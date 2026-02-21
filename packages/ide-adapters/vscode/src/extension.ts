@@ -3,6 +3,11 @@ import { CoreBridge } from './services/coreBridge';
 import { LanguageDetector } from './services/languageDetector';
 import { ConfigurationService } from './services/configurationService';
 import { TranslatedContentProvider, TRANSLATED_SCHEME } from './providers/translatedContentProvider';
+import { EditInterceptor } from './providers/editInterceptor';
+import { SaveHandler } from './providers/saveHandler';
+import { CompletionProvider } from './providers/completionProvider';
+import { HoverProvider } from './providers/hoverProvider';
+import { StatusBar } from './ui/statusBar';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -11,6 +16,9 @@ let coreBridge: CoreBridge;
 let languageDetector: LanguageDetector;
 let configService: ConfigurationService;
 let translatedContentProvider: TranslatedContentProvider;
+let editInterceptor: EditInterceptor;
+let saveHandler: SaveHandler;
+let statusBar: StatusBar;
 
 export function activate(context: vscode.ExtensionContext): void {
   outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME);
@@ -22,13 +30,30 @@ export function activate(context: vscode.ExtensionContext): void {
   translatedContentProvider = new TranslatedContentProvider(
     coreBridge, languageDetector, configService, outputChannel
   );
+  editInterceptor = new EditInterceptor(
+    coreBridge, languageDetector, configService, translatedContentProvider, outputChannel
+  );
+  saveHandler = new SaveHandler(
+    coreBridge, languageDetector, configService, outputChannel
+  );
+  statusBar = new StatusBar(configService);
 
   const providerRegistration: vscode.Disposable = vscode.workspace.registerTextDocumentContentProvider(
     TRANSLATED_SCHEME,
     translatedContentProvider
   );
 
-  outputChannel.appendLine('CoreBridge, LanguageDetector, ConfigurationService and TranslatedContentProvider initialized.');
+  const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
+    { scheme: TRANSLATED_SCHEME },
+    new CompletionProvider()
+  );
+
+  const hoverRegistration: vscode.Disposable = vscode.languages.registerHoverProvider(
+    { scheme: TRANSLATED_SCHEME },
+    new HoverProvider()
+  );
+
+  outputChannel.appendLine('All services and providers initialized.');
 
   const toggleCommand: vscode.Disposable = vscode.commands.registerCommand(
     'babel-tcc.toggle',
@@ -109,7 +134,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(outputChannel);
   context.subscriptions.push(providerRegistration);
+  context.subscriptions.push(completionRegistration);
+  context.subscriptions.push(hoverRegistration);
   context.subscriptions.push(configService);
+  context.subscriptions.push(editInterceptor);
+  context.subscriptions.push(saveHandler);
+  context.subscriptions.push(statusBar);
   context.subscriptions.push(toggleCommand);
   context.subscriptions.push(selectLanguageCommand);
   context.subscriptions.push(openTranslatedCommand);

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Babel TCC - C# Traduzido",
+  "scopeName": "source.mlc-csharp",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords-control" },
+    { "include": "#keywords-types" },
+    { "include": "#keywords-modifiers" },
+    { "include": "#keywords-literals" },
+    { "include": "#keywords-other" },
+    { "include": "#tradu-annotations" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.mlc-csharp",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.mlc-csharp",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.mlc-csharp",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-csharp",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.mlc-csharp",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-csharp",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.other.verbatim.mlc-csharp",
+          "begin": "@\"",
+          "end": "\"(?!\")",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-csharp",
+              "match": "\"\""
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.mlc-csharp",
+          "match": "\\b(0[xX][0-9a-fA-F_]+|0[bB][01_]+|[0-9][0-9_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?[fFdDmMlLuU]?)\\b"
+        }
+      ]
+    },
+    "keywords-control": {
+      "patterns": [
+        {
+          "name": "keyword.control.mlc-csharp",
+          "match": "\\b(se|senao|para|paracada|enquanto|faca|escolha|caso|padrao|retornar|quebrar|continuar|lancamento|tentar|capturar|finalmente|em|goto)\\b"
+        }
+      ]
+    },
+    "keywords-types": {
+      "patterns": [
+        {
+          "name": "keyword.type.mlc-csharp",
+          "match": "\\b(vazio|inteiro|texto|booleano|decimal|flutuante|duplo|longo|curto|byte|caractere|objeto|dinamico|var)\\b"
+        }
+      ]
+    },
+    "keywords-modifiers": {
+      "patterns": [
+        {
+          "name": "keyword.other.modifier.mlc-csharp",
+          "match": "\\b(publico|protegido|privado|interno|estatico|constante|somenteLeitura|virtual|sobrescrever|abstrato|selado|async|parcial|externo|volatil|inseguro|fixo)\\b"
+        }
+      ]
+    },
+    "keywords-literals": {
+      "patterns": [
+        {
+          "name": "constant.language.mlc-csharp",
+          "match": "\\b(verdadeiro|falso|nulo)\\b"
+        }
+      ]
+    },
+    "keywords-other": {
+      "patterns": [
+        {
+          "name": "keyword.other.mlc-csharp",
+          "match": "\\b(usando|espaconome|classe|estrutura|enumeracao|interface|novo|este|base|tipode|tamanhode|como|e|de|referencia|aguardar|delegado|evento|operador|implicito|explicito|verificado|naoverificado|bloqueado)\\b"
+        }
+      ]
+    },
+    "tradu-annotations": {
+      "patterns": [
+        {
+          "name": "markup.italic.tradu.mlc-csharp",
+          "match": "//\\s*tradu:.*$"
+        }
+      ]
+    }
+  }
+}

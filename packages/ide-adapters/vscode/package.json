@@ -49,7 +49,21 @@
           "description": "Target natural language for translation."
         }
       }
-    }
+    },
+    "grammars": [
+      {
+        "language": "mlc-csharp",
+        "scopeName": "source.mlc-csharp",
+        "path": "./syntaxes/mlc-csharp.tmLanguage.json"
+      }
+    ],
+    "languages": [
+      {
+        "id": "mlc-csharp",
+        "aliases": ["C# Traduzido", "mlc-csharp"],
+        "extensions": []
+      }
+    ]
   },
   "scripts": {
     "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
