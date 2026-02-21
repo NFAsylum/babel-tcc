@@ -164,6 +164,10 @@ public class CSharpAdapter : ILanguageAdapter
             case IdentifierNode identifier:
                 replacements.Add((identifier.StartPosition, identifier.EndPosition, identifier.Name));
                 break;
+            case LiteralNode literal when literal.Type == LiteralType.String:
+                string quotedValue = "\"" + literal.Value + "\"";
+                replacements.Add((literal.StartPosition, literal.EndPosition, quotedValue));
+                break;
         }
 
         foreach (ASTNode child in node.Children)

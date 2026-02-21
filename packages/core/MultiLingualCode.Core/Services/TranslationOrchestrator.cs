@@ -111,6 +111,15 @@ public class TranslationOrchestrator
                     identifier.Name = translatedIdResult.Value;
                 }
                 break;
+
+            case LiteralNode literal when literal.IsTranslatable:
+                string literalText = literal.Value.ToString() ?? "";
+                OperationResult<string> translatedLitResult = IdentifierMapperService.GetLiteralTranslation(literalText, targetLanguage);
+                if (translatedLitResult.IsSuccess)
+                {
+                    literal.Value = translatedLitResult.Value;
+                }
+                break;
         }
 
         foreach (ASTNode child in node.Children)
@@ -143,6 +152,20 @@ public class TranslationOrchestrator
                 {
                     identifier.Name = originalIdResult.Value;
                     identifier.TranslatedName = "";
+                }
+                break;
+
+            case LiteralNode literal when literal.IsTranslatable:
+                string translatedLiteralText = literal.Value.ToString() ?? "";
+                foreach (KeyValuePair<string, Dictionary<string, string>> kvp in IdentifierMapperService.Data.Literals)
+                {
+                    if (kvp.Value.TryGetValue(sourceLanguage, out string? translatedValue)
+                        && translatedValue is not null
+                        && string.Equals(translatedValue, translatedLiteralText, StringComparison.Ordinal))
+                    {
+                        literal.Value = kvp.Key;
+                        break;
+                    }
                 }
                 break;
         }
