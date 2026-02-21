@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 
 namespace MultiLingualCode.Core.LanguageAdapters;
 
@@ -79,6 +80,53 @@ public class RoslynWrapper
             SyntaxKind.CharacterLiteralToken => LiteralTokenKind.Character,
             _ => LiteralTokenKind.Other
         };
+    }
+
+    public static string GetTrailingCommentText(SyntaxToken token)
+    {
+        foreach (SyntaxTrivia trivia in token.TrailingTrivia)
+        {
+            if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+            {
+                string commentText = trivia.ToString();
+                if (commentText.StartsWith("//"))
+                {
+                    return commentText.Substring(2).TrimStart();
+                }
+            }
+        }
+
+        return string.Empty;
+    }
+
+    public static List<SyntaxToken> GetAllTokensOnLine(SyntaxNode root, int line)
+    {
+        List<SyntaxToken> tokensOnLine = new List<SyntaxToken>();
+        foreach (SyntaxToken token in root.DescendantTokens())
+        {
+            FileLinePositionSpan lineSpan = token.GetLocation().GetLineSpan();
+            if (lineSpan.StartLinePosition.Line == line)
+            {
+                tokensOnLine.Add(token);
+            }
+        }
+
+        return tokensOnLine;
+    }
+
+    public static List<SyntaxToken> GetIdentifierTokensOnLine(SyntaxNode root, int line)
+    {
+        List<SyntaxToken> identifiersOnLine = new List<SyntaxToken>();
+        foreach (SyntaxToken token in root.DescendantTokens())
+        {
+            FileLinePositionSpan lineSpan = token.GetLocation().GetLineSpan();
+            if (lineSpan.StartLinePosition.Line == line && IsIdentifierToken(token))
+            {
+                identifiersOnLine.Add(token);
+            }
+        }
+
+        return identifiersOnLine;
     }
 }
 
