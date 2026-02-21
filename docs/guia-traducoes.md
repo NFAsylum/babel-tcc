@@ -88,7 +88,6 @@ Copiar o template stub (`docs/template.json`) e preencher:
   "languageCode": "fr-fr",
   "languageName": "Francais",
   "programmingLanguage": "CSharp",
-  "compatibleKeywordVersion": "1.0.0",
   "translations": {
     "0": "abstrait",
     "1": "comme",
@@ -100,15 +99,16 @@ Copiar o template stub (`docs/template.json`) e preencher:
     "18": "sinon",
     "33": "entier",
     "75": "vide"
-  },
-  "commonIdentifiers": {
-    "count": "compteur",
-    "index": "indice",
-    "value": "valeur",
-    "name": "nom"
   }
 }
 ```
+
+**Campos:**
+- `version` - Versao do arquivo de traducao
+- `languageCode` - Identificador do idioma no formato ISO (`pt-br`, `es-es`, `fr-fr`)
+- `languageName` - Nome legivel do idioma para exibicao na interface (`Portugues Brasileiro`)
+- `programmingLanguage` - Linguagem de programacao alvo (`CSharp`)
+- `translations` - Mapa de ID numerico (definido em `keywords-base.json`) para palavra traduzida
 
 ### 4. Regras para boas traducoes
 
@@ -116,7 +116,6 @@ Copiar o template stub (`docs/template.json`) e preencher:
 - **Uma palavra so** quando possivel: `paracada` (foreach), `espaconome` (namespace)
 - **Consistencia**: se `int` e `inteiro`, `uint` deve ser `uinteiro`
 - **Intuitividade**: a traducao deve ser reconhecivel por um falante nativo
-- Traducoes de `commonIdentifiers` sao sugestoes; usuarios podem sobrescrever
 
 ### 5. Validar
 

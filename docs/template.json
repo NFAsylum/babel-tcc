@@ -1,10 +1,8 @@
 {
-  "_comment": "STUB - Este arquivo e um template para novas traducoes. Copie para natural-languages/<codigo-idioma>/csharp.json e preencha as traducoes.",
   "version": "1.0.0",
   "languageCode": "xx-yy",
   "languageName": "Nome do Idioma",
   "programmingLanguage": "CSharp",
-  "compatibleKeywordVersion": "1.0.0",
   "translations": {
     "0": "",
     "1": "",
@@ -84,22 +82,5 @@
     "75": "",
     "76": "",
     "77": ""
-  },
-  "commonIdentifiers": {
-    "count": "",
-    "index": "",
-    "value": "",
-    "name": "",
-    "id": "",
-    "data": "",
-    "result": "",
-    "list": "",
-    "key": "",
-    "user": "",
-    "item": "",
-    "message": "",
-    "error": "",
-    "success": "",
-    "total": ""
   }
 }

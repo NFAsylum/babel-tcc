@@ -13,8 +13,5 @@
 
 ## Notas
 O mapeamento e por projeto (.multilingual/ na raiz do projeto).
-Anotacoes tradu sao detectadas nos comentarios do codigo-fonte.
-Formatos suportados:
-  // tradu:nomeTraduzido
-  // tradu:Metodo,param1:traducao1,param2:traducao2
-  // tradu:"texto traduzido"
+Este servico e responsavel apenas pelo storage e lookup dos mapeamentos.
+O parsing de anotacoes // tradu: e responsabilidade da Tarefa 017.

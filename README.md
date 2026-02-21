@@ -1,4 +1,4 @@
-# Multilingual Code - babel-tcc
+# babel-tcc
 
 Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
 

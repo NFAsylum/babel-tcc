@@ -1,4 +1,4 @@
-# Arquitetura - Multilingual Code Extension
+# Arquitetura
 
 ## Visao Geral
 
@@ -61,7 +61,7 @@ O projeto segue uma arquitetura em camadas com separacao clara de responsabilida
 | `babel-tcc` | Core Engine + Extension + Exemplos + Docs | C# + TypeScript |
 | `babel-tcc-translations` | Tabelas de keywords e traducoes | JSON |
 
-Veja `docs/repos.txt` para detalhes da estrategia de organizacao.
+Veja [repos.txt](repos.txt) para detalhes da estrategia de organizacao.
 
 ## Interfaces Principais
 

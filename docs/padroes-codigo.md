@@ -118,6 +118,7 @@ Traducao (`pt-br/csharp.json`):
 {
   "version": "1.0.0",
   "languageCode": "pt-br",
+  "languageName": "Portugues Brasileiro",
   "programmingLanguage": "CSharp",
   "translations": {
     "30": "se",

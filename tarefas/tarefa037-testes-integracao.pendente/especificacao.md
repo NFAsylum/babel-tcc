@@ -4,7 +4,7 @@
 5 - Testes e QA
 
 ## Objetivo
-Criar e executar cenarios de teste end-to-end completos que validem o fluxo inteiro da extensao com projetos reais.
+Suite completa de testes e2e que valida o fluxo inteiro da extensao com projetos reais. Expande os smoke tests basicos da Tarefa 030.
 
 ## Escopo
 - Cenario 1 - Traducao C# para PT-BR:

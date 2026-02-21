@@ -13,6 +13,5 @@ Criar servico que mapeia identificadores customizados (variaveis, metodos, class
   - GetOriginal(string translatedIdentifier, string sourceLanguage) -> string?
   - GetLiteralTranslation(string literal, string targetLanguage) -> string?
   - SaveMap(string projectPath)
-- Parser de anotacoes // tradu:nome
 - Persistencia em .multilingual/identifier-map.json
 - Testes de mapeamento bidirecional

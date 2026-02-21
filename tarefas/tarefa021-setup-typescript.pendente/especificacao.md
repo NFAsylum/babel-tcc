@@ -7,12 +7,11 @@
 Finalizar a configuracao do projeto TypeScript da extensao VS Code.
 
 ## Escopo
-- Estrutura final em packages/ide-adapters/vscode/
-- Configurar package.json com:
+Incremento sobre scaffold da Tarefa 002 (que ja criou tsconfig, package.json basico, ESLint, build scripts e launch.json):
+- Adicionar ao package.json:
   - contributes.commands (toggle, selectLanguage, openTranslated, showOriginal)
   - contributes.configuration (multilingual.enabled, multilingual.language)
   - activationEvents (onLanguage:csharp)
-- Configurar tsconfig.json (strict, ES2020, CommonJS)
-- Configurar build com esbuild ou webpack
-- Criar src/extension.ts com activate/deactivate basicos
-- Testar: extensao ativa e loga no Output Channel
+- Configurar bundling com esbuild ou webpack
+- Criar src/extension.ts com activate/deactivate que registra providers
+- Testar: extensao ativa ao abrir arquivo .cs e loga no Output Channel

@@ -5,5 +5,4 @@
 - [ ] GetOriginal retorna nome original para identificador traduzido
 - [ ] GetLiteralTranslation traduz strings literais mapeadas
 - [ ] SaveMap persiste alteracoes em identifier-map.json
-- [ ] Parser de // tradu:nome extrai anotacoes corretamente
 - [ ] Testes com identifier-map.json de exemplo (Calculator)

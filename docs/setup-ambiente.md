@@ -103,4 +103,4 @@ npm install
 ```
 
 ### Extension nao ativa
-Verificar Output Channel "MultiLingual Code" no VS Code para logs de erro.
+Verificar Output Channel "babel-tcc" no VS Code para logs de erro.
