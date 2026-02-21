@@ -3,52 +3,49 @@ using MultiLingualCode.Core.Models;
 
 namespace MultiLingualCode.Core.Tests.Interfaces;
 
-/// <summary>
-/// Verifies that a mock implementation can satisfy the IIDEAdapter contract.
-/// </summary>
 public class IIDEAdapterContractTests
 {
-    private readonly MockIDEAdapter _adapter = new();
+    public MockIDEAdapter Adapter = new();
 
     [Fact]
     public void IDEName_IsAccessible()
     {
-        Assert.Equal("MockIDE", _adapter.IDEName);
+        Assert.Equal("MockIDE", Adapter.IDEName);
     }
 
     [Fact]
     public async Task ShowTranslatedContentAsync_Completes()
     {
-        await _adapter.ShowTranslatedContentAsync("test.cs", "translated code");
+        await Adapter.ShowTranslatedContentAsync("test.cs", "translated code");
     }
 
     [Fact]
     public async Task CaptureEditEventAsync_ReturnsEditEvent()
     {
-        var result = await _adapter.CaptureEditEventAsync();
+        EditEvent result = await Adapter.CaptureEditEventAsync();
         Assert.NotNull(result);
     }
 
     [Fact]
     public async Task SaveOriginalContentAsync_Completes()
     {
-        await _adapter.SaveOriginalContentAsync("test.cs", "original code");
+        await Adapter.SaveOriginalContentAsync("test.cs", "original code");
     }
 
     [Fact]
     public async Task ProvideAutocompleteAsync_ReturnsList()
     {
-        var result = await _adapter.ProvideAutocompleteAsync("se", 2);
+        List<CompletionItem> result = await Adapter.ProvideAutocompleteAsync("se", 2);
         Assert.NotNull(result);
     }
 
     [Fact]
     public async Task ShowDiagnosticsAsync_Completes()
     {
-        await _adapter.ShowDiagnosticsAsync(new List<Diagnostic>());
+        await Adapter.ShowDiagnosticsAsync(new List<Diagnostic>());
     }
 
-    private class MockIDEAdapter : IIDEAdapter
+    public class MockIDEAdapter : IIDEAdapter
     {
         public string IDEName => "MockIDE";
 

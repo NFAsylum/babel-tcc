@@ -1,79 +1,63 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
+using MultiLingualCode.Core.Models;
+using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Models.Translation;
 
-/// <summary>
-/// Represents the keywords-base.json file that maps programming language keywords to numeric IDs.
-/// Provides bidirectional lookup between keyword text and ID.
-/// </summary>
 public class KeywordTable
 {
-    private Dictionary<string, int> _keywordToId = new(StringComparer.OrdinalIgnoreCase);
-    private Dictionary<int, string> _idToKeyword = new();
+    public Dictionary<string, int> KeywordToId = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<int, string> IdToKeyword = new();
 
     [JsonPropertyName("keywords")]
     public Dictionary<string, int> Keywords
     {
-        get => _keywordToId;
+        get => KeywordToId;
         set
         {
-            _keywordToId = new Dictionary<string, int>(value, StringComparer.OrdinalIgnoreCase);
-            _idToKeyword = new Dictionary<int, string>(value.Count);
-            foreach (var kvp in value)
+            KeywordToId = new Dictionary<string, int>(value, StringComparer.OrdinalIgnoreCase);
+            IdToKeyword = new Dictionary<int, string>(value.Count);
+            foreach (KeyValuePair<string, int> kvp in value)
             {
-                _idToKeyword[kvp.Value] = kvp.Key;
+                IdToKeyword[kvp.Value] = kvp.Key;
             }
         }
     }
 
-    /// <summary>
-    /// Returns the numeric ID for a keyword, or -1 if not found.
-    /// </summary>
     public int GetKeywordId(string keyword)
     {
         if (string.IsNullOrEmpty(keyword))
+        {
             return -1;
+        }
 
-        return _keywordToId.TryGetValue(keyword, out var id) ? id : -1;
+        if (KeywordToId.TryGetValue(keyword, out int id))
+        {
+            return id;
+        }
+
+        return -1;
     }
 
-    /// <summary>
-    /// Returns the keyword text for a numeric ID, or null if not found.
-    /// </summary>
-    public string? GetKeyword(int id)
+    public OperationResult<string> GetKeyword(int id)
     {
-        return _idToKeyword.TryGetValue(id, out var keyword) ? keyword : null;
+        if (IdToKeyword.TryGetValue(id, out string? keyword) && keyword is not null)
+        {
+            return OperationResult<string>.Ok(keyword);
+        }
+
+        return OperationResult<string>.Fail($"Keyword not found for id: {id}");
     }
 
-    /// <summary>
-    /// Returns the total number of keywords in the table.
-    /// </summary>
-    public int Count => _keywordToId.Count;
+    public int Count => KeywordToId.Count;
 
-    /// <summary>
-    /// Loads a KeywordTable from a JSON file.
-    /// </summary>
-    public static KeywordTable LoadFrom(string filePath)
+    public static OperationResult<KeywordTable> LoadFrom(string filePath)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Keywords file not found: {filePath}", filePath);
-
-        var json = File.ReadAllText(filePath);
-        return JsonSerializer.Deserialize<KeywordTable>(json, JsonOptions.Default)
-            ?? throw new JsonException($"Failed to deserialize keywords file: {filePath}");
+        return JsonFileReader.ReadFromFile<KeywordTable>(filePath, JsonOptions.Default);
     }
 
-    /// <summary>
-    /// Loads a KeywordTable from a JSON file asynchronously.
-    /// </summary>
-    public static async Task<KeywordTable> LoadFromAsync(string filePath)
+    public static async Task<OperationResult<KeywordTable>> LoadFromAsync(string filePath)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Keywords file not found: {filePath}", filePath);
-
-        await using var stream = File.OpenRead(filePath);
-        return await JsonSerializer.DeserializeAsync<KeywordTable>(stream, JsonOptions.Default)
-            ?? throw new JsonException($"Failed to deserialize keywords file: {filePath}");
+        return await JsonFileReader.ReadFromFileAsync<KeywordTable>(filePath, JsonOptions.Default);
     }
 }

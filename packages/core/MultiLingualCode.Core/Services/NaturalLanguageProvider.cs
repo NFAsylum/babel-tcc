@@ -4,143 +4,145 @@ using MultiLingualCode.Core.Models.Translation;
 
 namespace MultiLingualCode.Core.Services;
 
-/// <summary>
-/// Concrete implementation of INaturalLanguageProvider.
-/// Loads translation tables from the filesystem and provides keyword/identifier translation.
-/// </summary>
 public class NaturalLanguageProvider : INaturalLanguageProvider
 {
-    private readonly string _translationsBasePath;
-    private readonly Dictionary<string, LanguageTable> _loadedTables = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, KeywordTable> _keywordTables = new(StringComparer.OrdinalIgnoreCase);
-    private IdentifierMap? _identifierMap;
-    private LanguageTable? _activeTable;
-    private KeywordTable? _activeKeywordTable;
+    public string TranslationsBasePath { get; }
+    public Dictionary<string, LanguageTable> LoadedTables = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, KeywordTable> KeywordTables = new(StringComparer.OrdinalIgnoreCase);
+    public IdentifierMap IdentifierMapData = new();
+    public LanguageTable ActiveTable = new();
+    public KeywordTable ActiveKeywordTable = new();
+    public bool HasActiveTable { get; set; }
 
     public string LanguageCode { get; }
-    public string LanguageName { get; private set; } = "";
+    public string LanguageName { get; set; } = "";
 
-    /// <summary>
-    /// Creates a new NaturalLanguageProvider.
-    /// </summary>
-    /// <param name="languageCode">ISO language code (e.g. "pt-br").</param>
-    /// <param name="translationsBasePath">Root path of the translations repository.</param>
-    public NaturalLanguageProvider(string languageCode, string translationsBasePath)
+    public static OperationResult<NaturalLanguageProvider> Create(string languageCode, string translationsBasePath)
     {
-        ArgumentNullException.ThrowIfNull(languageCode);
-        ArgumentNullException.ThrowIfNull(translationsBasePath);
+        if (string.IsNullOrEmpty(languageCode))
+        {
+            return OperationResult<NaturalLanguageProvider>.Fail("Language code cannot be empty.");
+        }
 
-        LanguageCode = languageCode;
-        _translationsBasePath = translationsBasePath;
+        if (string.IsNullOrEmpty(translationsBasePath))
+        {
+            return OperationResult<NaturalLanguageProvider>.Fail("Translations base path cannot be empty.");
+        }
+
+        return OperationResult<NaturalLanguageProvider>.Ok(new NaturalLanguageProvider(languageCode, translationsBasePath));
     }
 
-    /// <summary>
-    /// Loads translation tables for a specific programming language.
-    /// Resolves paths based on the translations repository structure:
-    ///   programming-languages/{lang}/keywords-base.json
-    ///   natural-languages/{languageCode}/{lang}.json
-    /// </summary>
+    public NaturalLanguageProvider(string languageCode, string translationsBasePath)
+    {
+        LanguageCode = languageCode;
+        TranslationsBasePath = translationsBasePath;
+    }
+
     public async Task LoadTranslationTableAsync(string programmingLanguage)
     {
-        ArgumentNullException.ThrowIfNull(programmingLanguage);
+        string langKey = programmingLanguage.ToLowerInvariant();
 
-        var langKey = programmingLanguage.ToLowerInvariant();
-
-        // Load keyword table if not cached
-        if (!_keywordTables.ContainsKey(langKey))
+        if (!KeywordTables.ContainsKey(langKey))
         {
-            var keywordsPath = Path.Combine(
-                _translationsBasePath,
+            string keywordsPath = Path.Combine(
+                TranslationsBasePath,
                 "programming-languages",
                 langKey,
                 "keywords-base.json");
 
-            var keywordTable = await KeywordTable.LoadFromAsync(keywordsPath);
-            _keywordTables[langKey] = keywordTable;
+            OperationResult<KeywordTable> keywordResult = await KeywordTable.LoadFromAsync(keywordsPath);
+            if (!keywordResult.IsSuccess)
+            {
+                return;
+            }
+
+            KeywordTables[langKey] = keywordResult.Value;
         }
 
-        // Load language table if not cached
-        if (!_loadedTables.ContainsKey(langKey))
+        if (!LoadedTables.ContainsKey(langKey))
         {
-            var translationPath = Path.Combine(
-                _translationsBasePath,
+            string translationPath = Path.Combine(
+                TranslationsBasePath,
                 "natural-languages",
                 LanguageCode,
                 $"{langKey}.json");
 
-            var languageTable = await LanguageTable.LoadFromAsync(translationPath);
-            _loadedTables[langKey] = languageTable;
+            OperationResult<LanguageTable> tableResult = await LanguageTable.LoadFromAsync(translationPath);
+            if (!tableResult.IsSuccess)
+            {
+                return;
+            }
+
+            LoadedTables[langKey] = tableResult.Value;
         }
 
-        _activeTable = _loadedTables[langKey];
-        _activeKeywordTable = _keywordTables[langKey];
-        LanguageName = _activeTable.LanguageName;
+        ActiveTable = LoadedTables[langKey];
+        ActiveKeywordTable = KeywordTables[langKey];
+        HasActiveTable = true;
+        LanguageName = ActiveTable.LanguageName;
     }
 
-    /// <summary>
-    /// Translates a keyword by its numeric ID.
-    /// Returns the translated text, or null if no translation exists.
-    /// </summary>
-    public string? TranslateKeyword(int keywordId)
+    public OperationResult<string> TranslateKeyword(int keywordId)
     {
-        return _activeTable?.GetTranslation(keywordId);
+        if (!HasActiveTable)
+        {
+            return OperationResult<string>.Fail("No active translation table loaded.");
+        }
+
+        return ActiveTable.GetTranslation(keywordId);
     }
 
-    /// <summary>
-    /// Reverse-translates a keyword from translated text back to its numeric ID.
-    /// Returns -1 if the translated keyword is not found.
-    /// </summary>
     public int ReverseTranslateKeyword(string translatedKeyword)
     {
         if (string.IsNullOrEmpty(translatedKeyword))
+        {
             return -1;
+        }
 
-        return _activeTable?.GetKeywordId(translatedKeyword) ?? -1;
+        if (!HasActiveTable)
+        {
+            return -1;
+        }
+
+        return ActiveTable.GetKeywordId(translatedKeyword);
     }
 
-    /// <summary>
-    /// Translates a user-defined identifier using the loaded identifier map.
-    /// Returns null if no translation is available.
-    /// </summary>
-    public string? TranslateIdentifier(string identifier, IdentifierContext context)
+    public OperationResult<string> TranslateIdentifier(string identifier, IdentifierContext context)
     {
         if (string.IsNullOrEmpty(identifier))
-            return null;
+        {
+            return OperationResult<string>.Fail("Identifier is empty.");
+        }
 
-        return _identifierMap?.GetTranslated(identifier);
+        return IdentifierMapData.GetTranslated(identifier);
     }
 
-    /// <summary>
-    /// Loads an identifier map from a JSON file.
-    /// </summary>
     public async Task LoadIdentifierMapAsync(string filePath)
     {
-        _identifierMap = await IdentifierMap.LoadFromAsync(filePath);
+        OperationResult<IdentifierMap> result = await IdentifierMap.LoadFromAsync(filePath);
+        if (result.IsSuccess)
+        {
+            IdentifierMapData = result.Value;
+        }
     }
 
-    /// <summary>
-    /// Sets the identifier map directly (useful for testing or runtime updates).
-    /// </summary>
     public void SetIdentifierMap(IdentifierMap map)
     {
-        _identifierMap = map;
+        IdentifierMapData = map;
     }
 
-    /// <summary>
-    /// Returns the currently active keyword table, or null if none loaded.
-    /// </summary>
-    public KeywordTable? ActiveKeywordTable => _activeKeywordTable;
+    public KeywordTable GetActiveKeywordTable()
+    {
+        return ActiveKeywordTable;
+    }
 
-    /// <summary>
-    /// Returns the currently active language table, or null if none loaded.
-    /// </summary>
-    public LanguageTable? ActiveLanguageTable => _activeTable;
+    public LanguageTable GetActiveLanguageTable()
+    {
+        return ActiveTable;
+    }
 
-    /// <summary>
-    /// Returns whether a translation table has been loaded for the given programming language.
-    /// </summary>
     public bool IsLoaded(string programmingLanguage)
     {
-        return _loadedTables.ContainsKey(programmingLanguage.ToLowerInvariant());
+        return LoadedTables.ContainsKey(programmingLanguage.ToLowerInvariant());
     }
 }

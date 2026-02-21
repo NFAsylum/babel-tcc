@@ -8,11 +8,11 @@ namespace MultiLingualCode.Core.Tests.Services;
 
 public class LanguageRegistryTests
 {
-    private readonly LanguageRegistry _registry = new();
+    public LanguageRegistry _registry = new();
 
     private static ILanguageAdapter CreateMockAdapter(string name, params string[] extensions)
     {
-        var adapter = Substitute.For<ILanguageAdapter>();
+        ILanguageAdapter adapter = Substitute.For<ILanguageAdapter>();
         adapter.LanguageName.Returns(name);
         adapter.FileExtensions.Returns(extensions);
         return adapter;
@@ -21,115 +21,137 @@ public class LanguageRegistryTests
     [Fact]
     public void RegisterAdapter_MakesExtensionsAvailable()
     {
-        var adapter = CreateMockAdapter("CSharp", ".cs");
+        ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
 
-        _registry.RegisterAdapter(adapter);
+        OperationResult result = _registry.RegisterAdapter(adapter);
 
+        Assert.True(result.IsSuccess);
         Assert.True(_registry.IsSupported(".cs"));
     }
 
     [Fact]
     public void RegisterAdapter_MultipleExtensions()
     {
-        var adapter = CreateMockAdapter("TypeScript", ".ts", ".tsx");
+        ILanguageAdapter adapter = CreateMockAdapter("TypeScript", ".ts", ".tsx");
 
-        _registry.RegisterAdapter(adapter);
+        OperationResult result = _registry.RegisterAdapter(adapter);
 
+        Assert.True(result.IsSuccess);
         Assert.True(_registry.IsSupported(".ts"));
         Assert.True(_registry.IsSupported(".tsx"));
     }
 
     [Fact]
-    public void RegisterAdapter_ThrowsOnNull()
+    public void RegisterAdapter_NullAdapter_ReturnsFailure()
     {
-        Assert.Throws<ArgumentNullException>(() => _registry.RegisterAdapter(null!));
+        OperationResult result = _registry.RegisterAdapter(null!);
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void RegisterAdapter_ThrowsOnEmptyExtensions()
+    public void RegisterAdapter_EmptyExtensions_ReturnsFailure()
     {
-        var adapter = CreateMockAdapter("Empty");
+        ILanguageAdapter adapter = CreateMockAdapter("Empty");
 
-        Assert.Throws<ArgumentException>(() => _registry.RegisterAdapter(adapter));
+        OperationResult result = _registry.RegisterAdapter(adapter);
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void RegisterAdapter_ThrowsOnNullExtensions()
+    public void RegisterAdapter_NullExtensions_ReturnsFailure()
     {
-        var adapter = Substitute.For<ILanguageAdapter>();
+        ILanguageAdapter adapter = Substitute.For<ILanguageAdapter>();
         adapter.LanguageName.Returns("Null");
         adapter.FileExtensions.Returns((string[]?)null);
 
-        Assert.Throws<ArgumentException>(() => _registry.RegisterAdapter(adapter));
+        OperationResult result = _registry.RegisterAdapter(adapter);
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void RegisterAdapter_ReplacesExistingAdapter()
     {
-        var first = CreateMockAdapter("First", ".cs");
-        var second = CreateMockAdapter("Second", ".cs");
+        ILanguageAdapter first = CreateMockAdapter("First", ".cs");
+        ILanguageAdapter second = CreateMockAdapter("Second", ".cs");
 
         _registry.RegisterAdapter(first);
         _registry.RegisterAdapter(second);
 
-        var result = _registry.GetAdapter(".cs");
-        Assert.Same(second, result);
+        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(".cs");
+        Assert.True(result.IsSuccess);
+        Assert.Same(second, result.Value);
     }
 
     [Fact]
     public void GetAdapter_ReturnsCorrectAdapter()
     {
-        var csAdapter = CreateMockAdapter("CSharp", ".cs");
-        var pyAdapter = CreateMockAdapter("Python", ".py");
+        ILanguageAdapter csAdapter = CreateMockAdapter("CSharp", ".cs");
+        ILanguageAdapter pyAdapter = CreateMockAdapter("Python", ".py");
 
         _registry.RegisterAdapter(csAdapter);
         _registry.RegisterAdapter(pyAdapter);
 
-        Assert.Same(csAdapter, _registry.GetAdapter(".cs"));
-        Assert.Same(pyAdapter, _registry.GetAdapter(".py"));
+        OperationResult<ILanguageAdapter> csResult = _registry.GetAdapter(".cs");
+        OperationResult<ILanguageAdapter> pyResult = _registry.GetAdapter(".py");
+
+        Assert.True(csResult.IsSuccess);
+        Assert.True(pyResult.IsSuccess);
+        Assert.Same(csAdapter, csResult.Value);
+        Assert.Same(pyAdapter, pyResult.Value);
     }
 
     [Fact]
-    public void GetAdapter_ReturnsNullForUnknownExtension()
+    public void GetAdapter_ReturnsFailureForUnknownExtension()
     {
-        var adapter = CreateMockAdapter("CSharp", ".cs");
+        ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
         _registry.RegisterAdapter(adapter);
 
-        Assert.Null(_registry.GetAdapter(".py"));
+        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(".py");
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void GetAdapter_ReturnsNullForEmptyString()
+    public void GetAdapter_ReturnsFailureForEmptyString()
     {
-        Assert.Null(_registry.GetAdapter(""));
+        OperationResult<ILanguageAdapter> result = _registry.GetAdapter("");
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void GetAdapter_ReturnsNullForNullString()
+    public void GetAdapter_ReturnsFailureForNullString()
     {
-        Assert.Null(_registry.GetAdapter(null!));
+        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(null!);
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void GetAdapter_CaseInsensitive()
     {
-        var adapter = CreateMockAdapter("CSharp", ".cs");
+        ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
         _registry.RegisterAdapter(adapter);
 
-        Assert.Same(adapter, _registry.GetAdapter(".CS"));
-        Assert.Same(adapter, _registry.GetAdapter(".Cs"));
+        OperationResult<ILanguageAdapter> upperResult = _registry.GetAdapter(".CS");
+        OperationResult<ILanguageAdapter> mixedResult = _registry.GetAdapter(".Cs");
+
+        Assert.True(upperResult.IsSuccess);
+        Assert.True(mixedResult.IsSuccess);
+        Assert.Same(adapter, upperResult.Value);
+        Assert.Same(adapter, mixedResult.Value);
     }
 
     [Fact]
     public void GetSupportedExtensions_ReturnsAllRegistered()
     {
-        var csAdapter = CreateMockAdapter("CSharp", ".cs");
-        var pyAdapter = CreateMockAdapter("Python", ".py");
+        ILanguageAdapter csAdapter = CreateMockAdapter("CSharp", ".cs");
+        ILanguageAdapter pyAdapter = CreateMockAdapter("Python", ".py");
 
         _registry.RegisterAdapter(csAdapter);
         _registry.RegisterAdapter(pyAdapter);
 
-        var extensions = _registry.GetSupportedExtensions();
+        string[] extensions = _registry.GetSupportedExtensions();
         Assert.Equal(2, extensions.Length);
         Assert.Contains(".cs", extensions);
         Assert.Contains(".py", extensions);
@@ -138,7 +160,7 @@ public class LanguageRegistryTests
     [Fact]
     public void GetSupportedExtensions_ReturnsEmptyWhenNoneRegistered()
     {
-        var extensions = _registry.GetSupportedExtensions();
+        string[] extensions = _registry.GetSupportedExtensions();
         Assert.Empty(extensions);
     }
 
@@ -149,7 +171,7 @@ public class LanguageRegistryTests
         _registry.RegisterAdapter(CreateMockAdapter("CSharp", ".cs"));
         _registry.RegisterAdapter(CreateMockAdapter("TypeScript", ".ts", ".tsx"));
 
-        var extensions = _registry.GetSupportedExtensions();
+        string[] extensions = _registry.GetSupportedExtensions();
         Assert.Equal(new[] { ".cs", ".py", ".ts", ".tsx" }, extensions);
     }
 
@@ -185,12 +207,14 @@ public class LanguageRegistryTests
     [Fact]
     public void RegisterAdapter_NormalizesExtensionWithoutDot()
     {
-        var adapter = CreateMockAdapter("CSharp", "cs");
+        ILanguageAdapter adapter = CreateMockAdapter("CSharp", "cs");
 
         _registry.RegisterAdapter(adapter);
 
         Assert.True(_registry.IsSupported(".cs"));
-        Assert.Same(adapter, _registry.GetAdapter(".cs"));
+        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(".cs");
+        Assert.True(result.IsSuccess);
+        Assert.Same(adapter, result.Value);
     }
 
     [Fact]
@@ -198,24 +222,34 @@ public class LanguageRegistryTests
     {
         _registry.RegisterAdapter(CreateMockAdapter("CSharp", ".cs"));
 
-        Assert.NotNull(_registry.GetAdapter("cs"));
+        OperationResult<ILanguageAdapter> result = _registry.GetAdapter("cs");
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
     public void MultipleAdapters_IndependentRegistrations()
     {
-        var csAdapter = CreateMockAdapter("CSharp", ".cs");
-        var pyAdapter = CreateMockAdapter("Python", ".py");
-        var tsAdapter = CreateMockAdapter("TypeScript", ".ts", ".tsx");
+        ILanguageAdapter csAdapter = CreateMockAdapter("CSharp", ".cs");
+        ILanguageAdapter pyAdapter = CreateMockAdapter("Python", ".py");
+        ILanguageAdapter tsAdapter = CreateMockAdapter("TypeScript", ".ts", ".tsx");
 
         _registry.RegisterAdapter(csAdapter);
         _registry.RegisterAdapter(pyAdapter);
         _registry.RegisterAdapter(tsAdapter);
 
-        Assert.Same(csAdapter, _registry.GetAdapter(".cs"));
-        Assert.Same(pyAdapter, _registry.GetAdapter(".py"));
-        Assert.Same(tsAdapter, _registry.GetAdapter(".ts"));
-        Assert.Same(tsAdapter, _registry.GetAdapter(".tsx"));
+        OperationResult<ILanguageAdapter> csResult = _registry.GetAdapter(".cs");
+        OperationResult<ILanguageAdapter> pyResult = _registry.GetAdapter(".py");
+        OperationResult<ILanguageAdapter> tsResult = _registry.GetAdapter(".ts");
+        OperationResult<ILanguageAdapter> tsxResult = _registry.GetAdapter(".tsx");
+
+        Assert.True(csResult.IsSuccess);
+        Assert.True(pyResult.IsSuccess);
+        Assert.True(tsResult.IsSuccess);
+        Assert.True(tsxResult.IsSuccess);
+        Assert.Same(csAdapter, csResult.Value);
+        Assert.Same(pyAdapter, pyResult.Value);
+        Assert.Same(tsAdapter, tsResult.Value);
+        Assert.Same(tsAdapter, tsxResult.Value);
         Assert.Equal(4, _registry.GetSupportedExtensions().Length);
     }
 }

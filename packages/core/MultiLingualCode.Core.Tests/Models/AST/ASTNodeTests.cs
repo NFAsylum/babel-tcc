@@ -7,7 +7,7 @@ public class KeywordNodeTests
     [Fact]
     public void Clone_CopiesAllProperties()
     {
-        var node = new KeywordNode
+        KeywordNode node = new KeywordNode
         {
             KeywordId = 30,
             OriginalKeyword = "if",
@@ -17,7 +17,7 @@ public class KeywordNodeTests
             EndLine = 1
         };
 
-        var clone = (KeywordNode)node.Clone();
+        KeywordNode clone = (KeywordNode)node.Clone();
 
         Assert.Equal(30, clone.KeywordId);
         Assert.Equal("if", clone.OriginalKeyword);
@@ -30,8 +30,8 @@ public class KeywordNodeTests
     [Fact]
     public void Clone_IsDeepCopy()
     {
-        var node = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
-        var clone = (KeywordNode)node.Clone();
+        KeywordNode node = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
+        KeywordNode clone = (KeywordNode)node.Clone();
 
         clone.KeywordId = 99;
         Assert.Equal(30, node.KeywordId);
@@ -40,12 +40,12 @@ public class KeywordNodeTests
     [Fact]
     public void Clone_DeepClonesChildren()
     {
-        var parent = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
-        var child = new IdentifierNode { Name = "x" };
+        KeywordNode parent = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
+        IdentifierNode child = new IdentifierNode { Name = "x" };
         child.Parent = parent;
         parent.Children.Add(child);
 
-        var clone = (KeywordNode)parent.Clone();
+        KeywordNode clone = (KeywordNode)parent.Clone();
 
         Assert.Single(clone.Children);
         Assert.IsType<IdentifierNode>(clone.Children[0]);
@@ -60,7 +60,7 @@ public class IdentifierNodeTests
     [Fact]
     public void Clone_CopiesAllProperties()
     {
-        var node = new IdentifierNode
+        IdentifierNode node = new IdentifierNode
         {
             Name = "calculator",
             IsTranslatable = true,
@@ -71,7 +71,7 @@ public class IdentifierNodeTests
             EndLine = 0
         };
 
-        var clone = (IdentifierNode)node.Clone();
+        IdentifierNode clone = (IdentifierNode)node.Clone();
 
         Assert.Equal("calculator", clone.Name);
         Assert.True(clone.IsTranslatable);
@@ -83,8 +83,8 @@ public class IdentifierNodeTests
     [Fact]
     public void Clone_IsDeepCopy()
     {
-        var node = new IdentifierNode { Name = "original", IsTranslatable = false };
-        var clone = (IdentifierNode)node.Clone();
+        IdentifierNode node = new IdentifierNode { Name = "original", IsTranslatable = false };
+        IdentifierNode clone = (IdentifierNode)node.Clone();
 
         clone.Name = "modified";
         Assert.Equal("original", node.Name);
@@ -93,11 +93,11 @@ public class IdentifierNodeTests
     [Fact]
     public void DefaultValues_AreCorrect()
     {
-        var node = new IdentifierNode();
+        IdentifierNode node = new IdentifierNode();
 
         Assert.Equal(string.Empty, node.Name);
         Assert.False(node.IsTranslatable);
-        Assert.Null(node.TranslatedName);
+        Assert.Equal("", node.TranslatedName);
     }
 }
 
@@ -106,14 +106,14 @@ public class LiteralNodeTests
     [Fact]
     public void Clone_CopiesStringLiteral()
     {
-        var node = new LiteralNode
+        LiteralNode node = new LiteralNode
         {
             Value = "hello",
             Type = LiteralType.String,
             IsTranslatable = true
         };
 
-        var clone = (LiteralNode)node.Clone();
+        LiteralNode clone = (LiteralNode)node.Clone();
 
         Assert.Equal("hello", clone.Value);
         Assert.Equal(LiteralType.String, clone.Type);
@@ -123,8 +123,8 @@ public class LiteralNodeTests
     [Fact]
     public void Clone_CopiesNumberLiteral()
     {
-        var node = new LiteralNode { Value = 42, Type = LiteralType.Number };
-        var clone = (LiteralNode)node.Clone();
+        LiteralNode node = new LiteralNode { Value = 42, Type = LiteralType.Number };
+        LiteralNode clone = (LiteralNode)node.Clone();
 
         Assert.Equal(42, clone.Value);
         Assert.Equal(LiteralType.Number, clone.Type);
@@ -133,8 +133,8 @@ public class LiteralNodeTests
     [Fact]
     public void Clone_CopiesBooleanLiteral()
     {
-        var node = new LiteralNode { Value = true, Type = LiteralType.Boolean };
-        var clone = (LiteralNode)node.Clone();
+        LiteralNode node = new LiteralNode { Value = true, Type = LiteralType.Boolean };
+        LiteralNode clone = (LiteralNode)node.Clone();
 
         Assert.Equal(true, clone.Value);
         Assert.Equal(LiteralType.Boolean, clone.Type);
@@ -143,10 +143,10 @@ public class LiteralNodeTests
     [Fact]
     public void Clone_CopiesNullLiteral()
     {
-        var node = new LiteralNode { Value = null, Type = LiteralType.Null };
-        var clone = (LiteralNode)node.Clone();
+        LiteralNode node = new LiteralNode { Value = "", Type = LiteralType.Null };
+        LiteralNode clone = (LiteralNode)node.Clone();
 
-        Assert.Null(clone.Value);
+        Assert.Equal("", clone.Value);
         Assert.Equal(LiteralType.Null, clone.Type);
     }
 }
@@ -156,13 +156,13 @@ public class ExpressionNodeTests
     [Fact]
     public void Clone_CopiesAllProperties()
     {
-        var node = new ExpressionNode
+        ExpressionNode node = new ExpressionNode
         {
             ExpressionKind = "BinaryExpression",
             RawText = "a + b"
         };
 
-        var clone = (ExpressionNode)node.Clone();
+        ExpressionNode clone = (ExpressionNode)node.Clone();
 
         Assert.Equal("BinaryExpression", clone.ExpressionKind);
         Assert.Equal("a + b", clone.RawText);
@@ -171,8 +171,8 @@ public class ExpressionNodeTests
     [Fact]
     public void Clone_IsDeepCopy()
     {
-        var node = new ExpressionNode { ExpressionKind = "MethodCall", RawText = "Foo()" };
-        var clone = (ExpressionNode)node.Clone();
+        ExpressionNode node = new ExpressionNode { ExpressionKind = "MethodCall", RawText = "Foo()" };
+        ExpressionNode clone = (ExpressionNode)node.Clone();
 
         clone.RawText = "Bar()";
         Assert.Equal("Foo()", node.RawText);
@@ -184,13 +184,13 @@ public class StatementNodeTests
     [Fact]
     public void Clone_CopiesAllProperties()
     {
-        var node = new StatementNode
+        StatementNode node = new StatementNode
         {
             StatementKind = "IfStatement",
             RawText = "if (x) { }"
         };
 
-        var clone = (StatementNode)node.Clone();
+        StatementNode clone = (StatementNode)node.Clone();
 
         Assert.Equal("IfStatement", clone.StatementKind);
         Assert.Equal("if (x) { }", clone.RawText);
@@ -199,26 +199,26 @@ public class StatementNodeTests
     [Fact]
     public void Clone_DeepClonesNestedHierarchy()
     {
-        var ifStmt = new StatementNode { StatementKind = "IfStatement" };
-        var keyword = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
+        StatementNode ifStmt = new StatementNode { StatementKind = "IfStatement" };
+        KeywordNode keyword = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
         keyword.Parent = ifStmt;
         ifStmt.Children.Add(keyword);
 
-        var block = new StatementNode { StatementKind = "Block" };
+        StatementNode block = new StatementNode { StatementKind = "Block" };
         block.Parent = ifStmt;
         ifStmt.Children.Add(block);
 
-        var innerExpr = new ExpressionNode { ExpressionKind = "Assignment", RawText = "x = 1" };
+        ExpressionNode innerExpr = new ExpressionNode { ExpressionKind = "Assignment", RawText = "x = 1" };
         innerExpr.Parent = block;
         block.Children.Add(innerExpr);
 
-        var clone = (StatementNode)ifStmt.Clone();
+        StatementNode clone = (StatementNode)ifStmt.Clone();
 
         Assert.Equal(2, clone.Children.Count);
         Assert.IsType<KeywordNode>(clone.Children[0]);
         Assert.IsType<StatementNode>(clone.Children[1]);
 
-        var clonedBlock = (StatementNode)clone.Children[1];
+        StatementNode clonedBlock = (StatementNode)clone.Children[1];
         Assert.Single(clonedBlock.Children);
         Assert.IsType<ExpressionNode>(clonedBlock.Children[0]);
         Assert.Equal("x = 1", ((ExpressionNode)clonedBlock.Children[0]).RawText);

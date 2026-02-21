@@ -1,16 +1,13 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
+using MultiLingualCode.Core.Models;
+using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Models.Translation;
 
-/// <summary>
-/// Represents a translation table (e.g. pt-br/csharp.json) that maps keyword IDs to translated text.
-/// Provides bidirectional lookup between numeric IDs and translated keywords.
-/// </summary>
 public class LanguageTable
 {
-    private Dictionary<int, string> _idToTranslation = new();
-    private Dictionary<string, int> _translationToId = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<int, string> IdToTranslation = new();
+    public Dictionary<string, int> TranslationToId = new(StringComparer.OrdinalIgnoreCase);
 
     [JsonPropertyName("version")]
     public string Version { get; set; } = "";
@@ -29,74 +26,63 @@ public class LanguageTable
     {
         get
         {
-            var result = new Dictionary<string, string>();
-            foreach (var kvp in _idToTranslation)
+            Dictionary<string, string> result = new Dictionary<string, string>();
+            foreach (KeyValuePair<int, string> kvp in IdToTranslation)
+            {
                 result[kvp.Key.ToString()] = kvp.Value;
+            }
             return result;
         }
         set
         {
-            _idToTranslation = new Dictionary<int, string>();
-            _translationToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            IdToTranslation = new Dictionary<int, string>();
+            TranslationToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var kvp in value)
+            foreach (KeyValuePair<string, string> kvp in value)
             {
-                if (int.TryParse(kvp.Key, out var id) && !string.IsNullOrEmpty(kvp.Value))
+                if (int.TryParse(kvp.Key, out int id) && !string.IsNullOrEmpty(kvp.Value))
                 {
-                    _idToTranslation[id] = kvp.Value;
-                    _translationToId[kvp.Value] = id;
+                    IdToTranslation[id] = kvp.Value;
+                    TranslationToId[kvp.Value] = id;
                 }
             }
         }
     }
 
-    /// <summary>
-    /// Returns the translated keyword for a numeric ID, or null if not found.
-    /// </summary>
-    public string? GetTranslation(int keywordId)
+    public OperationResult<string> GetTranslation(int keywordId)
     {
-        return _idToTranslation.TryGetValue(keywordId, out var translation) ? translation : null;
+        if (IdToTranslation.TryGetValue(keywordId, out string? translation) && translation is not null)
+        {
+            return OperationResult<string>.Ok(translation);
+        }
+
+        return OperationResult<string>.Fail($"Translation not found for keyword id: {keywordId}");
     }
 
-    /// <summary>
-    /// Returns the keyword ID for a translated keyword, or -1 if not found.
-    /// </summary>
     public int GetKeywordId(string translatedKeyword)
     {
         if (string.IsNullOrEmpty(translatedKeyword))
+        {
             return -1;
+        }
 
-        return _translationToId.TryGetValue(translatedKeyword, out var id) ? id : -1;
+        if (TranslationToId.TryGetValue(translatedKeyword, out int id))
+        {
+            return id;
+        }
+
+        return -1;
     }
 
-    /// <summary>
-    /// Returns the total number of translations in the table.
-    /// </summary>
-    public int Count => _idToTranslation.Count;
+    public int Count => IdToTranslation.Count;
 
-    /// <summary>
-    /// Loads a LanguageTable from a JSON file.
-    /// </summary>
-    public static LanguageTable LoadFrom(string filePath)
+    public static OperationResult<LanguageTable> LoadFrom(string filePath)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Translation file not found: {filePath}", filePath);
-
-        var json = File.ReadAllText(filePath);
-        return JsonSerializer.Deserialize<LanguageTable>(json, JsonOptions.Default)
-            ?? throw new JsonException($"Failed to deserialize translation file: {filePath}");
+        return JsonFileReader.ReadFromFile<LanguageTable>(filePath, JsonOptions.Default);
     }
 
-    /// <summary>
-    /// Loads a LanguageTable from a JSON file asynchronously.
-    /// </summary>
-    public static async Task<LanguageTable> LoadFromAsync(string filePath)
+    public static async Task<OperationResult<LanguageTable>> LoadFromAsync(string filePath)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Translation file not found: {filePath}", filePath);
-
-        await using var stream = File.OpenRead(filePath);
-        return await JsonSerializer.DeserializeAsync<LanguageTable>(stream, JsonOptions.Default)
-            ?? throw new JsonException($"Failed to deserialize translation file: {filePath}");
+        return await JsonFileReader.ReadFromFileAsync<LanguageTable>(filePath, JsonOptions.Default);
     }
 }

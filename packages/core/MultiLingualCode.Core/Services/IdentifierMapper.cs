@@ -1,211 +1,201 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using MultiLingualCode.Core.Models;
+using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Services;
 
-/// <summary>
-/// Service that manages bidirectional identifier mappings per project.
-/// Persists mappings to .multilingual/identifier-map.json in the project root.
-/// This service handles storage and lookup only; parsing of // tradu: annotations
-/// is the responsibility of the tradu detection system.
-/// </summary>
 public class IdentifierMapper
 {
-    private const string MapDirectory = ".multilingual";
-    private const string MapFileName = "identifier-map.json";
+    public const string MapDirectory = ".multilingual";
+    public const string MapFileName = "identifier-map.json";
 
-    private IdentifierMapData _data = new();
-    private string? _loadedPath;
+    public IdentifierMapData Data = new();
+    public string LoadedPath = "";
 
-    /// <summary>
-    /// Loads the identifier map from a project directory.
-    /// If the file does not exist, starts with an empty map.
-    /// </summary>
-    /// <param name="projectPath">Root directory of the project.</param>
-    public void LoadMap(string projectPath)
+    public OperationResult LoadMap(string projectPath)
     {
-        ArgumentNullException.ThrowIfNull(projectPath);
+        if (string.IsNullOrEmpty(projectPath))
+        {
+            return OperationResult.Fail("Project path cannot be empty.");
+        }
 
-        var filePath = GetMapFilePath(projectPath);
-        _loadedPath = filePath;
+        string filePath = GetMapFilePath(projectPath);
+        LoadedPath = filePath;
 
         if (!File.Exists(filePath))
         {
-            _data = new IdentifierMapData();
-            return;
+            Data = new IdentifierMapData();
+            return OperationResult.Ok();
         }
 
-        var json = File.ReadAllText(filePath);
-        _data = JsonSerializer.Deserialize<IdentifierMapData>(json, JsonOptions)
-            ?? new IdentifierMapData();
+        OperationResult<IdentifierMapData> result = JsonFileReader.ReadFromFile<IdentifierMapData>(filePath, JsonSerializerReadOptions);
+        if (result.IsSuccess)
+        {
+            Data = result.Value;
+        }
+        else
+        {
+            Data = new IdentifierMapData();
+        }
+
+        return OperationResult.Ok();
     }
 
-    /// <summary>
-    /// Loads the identifier map from a project directory asynchronously.
-    /// </summary>
-    public async Task LoadMapAsync(string projectPath)
+    public async Task<OperationResult> LoadMapAsync(string projectPath)
     {
-        ArgumentNullException.ThrowIfNull(projectPath);
+        if (string.IsNullOrEmpty(projectPath))
+        {
+            return OperationResult.Fail("Project path cannot be empty.");
+        }
 
-        var filePath = GetMapFilePath(projectPath);
-        _loadedPath = filePath;
+        string filePath = GetMapFilePath(projectPath);
+        LoadedPath = filePath;
 
         if (!File.Exists(filePath))
         {
-            _data = new IdentifierMapData();
-            return;
+            Data = new IdentifierMapData();
+            return OperationResult.Ok();
         }
 
-        await using var stream = File.OpenRead(filePath);
-        _data = await JsonSerializer.DeserializeAsync<IdentifierMapData>(stream, JsonOptions)
-            ?? new IdentifierMapData();
+        OperationResult<IdentifierMapData> result = await JsonFileReader.ReadFromFileAsync<IdentifierMapData>(filePath, JsonSerializerReadOptions);
+        if (result.IsSuccess)
+        {
+            Data = result.Value;
+        }
+        else
+        {
+            Data = new IdentifierMapData();
+        }
+
+        return OperationResult.Ok();
     }
 
-    /// <summary>
-    /// Returns the translated name for an identifier in the target language, or null if not mapped.
-    /// </summary>
-    public string? GetTranslation(string identifier, string targetLanguage)
+    public OperationResult<string> GetTranslation(string identifier, string targetLanguage)
     {
         if (string.IsNullOrEmpty(identifier) || string.IsNullOrEmpty(targetLanguage))
-            return null;
-
-        if (_data.Identifiers.TryGetValue(identifier, out var translations)
-            && translations.TryGetValue(targetLanguage, out var translated))
         {
-            return translated;
+            return OperationResult<string>.Fail("Identifier or target language is empty.");
         }
 
-        return null;
+        if (Data.Identifiers.TryGetValue(identifier, out Dictionary<string, string>? translations)
+            && translations is not null
+            && translations.TryGetValue(targetLanguage, out string? translated)
+            && translated is not null)
+        {
+            return OperationResult<string>.Ok(translated);
+        }
+
+        return OperationResult<string>.Fail($"No translation found for identifier: {identifier}");
     }
 
-    /// <summary>
-    /// Returns the original identifier name for a translated name, or null if not mapped.
-    /// </summary>
-    public string? GetOriginal(string translatedIdentifier, string sourceLanguage)
+    public OperationResult<string> GetOriginal(string translatedIdentifier, string sourceLanguage)
     {
         if (string.IsNullOrEmpty(translatedIdentifier) || string.IsNullOrEmpty(sourceLanguage))
-            return null;
-
-        foreach (var kvp in _data.Identifiers)
         {
-            if (kvp.Value.TryGetValue(sourceLanguage, out var translated)
+            return OperationResult<string>.Fail("Translated identifier or source language is empty.");
+        }
+
+        foreach (KeyValuePair<string, Dictionary<string, string>> kvp in Data.Identifiers)
+        {
+            if (kvp.Value.TryGetValue(sourceLanguage, out string? translated)
+                && translated is not null
                 && string.Equals(translated, translatedIdentifier, StringComparison.Ordinal))
             {
-                return kvp.Key;
+                return OperationResult<string>.Ok(kvp.Key);
             }
         }
 
-        return null;
+        return OperationResult<string>.Fail($"No original found for: {translatedIdentifier}");
     }
 
-    /// <summary>
-    /// Returns the translated string literal in the target language, or null if not mapped.
-    /// </summary>
-    public string? GetLiteralTranslation(string literal, string targetLanguage)
+    public OperationResult<string> GetLiteralTranslation(string literal, string targetLanguage)
     {
         if (string.IsNullOrEmpty(literal) || string.IsNullOrEmpty(targetLanguage))
-            return null;
-
-        if (_data.Literals.TryGetValue(literal, out var translations)
-            && translations.TryGetValue(targetLanguage, out var translated))
         {
-            return translated;
+            return OperationResult<string>.Fail("Literal or target language is empty.");
         }
 
-        return null;
+        if (Data.Literals.TryGetValue(literal, out Dictionary<string, string>? translations)
+            && translations is not null
+            && translations.TryGetValue(targetLanguage, out string? translated)
+            && translated is not null)
+        {
+            return OperationResult<string>.Ok(translated);
+        }
+
+        return OperationResult<string>.Fail($"No translation found for literal: {literal}");
     }
 
-    /// <summary>
-    /// Sets a translation for an identifier in a specific language.
-    /// </summary>
     public void SetTranslation(string identifier, string targetLanguage, string translatedName)
     {
-        ArgumentNullException.ThrowIfNull(identifier);
-        ArgumentNullException.ThrowIfNull(targetLanguage);
-        ArgumentNullException.ThrowIfNull(translatedName);
+        if (string.IsNullOrEmpty(identifier) || string.IsNullOrEmpty(targetLanguage) || string.IsNullOrEmpty(translatedName))
+        {
+            return;
+        }
 
-        if (!_data.Identifiers.ContainsKey(identifier))
-            _data.Identifiers[identifier] = new Dictionary<string, string>();
+        if (!Data.Identifiers.ContainsKey(identifier))
+        {
+            Data.Identifiers[identifier] = new Dictionary<string, string>();
+        }
 
-        _data.Identifiers[identifier][targetLanguage] = translatedName;
+        Data.Identifiers[identifier][targetLanguage] = translatedName;
     }
 
-    /// <summary>
-    /// Sets a translation for a string literal in a specific language.
-    /// </summary>
     public void SetLiteralTranslation(string literal, string targetLanguage, string translatedLiteral)
     {
-        ArgumentNullException.ThrowIfNull(literal);
-        ArgumentNullException.ThrowIfNull(targetLanguage);
-        ArgumentNullException.ThrowIfNull(translatedLiteral);
+        if (string.IsNullOrEmpty(literal) || string.IsNullOrEmpty(targetLanguage) || string.IsNullOrEmpty(translatedLiteral))
+        {
+            return;
+        }
 
-        if (!_data.Literals.ContainsKey(literal))
-            _data.Literals[literal] = new Dictionary<string, string>();
+        if (!Data.Literals.ContainsKey(literal))
+        {
+            Data.Literals[literal] = new Dictionary<string, string>();
+        }
 
-        _data.Literals[literal][targetLanguage] = translatedLiteral;
+        Data.Literals[literal][targetLanguage] = translatedLiteral;
     }
 
-    /// <summary>
-    /// Removes all translations for an identifier.
-    /// </summary>
     public bool RemoveIdentifier(string identifier)
     {
-        return _data.Identifiers.Remove(identifier);
+        return Data.Identifiers.Remove(identifier);
     }
 
-    /// <summary>
-    /// Saves the identifier map to the project directory.
-    /// Uses the same path from the last LoadMap call, or the provided projectPath.
-    /// </summary>
-    public void SaveMap(string? projectPath = null)
+    public OperationResult SaveMap(string projectPath = "")
     {
-        var filePath = projectPath != null
-            ? GetMapFilePath(projectPath)
-            : _loadedPath ?? throw new InvalidOperationException("No project path set. Call LoadMap first or provide a projectPath.");
+        string filePath;
+        if (!string.IsNullOrEmpty(projectPath))
+        {
+            filePath = GetMapFilePath(projectPath);
+        }
+        else if (!string.IsNullOrEmpty(LoadedPath))
+        {
+            filePath = LoadedPath;
+        }
+        else
+        {
+            return OperationResult.Fail("No project path set. Call LoadMap first or provide a projectPath.");
+        }
 
-        var directory = Path.GetDirectoryName(filePath);
-        if (!string.IsNullOrEmpty(directory))
-            Directory.CreateDirectory(directory);
-
-        var json = JsonSerializer.Serialize(_data, WriteOptions);
-        File.WriteAllText(filePath, json);
+        return JsonFileReader.WriteToFile(filePath, Data, WriteOptions);
     }
 
-    /// <summary>
-    /// Returns the number of mapped identifiers.
-    /// </summary>
-    public int IdentifierCount => _data.Identifiers.Count;
+    public int IdentifierCount => Data.Identifiers.Count;
+    public int LiteralCount => Data.Literals.Count;
 
-    /// <summary>
-    /// Returns the number of mapped literals.
-    /// </summary>
-    public int LiteralCount => _data.Literals.Count;
-
-    private static string GetMapFilePath(string projectPath)
+    public static string GetMapFilePath(string projectPath)
     {
         return Path.Combine(projectPath, MapDirectory, MapFileName);
     }
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    public static readonly JsonSerializerOptions JsonSerializerReadOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip
     };
 
-    private static readonly JsonSerializerOptions WriteOptions = new()
+    public static readonly JsonSerializerOptions WriteOptions = new()
     {
         WriteIndented = true
     };
-}
-
-/// <summary>
-/// Data structure for the identifier-map.json file.
-/// </summary>
-internal class IdentifierMapData
-{
-    [JsonPropertyName("identifiers")]
-    public Dictionary<string, Dictionary<string, string>> Identifiers { get; set; } = new();
-
-    [JsonPropertyName("literals")]
-    public Dictionary<string, Dictionary<string, string>> Literals { get; set; } = new();
 }

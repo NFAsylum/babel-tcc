@@ -1,151 +1,215 @@
+using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.Translation;
 
 namespace MultiLingualCode.Core.Tests.Models.Translation;
 
 public class IdentifierMapTests
 {
-    private static string GetTestDataPath(string fileName) =>
+    static string GetTestDataPath(string fileName) =>
         Path.Combine(AppContext.BaseDirectory, "TestData", fileName);
 
     [Fact]
     public void LoadFrom_ValidFile_LoadsIdentifiers()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> result = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
 
-        Assert.Equal(5, map.Count);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(5, result.Value.Count);
     }
 
     [Fact]
-    public void LoadFrom_NonExistentFile_ThrowsFileNotFound()
+    public void LoadFrom_NonExistentFile_ReturnsFailure()
     {
-        Assert.Throws<FileNotFoundException>(() =>
-            IdentifierMap.LoadFrom("nonexistent.json"));
+        OperationResult<IdentifierMap> result = IdentifierMap.LoadFrom("nonexistent.json");
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public async Task LoadFromAsync_ValidFile_LoadsIdentifiers()
     {
-        var map = await IdentifierMap.LoadFromAsync(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> result = await IdentifierMap.LoadFromAsync(GetTestDataPath("identifier-map.json"));
 
-        Assert.Equal(5, map.Count);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(5, result.Value.Count);
     }
 
     [Fact]
     public void GetTranslated_KnownOriginal_ReturnsTranslation()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        Assert.True(loadResult.IsSuccess);
+        IdentifierMap map = loadResult.Value;
 
-        Assert.Equal("ObterNome", map.GetTranslated("GetName"));
-        Assert.Equal("DefinirValor", map.GetTranslated("SetValue"));
-        Assert.Equal("EhValido", map.GetTranslated("IsValid"));
+        OperationResult<string> getNameResult = map.GetTranslated("GetName");
+        Assert.True(getNameResult.IsSuccess);
+        Assert.Equal("ObterNome", getNameResult.Value);
+
+        OperationResult<string> setValueResult = map.GetTranslated("SetValue");
+        Assert.True(setValueResult.IsSuccess);
+        Assert.Equal("DefinirValor", setValueResult.Value);
+
+        OperationResult<string> isValidResult = map.GetTranslated("IsValid");
+        Assert.True(isValidResult.IsSuccess);
+        Assert.Equal("EhValido", isValidResult.Value);
     }
 
     [Fact]
-    public void GetTranslated_UnknownOriginal_ReturnsNull()
+    public void GetTranslated_UnknownOriginal_ReturnsFailure()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        Assert.True(loadResult.IsSuccess);
+        IdentifierMap map = loadResult.Value;
 
-        Assert.Null(map.GetTranslated("NonExistent"));
+        OperationResult<string> result = map.GetTranslated("NonExistent");
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void GetTranslated_EmptyOrNull_ReturnsNull()
+    public void GetTranslated_EmptyOrNull_ReturnsFailure()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        Assert.True(loadResult.IsSuccess);
+        IdentifierMap map = loadResult.Value;
 
-        Assert.Null(map.GetTranslated(""));
-        Assert.Null(map.GetTranslated(null!));
+        OperationResult<string> emptyResult = map.GetTranslated("");
+        Assert.False(emptyResult.IsSuccess);
+
+        OperationResult<string> nullResult = map.GetTranslated(null!);
+        Assert.False(nullResult.IsSuccess);
     }
 
     [Fact]
     public void GetOriginal_KnownTranslation_ReturnsOriginal()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        Assert.True(loadResult.IsSuccess);
+        IdentifierMap map = loadResult.Value;
 
-        Assert.Equal("GetName", map.GetOriginal("ObterNome"));
-        Assert.Equal("SetValue", map.GetOriginal("DefinirValor"));
+        OperationResult<string> getNameResult = map.GetOriginal("ObterNome");
+        Assert.True(getNameResult.IsSuccess);
+        Assert.Equal("GetName", getNameResult.Value);
+
+        OperationResult<string> setValueResult = map.GetOriginal("DefinirValor");
+        Assert.True(setValueResult.IsSuccess);
+        Assert.Equal("SetValue", setValueResult.Value);
     }
 
     [Fact]
-    public void GetOriginal_UnknownTranslation_ReturnsNull()
+    public void GetOriginal_UnknownTranslation_ReturnsFailure()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        Assert.True(loadResult.IsSuccess);
+        IdentifierMap map = loadResult.Value;
 
-        Assert.Null(map.GetOriginal("Desconhecido"));
+        OperationResult<string> result = map.GetOriginal("Desconhecido");
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void GetOriginal_EmptyOrNull_ReturnsNull()
+    public void GetOriginal_EmptyOrNull_ReturnsFailure()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        Assert.True(loadResult.IsSuccess);
+        IdentifierMap map = loadResult.Value;
 
-        Assert.Null(map.GetOriginal(""));
-        Assert.Null(map.GetOriginal(null!));
+        OperationResult<string> emptyResult = map.GetOriginal("");
+        Assert.False(emptyResult.IsSuccess);
+
+        OperationResult<string> nullResult = map.GetOriginal(null!);
+        Assert.False(nullResult.IsSuccess);
     }
 
     [Fact]
     public void BidirectionalLookup_IsConsistent()
     {
-        var map = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        OperationResult<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
+        Assert.True(loadResult.IsSuccess);
+        IdentifierMap map = loadResult.Value;
 
-        var translated = map.GetTranslated("ToString");
-        Assert.Equal("ParaTexto", translated);
+        OperationResult<string> translatedResult = map.GetTranslated("ToString");
+        Assert.True(translatedResult.IsSuccess);
+        Assert.Equal("ParaTexto", translatedResult.Value);
 
-        var original = map.GetOriginal(translated!);
-        Assert.Equal("ToString", original);
+        OperationResult<string> originalResult = map.GetOriginal(translatedResult.Value);
+        Assert.True(originalResult.IsSuccess);
+        Assert.Equal("ToString", originalResult.Value);
     }
 
     [Fact]
     public void Set_AddsNewMapping()
     {
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
 
         map.Set("MyMethod", "MeuMetodo");
 
-        Assert.Equal("MeuMetodo", map.GetTranslated("MyMethod"));
-        Assert.Equal("MyMethod", map.GetOriginal("MeuMetodo"));
+        OperationResult<string> translatedResult = map.GetTranslated("MyMethod");
+        Assert.True(translatedResult.IsSuccess);
+        Assert.Equal("MeuMetodo", translatedResult.Value);
+
+        OperationResult<string> originalResult = map.GetOriginal("MeuMetodo");
+        Assert.True(originalResult.IsSuccess);
+        Assert.Equal("MyMethod", originalResult.Value);
+
         Assert.Equal(1, map.Count);
     }
 
     [Fact]
     public void Set_UpdatesExistingMapping()
     {
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
 
         map.Set("MyMethod", "MeuMetodo");
         map.Set("MyMethod", "MinhaFuncao");
 
-        Assert.Equal("MinhaFuncao", map.GetTranslated("MyMethod"));
-        Assert.Equal("MyMethod", map.GetOriginal("MinhaFuncao"));
-        Assert.Null(map.GetOriginal("MeuMetodo")); // old reverse mapping removed
+        OperationResult<string> translatedResult = map.GetTranslated("MyMethod");
+        Assert.True(translatedResult.IsSuccess);
+        Assert.Equal("MinhaFuncao", translatedResult.Value);
+
+        OperationResult<string> originalResult = map.GetOriginal("MinhaFuncao");
+        Assert.True(originalResult.IsSuccess);
+        Assert.Equal("MyMethod", originalResult.Value);
+
+        OperationResult<string> oldReverseResult = map.GetOriginal("MeuMetodo"); // old reverse mapping removed
+        Assert.False(oldReverseResult.IsSuccess);
+
         Assert.Equal(1, map.Count);
     }
 
     [Fact]
-    public void Set_ThrowsOnNull()
+    public void Set_NullValues_DoesNotAdd()
     {
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
 
-        Assert.Throws<ArgumentNullException>(() => map.Set(null!, "value"));
-        Assert.Throws<ArgumentNullException>(() => map.Set("key", null!));
+        map.Set(null!, "value");
+        map.Set("key", null!);
+        map.Set("", "value");
+        map.Set("key", "");
+
+        Assert.Equal(0, map.Count);
     }
 
     [Fact]
     public void Remove_ExistingMapping_ReturnsTrue()
     {
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
         map.Set("MyMethod", "MeuMetodo");
 
         Assert.True(map.Remove("MyMethod"));
-        Assert.Null(map.GetTranslated("MyMethod"));
-        Assert.Null(map.GetOriginal("MeuMetodo"));
+
+        OperationResult<string> translatedResult = map.GetTranslated("MyMethod");
+        Assert.False(translatedResult.IsSuccess);
+
+        OperationResult<string> originalResult = map.GetOriginal("MeuMetodo");
+        Assert.False(originalResult.IsSuccess);
+
         Assert.Equal(0, map.Count);
     }
 
     [Fact]
     public void Remove_NonExistentMapping_ReturnsFalse()
     {
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
 
         Assert.False(map.Remove("NonExistent"));
     }
@@ -153,11 +217,14 @@ public class IdentifierMapTests
     [Fact]
     public void IsCaseSensitive_ForIdentifiers()
     {
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
         map.Set("GetName", "ObterNome");
 
         // Identifiers are case-sensitive (unlike keywords)
-        Assert.Null(map.GetTranslated("getname"));
-        Assert.Null(map.GetTranslated("GETNAME"));
+        OperationResult<string> lowerResult = map.GetTranslated("getname");
+        Assert.False(lowerResult.IsSuccess);
+
+        OperationResult<string> upperResult = map.GetTranslated("GETNAME");
+        Assert.False(upperResult.IsSuccess);
     }
 }

@@ -4,7 +4,7 @@ namespace MultiLingualCode.Core.Tests.Utilities;
 
 public class FileSystemHelperTests : IDisposable
 {
-    private readonly string _tempDir;
+    public string _tempDir;
 
     public FileSystemHelperTests()
     {
@@ -15,22 +15,24 @@ public class FileSystemHelperTests : IDisposable
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))
+        {
             Directory.Delete(_tempDir, true);
+        }
     }
 
     [Fact]
     public void ResolvePath_AbsolutePathReturnedAsIs()
     {
-        var absolute = Path.Combine(_tempDir, "file.txt");
-        var result = FileSystemHelper.ResolvePath(absolute);
+        string absolute = Path.Combine(_tempDir, "file.txt");
+        string result = FileSystemHelper.ResolvePath(absolute);
         Assert.Equal(Path.GetFullPath(absolute), result);
     }
 
     [Fact]
     public void ResolvePath_RelativePathResolvedAgainstBase()
     {
-        var result = FileSystemHelper.ResolvePath("sub/file.txt", _tempDir);
-        var expected = Path.GetFullPath(Path.Combine(_tempDir, "sub/file.txt"));
+        string result = FileSystemHelper.ResolvePath("sub/file.txt", _tempDir);
+        string expected = Path.GetFullPath(Path.Combine(_tempDir, "sub/file.txt"));
         Assert.Equal(expected, result);
     }
 
@@ -67,34 +69,34 @@ public class FileSystemHelperTests : IDisposable
     [Fact]
     public void FindProjectRoot_FindsMarkerDirectory()
     {
-        var projectDir = Path.Combine(_tempDir, "myproject");
-        var subDir = Path.Combine(projectDir, "src", "deep");
+        string projectDir = Path.Combine(_tempDir, "myproject");
+        string subDir = Path.Combine(projectDir, "src", "deep");
         Directory.CreateDirectory(subDir);
         Directory.CreateDirectory(Path.Combine(projectDir, ".multilingual"));
 
-        var result = FileSystemHelper.FindProjectRoot(subDir);
+        string result = FileSystemHelper.FindProjectRoot(subDir);
 
         Assert.Equal(projectDir, result);
     }
 
     [Fact]
-    public void FindProjectRoot_ReturnsNullIfNotFound()
+    public void FindProjectRoot_ReturnsEmptyIfNotFound()
     {
-        var result = FileSystemHelper.FindProjectRoot(_tempDir, ".nonexistent-marker");
-        Assert.Null(result);
+        string result = FileSystemHelper.FindProjectRoot(_tempDir, ".nonexistent-marker");
+        Assert.Equal("", result);
     }
 
     [Fact]
     public void FindProjectRoot_WorksFromFilePath()
     {
-        var projectDir = Path.Combine(_tempDir, "proj2");
-        var srcDir = Path.Combine(projectDir, "src");
+        string projectDir = Path.Combine(_tempDir, "proj2");
+        string srcDir = Path.Combine(projectDir, "src");
         Directory.CreateDirectory(srcDir);
         Directory.CreateDirectory(Path.Combine(projectDir, ".multilingual"));
-        var filePath = Path.Combine(srcDir, "Program.cs");
+        string filePath = Path.Combine(srcDir, "Program.cs");
         File.WriteAllText(filePath, "");
 
-        var result = FileSystemHelper.FindProjectRoot(filePath);
+        string result = FileSystemHelper.FindProjectRoot(filePath);
 
         Assert.Equal(projectDir, result);
     }

@@ -1,111 +1,96 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
+using MultiLingualCode.Core.Models;
+using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Models.Translation;
 
-/// <summary>
-/// Represents a bidirectional mapping of identifiers (original <-> translated).
-/// Used for user-defined identifiers like method names, variable names, etc.
-/// </summary>
 public class IdentifierMap
 {
-    private Dictionary<string, string> _originalToTranslated = new();
-    private Dictionary<string, string> _translatedToOriginal = new();
+    public Dictionary<string, string> OriginalToTranslated = new();
+    public Dictionary<string, string> TranslatedToOriginal = new();
 
     [JsonPropertyName("identifiers")]
     public Dictionary<string, string> Identifiers
     {
-        get => _originalToTranslated;
+        get => OriginalToTranslated;
         set
         {
-            _originalToTranslated = new Dictionary<string, string>(value);
-            _translatedToOriginal = new Dictionary<string, string>(value.Count);
-            foreach (var kvp in value)
+            OriginalToTranslated = new Dictionary<string, string>(value);
+            TranslatedToOriginal = new Dictionary<string, string>(value.Count);
+            foreach (KeyValuePair<string, string> kvp in value)
             {
-                _translatedToOriginal[kvp.Value] = kvp.Key;
+                TranslatedToOriginal[kvp.Value] = kvp.Key;
             }
         }
     }
 
-    /// <summary>
-    /// Returns the translated identifier for an original name, or null if not found.
-    /// </summary>
-    public string? GetTranslated(string originalName)
+    public OperationResult<string> GetTranslated(string originalName)
     {
         if (string.IsNullOrEmpty(originalName))
-            return null;
+        {
+            return OperationResult<string>.Fail("Original name is empty");
+        }
 
-        return _originalToTranslated.TryGetValue(originalName, out var translated) ? translated : null;
+        if (OriginalToTranslated.TryGetValue(originalName, out string? translated) && translated is not null)
+        {
+            return OperationResult<string>.Ok(translated);
+        }
+
+        return OperationResult<string>.Fail($"No translation found for: {originalName}");
     }
 
-    /// <summary>
-    /// Returns the original identifier for a translated name, or null if not found.
-    /// </summary>
-    public string? GetOriginal(string translatedName)
+    public OperationResult<string> GetOriginal(string translatedName)
     {
         if (string.IsNullOrEmpty(translatedName))
-            return null;
+        {
+            return OperationResult<string>.Fail("Translated name is empty");
+        }
 
-        return _translatedToOriginal.TryGetValue(translatedName, out var original) ? original : null;
+        if (TranslatedToOriginal.TryGetValue(translatedName, out string? original) && original is not null)
+        {
+            return OperationResult<string>.Ok(original);
+        }
+
+        return OperationResult<string>.Fail($"No original found for: {translatedName}");
     }
 
-    /// <summary>
-    /// Adds or updates a mapping between an original and translated identifier.
-    /// </summary>
     public void Set(string originalName, string translatedName)
     {
-        ArgumentNullException.ThrowIfNull(originalName);
-        ArgumentNullException.ThrowIfNull(translatedName);
+        if (string.IsNullOrEmpty(originalName) || string.IsNullOrEmpty(translatedName))
+        {
+            return;
+        }
 
-        // Remove old reverse mapping if the original was already mapped
-        if (_originalToTranslated.TryGetValue(originalName, out var oldTranslated))
-            _translatedToOriginal.Remove(oldTranslated);
+        if (OriginalToTranslated.TryGetValue(originalName, out string? oldTranslated) && oldTranslated is not null)
+        {
+            TranslatedToOriginal.Remove(oldTranslated);
+        }
 
-        _originalToTranslated[originalName] = translatedName;
-        _translatedToOriginal[translatedName] = originalName;
+        OriginalToTranslated[originalName] = translatedName;
+        TranslatedToOriginal[translatedName] = originalName;
     }
 
-    /// <summary>
-    /// Removes a mapping by original name.
-    /// </summary>
     public bool Remove(string originalName)
     {
-        if (!_originalToTranslated.TryGetValue(originalName, out var translated))
+        if (!OriginalToTranslated.TryGetValue(originalName, out string? translated) || translated is null)
+        {
             return false;
+        }
 
-        _originalToTranslated.Remove(originalName);
-        _translatedToOriginal.Remove(translated);
+        OriginalToTranslated.Remove(originalName);
+        TranslatedToOriginal.Remove(translated);
         return true;
     }
 
-    /// <summary>
-    /// Returns the total number of identifier mappings.
-    /// </summary>
-    public int Count => _originalToTranslated.Count;
+    public int Count => OriginalToTranslated.Count;
 
-    /// <summary>
-    /// Loads an IdentifierMap from a JSON file.
-    /// </summary>
-    public static IdentifierMap LoadFrom(string filePath)
+    public static OperationResult<IdentifierMap> LoadFrom(string filePath)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Identifier map file not found: {filePath}", filePath);
-
-        var json = File.ReadAllText(filePath);
-        return JsonSerializer.Deserialize<IdentifierMap>(json, JsonOptions.Default)
-            ?? throw new JsonException($"Failed to deserialize identifier map: {filePath}");
+        return JsonFileReader.ReadFromFile<IdentifierMap>(filePath, JsonOptions.Default);
     }
 
-    /// <summary>
-    /// Loads an IdentifierMap from a JSON file asynchronously.
-    /// </summary>
-    public static async Task<IdentifierMap> LoadFromAsync(string filePath)
+    public static async Task<OperationResult<IdentifierMap>> LoadFromAsync(string filePath)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Identifier map file not found: {filePath}", filePath);
-
-        await using var stream = File.OpenRead(filePath);
-        return await JsonSerializer.DeserializeAsync<IdentifierMap>(stream, JsonOptions.Default)
-            ?? throw new JsonException($"Failed to deserialize identifier map: {filePath}");
+        return await JsonFileReader.ReadFromFileAsync<IdentifierMap>(filePath, JsonOptions.Default);
     }
 }

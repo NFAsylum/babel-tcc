@@ -11,7 +11,7 @@ public class NaturalLanguageProviderTests
 
     private static async Task<NaturalLanguageProvider> CreateLoadedProvider()
     {
-        var provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
         await provider.LoadTranslationTableAsync("csharp");
         return provider;
     }
@@ -19,29 +19,31 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void Constructor_SetsLanguageCode()
     {
-        var provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
 
         Assert.Equal("pt-br", provider.LanguageCode);
     }
 
     [Fact]
-    public void Constructor_ThrowsOnNullLanguageCode()
+    public void Create_NullLanguageCode_ReturnsFailure()
     {
-        Assert.Throws<ArgumentNullException>(() =>
-            new NaturalLanguageProvider(null!, TranslationsPath));
+        OperationResult<NaturalLanguageProvider> result = NaturalLanguageProvider.Create(null!, TranslationsPath);
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void Constructor_ThrowsOnNullPath()
+    public void Create_NullPath_ReturnsFailure()
     {
-        Assert.Throws<ArgumentNullException>(() =>
-            new NaturalLanguageProvider("pt-br", null!));
+        OperationResult<NaturalLanguageProvider> result = NaturalLanguageProvider.Create("pt-br", null!);
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public async Task LoadTranslationTableAsync_LoadsSuccessfully()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         Assert.Equal("Portugues Brasileiro", provider.LanguageName);
         Assert.True(provider.IsLoaded("csharp"));
@@ -50,59 +52,73 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task LoadTranslationTableAsync_CachesTable()
     {
-        var provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
 
         await provider.LoadTranslationTableAsync("csharp");
-        var table1 = provider.ActiveLanguageTable;
+        LanguageTable table1 = provider.GetActiveLanguageTable();
 
         // Load again - should use cache
         await provider.LoadTranslationTableAsync("csharp");
-        var table2 = provider.ActiveLanguageTable;
+        LanguageTable table2 = provider.GetActiveLanguageTable();
 
         Assert.Same(table1, table2);
     }
 
     [Fact]
-    public async Task LoadTranslationTableAsync_InvalidPath_ThrowsFileNotFound()
+    public async Task LoadTranslationTableAsync_InvalidPath_DoesNotLoad()
     {
-        var provider = new NaturalLanguageProvider("pt-br", "/nonexistent/path");
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", "/nonexistent/path");
 
-        await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            provider.LoadTranslationTableAsync("csharp"));
+        await provider.LoadTranslationTableAsync("csharp");
+
+        Assert.False(provider.HasActiveTable);
     }
 
     [Fact]
     public async Task TranslateKeyword_KnownId_ReturnsTranslation()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        Assert.Equal("se", provider.TranslateKeyword(30));        // if
-        Assert.Equal("senao", provider.TranslateKeyword(18));      // else
-        Assert.Equal("classe", provider.TranslateKeyword(10));     // class
-        Assert.Equal("vazio", provider.TranslateKeyword(75));      // void
-        Assert.Equal("retornar", provider.TranslateKeyword(52));   // return
+        OperationResult<string> ifResult = provider.TranslateKeyword(30);
+        OperationResult<string> elseResult = provider.TranslateKeyword(18);
+        OperationResult<string> classResult = provider.TranslateKeyword(10);
+        OperationResult<string> voidResult = provider.TranslateKeyword(75);
+        OperationResult<string> returnResult = provider.TranslateKeyword(52);
+
+        Assert.True(ifResult.IsSuccess);
+        Assert.Equal("se", ifResult.Value);
+        Assert.True(elseResult.IsSuccess);
+        Assert.Equal("senao", elseResult.Value);
+        Assert.True(classResult.IsSuccess);
+        Assert.Equal("classe", classResult.Value);
+        Assert.True(voidResult.IsSuccess);
+        Assert.Equal("vazio", voidResult.Value);
+        Assert.True(returnResult.IsSuccess);
+        Assert.Equal("retornar", returnResult.Value);
     }
 
     [Fact]
-    public async Task TranslateKeyword_UnknownId_ReturnsNull()
+    public async Task TranslateKeyword_UnknownId_ReturnsFailure()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        Assert.Null(provider.TranslateKeyword(999));
+        OperationResult<string> result = provider.TranslateKeyword(999);
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void TranslateKeyword_BeforeLoad_ReturnsNull()
+    public void TranslateKeyword_BeforeLoad_ReturnsFailure()
     {
-        var provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
 
-        Assert.Null(provider.TranslateKeyword(30));
+        OperationResult<string> result = provider.TranslateKeyword(30);
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public async Task ReverseTranslateKeyword_KnownTranslation_ReturnsId()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         Assert.Equal(30, provider.ReverseTranslateKeyword("se"));
         Assert.Equal(18, provider.ReverseTranslateKeyword("senao"));
@@ -112,7 +128,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task ReverseTranslateKeyword_UnknownTranslation_ReturnsMinusOne()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         Assert.Equal(-1, provider.ReverseTranslateKeyword("desconhecido"));
     }
@@ -120,7 +136,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void ReverseTranslateKeyword_BeforeLoad_ReturnsMinusOne()
     {
-        var provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
 
         Assert.Equal(-1, provider.ReverseTranslateKeyword("se"));
     }
@@ -128,7 +144,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task ReverseTranslateKeyword_EmptyOrNull_ReturnsMinusOne()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         Assert.Equal(-1, provider.ReverseTranslateKeyword(""));
         Assert.Equal(-1, provider.ReverseTranslateKeyword(null!));
@@ -137,65 +153,73 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task TranslateIdentifier_WithMap_ReturnsTranslation()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
         map.Set("GetName", "ObterNome");
         map.Set("SetValue", "DefinirValor");
         provider.SetIdentifierMap(map);
 
-        var context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
-        Assert.Equal("ObterNome", provider.TranslateIdentifier("GetName", context));
+        IdentifierContext context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
+        OperationResult<string> result = provider.TranslateIdentifier("GetName", context);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("ObterNome", result.Value);
     }
 
     [Fact]
-    public async Task TranslateIdentifier_WithoutMap_ReturnsNull()
+    public async Task TranslateIdentifier_WithoutMap_ReturnsFailure()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        var context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
-        Assert.Null(provider.TranslateIdentifier("GetName", context));
+        IdentifierContext context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
+        OperationResult<string> result = provider.TranslateIdentifier("GetName", context);
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public async Task TranslateIdentifier_UnknownIdentifier_ReturnsNull()
+    public async Task TranslateIdentifier_UnknownIdentifier_ReturnsFailure()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        var map = new IdentifierMap();
+        IdentifierMap map = new IdentifierMap();
         map.Set("GetName", "ObterNome");
         provider.SetIdentifierMap(map);
 
-        var context = new IdentifierContext { OriginalName = "Unknown", Kind = IdentifierKind.Method };
-        Assert.Null(provider.TranslateIdentifier("Unknown", context));
+        IdentifierContext context = new IdentifierContext { OriginalName = "Unknown", Kind = IdentifierKind.Method };
+        OperationResult<string> result = provider.TranslateIdentifier("Unknown", context);
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public async Task TranslateIdentifier_EmptyOrNull_ReturnsNull()
+    public async Task TranslateIdentifier_EmptyOrNull_ReturnsFailure()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        var context = new IdentifierContext { Kind = IdentifierKind.Variable };
-        Assert.Null(provider.TranslateIdentifier("", context));
-        Assert.Null(provider.TranslateIdentifier(null!, context));
+        IdentifierContext context = new IdentifierContext { Kind = IdentifierKind.Variable };
+        OperationResult<string> emptyResult = provider.TranslateIdentifier("", context);
+        OperationResult<string> nullResult = provider.TranslateIdentifier(null!, context);
+        Assert.False(emptyResult.IsSuccess);
+        Assert.False(nullResult.IsSuccess);
     }
 
     [Fact]
     public async Task LoadIdentifierMapAsync_LoadsFromFile()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        var mapPath = Path.Combine(AppContext.BaseDirectory, "TestData", "identifier-map.json");
+        string mapPath = Path.Combine(AppContext.BaseDirectory, "TestData", "identifier-map.json");
         await provider.LoadIdentifierMapAsync(mapPath);
 
-        var context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
-        Assert.Equal("ObterNome", provider.TranslateIdentifier("GetName", context));
+        IdentifierContext context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
+        OperationResult<string> result = provider.TranslateIdentifier("GetName", context);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("ObterNome", result.Value);
     }
 
     [Fact]
     public void IsLoaded_ReturnsFalseBeforeLoad()
     {
-        var provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
 
         Assert.False(provider.IsLoaded("csharp"));
     }
@@ -203,7 +227,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task IsLoaded_ReturnsTrueAfterLoad()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         Assert.True(provider.IsLoaded("csharp"));
         Assert.False(provider.IsLoaded("python"));
@@ -212,31 +236,33 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task ActiveKeywordTable_IsAvailableAfterLoad()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        Assert.NotNull(provider.ActiveKeywordTable);
-        Assert.Equal(30, provider.ActiveKeywordTable!.GetKeywordId("if"));
+        KeywordTable keywordTable = provider.GetActiveKeywordTable();
+        Assert.NotNull(keywordTable);
+        Assert.Equal(30, keywordTable.GetKeywordId("if"));
     }
 
     [Fact]
-    public void ActiveKeywordTable_IsNullBeforeLoad()
+    public void ActiveKeywordTable_HasActiveTableIsFalseBeforeLoad()
     {
-        var provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
 
-        Assert.Null(provider.ActiveKeywordTable);
+        Assert.False(provider.HasActiveTable);
     }
 
     [Fact]
     public async Task RoundTrip_TranslateAndReverse()
     {
-        var provider = await CreateLoadedProvider();
+        NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         // Translate forward
-        var translated = provider.TranslateKeyword(30); // if -> se
-        Assert.Equal("se", translated);
+        OperationResult<string> translatedResult = provider.TranslateKeyword(30); // if -> se
+        Assert.True(translatedResult.IsSuccess);
+        Assert.Equal("se", translatedResult.Value);
 
         // Translate back
-        var id = provider.ReverseTranslateKeyword(translated!);
+        int id = provider.ReverseTranslateKeyword(translatedResult.Value);
         Assert.Equal(30, id);
     }
 }
