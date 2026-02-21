@@ -1,12 +1,17 @@
 import * as vscode from 'vscode';
+import { CoreBridge } from './services/coreBridge';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
 let outputChannel: vscode.OutputChannel;
+let coreBridge: CoreBridge;
 
 export function activate(context: vscode.ExtensionContext): void {
   outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME);
   outputChannel.appendLine('Babel TCC extension activated.');
+
+  coreBridge = new CoreBridge(context, outputChannel);
+  outputChannel.appendLine('CoreBridge initialized.');
 
   const toggleCommand: vscode.Disposable = vscode.commands.registerCommand(
     'babel-tcc.toggle',
@@ -62,6 +67,9 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
+  if (coreBridge) {
+    coreBridge.dispose();
+  }
   if (outputChannel) {
     outputChannel.appendLine('Babel TCC extension deactivated.');
   }
