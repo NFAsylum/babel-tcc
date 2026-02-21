@@ -1,27 +1,47 @@
 import * as vscode from 'vscode';
 import { CoreBridge } from './services/coreBridge';
+import { LanguageDetector } from './services/languageDetector';
+import { ConfigurationService } from './services/configurationService';
+import { TranslatedContentProvider, TRANSLATED_SCHEME } from './providers/translatedContentProvider';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
 let outputChannel: vscode.OutputChannel;
 let coreBridge: CoreBridge;
+let languageDetector: LanguageDetector;
+let configService: ConfigurationService;
+let translatedContentProvider: TranslatedContentProvider;
 
 export function activate(context: vscode.ExtensionContext): void {
   outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME);
   outputChannel.appendLine('Babel TCC extension activated.');
 
   coreBridge = new CoreBridge(context, outputChannel);
-  outputChannel.appendLine('CoreBridge initialized.');
+  languageDetector = new LanguageDetector();
+  configService = new ConfigurationService();
+  translatedContentProvider = new TranslatedContentProvider(
+    coreBridge, languageDetector, configService, outputChannel
+  );
+
+  const providerRegistration: vscode.Disposable = vscode.workspace.registerTextDocumentContentProvider(
+    TRANSLATED_SCHEME,
+    translatedContentProvider
+  );
+
+  outputChannel.appendLine('CoreBridge, LanguageDetector, ConfigurationService and TranslatedContentProvider initialized.');
 
   const toggleCommand: vscode.Disposable = vscode.commands.registerCommand(
     'babel-tcc.toggle',
-    (): void => {
-      const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('babel-tcc');
-      const currentEnabled: boolean = config.get<boolean>('enabled', true);
-      config.update('enabled', !currentEnabled, vscode.ConfigurationTarget.Global);
+    async (): Promise<void> => {
+      const currentEnabled: boolean = configService.isEnabled();
+      await configService.setEnabled(!currentEnabled);
       const status: string = !currentEnabled ? 'enabled' : 'disabled';
       outputChannel.appendLine(`Translation ${status}.`);
       vscode.window.showInformationMessage(`Babel TCC: Translation ${status}.`);
+
+      if (!currentEnabled) {
+        translatedContentProvider.invalidateAll();
+      }
     }
   );
 
@@ -33,8 +53,8 @@ export function activate(context: vscode.ExtensionContext): void {
         placeHolder: 'Select target language for translation'
       });
       if (selected) {
-        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('babel-tcc');
-        config.update('language', selected, vscode.ConfigurationTarget.Global);
+        await configService.setLanguage(selected);
+        translatedContentProvider.invalidateAll();
         outputChannel.appendLine(`Language set to: ${selected}`);
         vscode.window.showInformationMessage(`Babel TCC: Language set to ${selected}.`);
       }
@@ -43,21 +63,53 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const openTranslatedCommand: vscode.Disposable = vscode.commands.registerCommand(
     'babel-tcc.openTranslated',
-    (): void => {
-      outputChannel.appendLine('Open translated view requested.');
-      vscode.window.showInformationMessage('Babel TCC: Translated view not yet implemented.');
+    async (): Promise<void> => {
+      const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showWarningMessage('Babel TCC: No active editor.');
+        return;
+      }
+
+      const originalUri: vscode.Uri = editor.document.uri;
+      if (!languageDetector.isSupported(originalUri.fsPath)) {
+        vscode.window.showWarningMessage('Babel TCC: File type not supported for translation.');
+        return;
+      }
+
+      const translatedUri: vscode.Uri = vscode.Uri.parse(
+        `${TRANSLATED_SCHEME}:${originalUri.path}`
+      );
+
+      const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
+      await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+      outputChannel.appendLine(`Opened translated view for: ${originalUri.fsPath}`);
     }
   );
 
   const showOriginalCommand: vscode.Disposable = vscode.commands.registerCommand(
     'babel-tcc.showOriginal',
-    (): void => {
-      outputChannel.appendLine('Show original code requested.');
-      vscode.window.showInformationMessage('Babel TCC: Show original not yet implemented.');
+    async (): Promise<void> => {
+      const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showWarningMessage('Babel TCC: No active editor.');
+        return;
+      }
+
+      const uri: vscode.Uri = editor.document.uri;
+      if (uri.scheme === TRANSLATED_SCHEME) {
+        const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
+        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(originalUri);
+        await vscode.window.showTextDocument(doc);
+        outputChannel.appendLine(`Showing original for: ${uri.path}`);
+      } else {
+        vscode.window.showInformationMessage('Babel TCC: Already viewing original code.');
+      }
     }
   );
 
   context.subscriptions.push(outputChannel);
+  context.subscriptions.push(providerRegistration);
+  context.subscriptions.push(configService);
   context.subscriptions.push(toggleCommand);
   context.subscriptions.push(selectLanguageCommand);
   context.subscriptions.push(openTranslatedCommand);
@@ -67,6 +119,9 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
+  if (translatedContentProvider) {
+    translatedContentProvider.dispose();
+  }
   if (coreBridge) {
     coreBridge.dispose();
   }
