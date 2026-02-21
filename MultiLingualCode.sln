@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiLingualCode.Core", "pa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiLingualCode.Core.Tests", "packages\core\MultiLingualCode.Core.Tests\MultiLingualCode.Core.Tests.csproj", "{F2AA8FDE-B562-4616-A817-042AB2E07949}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiLingualCode.Core.Host", "packages\core\MultiLingualCode.Core.Host\MultiLingualCode.Core.Host.csproj", "{C8AC1699-671D-46FA-A900-93D37C7DDEC6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,18 @@ Global
 		{F2AA8FDE-B562-4616-A817-042AB2E07949}.Release|x64.Build.0 = Release|Any CPU
 		{F2AA8FDE-B562-4616-A817-042AB2E07949}.Release|x86.ActiveCfg = Release|Any CPU
 		{F2AA8FDE-B562-4616-A817-042AB2E07949}.Release|x86.Build.0 = Release|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Debug|x64.Build.0 = Debug|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Debug|x86.Build.0 = Debug|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Release|x64.ActiveCfg = Release|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Release|x64.Build.0 = Release|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Release|x86.ActiveCfg = Release|Any CPU
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,5 +67,6 @@ Global
 		{81C5FA5E-A62B-98A1-4CBC-09B5BB06FF07} = {809F86A1-1C4C-B159-0CD4-DF9D33D876CE}
 		{A6312A3E-5CE6-4C0F-983D-534787AA151E} = {81C5FA5E-A62B-98A1-4CBC-09B5BB06FF07}
 		{F2AA8FDE-B562-4616-A817-042AB2E07949} = {81C5FA5E-A62B-98A1-4CBC-09B5BB06FF07}
+		{C8AC1699-671D-46FA-A900-93D37C7DDEC6} = {81C5FA5E-A62B-98A1-4CBC-09B5BB06FF07}
 	EndGlobalSection
 EndGlobal
