@@ -364,6 +364,265 @@ class Calculator
         Assert.All(identifiers, id => Assert.True(id.IsTranslatable));
     }
 
+    [Fact]
+    public void Parse_ClassWithProperties_ExtractsAllMembers()
+    {
+        string code = @"
+public class Person
+{
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public int Age { get; set; }
+
+    public string GetFullName()
+    {
+        return FirstName + "" "" + LastName;
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "public");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "string");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "int");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "return");
+        Assert.Contains(identifiers, i => i.Name == "Person");
+        Assert.Contains(identifiers, i => i.Name == "FirstName");
+        Assert.Contains(identifiers, i => i.Name == "LastName");
+        Assert.Contains(identifiers, i => i.Name == "Age");
+        Assert.Contains(identifiers, i => i.Name == "GetFullName");
+    }
+
+    [Fact]
+    public void Parse_StructDeclaration_ExtractsKeywordsAndFields()
+    {
+        string code = @"
+public struct Point
+{
+    public int X;
+    public int Y;
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "struct");
+        Assert.Contains(identifiers, i => i.Name == "Point");
+        Assert.Contains(identifiers, i => i.Name == "X");
+        Assert.Contains(identifiers, i => i.Name == "Y");
+    }
+
+    [Fact]
+    public void Parse_EnumDeclaration_ExtractsEnumMembers()
+    {
+        string code = @"
+public enum Color
+{
+    Red,
+    Green,
+    Blue
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "enum");
+        Assert.Contains(identifiers, i => i.Name == "Color");
+        Assert.Contains(identifiers, i => i.Name == "Red");
+        Assert.Contains(identifiers, i => i.Name == "Green");
+        Assert.Contains(identifiers, i => i.Name == "Blue");
+    }
+
+    [Fact]
+    public void Parse_GenericTypes_ExtractsTypeParameters()
+    {
+        string code = @"
+public class Repository
+{
+    public List<string> items = new List<string>();
+    public Dictionary<string, int> lookup = new Dictionary<string, int>();
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.Contains(identifiers, i => i.Name == "Repository");
+        Assert.Contains(identifiers, i => i.Name == "List");
+        Assert.Contains(identifiers, i => i.Name == "Dictionary");
+        Assert.Contains(identifiers, i => i.Name == "items");
+        Assert.Contains(identifiers, i => i.Name == "lookup");
+    }
+
+    [Fact]
+    public void Parse_NamespaceWithUsings_ExtractsAll()
+    {
+        string code = @"
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace MyApp.Models
+{
+    public class Item
+    {
+        public string Name { get; set; }
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "using");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "namespace");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
+        Assert.Contains(identifiers, i => i.Name == "System");
+        Assert.Contains(identifiers, i => i.Name == "Collections");
+        Assert.Contains(identifiers, i => i.Name == "Generic");
+        Assert.Contains(identifiers, i => i.Name == "Linq");
+        Assert.Contains(identifiers, i => i.Name == "MyApp");
+        Assert.Contains(identifiers, i => i.Name == "Models");
+        Assert.Contains(identifiers, i => i.Name == "Item");
+    }
+
+    [Fact]
+    public void Parse_LinqBasic_ExtractsLinqIdentifiers()
+    {
+        string code = @"
+using System.Linq;
+
+public class DataProcessor
+{
+    public List<int> FilterAndSort(List<int> numbers)
+    {
+        return numbers.Where(n => n > 0).OrderBy(n => n).Select(n => n * 2).ToList();
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.Contains(identifiers, i => i.Name == "DataProcessor");
+        Assert.Contains(identifiers, i => i.Name == "FilterAndSort");
+        Assert.Contains(identifiers, i => i.Name == "Where");
+        Assert.Contains(identifiers, i => i.Name == "OrderBy");
+        Assert.Contains(identifiers, i => i.Name == "Select");
+        Assert.Contains(identifiers, i => i.Name == "ToList");
+    }
+
+    [Fact]
+    public void RoundTrip_ComplexClass_PreservesCode()
+    {
+        string code = @"using System;
+using System.Collections.Generic;
+
+namespace Calculator.Core
+{
+    public class Calculator
+    {
+        public int OperationCount = 0;
+
+        public int Add(int a, int b)
+        {
+            OperationCount++;
+            return a + b;
+        }
+
+        public int Subtract(int a, int b)
+        {
+            OperationCount++;
+            return a - b;
+        }
+
+        public string GetSummary()
+        {
+            return ""Total: "" + OperationCount;
+        }
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        string result = _adapter.Generate(ast);
+
+        Assert.Equal(code, result);
+    }
+
+    [Fact]
+    public void RoundTrip_StructAndEnum_PreservesCode()
+    {
+        string code = @"public struct Point
+{
+    public int X;
+    public int Y;
+}
+
+public enum Direction
+{
+    North,
+    South,
+    East,
+    West
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        string result = _adapter.Generate(ast);
+
+        Assert.Equal(code, result);
+    }
+
+    [Fact]
+    public void Generate_TranslatedComplexClass_ReplacesCorrectly()
+    {
+        string code = @"public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+
+        foreach (ASTNode child in ast.Children)
+        {
+            if (child is KeywordNode kw)
+            {
+                kw.OriginalKeyword = kw.KeywordId switch
+                {
+                    49 => "publico",
+                    10 => "classe",
+                    33 => "inteiro",
+                    52 => "retornar",
+                    _ => kw.OriginalKeyword
+                };
+            }
+
+            if (child is IdentifierNode id)
+            {
+                id.Name = id.Name switch
+                {
+                    "Calculator" => "Calculadora",
+                    "Add" => "Somar",
+                    _ => id.Name
+                };
+            }
+        }
+
+        string result = _adapter.Generate(ast);
+
+        Assert.Contains("publico", result);
+        Assert.Contains("classe", result);
+        Assert.Contains("Calculadora", result);
+        Assert.Contains("inteiro", result);
+        Assert.Contains("Somar", result);
+        Assert.Contains("retornar", result);
+    }
+
     public static List<T> GetNodesOfType<T>(ASTNode root) where T : ASTNode
     {
         List<T> result = new List<T>();
