@@ -1,0 +1,38 @@
+# C# / .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.nupkg
+*.snupkg
+
+# TypeScript / Node.js
+node_modules/
+dist/
+out/
+*.js.map
+.tsbuildinfo
+
+# VS Code Extension
+*.vsix
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Test results
+TestResults/
+coverage/
