@@ -1,12 +1,13 @@
 using System.Text.Json;
+using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Tests.Utilities;
 
 public class JsonLoaderTests : IDisposable
 {
-    private readonly JsonLoader _loader = new();
-    private readonly string _tempDir;
+    public JsonLoader _loader = new();
+    public string _tempDir;
 
     public JsonLoaderTests()
     {
@@ -17,12 +18,14 @@ public class JsonLoaderTests : IDisposable
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))
+        {
             Directory.Delete(_tempDir, true);
+        }
     }
 
-    private string CreateTempJson(string fileName, string content)
+    public string CreateTempJson(string fileName, string content)
     {
-        var path = Path.Combine(_tempDir, fileName);
+        string path = Path.Combine(_tempDir, fileName);
         File.WriteAllText(path, content);
         return path;
     }
@@ -30,97 +33,102 @@ public class JsonLoaderTests : IDisposable
     [Fact]
     public void Load_DeserializesValidJson()
     {
-        var path = CreateTempJson("test.json", """{"name":"test","value":42}""");
+        string path = CreateTempJson("test.json", """{"name":"test","value":42}""");
 
-        var result = _loader.Load<TestData>(path);
+        OperationResult<TestData> result = _loader.Load<TestData>(path);
 
-        Assert.Equal("test", result.Name);
-        Assert.Equal(42, result.Value);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("test", result.Value.Name);
+        Assert.Equal(42, result.Value.Value);
     }
 
     [Fact]
     public void Load_CachesResult()
     {
-        var path = CreateTempJson("cached.json", """{"name":"cached","value":1}""");
+        string path = CreateTempJson("cached.json", """{"name":"cached","value":1}""");
 
-        var first = _loader.Load<TestData>(path);
-        var second = _loader.Load<TestData>(path);
+        OperationResult<TestData> first = _loader.Load<TestData>(path);
+        OperationResult<TestData> second = _loader.Load<TestData>(path);
 
-        Assert.Same(first, second);
+        Assert.Same(first.Value, second.Value);
     }
 
     [Fact]
-    public void Load_ThrowsOnFileNotFound()
+    public void Load_ReturnsFailureOnFileNotFound()
     {
-        Assert.Throws<FileNotFoundException>(() =>
-            _loader.Load<TestData>("/nonexistent/path.json"));
+        OperationResult<TestData> result = _loader.Load<TestData>("/nonexistent/path.json");
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void Load_ThrowsOnInvalidJson()
+    public void Load_ReturnsFailureOnInvalidJson()
     {
-        var path = CreateTempJson("invalid.json", "not valid json{{{");
+        string path = CreateTempJson("invalid.json", "not valid json{{{");
 
-        Assert.Throws<JsonException>(() => _loader.Load<TestData>(path));
+        OperationResult<TestData> result = _loader.Load<TestData>(path);
+
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public async Task LoadAsync_DeserializesValidJson()
     {
-        var path = CreateTempJson("async.json", """{"name":"async","value":99}""");
+        string path = CreateTempJson("async.json", """{"name":"async","value":99}""");
 
-        var result = await _loader.LoadAsync<TestData>(path);
+        OperationResult<TestData> result = await _loader.LoadAsync<TestData>(path);
 
-        Assert.Equal("async", result.Name);
-        Assert.Equal(99, result.Value);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("async", result.Value.Name);
+        Assert.Equal(99, result.Value.Value);
     }
 
     [Fact]
     public async Task LoadAsync_CachesResult()
     {
-        var path = CreateTempJson("async-cached.json", """{"name":"c","value":0}""");
+        string path = CreateTempJson("async-cached.json", """{"name":"c","value":0}""");
 
-        var first = await _loader.LoadAsync<TestData>(path);
-        var second = await _loader.LoadAsync<TestData>(path);
+        OperationResult<TestData> first = await _loader.LoadAsync<TestData>(path);
+        OperationResult<TestData> second = await _loader.LoadAsync<TestData>(path);
 
-        Assert.Same(first, second);
+        Assert.Same(first.Value, second.Value);
     }
 
     [Fact]
     public void Invalidate_RemovesFromCache()
     {
-        var path = CreateTempJson("invalidate.json", """{"name":"v1","value":1}""");
+        string path = CreateTempJson("invalidate.json", """{"name":"v1","value":1}""");
 
-        var first = _loader.Load<TestData>(path);
-        Assert.Equal("v1", first.Name);
+        OperationResult<TestData> first = _loader.Load<TestData>(path);
+        Assert.Equal("v1", first.Value.Name);
 
         File.WriteAllText(path, """{"name":"v2","value":2}""");
         _loader.Invalidate(path);
 
-        var second = _loader.Load<TestData>(path);
-        Assert.Equal("v2", second.Name);
-        Assert.NotSame(first, second);
+        OperationResult<TestData> second = _loader.Load<TestData>(path);
+        Assert.Equal("v2", second.Value.Name);
+        Assert.NotSame(first.Value, second.Value);
     }
 
     [Fact]
     public void ClearCache_RemovesAllEntries()
     {
-        var path1 = CreateTempJson("a.json", """{"name":"a","value":1}""");
-        var path2 = CreateTempJson("b.json", """{"name":"b","value":2}""");
+        string path1 = CreateTempJson("a.json", """{"name":"a","value":1}""");
+        string path2 = CreateTempJson("b.json", """{"name":"b","value":2}""");
 
-        var a1 = _loader.Load<TestData>(path1);
-        var b1 = _loader.Load<TestData>(path2);
+        OperationResult<TestData> a1 = _loader.Load<TestData>(path1);
+        OperationResult<TestData> b1 = _loader.Load<TestData>(path2);
 
         _loader.ClearCache();
 
-        var a2 = _loader.Load<TestData>(path1);
-        var b2 = _loader.Load<TestData>(path2);
+        OperationResult<TestData> a2 = _loader.Load<TestData>(path1);
+        OperationResult<TestData> b2 = _loader.Load<TestData>(path2);
 
-        Assert.NotSame(a1, a2);
-        Assert.NotSame(b1, b2);
+        Assert.NotSame(a1.Value, a2.Value);
+        Assert.NotSame(b1.Value, b2.Value);
     }
 
-    private class TestData
+    public class TestData
     {
         public string Name { get; set; } = string.Empty;
         public int Value { get; set; }

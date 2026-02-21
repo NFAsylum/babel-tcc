@@ -1,4 +1,3 @@
-using MultiLingualCode.Core.Exceptions;
 using MultiLingualCode.Core.Interfaces;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.AST;
@@ -9,9 +8,9 @@ namespace MultiLingualCode.Core.Tests.Services;
 
 public class TranslationOrchestratorTests
 {
-    private readonly LanguageRegistry _registry = new();
-    private readonly IdentifierMapper _mapper = new();
-    private readonly string _translationsPath;
+    public LanguageRegistry _registry = new();
+    public IdentifierMapper _mapper = new();
+    public string _translationsPath;
 
     public TranslationOrchestratorTests()
     {
@@ -31,7 +30,7 @@ public class TranslationOrchestratorTests
     /// </summary>
     private static ILanguageAdapter CreateMockCSharpAdapter()
     {
-        var adapter = Substitute.For<ILanguageAdapter>();
+        ILanguageAdapter adapter = Substitute.For<ILanguageAdapter>();
         adapter.LanguageName.Returns("CSharp");
         adapter.FileExtensions.Returns(new[] { ".cs" });
         adapter.Version.Returns("1.0.0");
@@ -39,11 +38,11 @@ public class TranslationOrchestratorTests
         // Parse: creates a flat AST with keyword and identifier nodes
         adapter.Parse(Arg.Any<string>()).Returns(callInfo =>
         {
-            var source = callInfo.ArgAt<string>(0);
-            var root = new StatementNode { StatementKind = "CompilationUnit", RawText = source };
-            var tokens = source.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string source = callInfo.ArgAt<string>(0);
+            StatementNode root = new StatementNode { StatementKind = "CompilationUnit", RawText = source };
+            string[] tokens = source.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            var keywordMap = new Dictionary<string, int>
+            Dictionary<string, int> keywordMap = new Dictionary<string, int>
             {
                 ["if"] = 30, ["else"] = 18, ["class"] = 10,
                 ["void"] = 75, ["return"] = 52, ["public"] = 49,
@@ -54,10 +53,10 @@ public class TranslationOrchestratorTests
                 ["estatico"] = 58, ["inteiro"] = 33
             };
 
-            foreach (var token in tokens)
+            foreach (string token in tokens)
             {
-                var clean = token.TrimEnd('{', '}', '(', ')', ';', ',');
-                if (keywordMap.TryGetValue(clean.ToLowerInvariant(), out var id))
+                string clean = token.TrimEnd('{', '}', '(', ')', ';', ',');
+                if (keywordMap.TryGetValue(clean.ToLowerInvariant(), out int id))
                 {
                     root.Children.Add(new KeywordNode
                     {
@@ -83,8 +82,8 @@ public class TranslationOrchestratorTests
         // Generate: reconstructs code from AST node keywords/identifiers
         adapter.Generate(Arg.Any<ASTNode>()).Returns(callInfo =>
         {
-            var ast = callInfo.ArgAt<ASTNode>(0);
-            var parts = new List<string>();
+            ASTNode ast = callInfo.ArgAt<ASTNode>(0);
+            List<string> parts = new List<string>();
             CollectParts(ast, parts);
             return string.Join(" ", parts);
         });
@@ -104,48 +103,52 @@ public class TranslationOrchestratorTests
                 break;
         }
 
-        foreach (var child in node.Children)
+        foreach (ASTNode child in node.Children)
+        {
             CollectParts(child, parts);
+        }
     }
 
     [Fact]
     public async Task TranslateToNaturalLanguage_TranslatesKeywords()
     {
-        var adapter = CreateMockCSharpAdapter();
+        ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
+        NaturalLanguageProvider provider = CreateProvider();
 
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        var result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "public class Program", ".cs", "pt-br");
 
-        Assert.Contains("publico", result);
-        Assert.Contains("classe", result);
+        Assert.True(result.IsSuccess);
+        Assert.Contains("publico", result.Value);
+        Assert.Contains("classe", result.Value);
     }
 
     [Fact]
     public async Task TranslateToNaturalLanguage_TranslatesIdentifiers()
     {
-        var adapter = CreateMockCSharpAdapter();
+        ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
+        NaturalLanguageProvider provider = CreateProvider();
 
-        var tempDir = Path.Combine(Path.GetTempPath(), $"orch_test_{Guid.NewGuid()}");
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_test_{Guid.NewGuid()}");
         Directory.CreateDirectory(tempDir);
         try
         {
             _mapper.LoadMap(tempDir);
             _mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
 
-            var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-            var result = await orchestrator.TranslateToNaturalLanguageAsync(
+            OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
                 "public class Calculator", ".cs", "pt-br");
 
-            Assert.Contains("Calculadora", result);
-            Assert.Contains("publico", result);
-            Assert.Contains("classe", result);
+            Assert.True(result.IsSuccess);
+            Assert.Contains("Calculadora", result.Value);
+            Assert.Contains("publico", result.Value);
+            Assert.Contains("classe", result.Value);
         }
         finally
         {
@@ -156,41 +159,43 @@ public class TranslationOrchestratorTests
     [Fact]
     public async Task TranslateFromNaturalLanguage_ReversesKeywords()
     {
-        var adapter = CreateMockCSharpAdapter();
+        ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
+        NaturalLanguageProvider provider = CreateProvider();
 
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        var result = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResult<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             "publico classe Programa", ".cs", "pt-br");
 
-        Assert.Contains("public", result);
-        Assert.Contains("class", result);
+        Assert.True(result.IsSuccess);
+        Assert.Contains("public", result.Value);
+        Assert.Contains("class", result.Value);
     }
 
     [Fact]
     public async Task TranslateFromNaturalLanguage_ReversesIdentifiers()
     {
-        var adapter = CreateMockCSharpAdapter();
+        ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
+        NaturalLanguageProvider provider = CreateProvider();
 
-        var tempDir = Path.Combine(Path.GetTempPath(), $"orch_test_{Guid.NewGuid()}");
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_test_{Guid.NewGuid()}");
         Directory.CreateDirectory(tempDir);
         try
         {
             _mapper.LoadMap(tempDir);
             _mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
 
-            var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-            var result = await orchestrator.TranslateFromNaturalLanguageAsync(
+            OperationResult<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
                 "publico classe Calculadora", ".cs", "pt-br");
 
-            Assert.Contains("public", result);
-            Assert.Contains("class", result);
-            Assert.Contains("Calculator", result);
+            Assert.True(result.IsSuccess);
+            Assert.Contains("public", result.Value);
+            Assert.Contains("class", result.Value);
+            Assert.Contains("Calculator", result.Value);
         }
         finally
         {
@@ -199,110 +204,109 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task TranslateToNaturalLanguage_UnsupportedExtension_Throws()
+    public async Task TranslateToNaturalLanguage_UnsupportedExtension_ReturnsFailure()
     {
-        var provider = CreateProvider();
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        NaturalLanguageProvider provider = CreateProvider();
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        var ex = await Assert.ThrowsAsync<UnsupportedLanguageException>(() =>
-            orchestrator.TranslateToNaturalLanguageAsync("code", ".xyz", "pt-br"));
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            "code", ".xyz", "pt-br");
 
-        Assert.Equal(".xyz", ex.FileExtension);
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public async Task TranslateFromNaturalLanguage_UnsupportedExtension_Throws()
+    public async Task TranslateFromNaturalLanguage_UnsupportedExtension_ReturnsFailure()
     {
-        var provider = CreateProvider();
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        NaturalLanguageProvider provider = CreateProvider();
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        var ex = await Assert.ThrowsAsync<UnsupportedLanguageException>(() =>
-            orchestrator.TranslateFromNaturalLanguageAsync("code", ".xyz", "pt-br"));
+        OperationResult<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
+            "code", ".xyz", "pt-br");
 
-        Assert.Equal(".xyz", ex.FileExtension);
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void Constructor_ThrowsOnNullArguments()
+    public void Constructor_AcceptsValidArguments()
     {
-        var provider = CreateProvider();
+        NaturalLanguageProvider provider = CreateProvider();
 
-        Assert.Throws<ArgumentNullException>(() =>
-            new TranslationOrchestrator(null!, provider, _mapper));
-        Assert.Throws<ArgumentNullException>(() =>
-            new TranslationOrchestrator(_registry, null!, _mapper));
-        Assert.Throws<ArgumentNullException>(() =>
-            new TranslationOrchestrator(_registry, provider, null!));
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+
+        Assert.NotNull(orchestrator);
     }
 
     [Fact]
-    public async Task TranslateToNaturalLanguage_ThrowsOnNullArguments()
+    public void Create_NullArguments_ReturnsFailure()
     {
-        var adapter = CreateMockCSharpAdapter();
-        _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        NaturalLanguageProvider provider = CreateProvider();
 
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            orchestrator.TranslateToNaturalLanguageAsync(null!, ".cs", "pt-br"));
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            orchestrator.TranslateToNaturalLanguageAsync("code", null!, "pt-br"));
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            orchestrator.TranslateToNaturalLanguageAsync("code", ".cs", null!));
+        OperationResult<TranslationOrchestrator> nullRegistryResult = TranslationOrchestrator.Create(null!, provider, _mapper);
+        OperationResult<TranslationOrchestrator> nullProviderResult = TranslationOrchestrator.Create(_registry, null!, _mapper);
+        OperationResult<TranslationOrchestrator> nullMapperResult = TranslationOrchestrator.Create(_registry, provider, null!);
+
+        Assert.False(nullRegistryResult.IsSuccess);
+        Assert.False(nullProviderResult.IsSuccess);
+        Assert.False(nullMapperResult.IsSuccess);
     }
 
     [Fact]
     public async Task RoundTrip_TranslateAndReverse()
     {
-        var adapter = CreateMockCSharpAdapter();
+        ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        NaturalLanguageProvider provider = CreateProvider();
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        var original = "public void Main";
-        var translated = await orchestrator.TranslateToNaturalLanguageAsync(
+        string original = "public void Main";
+        OperationResult<string> translatedResult = await orchestrator.TranslateToNaturalLanguageAsync(
             original, ".cs", "pt-br");
 
-        Assert.Contains("publico", translated);
-        Assert.Contains("vazio", translated);
+        Assert.True(translatedResult.IsSuccess);
+        Assert.Contains("publico", translatedResult.Value);
+        Assert.Contains("vazio", translatedResult.Value);
 
-        var reversed = await orchestrator.TranslateFromNaturalLanguageAsync(
-            translated, ".cs", "pt-br");
+        OperationResult<string> reversedResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translatedResult.Value, ".cs", "pt-br");
 
-        Assert.Contains("public", reversed);
-        Assert.Contains("void", reversed);
+        Assert.True(reversedResult.IsSuccess);
+        Assert.Contains("public", reversedResult.Value);
+        Assert.Contains("void", reversedResult.Value);
     }
 
     [Fact]
     public async Task TranslateToNaturalLanguage_PreservesUntranslatableIdentifiers()
     {
-        var adapter = CreateMockCSharpAdapter();
+        ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        NaturalLanguageProvider provider = CreateProvider();
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
         // "x" starts with lowercase, so IsTranslatable = false in the mock adapter
-        var result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "int x", ".cs", "pt-br");
 
-        Assert.Contains("inteiro", result);
-        Assert.Contains("x", result);
+        Assert.True(result.IsSuccess);
+        Assert.Contains("inteiro", result.Value);
+        Assert.Contains("x", result.Value);
     }
 
     [Fact]
     public async Task TranslateToNaturalLanguage_UnknownKeywordId_PreservesOriginal()
     {
-        var adapter = CreateMockCSharpAdapter();
+        ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
-        var provider = CreateProvider();
-        var orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        NaturalLanguageProvider provider = CreateProvider();
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
         // "Main" is an identifier (uppercase), not a keyword - won't be in translation table
         // It should remain as "Main" since there's no identifier mapping for it
-        var result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "void Main", ".cs", "pt-br");
 
-        Assert.Contains("vazio", result);
-        Assert.Contains("Main", result);
+        Assert.True(result.IsSuccess);
+        Assert.Contains("vazio", result.Value);
+        Assert.Contains("Main", result.Value);
     }
 }

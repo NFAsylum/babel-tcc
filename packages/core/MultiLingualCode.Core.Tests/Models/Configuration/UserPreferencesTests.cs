@@ -7,7 +7,7 @@ public class UserPreferencesTests
     [Fact]
     public void DefaultValues_AreCorrect()
     {
-        var prefs = new UserPreferences();
+        UserPreferences prefs = new UserPreferences();
 
         Assert.Equal("pt-br", prefs.LanguageCode);
         Assert.True(prefs.TranslateKeywords);
@@ -19,7 +19,7 @@ public class UserPreferencesTests
     [Fact]
     public void LoadFrom_NonExistentFile_ReturnsDefaults()
     {
-        var prefs = UserPreferences.LoadFrom("nonexistent.json");
+        UserPreferences prefs = UserPreferences.LoadFrom("nonexistent.json");
 
         Assert.Equal("pt-br", prefs.LanguageCode);
         Assert.True(prefs.Enabled);
@@ -28,7 +28,7 @@ public class UserPreferencesTests
     [Fact]
     public async Task LoadFromAsync_NonExistentFile_ReturnsDefaults()
     {
-        var prefs = await UserPreferences.LoadFromAsync("nonexistent.json");
+        UserPreferences prefs = await UserPreferences.LoadFromAsync("nonexistent.json");
 
         Assert.Equal("pt-br", prefs.LanguageCode);
         Assert.True(prefs.Enabled);
@@ -37,10 +37,10 @@ public class UserPreferencesTests
     [Fact]
     public void SaveTo_AndLoadFrom_RoundTrip()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"prefs_{Guid.NewGuid()}.json");
+        string tempFile = Path.Combine(Path.GetTempPath(), $"prefs_{Guid.NewGuid()}.json");
         try
         {
-            var original = new UserPreferences
+            UserPreferences original = new UserPreferences
             {
                 LanguageCode = "es-es",
                 TranslateKeywords = true,
@@ -51,7 +51,7 @@ public class UserPreferencesTests
 
             original.SaveTo(tempFile);
 
-            var loaded = UserPreferences.LoadFrom(tempFile);
+            UserPreferences loaded = UserPreferences.LoadFrom(tempFile);
 
             Assert.Equal("es-es", loaded.LanguageCode);
             Assert.True(loaded.TranslateKeywords);
@@ -62,49 +62,55 @@ public class UserPreferencesTests
         finally
         {
             if (File.Exists(tempFile))
+            {
                 File.Delete(tempFile);
+            }
         }
     }
 
     [Fact]
     public void SaveTo_CreatesDirectoryIfNeeded()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), $"prefs_test_{Guid.NewGuid()}");
-        var tempFile = Path.Combine(tempDir, "settings.json");
+        string tempDir = Path.Combine(Path.GetTempPath(), $"prefs_test_{Guid.NewGuid()}");
+        string tempFile = Path.Combine(tempDir, "settings.json");
         try
         {
-            var prefs = new UserPreferences { LanguageCode = "fr-fr" };
+            UserPreferences prefs = new UserPreferences { LanguageCode = "fr-fr" };
             prefs.SaveTo(tempFile);
 
             Assert.True(File.Exists(tempFile));
 
-            var loaded = UserPreferences.LoadFrom(tempFile);
+            UserPreferences loaded = UserPreferences.LoadFrom(tempFile);
             Assert.Equal("fr-fr", loaded.LanguageCode);
         }
         finally
         {
             if (Directory.Exists(tempDir))
+            {
                 Directory.Delete(tempDir, true);
+            }
         }
     }
 
     [Fact]
     public async Task LoadFromAsync_ValidFile_LoadsCorrectly()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"prefs_{Guid.NewGuid()}.json");
+        string tempFile = Path.Combine(Path.GetTempPath(), $"prefs_{Guid.NewGuid()}.json");
         try
         {
-            var original = new UserPreferences { LanguageCode = "de-de" };
+            UserPreferences original = new UserPreferences { LanguageCode = "de-de" };
             original.SaveTo(tempFile);
 
-            var loaded = await UserPreferences.LoadFromAsync(tempFile);
+            UserPreferences loaded = await UserPreferences.LoadFromAsync(tempFile);
 
             Assert.Equal("de-de", loaded.LanguageCode);
         }
         finally
         {
             if (File.Exists(tempFile))
+            {
                 File.Delete(tempFile);
+            }
         }
     }
 }
