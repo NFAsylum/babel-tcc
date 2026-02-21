@@ -137,7 +137,7 @@ export class CoreBridge {
         stderr += data.toString();
       });
 
-      coreProcess.on('close', (code: number | null): void => {
+      coreProcess.on('close', (_code: number | null): void => {
         clearTimeout(timeoutHandle);
 
         if (stderr) {
