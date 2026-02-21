@@ -1,4 +1,5 @@
 using MultiLingualCode.Core.Interfaces;
+using MultiLingualCode.Core.LanguageAdapters;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.AST;
 
@@ -56,6 +57,8 @@ public class TranslationOrchestrator
         ILanguageAdapter adapter = adapterResult.Value;
 
         await Provider.LoadTranslationTableAsync(adapter.LanguageName);
+
+        ApplyTraduAnnotations(sourceCode, targetLanguage);
 
         ASTNode ast = adapter.Parse(sourceCode);
         ASTNode translatedAst = ast.Clone();
@@ -147,6 +150,32 @@ public class TranslationOrchestrator
         foreach (ASTNode child in node.Children)
         {
             TranslateAstReverse(child, sourceLanguage);
+        }
+    }
+
+    public void ApplyTraduAnnotations(string sourceCode, string targetLanguage)
+    {
+        TraduAnnotationParser parser = new TraduAnnotationParser();
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode);
+
+        foreach (TraduAnnotation annotation in annotations)
+        {
+            if (annotation.IsLiteralAnnotation)
+            {
+                IdentifierMapperService.SetLiteralTranslation(
+                    annotation.OriginalLiteral, targetLanguage, annotation.TranslatedLiteral);
+            }
+            else
+            {
+                IdentifierMapperService.SetTranslation(
+                    annotation.OriginalIdentifier, targetLanguage, annotation.TranslatedIdentifier);
+
+                foreach (TraduParameterMapping paramMapping in annotation.ParameterMappings)
+                {
+                    IdentifierMapperService.SetTranslation(
+                        paramMapping.OriginalParameterName, targetLanguage, paramMapping.TranslatedParameterName);
+                }
+            }
         }
     }
 }
