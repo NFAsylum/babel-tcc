@@ -1,0 +1,9 @@
+{
+  "identifiers": {
+    "GetName": "ObterNome",
+    "SetValue": "DefinirValor",
+    "IsValid": "EhValido",
+    "ToString": "ParaTexto",
+    "Count": "Contagem"
+  }
+}

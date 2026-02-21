@@ -1,0 +1,11 @@
+<Project>
+
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>NFAsylum</Authors>
+    <Product>babel-tcc</Product>
+    <Description>Multilingual code translation engine</Description>
+    <RepositoryUrl>https://github.com/NFAsylum/babel-tcc</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>
