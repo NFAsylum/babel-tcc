@@ -1,4 +1,5 @@
 using MultiLingualCode.Core.Interfaces;
+using MultiLingualCode.Core.LanguageAdapters;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.AST;
 using MultiLingualCode.Core.Services;
@@ -308,5 +309,46 @@ public class TranslationOrchestratorTests
         Assert.True(result.IsSuccess);
         Assert.Contains("vazio", result.Value);
         Assert.Contains("Main", result.Value);
+    }
+
+    [Fact]
+    public async Task TranslateToNaturalLanguage_WithTraduAnnotations_AppliesMappings()
+    {
+        // Uses real CSharpAdapter so tradu annotations are parsed from actual C# source
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_tradu_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator(registry, provider, mapper);
+
+            string sourceCode = @"public class Calculator // tradu:Calculadora
+{
+    public int Add(int a, int b) // tradu:Somar,a:primeiro,b:segundo
+    {
+        return a + b;
+    }
+}";
+
+            OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+                sourceCode, ".cs", "pt-br");
+
+            Assert.True(translationResult.IsSuccess);
+            Assert.Contains("Calculadora", translationResult.Value);
+            Assert.Contains("Somar", translationResult.Value);
+            Assert.Contains("primeiro", translationResult.Value);
+            Assert.Contains("segundo", translationResult.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
     }
 }

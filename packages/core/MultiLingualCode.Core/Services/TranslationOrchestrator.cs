@@ -1,4 +1,5 @@
 using MultiLingualCode.Core.Interfaces;
+using MultiLingualCode.Core.LanguageAdapters;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.AST;
 
@@ -57,6 +58,8 @@ public class TranslationOrchestrator
 
         await Provider.LoadTranslationTableAsync(adapter.LanguageName);
 
+        ApplyTraduAnnotations(sourceCode, targetLanguage);
+
         ASTNode ast = adapter.Parse(sourceCode);
         ASTNode translatedAst = ast.Clone();
 
@@ -108,6 +111,15 @@ public class TranslationOrchestrator
                     identifier.Name = translatedIdResult.Value;
                 }
                 break;
+
+            case LiteralNode literal when literal.IsTranslatable:
+                string literalText = literal.Value.ToString() ?? "";
+                OperationResult<string> translatedLitResult = IdentifierMapperService.GetLiteralTranslation(literalText, targetLanguage);
+                if (translatedLitResult.IsSuccess)
+                {
+                    literal.Value = translatedLitResult.Value;
+                }
+                break;
         }
 
         foreach (ASTNode child in node.Children)
@@ -142,11 +154,51 @@ public class TranslationOrchestrator
                     identifier.TranslatedName = "";
                 }
                 break;
+
+            case LiteralNode literal when literal.IsTranslatable:
+                string translatedLiteralText = literal.Value.ToString() ?? "";
+                foreach (KeyValuePair<string, Dictionary<string, string>> kvp in IdentifierMapperService.Data.Literals)
+                {
+                    if (kvp.Value.TryGetValue(sourceLanguage, out string? translatedValue)
+                        && translatedValue is not null
+                        && string.Equals(translatedValue, translatedLiteralText, StringComparison.Ordinal))
+                    {
+                        literal.Value = kvp.Key;
+                        break;
+                    }
+                }
+                break;
         }
 
         foreach (ASTNode child in node.Children)
         {
             TranslateAstReverse(child, sourceLanguage);
+        }
+    }
+
+    public void ApplyTraduAnnotations(string sourceCode, string targetLanguage)
+    {
+        TraduAnnotationParser parser = new TraduAnnotationParser();
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode);
+
+        foreach (TraduAnnotation annotation in annotations)
+        {
+            if (annotation.IsLiteralAnnotation)
+            {
+                IdentifierMapperService.SetLiteralTranslation(
+                    annotation.OriginalLiteral, targetLanguage, annotation.TranslatedLiteral);
+            }
+            else
+            {
+                IdentifierMapperService.SetTranslation(
+                    annotation.OriginalIdentifier, targetLanguage, annotation.TranslatedIdentifier);
+
+                foreach (TraduParameterMapping paramMapping in annotation.ParameterMappings)
+                {
+                    IdentifierMapperService.SetTranslation(
+                        paramMapping.OriginalParameterName, targetLanguage, paramMapping.TranslatedParameterName);
+                }
+            }
         }
     }
 }
