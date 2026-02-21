@@ -1,0 +1,678 @@
+================================================================================
+ESTRATEGIA DE ORGANIZACAO DE REPOSITORIOS - MULTILINGUAL CODE
+================================================================================
+
+DECISAO CRITICA: Como organizar codigo, adapters e traducoes?
+
+================================================================================
+OPCOES ANALISADAS
+================================================================================
+
+### OPCAO 1: MONOREPO (TUDO EM UM UNICO REPOSITORIO) ###
+
+Estrutura:
+multilingual-code/
+  +-- packages/
+  |   +-- core/
+  |   +-- csharp-adapter/
+  |   +-- python-adapter/
+  |   +-- vscode-extension/
+  +-- languages/
+  +-- examples/
+  +-- docs/
+
+VANTAGENS:
++ Mudancas atomicas (um PR pode mudar core + adapter + tabelas)
++ Versionamento unificado e simples
++ CI/CD mais simples de configurar
++ Facil garantir compatibilidade entre componentes
++ Menos overhead de manutencao no inicio
++ Clone unico tem tudo
++ Monorepo tools (Nx, Turborepo) podem ajudar
+
+DESVANTAGENS:
+- Repositorio cresce muito com o tempo
+- Clone pesado (tudo junto)
+- Dificil para contribuidores que so querem adicionar traducoes
+- Build pode ser lento
+- Dificil para usuarios que so querem um adapter especifico
+- Permissoes de acesso sao tudo-ou-nada
+- Historico Git fica confuso (mudancas em tudo misturado)
+
+QUANDO USAR:
+- Projeto pequeno/medio
+- Equipe pequena e coesa
+- Componentes muito acoplados
+- Inicio de projeto (MVP)
+
+### OPCAO 2: MULTI-REPO (SEPARADO POR COMPONENTE) ###
+
+Estrutura:
+multilingual-code-core/           (C# engine)
+multilingual-code-csharp/         (CSharp adapter)
+multilingual-code-python/         (Python adapter)
+multilingual-code-vscode/         (VS Code extension)
+multilingual-code-visualstudio/   (Visual Studio extension)
+multilingual-code-intellij/       (IntelliJ plugin)
+multilingual-translations/        (tabelas de idiomas)
+
+VANTAGENS:
++ Contribuicoes muito focadas
++ Clone leve para contribuidores especificos
++ Versoes totalmente independentes
++ Times diferentes podem manter repos diferentes
++ Traducoes evoluem independentemente do core
++ Facil dar permissoes granulares
++ Cada repo tem seu proprio CI/CD otimizado
++ Historico Git limpo por componente
+
+DESVANTAGENS:
+- Sincronizacao complexa entre repositorios
+- Versionamento entre repos e muito complicado
+- Breaking changes sao um pesadelo
+- CI/CD precisa orquestrar multiplos repos
+- Duplicacao de configuracao (.github, etc)
+- Overhead de manutencao alto
+- Dificil para novos contribuidores entenderem a estrutura
+- Testes de integracao entre repos sao complexos
+
+QUANDO USAR:
+- Projeto muito grande e maduro
+- Equipes distribuidas e independentes
+- Componentes totalmente desacoplados
+- Necessidade de releases independentes frequentes
+
+### OPCAO 3: HIBRIDO (CORE + PLUGINS SEPARADOS) ###
+
+Estrutura:
+multilingual-code/                 (PRINCIPAL)
+  +-- packages/
+  |   +-- core/
+  |   +-- csharp-adapter/
+  |   +-- vscode-extension/
+  +-- examples/
+  +-- docs/
+
+multilingual-translations/         (SEPARADO)
+  +-- programming-languages/
+  +-- natural-languages/
+  +-- templates/
+  +-- tools/
+
+[FUTUROS - conforme necessario]
+multilingual-code-python/
+multilingual-code-visualstudio/
+multilingual-code-intellij/
+
+VANTAGENS:
++ Balanco entre simplicidade e modularidade
++ Traducoes podem ser contribuidas facilmente SEM tocar codigo
++ Core + MVP mantem sincronizado
++ Releases de traducoes independentes (sem afetar core)
++ Clone do repo principal tem tudo essencial
++ Facil expandir depois
++ Contribuidores de traducoes nao precisam entender C#
++ Menos overhead que multi-repo total
+
+DESVANTAGENS:
+- Ainda precisa sincronizar core <-> traducoes
+- Decisoes sobre o que vai em qual repo
+- Dois repos para gerenciar (minimo)
+
+QUANDO USAR:
+- Projeto em crescimento
+- Quer facilitar contribuicoes de traducoes
+- MVP precisa estar coeso
+- Planejando expansao futura
+
+================================================================================
+RECOMENDACAO: OPCAO 3 (HIBRIDO) - DETALHAMENTO
+================================================================================
+
+### REPOSITORIO PRINCIPAL: multilingual-code ###
+
+PROPOSITO:
+Contem o core engine, adapters principais e extensao VS Code
+
+CONTEUDO:
+multilingual-code/
+  +-- packages/
+  |   +-- core/
+  |   |   +-- MultiLingualCode.Core/
+  |   |   +-- MultiLingualCode.Core.Tests/
+  |   +-- adapters/
+  |   |   +-- csharp/
+  |   |   |   +-- MultiLingualCode.Adapters.CSharp/
+  |   |   |   +-- MultiLingualCode.Adapters.CSharp.Tests/
+  |   +-- ide/
+  |       +-- vscode/
+  |           +-- src/
+  |           +-- package.json
+  +-- examples/
+  |   +-- csharp/
+  |   +-- getting-started/
+  +-- docs/
+  |   +-- architecture/
+  |   +-- user-guide/
+  |   +-- developer-guide/
+  +-- scripts/
+  |   +-- build.sh
+  |   +-- test.sh
+  |   +-- publish.sh
+  +-- .github/
+  |   +-- workflows/
+  |       +-- ci.yml
+  |       +-- release.yml
+  +-- README.md
+  +-- LICENSE
+  +-- CONTRIBUTING.md
+  +-- package.json          (workspace root)
+
+VERSIONAMENTO:
+- Versao unica para todo repo: v1.0.0
+- Core, CSharpAdapter e VSCode Extension sempre em sync
+- Releases coordenados
+
+RELEASES:
+- GitHub Releases com artifacts:
+  - MultiLingualCode.Core.nupkg (NuGet)
+  - multilingual-code-vscode-x.x.x.vsix
+- Publicacao automatica via CI/CD
+
+CONTRIBUICOES:
+- Issues e PRs neste repo para:
+  - Core engine
+  - CSharp adapter
+  - VS Code extension
+  - Bugs gerais
+  - Novas features
+
+BRANCH STRATEGY:
+main/
+  +-- develop
+  +-- feature/nome-feature
+  +-- release/v1.x
+  +-- hotfix/v1.x.x
+
+### REPOSITORIO DE TRADUCOES: multilingual-translations ###
+
+PROPOSITO:
+Contem APENAS tabelas de traducao e ferramentas para criar novas
+
+CONTEUDO:
+multilingual-translations/
+  +-- programming-languages/
+  |   +-- csharp/
+  |   |   +-- keywords-base.json
+  |   |   +-- metadata.json
+  |   |   +-- CHANGELOG.md
+  |   +-- python/
+  |   |   +-- keywords-base.json
+  |   |   +-- metadata.json
+  |   +-- javascript/
+  |   +-- java/
+  |   +-- README.md
+  +-- natural-languages/
+  |   +-- pt-br/
+  |   |   +-- csharp.json
+  |   |   +-- python.json
+  |   |   +-- common-identifiers.json
+  |   |   +-- metadata.json
+  |   +-- es-es/
+  |   +-- fr-fr/
+  |   +-- de-de/
+  |   +-- it-it/
+  |   +-- ja-jp/
+  |   +-- zh-cn/
+  |   +-- README.md
+  |   +-- TEMPLATE.json
+  +-- tools/
+  |   +-- validator/
+  |   |   +-- validate-tables.js
+  |   |   +-- validate-schema.js
+  |   +-- generator/
+  |   |   +-- create-translation.js
+  |   |   +-- update-translation.js
+  |   +-- stats/
+  |       +-- coverage-report.js
+  +-- schemas/
+  |   +-- keyword-table.schema.json
+  |   +-- translation-table.schema.json
+  +-- .github/
+  |   +-- workflows/
+  |       +-- validate.yml
+  |       +-- publish.yml
+  |   +-- PULL_REQUEST_TEMPLATE.md
+  +-- README.md
+  +-- CONTRIBUTING.md
+  +-- LICENSE
+
+VERSIONAMENTO:
+- Versionamento INDEPENDENTE: v1.0.0
+- Cada idioma pode ter sua propria versao
+- Compatibilidade indicada em metadata.json
+
+RELEASES:
+- NPM package: @multilingual-code/translations
+- NuGet package: MultiLingualCode.Translations
+- Instalacao facil: npm install @multilingual-code/translations
+- Core baixa automaticamente ou usa local
+
+CONTRIBUICOES:
+- Processo MUITO SIMPLES para adicionar traducoes
+- Issues template para "Novo Idioma"
+- PR review focado apenas em qualidade da traducao
+- Traducoes podem ser aceitas mesmo se core nao mudou
+
+VALIDACAO AUTOMATICA:
+- CI valida JSON schema
+- CI verifica completude (todos IDs preenchidos)
+- CI verifica duplicacoes
+- CI gera relatorio de cobertura
+- CI verifica compatibilidade com versoes core
+
+### REPOSITORIOS FUTUROS (CONFORME NECESSARIO) ###
+
+multilingual-code-python/
+  - PythonAdapter standalone
+  - Quando Python adapter ficar complexo
+  - Equipe separada pode manter
+
+multilingual-code-visualstudio/
+  - Visual Studio Extension
+  - Tecnologia diferente (.NET)
+  - Ciclo de release diferente
+
+multilingual-code-intellij/
+  - IntelliJ Plugin
+  - Linguagem diferente (Kotlin/Java)
+  - Ecossistema completamente diferente
+
+multilingual-code-cli/
+  - Ferramenta de linha de comando standalone
+  - Casos de uso diferentes (CI/CD, scripts)
+
+CRITERIO PARA SEPARAR:
+- Tecnologia muito diferente
+- Equipe separada mantendo
+- Ciclo de release independente necessario
+- Tamanho/complexidade justifica
+
+================================================================================
+ESTRATEGIA DE VERSIONAMENTO E COMPATIBILIDADE
+================================================================================
+
+### VERSIONAMENTO PRINCIPAL (multilingual-code) ###
+
+Semantic Versioning: MAJOR.MINOR.PATCH
+
+MAJOR (v1.0.0 -> v2.0.0):
+- Breaking changes no Core API
+- Breaking changes na interface ILanguageAdapter
+- Mudancas que exigem re-escrever adapters
+
+MINOR (v1.0.0 -> v1.1.0):
+- Novas features
+- Novos adapters incluidos
+- Melhorias de performance
+- Features opcionais adicionadas
+
+PATCH (v1.0.0 -> v1.0.1):
+- Bug fixes
+- Correcoes de documentacao
+- Pequenas otimizacoes
+
+### VERSIONAMENTO TRADUCOES (multilingual-translations) ###
+
+Semantic Versioning independente: MAJOR.MINOR.PATCH
+
+MAJOR (v1.0.0 -> v2.0.0):
+- Mudanca de esquema JSON
+- Reestruturacao completa
+- Breaking changes que exigem update do core
+
+MINOR (v1.0.0 -> v1.1.0):
+- Novo idioma natural adicionado
+- Nova linguagem de programacao adicionada
+- Expansao de common-identifiers
+
+PATCH (v1.0.0 -> v1.0.1):
+- Correcoes em traducoes existentes
+- Pequenas melhorias
+- Adicao de keywords faltantes
+
+### ARQUIVO DE COMPATIBILIDADE ###
+
+No multilingual-translations, criar compatibility.json:
+
+{
+  "translations": {
+    "version": "1.5.0",
+    "compatibleWith": {
+      "multilingual-code": ">=1.0.0 <2.0.0"
+    }
+  },
+  "languages": {
+    "pt-br": {
+      "version": "1.2.0",
+      "csharp": "complete",
+      "python": "partial",
+      "javascript": "complete"
+    },
+    "es-es": {
+      "version": "1.1.0",
+      "csharp": "complete",
+      "python": "none"
+    }
+  }
+}
+
+================================================================================
+PROCESSO DE RELEASE
+================================================================================
+
+### RELEASE DO CORE (multilingual-code) ###
+
+1. Criar branch release/vX.Y.Z
+2. Atualizar versoes em:
+   - package.json (root)
+   - MultiLingualCode.Core.csproj
+   - package.json (vscode)
+3. Atualizar CHANGELOG.md
+4. Rodar todos testes
+5. Build de release
+6. Criar tag vX.Y.Z
+7. Push tag -> CI automaticamente:
+   - Publica NuGet package
+   - Publica VS Code extension
+   - Cria GitHub Release
+8. Merge release -> main
+9. Merge release -> develop
+
+### RELEASE DE TRADUCOES (multilingual-translations) ###
+
+1. Novo idioma adicionado via PR
+2. PR aprovado e merged em main
+3. Atualizar version em package.json
+4. Criar tag vX.Y.Z
+5. Push tag -> CI automaticamente:
+   - Publica NPM package
+   - Publica NuGet package
+   - Atualiza compatibility.json
+   - Cria GitHub Release
+6. Opcional: Notificar repo principal (issue/PR)
+
+IMPORTANTE: Releases de traducoes NAO exigem release do core!
+
+================================================================================
+PROCESSO DE CONTRIBUICAO
+================================================================================
+
+### CONTRIBUINDO PARA CORE (multilingual-code) ###
+
+1. Fork do repositorio
+2. Clone: git clone https://github.com/seu-usuario/multilingual-code
+3. Setup: npm install && dotnet restore
+4. Branch: git checkout -b feature/minha-feature
+5. Desenvolver e testar
+6. Commit: seguir conventional commits
+7. Push e criar PR
+8. Code review pela equipe
+9. Merge apos aprovacao
+
+AREAS DE CONTRIBUICAO:
+- Core engine
+- CSharp adapter
+- VS Code extension
+- Documentacao
+- Exemplos
+- Bug fixes
+
+REQUISITOS:
+- Conhecimento de C# e/ou TypeScript
+- Testes incluidos
+- Documentacao atualizada
+
+### CONTRIBUINDO TRADUCOES (multilingual-translations) ###
+
+PROCESSO SUPER SIMPLES:
+
+1. Fork do repositorio
+2. Clone: git clone https://github.com/seu-usuario/multilingual-translations
+3. Escolher:
+   - Novo idioma natural (pt-br, es-es)
+   - Nova linguagem de programacao (java, go)
+4. Copiar template
+5. Preencher traducoes
+6. Validar: npm run validate
+7. Commit e Push
+8. Criar PR com template automatico
+9. Review focado em qualidade da traducao
+10. Merge rapido (sem code review complexo)
+
+AREAS DE CONTRIBUICAO:
+- Novas traducoes
+- Correcoes em traducoes existentes
+- Expansao de common-identifiers
+- Melhorias em ferramentas de validacao
+
+REQUISITOS:
+- Conhecer idioma target (nativo ou fluente)
+- Conhecimento basico de programacao
+- JSON valido
+- NAO precisa conhecer C# ou TypeScript!
+
+================================================================================
+CI/CD PARA CADA REPOSITORIO
+================================================================================
+
+### CI/CD - multilingual-code ###
+
+.github/workflows/ci.yml:
+- Trigger: Push em qualquer branch
+- Jobs:
+  1. Build Core (dotnet build)
+  2. Test Core (dotnet test)
+  3. Build VS Code Extension (npm run compile)
+  4. Test Extension (npm test)
+  5. Lint (eslint, dotnet format)
+  6. Coverage report
+- Artifacts: nenhum
+
+.github/workflows/release.yml:
+- Trigger: Tag vX.Y.Z
+- Jobs:
+  1. Build Release Core
+  2. Package NuGet
+  3. Publish NuGet
+  4. Build Release Extension
+  5. Package VSIX
+  6. Publish VS Code Marketplace
+  7. Create GitHub Release
+- Artifacts: NuGet package, VSIX file
+
+### CI/CD - multilingual-translations ###
+
+.github/workflows/validate.yml:
+- Trigger: Pull Request
+- Jobs:
+  1. Validate JSON schema
+  2. Check completeness
+  3. Check duplicates
+  4. Generate coverage report
+  5. Comment on PR with results
+- Artifacts: Coverage report
+
+.github/workflows/publish.yml:
+- Trigger: Tag vX.Y.Z
+- Jobs:
+  1. Validate all tables
+  2. Package NPM
+  3. Publish NPM
+  4. Package NuGet
+  5. Publish NuGet
+  6. Create GitHub Release
+  7. Update compatibility matrix
+- Artifacts: NPM package, NuGet package
+
+================================================================================
+INSTALACAO E USO PARA DESENVOLVEDORES
+================================================================================
+
+### SETUP COMPLETO (DESENVOLVIMENTO) ###
+
+# 1. Clone repositorio principal
+git clone https://github.com/org/multilingual-code
+cd multilingual-code
+
+# 2. Install dependencies
+npm install
+dotnet restore
+
+# 3. Clone traducoes (submodulo ou separado)
+git clone https://github.com/org/multilingual-translations languages-data
+
+# 4. Linkar localmente
+npm link ../multilingual-translations
+
+# 5. Build tudo
+npm run build
+
+# 6. Rodar testes
+npm test
+dotnet test
+
+# 7. Rodar extension em debug
+cd packages/ide/vscode
+npm run watch
+# F5 no VS Code
+
+### INSTALACAO PARA USUARIOS FINAIS ###
+
+Opcao 1: Via VS Code Marketplace
+- Buscar "MultiLingual Code"
+- Clicar Install
+- Traducoes baixadas automaticamente
+
+Opcao 2: Via CLI
+dotnet tool install --global MultiLingualCode.CLI
+mlc translate MeuArquivo.cs --from en --to pt-br
+
+Opcao 3: Como Library
+dotnet add package MultiLingualCode.Core
+dotnet add package MultiLingualCode.Translations
+
+================================================================================
+ROADMAP DE REPOSITORIOS
+================================================================================
+
+### FASE 1: MVP (MES 1-3) ###
+Repositorios:
+- multilingual-code (criar)
+- multilingual-translations (criar)
+
+Conteudo:
+- Core + CSharpAdapter + VSCode
+- PT-BR, ES-ES traducoes
+
+### FASE 2: EXPANSAO (MES 4-6) ###
+Repositorios existentes:
+- multilingual-code (manter)
+- multilingual-translations (expandir)
+
+Adicionar traducoes:
+- FR-FR, DE-DE, IT-IT
+- Mais common-identifiers
+
+### FASE 3: NOVOS ADAPTERS (MES 7-12) ###
+Criar novo repo:
+- multilingual-code-python (se complexidade justificar)
+
+Ou manter em:
+- multilingual-code (se simples)
+
+Decisao baseada em:
+- Tamanho do adapter
+- Complexidade
+- Equipe separada?
+
+### FASE 4: NOVAS IDES (MES 12+) ###
+Criar novos repos:
+- multilingual-code-visualstudio
+- multilingual-code-intellij
+
+Justificativa:
+- Tecnologias completamente diferentes
+- Ciclos de release independentes
+- Equipes separadas
+
+================================================================================
+METRICAS DE SUCESSO POR REPOSITORIO
+================================================================================
+
+### multilingual-code ###
+- Stars: 100+ no primeiro mes
+- Issues resolvidos: 90%+ em 1 semana
+- PRs merged: 80%+ em 2 semanas
+- Contributors: 5+ no primeiro trimestre
+- Downloads VS Code: 500+ no primeiro mes
+- NuGet downloads: 100+ no primeiro mes
+
+### multilingual-translations ###
+- Stars: 50+ no primeiro mes
+- Idiomas: 5+ no primeiro trimestre
+- Contributors: 10+ no primeiro trimestre (FACIL contribuir)
+- PRs de traducoes: merge em <24h (processo rapido)
+- Cobertura: 100% para idiomas principais
+
+================================================================================
+PERGUNTAS FREQUENTES
+================================================================================
+
+Q: Por que nao colocar traducoes no repo principal?
+A: Para facilitar contribuicoes. Tradutores nao precisam entender C#, 
+   clonar um repo gigante, ou esperar release do core.
+
+Q: Como garantir compatibilidade entre repos?
+A: Arquivo compatibility.json, versionamento semantico, e CI/CD que 
+   valida compatibilidade.
+
+Q: E se uma traducao depende de uma feature nova do core?
+A: Traducoes especificam versao minima do core em metadata. Core pode
+   ter features opcionais que traducoes nao precisam suportar.
+
+Q: Quando separar um adapter em repo proprio?
+A: Quando: (1) ficar muito complexo, (2) equipe separada mantendo,
+   (3) ciclo de release muito diferente.
+
+Q: Como fazer release coordenado core + traducoes?
+A: Normalmente nao precisa. Mas se precisar: release core primeiro,
+   entao release traducoes referenciando nova versao.
+
+================================================================================
+RECOMENDACAO FINAL
+================================================================================
+
+PARA TCC (INICIO):
+- 2 repositorios: multilingual-code + multilingual-translations
+- Mantem simplicidade
+- Facilita contribuicoes de traducoes
+- Permite crescimento futuro
+
+VANTAGENS:
++ Simples de gerenciar no inicio
++ Traducoes tem processo proprio
++ Core + MVP mantem coeso
++ Facil expandir depois
++ Comunidade pode contribuir traducoes facilmente
+
+QUANDO EXPANDIR:
+- Separar adapters quando ficarem complexos (>2000 linhas)
+- Separar IDEs quando lancadas
+- Manter traducoes sempre separado
+
+SUCESSO = Balanco entre simplicidade e modularidade!
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================
