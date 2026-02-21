@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "languageCode": "pt-br",
+  "languageName": "Portugues Brasileiro",
+  "programmingLanguage": "CSharp",
+  "translations": {
+    "0": "abstrato",
+    "1": "como",
+    "2": "base",
+    "3": "booleano",
+    "4": "parar",
+    "6": "caso",
+    "7": "capturar",
+    "10": "classe",
+    "11": "constante",
+    "18": "senao",
+    "27": "para",
+    "28": "paracada",
+    "30": "se",
+    "33": "inteiro",
+    "39": "espaconome",
+    "47": "privado",
+    "49": "publico",
+    "52": "retornar",
+    "58": "estatico",
+    "59": "texto",
+    "65": "tentar",
+    "72": "usando",
+    "75": "vazio",
+    "77": "enquanto"
+  }
+}

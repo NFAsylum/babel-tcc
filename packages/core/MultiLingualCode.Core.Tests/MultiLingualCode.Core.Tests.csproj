@@ -25,4 +25,8 @@
     <ProjectReference Include="..\MultiLingualCode.Core\MultiLingualCode.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="TestData\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
