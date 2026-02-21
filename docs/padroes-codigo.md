@@ -106,7 +106,9 @@ Tabela de keywords (`keywords-base.json`):
   "version": "1.0.0",
   "language": "CSharp",
   "keywords": {
-    "keyword": id_numerico
+    "if": 30,
+    "else": 18,
+    "class": 10
   }
 }
 ```
@@ -118,7 +120,9 @@ Traducao (`pt-br/csharp.json`):
   "languageCode": "pt-br",
   "programmingLanguage": "CSharp",
   "translations": {
-    "id_numerico": "traducao"
+    "30": "se",
+    "18": "senao",
+    "10": "classe"
   }
 }
 ```

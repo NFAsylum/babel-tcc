@@ -1,0 +1,1089 @@
+================================================================================
+CRONOGRAMA E ESTIMATIVAS DE TEMPO - MULTILINGUAL CODE EXTENSION
+================================================================================
+
+EQUIPE: 3-5 ESTAGIARIOS
+DURACAO TOTAL ESTIMADA: 14-18 SEMANAS (3.5-4.5 MESES)
+
+PREMISSAS:
+- Estagiarios com conhecimento basico de C# e TypeScript
+- Dedicacao de 20-40 horas/semana por pessoa
+- Code reviews e reunioes semanais
+- Sprints de 2 semanas
+- Buffer de 20% para imprevistos em cada fase
+
+================================================================================
+VISAO GERAL DO CRONOGRAMA
+================================================================================
+
+FASE 0: Setup e Onboarding                    | 1-2 semanas
+FASE 1: Core Engine                            | 3-4 semanas
+FASE 2: Language Adapters                      | 3-4 semanas
+FASE 3: VS Code Extension                      | 4-5 semanas
+FASE 4: Documentacao e Exemplos                | 2-3 semanas
+FASE 5: Testes e QA                            | 2 semanas
+FASE 6: Polimento e Deploy                     | 1-2 semanas
+                                               ---------------
+TOTAL:                                         | 16-22 semanas
+
+COM TRABALHO PARALELO E OTIMIZACAO:            | 14-18 semanas
+
+================================================================================
+FASE 0: SETUP E ONBOARDING (1-2 SEMANAS)
+================================================================================
+
+Objetivo: Preparar ambiente e nivelar conhecimento da equipe
+
+### SEMANA 1 ###
+
+TAREFA 0.1: Setup do Ambiente de Desenvolvimento
+Responsavel: 1 pessoa (lider tecnico)
+Tempo: 8-12 horas
+Atividades:
+  - Configurar repositorio Git (GitHub/GitLab)
+  - Setup de CI/CD basico
+  - Configurar templates de projeto C# e TypeScript
+  - Criar estrutura inicial de pastas
+  - Documentar processo de setup
+
+TAREFA 0.2: Estudos e Treinamentos
+Responsavel: Toda equipe (3-5 pessoas)
+Tempo: 16-24 horas por pessoa
+Atividades:
+  - Estudar Roslyn (Microsoft.CodeAnalysis)
+  - Estudar VS Code Extension API
+  - Estudar AST e parsing basico
+  - Workshop sobre arquitetura do projeto
+  - Definir padroes de codigo
+
+TAREFA 0.3: Prototipo Rapido (Proof of Concept)
+Responsavel: 2 pessoas
+Tempo: 12-16 horas
+Atividades:
+  - Criar mini-parser que traduz "if" -> "se"
+  - Testar Roslyn parse basico
+  - Validar comunicacao TypeScript <-> C#
+  - Demonstrar viabilidade tecnica
+
+TAREFA 0.4: Planejamento Detalhado
+Responsavel: Toda equipe
+Tempo: 4-8 horas
+Atividades:
+  - Definir sprints
+  - Atribuir responsabilidades
+  - Criar backlog no Jira/Trello
+  - Definir metricas de progresso
+
+TOTAL FASE 0: 40-60 horas de trabalho total
+COM 3-5 PESSOAS: 1-2 semanas calendario
+
+================================================================================
+FASE 1: CORE ENGINE (3-4 SEMANAS)
+================================================================================
+
+Objetivo: Implementar motor de traducao central
+
+### SPRINT 1 (SEMANA 2-3) ###
+
+TAREFA 1.1: Interfaces Base
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Arquivos:
+  - ILanguageAdapter.cs
+  - IIDEAdapter.cs
+  - INaturalLanguageProvider.cs
+Entregas:
+  - Interfaces documentadas
+  - Testes unitarios de contrato
+
+TAREFA 1.2: Modelos AST
+Responsavel: 1 pessoa
+Tempo: 16-24 horas
+Arquivos:
+  - ASTNode.cs (base)
+  - KeywordNode.cs
+  - IdentifierNode.cs
+  - LiteralNode.cs
+  - ExpressionNode.cs
+  - StatementNode.cs
+Entregas:
+  - Hierarquia completa de AST
+  - Metodos ToCode() e Clone()
+  - Testes de serializacao
+
+TAREFA 1.3: Modelos de Configuracao
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Arquivos:
+  - KeywordTable.cs
+  - LanguageTable.cs
+  - IdentifierMap.cs
+  - UserPreferences.cs
+Entregas:
+  - Classes com validacao
+  - Serializacao JSON
+  - Testes de carga
+
+TAREFA 1.4: Utilitarios e Helpers
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Arquivos:
+  - FileSystemHelper.cs
+  - JsonLoader.cs
+  - StringExtensions.cs
+Entregas:
+  - Helpers testados
+  - Tratamento de erros
+
+### SPRINT 2 (SEMANA 4-5) ###
+
+TAREFA 1.5: LanguageRegistry
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - Implementar registro de adapters
+  - Sistema de deteccao por extensao
+  - Cache de adapters
+  - Testes de registro
+
+TAREFA 1.6: NaturalLanguageProvider
+Responsavel: 1 pessoa
+Tempo: 16-24 horas
+Atividades:
+  - Carregar tabelas JSON
+  - Traducao keyword ID <-> texto
+  - Sistema de sugestoes
+  - Validacao de compatibilidade
+  - Testes de traducao
+
+TAREFA 1.7: IdentifierMapper
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - Mapear identificadores customizados
+  - Persistencia de mapas
+  - Sugestoes baseadas em contexto
+  - Testes de mapeamento
+
+TAREFA 1.8: TranslationOrchestrator (Parte 1)
+Responsavel: 2 pessoas
+Tempo: 20-30 horas
+Atividades:
+  - Estrutura basica
+  - Fluxo TranslateToNaturalLanguage (esqueleto)
+  - Fluxo TranslateFromNaturalLanguage (esqueleto)
+  - Integracao com componentes
+  - Testes de integracao basicos
+
+TAREFA 1.9: Tabelas JSON Iniciais
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Entregas:
+  - keywords-base.json para C#
+  - pt-br/csharp.json (completo)
+  - es-es/csharp.json (basico)
+  - Validacao de esquemas
+
+TAREFA 1.10: Code Review e Refatoracao
+Responsavel: Toda equipe
+Tempo: 8-12 horas
+Atividades:
+  - Review de todo codigo da Fase 1
+  - Refatoracao de duplicacoes
+  - Melhorias de performance
+  - Atualizacao de documentacao
+
+TOTAL FASE 1: 120-180 horas de trabalho total
+COM 3-5 PESSOAS EM PARALELO: 3-4 semanas calendario
+
+DEPENDENCIAS:
+- Tarefa 1.5 depende de 1.1
+- Tarefa 1.6 depende de 1.3
+- Tarefa 1.7 depende de 1.3
+- Tarefa 1.8 depende de 1.5, 1.6, 1.7
+
+================================================================================
+FASE 2: LANGUAGE ADAPTERS (3-4 SEMANAS)
+================================================================================
+
+Objetivo: Implementar suporte para C# e Python
+
+### SPRINT 3 (SEMANA 6-7) ###
+
+TAREFA 2.1: CSharpAdapter - Parse Basico
+Responsavel: 2 pessoas
+Tempo: 24-32 horas
+Atividades:
+  - Integracao com Roslyn
+  - Parse de keywords basicas (if, else, for, while)
+  - Parse de declaracoes de variaveis
+  - Conversao Roslyn AST -> Nossa AST
+  - Testes com codigos simples
+
+TAREFA 2.2: CSharpAdapter - Generate
+Responsavel: 1 pessoa
+Tempo: 16-24 horas
+Atividades:
+  - Geracao de codigo a partir da AST
+  - Formatacao e indentacao
+  - Preservacao de comentarios
+  - Testes de round-trip (parse -> generate)
+
+TAREFA 2.3: CSharpAdapter - Validacao e Diagnosticos
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - ValidateSyntax usando Roslyn
+  - Extracao de diagnosticos
+  - Formatacao de mensagens de erro
+  - Testes com codigos invalidos
+
+TAREFA 2.4: CSharpAdapter - Extract Identifiers
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Atividades:
+  - Detectar variaveis, metodos, classes
+  - Filtrar keywords
+  - Detectar anotacoes "tradu"
+  - Testes de extracao
+
+### SPRINT 4 (SEMANA 8-9) ###
+
+TAREFA 2.5: CSharpAdapter - Recursos Avancados
+Responsavel: 2 pessoas
+Tempo: 20-30 horas
+Atividades:
+  - Suporte a classes e structs
+  - Suporte a metodos e propriedades
+  - Suporte a namespaces
+  - Suporte a LINQ basico
+  - Testes com codigo complexo
+
+TAREFA 2.6: TranslationOrchestrator - Implementacao Completa
+Responsavel: 2 pessoas
+Tempo: 24-32 horas
+Atividades:
+  - Implementar TranslateAST completo
+  - Implementar ReverseTranslateAST
+  - Implementar GenerateTranslatedCode
+  - Otimizacao de performance
+  - Testes end-to-end
+
+TAREFA 2.7: PythonAdapter - Setup e Parse Basico
+Responsavel: 1-2 pessoas
+Tempo: 20-30 horas
+Atividades:
+  - Pesquisar opcoes de parse (IronPython vs processo)
+  - Implementar parse via Python subprocess
+  - Conversao Python AST -> Nossa AST
+  - Testes basicos
+  
+NOTA: PythonAdapter pode ser OPCIONAL para MVP
+
+TAREFA 2.8: Sistema de Deteccao de "tradu"
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - Parser de anotacoes // tradu:nome
+  - Integracao com IdentifierMapper
+  - Persistencia de mapas
+  - Testes de deteccao
+
+TAREFA 2.9: Tabelas Adicionais
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Entregas:
+  - Expandir pt-br/csharp.json (todos keywords)
+  - Criar es-es/csharp.json (completo)
+  - Criar fr-fr/csharp.json (basico)
+  - commonIdentifiers.json expandido
+
+TAREFA 2.10: Testes de Integracao Core
+Responsavel: 2 pessoas
+Tempo: 16-24 horas
+Atividades:
+  - Suite completa de testes
+  - Testes com codigos reais
+  - Benchmarks de performance
+  - Correcao de bugs encontrados
+
+TOTAL FASE 2: 160-228 horas de trabalho total
+COM 3-5 PESSOAS EM PARALELO: 3-4 semanas calendario
+
+DEPENDENCIAS:
+- Tarefa 2.2 depende de 2.1
+- Tarefa 2.5 depende de 2.1, 2.2
+- Tarefa 2.6 depende de 2.1, 2.2, 2.3
+- Tarefa 2.8 depende de 2.1
+- Tarefa 2.10 depende de todas anteriores
+
+================================================================================
+FASE 3: VS CODE EXTENSION (4-5 SEMANAS)
+================================================================================
+
+Objetivo: Criar extensao funcional para VS Code
+
+### SPRINT 5 (SEMANA 10-11) ###
+
+TAREFA 3.1: Setup Projeto TypeScript
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Atividades:
+  - Inicializar projeto com yo code
+  - Configurar tsconfig.json
+  - Setup de build e package
+  - Criar estrutura de pastas
+  - Configurar debugging
+
+TAREFA 3.2: CoreBridge - Comunicacao Basica
+Responsavel: 2 pessoas
+Tempo: 20-28 horas
+Atividades:
+  - Implementar spawn de processo .NET
+  - Protocolo de comunicacao JSON
+  - Metodo translateToNaturalLanguage
+  - Metodo translateFromNaturalLanguage
+  - Tratamento de erros
+  - Testes de comunicacao
+
+TAREFA 3.3: TranslatedContentProvider
+Responsavel: 1 pessoa
+Tempo: 16-24 horas
+Atividades:
+  - Implementar TextDocumentContentProvider
+  - Leitura de arquivo original
+  - Chamada ao CoreBridge
+  - Cache de traducoes
+  - Sistema de refresh
+  - Testes
+
+TAREFA 3.4: LanguageDetector e ConfigurationService
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Atividades:
+  - Detectar extensao de arquivo
+  - Carregar preferencias do usuario
+  - Validar configuracoes
+  - Testes
+
+### SPRINT 6 (SEMANA 12-13) ###
+
+TAREFA 3.5: EditInterceptor
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - Capturar onDidChangeTextDocument
+  - Detectar mudancas relevantes
+  - Atualizar traducao incremental
+  - Testes de edicao
+
+TAREFA 3.6: SaveHandler
+Responsavel: 1 pessoa
+Tempo: 16-24 horas
+Atividades:
+  - Capturar onWillSaveTextDocument
+  - Traducao reversa
+  - Salvar arquivo original
+  - Tratamento de erros
+  - Confirmacao de sucesso
+  - Testes de save
+
+TAREFA 3.7: Commands Basicos
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Comandos:
+  - multilingual.toggleTranslation
+  - multilingual.selectLanguage
+  - multilingual.openTranslated
+  - multilingual.showOriginal
+Testes de cada comando
+
+TAREFA 3.8: UI Basica
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - StatusBar item
+  - LanguageSelector (QuickPick)
+  - Icones e branding basico
+  - Testes de UI
+
+### SPRINT 7 (SEMANA 14) ###
+
+TAREFA 3.9: CompletionProvider
+Responsavel: 1 pessoa
+Tempo: 16-24 horas
+Atividades:
+  - Implementar autocomplete de keywords
+  - Sugestoes de identificadores comuns
+  - Integracao com CoreBridge
+  - Testes de completion
+
+TAREFA 3.10: HoverProvider
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Atividades:
+  - Mostrar traducao ao passar mouse
+  - Exibir tipo da keyword
+  - Formatacao de tooltips
+  - Testes de hover
+
+TAREFA 3.11: DiagnosticsProvider
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - Capturar erros do Core
+  - Traduzir mensagens de erro
+  - Mostrar sublinhados
+  - Testes de diagnosticos
+
+TAREFA 3.12: Syntax Highlighting
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Atividades:
+  - Criar mlc-csharp.tmLanguage.json
+  - Destacar keywords traduzidas
+  - Destacar "tradu"
+  - Testes visuais
+
+### SPRINT 8 (SEMANA 15) ###
+
+TAREFA 3.13: Package e Deploy
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Atividades:
+  - Configurar package.json
+  - Bundling com Core C#
+  - Gerar .vsix
+  - Testar instalacao local
+  - Documentacao de instalacao
+
+TAREFA 3.14: Testes End-to-End Extension
+Responsavel: 2 pessoas
+Tempo: 16-24 horas
+Atividades:
+  - Suite de testes automatizados
+  - Testes manuais de workflows
+  - Testes de performance
+  - Correcao de bugs
+
+TOTAL FASE 3: 176-252 horas de trabalho total
+COM 3-5 PESSOAS EM PARALELO: 4-5 semanas calendario
+
+DEPENDENCIAS:
+- Tarefa 3.2 depende de 3.1
+- Tarefa 3.3 depende de 3.2
+- Tarefa 3.5 depende de 3.3
+- Tarefa 3.6 depende de 3.3
+- Tarefas 3.9-3.11 dependem de 3.2
+- Tarefa 3.13 depende de todas anteriores
+
+================================================================================
+FASE 4: DOCUMENTACAO E EXEMPLOS (2-3 SEMANAS)
+================================================================================
+
+Objetivo: Criar documentacao completa e exemplos praticos
+
+### SPRINT 9 (SEMANA 16-17) ###
+
+TAREFA 4.1: README Principal
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Conteudo:
+  - Descricao do projeto
+  - Screenshots/GIFs demonstrativos
+  - Instalacao
+  - Quick start
+  - Features
+  - Contribuicao
+  - Licenca
+
+TAREFA 4.2: Documentacao de Usuario
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Arquivos:
+  - docs/user-guide/installation.md
+  - docs/user-guide/getting-started.md
+  - docs/user-guide/configuration.md
+  - docs/user-guide/troubleshooting.md
+  - docs/user-guide/faq.md
+
+TAREFA 4.3: Documentacao de Desenvolvedor
+Responsavel: 1 pessoa
+Tempo: 16-24 horas
+Arquivos:
+  - docs/architecture/overview.md
+  - docs/architecture/core-design.md
+  - docs/architecture/adapter-pattern.md
+  - docs/developer-guide/adding-new-language.md
+  - docs/developer-guide/adding-new-ide.md
+  - docs/developer-guide/creating-translations.md
+  - docs/developer-guide/api-reference.md
+
+TAREFA 4.4: Exemplos C# - Hello World
+Responsavel: 1 pessoa
+Tempo: 4-6 horas
+Entregas:
+  - examples/csharp/HelloWorld/Program.cs
+  - examples/csharp/HelloWorld/.multilingual/identifier-map.json
+  - examples/csharp/HelloWorld/README.md
+  - Video/GIF demonstrativo
+
+TAREFA 4.5: Exemplos C# - Calculator
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Entregas:
+  - examples/csharp/Calculator/Calculator.cs
+  - examples/csharp/Calculator/Program.cs
+  - examples/csharp/Calculator/.multilingual/identifier-map.json
+  - examples/csharp/Calculator/README.md
+  - Testes unitarios
+  - Documentacao de uso
+
+TAREFA 4.6: Exemplos C# - TodoList API
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Entregas:
+  - Projeto ASP.NET Core completo
+  - Controllers, Models, Services
+  - Mapeamento completo de identificadores
+  - README detalhado
+  - Colecao Postman/Insomnia
+
+TAREFA 4.7: Exemplos Python (Opcional)
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Entregas:
+  - examples/python/data-analysis/analyzer.py
+  - Mapeamento de identificadores
+  - README
+
+TAREFA 4.8: Video Tutorial
+Responsavel: 1-2 pessoas
+Tempo: 12-20 horas
+Conteudo:
+  - Video de 5-10 minutos
+  - Instalacao e configuracao
+  - Criacao de projeto
+  - Traducao em tempo real
+  - Colaboracao multilingue
+  - Edicao e publicacao
+
+TAREFA 4.9: Guia de Contribuicao
+Responsavel: 1 pessoa
+Tempo: 4-8 horas
+Arquivo: CONTRIBUTING.md
+Conteudo:
+  - Como contribuir
+  - Padroes de codigo
+  - Processo de PR
+  - Como reportar bugs
+  - Roadmap
+
+TAREFA 4.10: Documentacao de API (Inline)
+Responsavel: 2 pessoas
+Tempo: 16-24 horas
+Atividades:
+  - Revisar todo codigo Core
+  - Adicionar XML docs completos
+  - Gerar documentacao HTML
+  - Publicar em GitHub Pages
+
+TOTAL FASE 4: 100-150 horas de trabalho total
+COM 3-5 PESSOAS EM PARALELO: 2-3 semanas calendario
+
+PODE SER FEITO PARCIALMENTE EM PARALELO COM FASE 3
+
+================================================================================
+FASE 5: TESTES E QA (2 SEMANAS)
+================================================================================
+
+Objetivo: Garantir qualidade e estabilidade
+
+### SPRINT 10 (SEMANA 18-19) ###
+
+TAREFA 5.1: Testes Unitarios - Cobertura
+Responsavel: 2 pessoas
+Tempo: 20-30 horas
+Atividades:
+  - Atingir 80%+ cobertura em Core
+  - Atingir 70%+ cobertura em Extension
+  - Corrigir testes falhando
+  - Adicionar casos extremos
+
+TAREFA 5.2: Testes de Integracao
+Responsavel: 2 pessoas
+Tempo: 16-24 horas
+Cenarios:
+  - Traducao completa C# -> PT-BR
+  - Traducao completa PT-BR -> C#
+  - Edicao e save workflow
+  - Multiplos idiomas
+  - Projetos complexos
+
+TAREFA 5.3: Testes de Performance
+Responsavel: 1 pessoa
+Tempo: 12-16 horas
+Metricas:
+  - Tempo de traducao por tamanho de arquivo
+  - Uso de memoria
+  - Tempo de startup da extensao
+  - Identificar gargalos
+  - Otimizacoes
+
+TAREFA 5.4: Testes de Usabilidade
+Responsavel: 2-3 pessoas
+Tempo: 12-20 horas
+Atividades:
+  - Testes com usuarios reais
+  - Coletar feedback
+  - Identificar UX problems
+  - Documentar melhorias necessarias
+
+TAREFA 5.5: Bug Bash
+Responsavel: Toda equipe
+Tempo: 8-16 horas
+Atividades:
+  - Sessao focada em encontrar bugs
+  - Testar edge cases
+  - Testar em diferentes SO (Windows, Mac, Linux)
+  - Criar issues para bugs encontrados
+
+TAREFA 5.6: Correcao de Bugs Criticos
+Responsavel: 2-3 pessoas
+Tempo: 20-40 horas
+Atividades:
+  - Priorizar bugs
+  - Corrigir bugs criticos
+  - Regressao test
+  - Validar correcoes
+
+TAREFA 5.7: Testes de Compatibilidade
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Testar:
+  - VS Code versoes 1.80+
+  - .NET 6, 7, 8
+  - Windows 10/11
+  - macOS 12+
+  - Ubuntu 20.04+
+
+TAREFA 5.8: Security Review
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Verificar:
+  - Input validation
+  - Path traversal
+  - Code injection
+  - Permissoes de arquivo
+  - Dependencias vulneraveis
+
+TOTAL FASE 5: 104-170 horas de trabalho total
+COM 3-5 PESSOAS EM PARALELO: 2 semanas calendario
+
+NOTA: Fase 5 pode comecar parcialmente durante Fase 3 e 4
+
+================================================================================
+FASE 6: POLIMENTO E DEPLOY (1-2 SEMANAS)
+================================================================================
+
+Objetivo: Preparar para lancamento
+
+### SPRINT 11 (SEMANA 20-21) ###
+
+TAREFA 6.1: Refatoracao e Code Cleanup
+Responsavel: 2 pessoas
+Tempo: 12-20 horas
+Atividades:
+  - Remover codigo morto
+  - Refatorar duplicacoes
+  - Melhorar nomenclatura
+  - Adicionar TODOs para futuro
+  - Final code review
+
+TAREFA 6.2: Configuracao de CI/CD
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Setup:
+  - GitHub Actions / Azure Pipelines
+  - Build automatico
+  - Testes automaticos
+  - Package automatico
+  - Versionamento semantico
+
+TAREFA 6.3: Preparacao para Marketplace
+Responsavel: 1 pessoa
+Tempo: 8-12 horas
+Atividades:
+  - Criar conta no VS Code Marketplace
+  - Preparar icones e banners
+  - Escrever descricao atraente
+  - Screenshots de qualidade
+  - Review de metadata
+
+TAREFA 6.4: Changelog e Release Notes
+Responsavel: 1 pessoa
+Tempo: 4-6 horas
+Documentos:
+  - CHANGELOG.md completo
+  - Release notes v1.0.0
+  - Lista de features
+  - Known issues
+
+TAREFA 6.5: Licenciamento
+Responsavel: 1 pessoa
+Tempo: 2-4 horas
+Atividades:
+  - Escolher licenca (MIT recomendado)
+  - Adicionar LICENSE file
+  - Verificar dependencias
+  - Adicionar headers de licenca
+
+TAREFA 6.6: Website/Landing Page (Opcional)
+Responsavel: 1-2 pessoas
+Tempo: 16-24 horas
+Conteudo:
+  - GitHub Pages ou site custom
+  - Apresentacao do projeto
+  - Documentacao online
+  - Download links
+  - Exemplos interativos
+
+TAREFA 6.7: Deploy Beta
+Responsavel: 1 pessoa
+Tempo: 4-8 horas
+Atividades:
+  - Publicar versao 0.9.0-beta
+  - Testar instalacao do Marketplace
+  - Coletar feedback de beta testers
+  - Correcoes de ultima hora
+
+TAREFA 6.8: Deploy v1.0.0
+Responsavel: 1 pessoa
+Tempo: 4-6 horas
+Atividades:
+  - Tag v1.0.0 no Git
+  - Build de release
+  - Publicar no VS Code Marketplace
+  - Anunciar lancamento
+
+TAREFA 6.9: Materiais de Marketing
+Responsavel: 1-2 pessoas
+Tempo: 8-16 horas
+Criar:
+  - Post de blog/Medium
+  - Tweet thread
+  - Post no LinkedIn
+  - Video de lancamento
+  - Demo GIFs
+  - Slide deck para apresentacoes
+
+TAREFA 6.10: Preparacao TCC
+Responsavel: Pessoa responsavel pelo TCC
+Tempo: 40-60 horas (fora do cronograma tecnico)
+Atividades:
+  - Escrita da monografia
+  - Documentacao academica
+  - Analise de resultados
+  - Preparacao de apresentacao
+  - Revisoes
+
+TOTAL FASE 6: 106-168 horas de trabalho total
+COM 3-5 PESSOAS EM PARALELO: 1-2 semanas calendario
+
+================================================================================
+DISTRIBUICAO DE TRABALHO POR PERFIL
+================================================================================
+
+### PERFIL 1: LIDER TECNICO / SENIOR ###
+Dedicacao: 40 horas/semana
+Responsabilidades:
+  - Arquitetura geral
+  - Code reviews
+  - Mentoria da equipe
+  - Resolucao de bloqueios tecnicos
+  - Integracao entre componentes
+Tarefas principais:
+  - Fase 0: Setup e POC
+  - Fase 1: TranslationOrchestrator
+  - Fase 2: CSharpAdapter avancado
+  - Fase 5: Performance e otimizacao
+  - Fase 6: Deploy
+
+### PERFIL 2-3: DESENVOLVEDORES C# ###
+Dedicacao: 30-40 horas/semana
+Responsabilidades:
+  - Implementacao do Core
+  - Language Adapters
+  - Testes unitarios
+Tarefas principais:
+  - Fase 1: Interfaces, AST, Services
+  - Fase 2: CSharpAdapter, PythonAdapter
+  - Fase 5: Testes e correcoes
+
+### PERFIL 4-5: DESENVOLVEDORES TypeScript ###
+Dedicacao: 30-40 horas/semana
+Responsabilidades:
+  - VS Code Extension
+  - UI/UX
+  - Integracao com Core
+Tarefas principais:
+  - Fase 3: Toda implementacao da extensao
+  - Fase 4: Exemplos e documentacao
+  - Fase 5: Testes de usabilidade
+
+================================================================================
+CRONOGRAMA DETALHADO (DIAGRAMA DE GANTT SIMPLIFICADO)
+================================================================================
+
+SEMANA |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  | 10  |
+-------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+FASE 0 | ### |     |     |     |     |     |     |     |     |     |
+FASE 1 |     | ### | ### | ### | ### |     |     |     |     |     |
+FASE 2 |     |     |     |     | ### | ### | ### | ### |     |     |
+FASE 3 |     |     |     |     |     |     |     |     | ### | ### |
+FASE 4 |     |     |     |     |     |     |     |     |     | ### |
+FASE 5 |     |     |     |     |     |     |     |     |     |     |
+FASE 6 |     |     |     |     |     |     |     |     |     |     |
+
+SEMANA | 11  | 12  | 13  | 14  | 15  | 16  | 17  | 18  | 19  | 20  |
+-------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+FASE 3 | ### | ### | ### | ### | ### |     |     |     |     |     |
+FASE 4 | ### | ### | ### | ### | ### | ### |     |     |     |     |
+FASE 5 |     |     |     |     | ### | ### | ### | ### |     |     |
+FASE 6 |     |     |     |     |     |     |     |     | ### | ### |
+
+LEGENDA: ### = Trabalho ativo na fase
+
+================================================================================
+MILESTONES E ENTREGAS
+================================================================================
+
+MILESTONE 1 (SEMANA 2): Ambiente Configurado
+Entrega:
+  - Repositorio configurado
+  - CI/CD basico funcionando
+  - Equipe nivelada
+  - Prototipo validado
+
+MILESTONE 2 (SEMANA 5): Core Engine Completo
+Entrega:
+  - Interfaces implementadas
+  - AST funcional
+  - TranslationOrchestrator basico
+  - Testes unitarios passando
+
+MILESTONE 3 (SEMANA 9): Adapters Prontos
+Entrega:
+  - CSharpAdapter completo
+  - Traducao C# <-> PT-BR funcionando
+  - Tabelas JSON completas
+  - Testes de integracao passando
+
+MILESTONE 4 (SEMANA 15): Extension Beta
+Entrega:
+  - VS Code Extension instalavel
+  - Features principais funcionando
+  - CoreBridge estavel
+  - Demonstracao funcional
+
+MILESTONE 5 (SEMANA 17): Documentacao Completa
+Entrega:
+  - Toda documentacao escrita
+  - Exemplos funcionais
+  - Videos tutoriais
+  - Website/landing page
+
+MILESTONE 6 (SEMANA 19): QA Aprovado
+Entrega:
+  - Testes passando (80%+ cobertura)
+  - Bugs criticos corrigidos
+  - Performance validada
+  - Seguranca revisada
+
+MILESTONE 7 (SEMANA 21): Lancamento v1.0.0
+Entrega:
+  - Publicado no VS Code Marketplace
+  - Release notes publicados
+  - Lancamento anunciado
+  - Materiais de marketing prontos
+
+================================================================================
+RISCOS E MITIGACOES
+================================================================================
+
+RISCO 1: Complexidade do Roslyn
+Probabilidade: ALTA
+Impacto: ALTO
+Mitigacao:
+  - Estudos antecipados (Fase 0)
+  - Consultar especialistas
+  - Fallback para parser simples
+  - Buffer de tempo extra
+
+RISCO 2: Performance de Traducao
+Probabilidade: MEDIA
+Impacto: MEDIO
+Mitigacao:
+  - Testes de performance desde cedo
+  - Cache agressivo
+  - Traducao incremental
+  - Otimizacoes progressivas
+
+RISCO 3: Comunicacao TypeScript <-> C#
+Probabilidade: MEDIA
+Impacto: ALTO
+Mitigacao:
+  - POC na Fase 0
+  - Protocolo bem definido
+  - Tratamento robusto de erros
+  - Fallback modes
+
+RISCO 4: Estagiarios com Curva de Aprendizado
+Probabilidade: ALTA
+Impacto: MEDIO
+Mitigacao:
+  - Onboarding estruturado
+  - Pair programming
+  - Code reviews frequentes
+  - Documentacao interna
+
+RISCO 5: Scope Creep
+Probabilidade: ALTA
+Impacto: ALTO
+Mitigacao:
+  - MVP bem definido
+  - Features opcionais marcadas
+  - Priorizacao rigorosa
+  - Python adapter como opcional
+
+RISCO 6: Bugs de Ultima Hora
+Probabilidade: MEDIA
+Impacto: MEDIO
+Mitigacao:
+  - Testes continuos
+  - Bug bash dedicado
+  - Beta testing
+  - Buffer de tempo (Fase 6)
+
+================================================================================
+RECURSOS NECESSARIOS
+================================================================================
+
+HUMANOS:
+- 1 Lider Tecnico (senior)
+- 2 Desenvolvedores C# (junior/pleno)
+- 2 Desenvolvedores TypeScript (junior/pleno)
+- 1 QA/Tester (parcial, pode ser um dos devs)
+- 1 Tech Writer (parcial, pode ser um dos devs)
+
+FERRAMENTAS:
+- GitHub/GitLab (free)
+- VS Code (free)
+- Visual Studio Community (free)
+- .NET SDK (free)
+- Node.js (free)
+- Jira/Trello para gestao (free tier)
+- Slack/Discord para comunicacao (free)
+- Figma para mockups (free tier)
+
+CUSTOS ESTIMADOS:
+- Dominio para site: $10-20/ano
+- GitHub Pro (opcional): $4/mes/usuario
+- Cloud para CI/CD (opcional): $0-50/mes
+TOTAL: ~$100-500 para todo projeto
+
+================================================================================
+METRICAS DE SUCESSO
+================================================================================
+
+TECNICAS:
+- 80%+ cobertura de testes
+- < 500ms para traducao de arquivo medio (500 linhas)
+- 0 bugs criticos no lancamento
+- Suporte a 100% das keywords C#
+
+PRODUTO:
+- 100+ downloads na primeira semana
+- 4+ estrelas no Marketplace
+- 3+ idiomas suportados (EN, PT-BR, ES-ES)
+- 5+ exemplos funcionais
+
+ACADEMICAS (TCC):
+- Monografia completa
+- Apresentacao bem avaliada
+- Contribuicao cientifica documentada
+- Codigo open-source publicado
+
+================================================================================
+PLANO DE CONTINGENCIA
+================================================================================
+
+SE ATRASARMOS 2+ SEMANAS:
+- Reduzir escopo: PythonAdapter opcional
+- Focar apenas em C# + PT-BR
+- Reduzir numero de exemplos
+- Simplificar UI da extensao
+
+SE ATRASARMOS 4+ SEMANAS:
+- MVP minimo: C# + PT-BR + Traducao basica
+- Extension com apenas comandos essenciais
+- Documentacao minima
+- Roadmap para v2.0
+
+SE UM MEMBRO SAIR:
+- Redistribuir tarefas
+- Contratar substituto rapidamente
+- Pair programming intensivo
+- Priorizar conhecimento compartilhado
+
+================================================================================
+PROXIMOS PASSOS APOS LANCAMENTO
+================================================================================
+
+VERSAO 1.1 (1-2 MESES APOS v1.0):
+- Correcoes baseadas em feedback
+- Melhorias de performance
+- Mais idiomas (FR, DE, IT)
+- Suporte a Python completo
+
+VERSAO 1.5 (3-4 MESES APOS v1.0):
+- Suporte a JavaScript/TypeScript
+- Plugin para Visual Studio
+- Mais features de UI
+- Sistema de plugins
+
+VERSAO 2.0 (6+ MESES APOS v1.0):
+- Suporte a Java
+- Plugin para IntelliJ
+- Traducao de comentarios
+- AI-powered suggestions
+- Marketplace de traducoes comunitarias
+
+================================================================================
+CONCLUSAO
+================================================================================
+
+DURACAO TOTAL: 14-18 semanas (3.5-4.5 meses)
+ESFORCO TOTAL: ~1000-1400 horas de trabalho
+COM 3-5 ESTAGIARIOS: Viavel e bem distribuido
+
+FATORES DE SUCESSO:
+1. Planejamento detalhado (este documento!)
+2. Comunicacao constante da equipe
+3. Code reviews rigorosos
+4. Testes desde o inicio
+5. Sprints bem definidos
+6. Flexibilidade para ajustes
+
+RECOMENDACAO FINAL:
+- Comecar com time de 4 pessoas (1 senior + 3 juniors)
+- Foco inicial no MVP (C# + PT-BR)
+- Expansao gradual de features
+- Documentacao continua
+- Celebrar milestones!
+
+BOA SORTE COM O PROJETO!
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================

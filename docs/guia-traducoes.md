@@ -80,7 +80,7 @@ Exemplos de codigos:
 
 ### 3. Criar arquivo de traducao
 
-Copiar template e preencher:
+Copiar o template stub (`docs/template.json`) e preencher:
 
 ```json
 {

@@ -1,0 +1,1798 @@
+================================================================================
+PLANO DETALHADO DE IMPLEMENTACAO - MULTILINGUAL CODE EXTENSION
+================================================================================
+
+================================================================================
+VISAO GERAL
+================================================================================
+
+Objetivo: Criar uma extensao modular que traduz codigo-fonte visualmente, 
+mantendo arquivos originais intactos, extensivel para multiplas linguagens de 
+programacao e IDEs.
+
+Principios Fundamentais:
+- Arquivo no disco = SEMPRE linguagem de programacao original (C#, Python, JS, etc)
+- Editor = Mostra versao traduzida (portugues, espanhol, etc)
+- Edicao = Em qualquer idioma humano configurado
+- Salvamento = Traduz de volta para linguagem de programacao original
+- Zero dependencia = Projeto funciona sem a extensao
+
+================================================================================
+ARQUITETURA MODULAR (SEPARATION OF CONCERNS)
+================================================================================
+
++---------------------------------------------------------------------+
+|                   PRESENTATION LAYER (UI)                           |
+|  +--------------+  +--------------+  +--------------+               |
+|  |  VS Code     |  | Visual       |  |  IntelliJ    |               |
+|  |  Extension   |  | Studio Ext   |  |  Plugin      |               |
+|  +--------------+  +--------------+  +--------------+               |
++---------------------------------------------------------------------+
+                            |
+                            v
++---------------------------------------------------------------------+
+|                    IDE ADAPTER LAYER                                |
+|  +----------------------------------------------------------+       |
+|  |  IIDEAdapter Interface                                   |       |
+|  |  - ShowTranslatedContent()                               |       |
+|  |  - CaptureEditEvent()                                    |       |
+|  |  - SaveOriginalContent()                                 |       |
+|  |  - ProvideAutocomplete()                                 |       |
+|  +----------------------------------------------------------+       |
+|         |                  |                  |                     |
+|  +------v------+  +--------v------+  +--------v------+              |
+|  | VSCode      |  | VisualStudio  |  | IntelliJ      |              |
+|  | Adapter     |  | Adapter       |  | Adapter       |              |
+|  +-------------+  +---------------+  +---------------+              |
++---------------------------------------------------------------------+
+                            |
+                            v
++---------------------------------------------------------------------+
+|                    CORE TRANSLATION ENGINE                          |
+|  +----------------------------------------------------------+       |
+|  |  TranslationOrchestrator                                 |       |
+|  |  - Coordinates language <-> natural language             |       |
+|  +----------------------------------------------------------+       |
+|         |                                                            |
+|  +------v----------------------------------------------+             |
+|  |  LanguageRegistry                                  |             |
+|  |  - RegisterLanguage(ILanguageAdapter)              |             |
+|  |  - GetAdapter(fileExtension)                       |             |
+|  +----------------------------------------------------+             |
++---------------------------------------------------------------------+
+                            |
+                            v
++---------------------------------------------------------------------+
+|               LANGUAGE ADAPTER LAYER                                |
+|  +----------------------------------------------------------+       |
+|  |  ILanguageAdapter Interface                              |       |
+|  |  - Parse(code) -> AST                                    |       |
+|  |  - Generate(AST) -> code                                 |       |
+|  |  - GetKeywordMap() -> Dictionary                         |       |
+|  |  - ValidateSyntax(code) -> bool                          |       |
+|  +----------------------------------------------------------+       |
+|         |                  |                  |                     |
+|  +------v------+  +--------v------+  +--------v------+              |
+|  | CSharp      |  | Python        |  | JavaScript    |              |
+|  | Adapter     |  | Adapter       |  | Adapter       |              |
+|  +-------------+  +---------------+  +---------------+              |
++---------------------------------------------------------------------+
+                            |
+                            v
++---------------------------------------------------------------------+
+|                 NATURAL LANGUAGE LAYER                              |
+|  +----------------------------------------------------------+       |
+|  |  NaturalLanguageProvider                                 |       |
+|  |  - LoadTranslationTables(pt-br, es-es, etc)             |       |
+|  |  - TranslateKeyword(keyword, targetLang)                 |       |
+|  |  - TranslateIdentifier(identifier, context)              |       |
+|  +----------------------------------------------------------+       |
++---------------------------------------------------------------------+
+                            |
+                            v
++---------------------------------------------------------------------+
+|                    DATA LAYER (JSON)                                |
+|  +--------------+  +--------------+  +--------------+               |
+|  | csharp-      |  | python-      |  | javascript-  |               |
+|  | keywords.json|  | keywords.json|  | keywords.json|               |
+|  +--------------+  +--------------+  +--------------+               |
+|  +--------------+  +--------------+                                 |
+|  | pt-br.json   |  | es-es.json   |  ...                            |
+|  +--------------+  +--------------+                                 |
++---------------------------------------------------------------------+
+
+================================================================================
+ESTRUTURA DE PASTAS COMPLETA
+================================================================================
+
+MultiLingualCode/
+|
++-- packages/
+|   |
+|   +-- core/                                    # Core Engine (C#/.NET)
+|   |   +-- MultiLingualCode.Core/
+|   |   |   +-- Interfaces/
+|   |   |   |   +-- ILanguageAdapter.cs          # Interface para adaptadores de linguagem
+|   |   |   |   +-- IIDEAdapter.cs               # Interface para adaptadores de IDE
+|   |   |   |   +-- INaturalLanguageProvider.cs  # Interface para idiomas humanos
+|   |   |   |
+|   |   |   +-- Models/
+|   |   |   |   +-- AST/
+|   |   |   |   |   +-- ASTNode.cs               # No base da AST
+|   |   |   |   |   +-- KeywordNode.cs           # No de keyword
+|   |   |   |   |   +-- IdentifierNode.cs        # No de identificador
+|   |   |   |   |   +-- LiteralNode.cs           # No de literal
+|   |   |   |   +-- Translation/
+|   |   |   |   |   +-- KeywordTable.cs          # Tabela de keywords
+|   |   |   |   |   +-- LanguageTable.cs         # Tabela de idioma humano
+|   |   |   |   |   +-- IdentifierMap.cs         # Mapa de identificadores traduzidos
+|   |   |   |   +-- Configuration/
+|   |   |   |       +-- LanguageConfig.cs        # Config de linguagem de programacao
+|   |   |   |       +-- UserPreferences.cs       # Preferencias do usuario
+|   |   |   |
+|   |   |   +-- Services/
+|   |   |   |   +-- TranslationOrchestrator.cs   # Coordena todo processo de traducao
+|   |   |   |   +-- LanguageRegistry.cs          # Registra adaptadores disponiveis
+|   |   |   |   +-- NaturalLanguageProvider.cs   # Prove traducoes PT/ES/etc
+|   |   |   |   +-- IdentifierMapper.cs          # Mapeia identificadores customizados
+|   |   |   |
+|   |   |   +-- LanguageAdapters/                # Adaptadores para cada linguagem
+|   |   |   |   +-- CSharpAdapter.cs             # Adapter para C#
+|   |   |   |   +-- PythonAdapter.cs             # Adapter para Python
+|   |   |   |   +-- JavaScriptAdapter.cs         # Adapter para JavaScript
+|   |   |   |   +-- TypeScriptAdapter.cs         # Adapter para TypeScript
+|   |   |   |
+|   |   |   +-- Parsers/
+|   |   |   |   +-- GenericParser.cs             # Parser generico base
+|   |   |   |   +-- Tokenizer.cs                 # Tokenizador universal
+|   |   |   |
+|   |   |   +-- Utilities/
+|   |   |       +-- FileSystemHelper.cs
+|   |   |       +-- JsonLoader.cs
+|   |   |
+|   |   +-- MultiLingualCode.Core.Tests/
+|   |       +-- TranslationTests.cs
+|   |       +-- AdapterTests.cs
+|   |
+|   +-- ide-adapters/                            # Adaptadores para IDEs
+|   |   |
+|   |   +-- vscode/                              # VS Code Extension
+|   |   |   +-- src/
+|   |   |   |   +-- extension.ts                 # Entry point
+|   |   |   |   |
+|   |   |   |   +-- adapters/
+|   |   |   |   |   +-- VSCodeIDEAdapter.ts      # Implementa IIDEAdapter
+|   |   |   |   |
+|   |   |   |   +-- providers/
+|   |   |   |   |   +-- TranslatedContentProvider.ts    # Mostra codigo traduzido
+|   |   |   |   |   +-- EditInterceptor.ts              # Intercepta edicoes
+|   |   |   |   |   +-- SaveHandler.ts                  # Salva traduzido de volta
+|   |   |   |   |   +-- CompletionProvider.ts           # Autocomplete traduzido
+|   |   |   |   |   +-- HoverProvider.ts                # Tooltips com traducoes
+|   |   |   |   |   +-- DiagnosticsProvider.ts          # Erros/warnings traduzidos
+|   |   |   |   |
+|   |   |   |   +-- services/
+|   |   |   |   |   +-- CoreBridge.ts            # Ponte para MultiLingualCode.Core
+|   |   |   |   |   +-- ConfigurationService.ts
+|   |   |   |   |   +-- LanguageDetector.ts
+|   |   |   |   |
+|   |   |   |   +-- ui/
+|   |   |   |       +-- LanguageSelector.ts      # Selector de idioma humano
+|   |   |   |       +-- StatusBar.ts             # Mostra idioma ativo
+|   |   |   |
+|   |   |   +-- syntaxes/
+|   |   |   |   +-- mlc-csharp.tmLanguage.json
+|   |   |   |   +-- mlc-python.tmLanguage.json
+|   |   |   |   +-- mlc-javascript.tmLanguage.json
+|   |   |   |
+|   |   |   +-- package.json
+|   |   |   +-- tsconfig.json
+|   |   |   +-- README.md
+|   |   |
+|   |   +-- visualstudio/                        # Visual Studio Extension (futuro)
+|   |   |   +-- (estrutura similar)
+|   |   |
+|   |   +-- intellij/                            # IntelliJ Plugin (futuro)
+|   |       +-- (estrutura similar)
+|   |
+|   +-- cli/                                     # CLI Tool (opcional)
+|       +-- MultiLingualCode.CLI/
+|           +-- Program.cs
+|           +-- Commands/
+|               +-- TranslateCommand.cs
+|               +-- ValidateCommand.cs
+|
++-- languages/                                   # Tabelas de Traducao
+|   +-- programming-languages/
+|   |   +-- csharp/
+|   |   |   +-- keywords-base.json              # Keywords C# -> IDs
+|   |   |   +-- metadata.json                   # Info sobre C#
+|   |   +-- python/
+|   |   |   +-- keywords-base.json
+|   |   |   +-- metadata.json
+|   |   +-- javascript/
+|   |       +-- keywords-base.json
+|   |       +-- metadata.json
+|   |
+|   +-- natural-languages/
+|       +-- pt-br/
+|       |   +-- csharp.json                     # ID -> PT-BR para C#
+|       |   +-- python.json                     # ID -> PT-BR para Python
+|       |   +-- javascript.json                 # ID -> PT-BR para JS
+|       |   +-- common-identifiers.json         # Termos comuns de programacao
+|       +-- es-es/
+|       |   +-- csharp.json
+|       |   +-- python.json
+|       |   +-- javascript.json
+|       +-- fr-fr/
+|           +-- (estrutura similar)
+|
++-- examples/                                    # Exemplos
+|   +-- csharp/
+|   |   +-- HelloWorld/
+|   |   |   +-- Program.cs                      # C# original
+|   |   |   +-- .multilingual/                  # Config da extensao
+|   |   |   |   +-- identifier-map.json         # Mapeamento de identificadores
+|   |   |   +-- README.md                       # Como testar
+|   |   +-- Calculator/
+|   |       +-- Calculator.cs
+|   |       +-- .multilingual/
+|   |           +-- identifier-map.json
+|   |
+|   +-- python/
+|   |   +-- data-analysis/
+|   |       +-- analyzer.py
+|   |       +-- .multilingual/
+|   |
+|   +-- javascript/
+|       +-- web-app/
+|           +-- app.js
+|           +-- .multilingual/
+|
++-- docs/                                        # Documentacao
+|   +-- architecture/
+|   |   +-- overview.md
+|   |   +-- core-design.md
+|   |   +-- adapter-pattern.md
+|   |   +-- extending-guide.md
+|   +-- user-guide/
+|   |   +-- installation.md
+|   |   +-- getting-started.md
+|   |   +-- configuration.md
+|   |   +-- troubleshooting.md
+|   +-- developer-guide/
+|       +-- adding-new-language.md              # Como adicionar Python, Java, etc
+|       +-- adding-new-ide.md                   # Como criar adapter para IntelliJ
+|       +-- creating-translations.md            # Como criar pt-br, es-es, etc
+|       +-- api-reference.md
+|
++-- tests/
+|   +-- integration/
+|   |   +-- csharp-translation.test.ts
+|   |   +-- python-translation.test.ts
+|   +-- unit/
+|       +-- (testes especificos)
+|
++-- .github/
+|   +-- workflows/
+|       +-- build-core.yml
+|       +-- build-vscode.yml
+|       +-- test.yml
+|
++-- README.md
++-- LICENSE
++-- CONTRIBUTING.md
+
+================================================================================
+IMPLEMENTACAO DETALHADA
+================================================================================
+
+--------------------------------------------------------------------------------
+FASE 1: CORE ENGINE (SEMANAS 1-3)
+--------------------------------------------------------------------------------
+
+### 1.1 - INTERFACES BASE ###
+
+// MultiLingualCode.Core/Interfaces/ILanguageAdapter.cs
+
+namespace MultiLingualCode.Core.Interfaces
+{
+    /// <summary>
+    /// Interface que todo adaptador de linguagem de programacao deve implementar
+    /// Permite suporte a C#, Python, JavaScript, etc.
+    /// </summary>
+    public interface ILanguageAdapter
+    {
+        /// <summary>
+        /// Nome da linguagem (ex: "CSharp", "Python")
+        /// </summary>
+        string LanguageName { get; }
+        
+        /// <summary>
+        /// Extensoes de arquivo suportadas (ex: [".cs"], [".py"])
+        /// </summary>
+        string[] FileExtensions { get; }
+        
+        /// <summary>
+        /// Versao do adapter
+        /// </summary>
+        string Version { get; }
+        
+        /// <summary>
+        /// Faz parse do codigo-fonte e retorna AST
+        /// </summary>
+        ASTNode Parse(string sourceCode);
+        
+        /// <summary>
+        /// Gera codigo-fonte a partir de uma AST
+        /// </summary>
+        string Generate(ASTNode ast);
+        
+        /// <summary>
+        /// Retorna mapa de keywords da linguagem
+        /// </summary>
+        Dictionary<string, int> GetKeywordMap();
+        
+        /// <summary>
+        /// Valida sintaxe do codigo
+        /// </summary>
+        ValidationResult ValidateSyntax(string sourceCode);
+        
+        /// <summary>
+        /// Detecta identificadores customizados no codigo
+        /// </summary>
+        List<string> ExtractIdentifiers(string sourceCode);
+    }
+}
+
+// MultiLingualCode.Core/Interfaces/IIDEAdapter.cs
+
+namespace MultiLingualCode.Core.Interfaces
+{
+    /// <summary>
+    /// Interface para adaptadores de IDE
+    /// Permite suporte a VS Code, Visual Studio, IntelliJ, etc.
+    /// </summary>
+    public interface IIDEAdapter
+    {
+        /// <summary>
+        /// Nome da IDE
+        /// </summary>
+        string IDEName { get; }
+        
+        /// <summary>
+        /// Mostra conteudo traduzido no editor
+        /// </summary>
+        Task ShowTranslatedContentAsync(string filePath, string translatedContent);
+        
+        /// <summary>
+        /// Captura evento de edicao do usuario
+        /// </summary>
+        Task<EditEvent> CaptureEditEventAsync();
+        
+        /// <summary>
+        /// Salva conteudo original (nao traduzido) no disco
+        /// </summary>
+        Task SaveOriginalContentAsync(string filePath, string originalContent);
+        
+        /// <summary>
+        /// Fornece autocomplete baseado em traducoes
+        /// </summary>
+        Task<List<CompletionItem>> ProvideAutocompleteAsync(string partialText, int position);
+        
+        /// <summary>
+        /// Mostra diagnosticos (erros/warnings) traduzidos
+        /// </summary>
+        Task ShowDiagnosticsAsync(List<Diagnostic> diagnostics);
+    }
+}
+
+// MultiLingualCode.Core/Interfaces/INaturalLanguageProvider.cs
+
+namespace MultiLingualCode.Core.Interfaces
+{
+    /// <summary>
+    /// Provedor de idiomas humanos (portugues, espanhol, etc)
+    /// </summary>
+    public interface INaturalLanguageProvider
+    {
+        /// <summary>
+        /// Codigo do idioma (ex: "pt-br", "es-es")
+        /// </summary>
+        string LanguageCode { get; }
+        
+        /// <summary>
+        /// Nome do idioma (ex: "Portugues Brasileiro")
+        /// </summary>
+        string LanguageName { get; }
+        
+        /// <summary>
+        /// Carrega tabelas de traducao para uma linguagem de programacao especifica
+        /// </summary>
+        Task LoadTranslationTableAsync(string programmingLanguage);
+        
+        /// <summary>
+        /// Traduz keyword (ID -> idioma humano)
+        /// </summary>
+        string TranslateKeyword(int keywordId);
+        
+        /// <summary>
+        /// Traduz keyword reverso (idioma humano -> ID)
+        /// </summary>
+        int ReverseTranslateKeyword(string translatedKeyword);
+        
+        /// <summary>
+        /// Traduz identificador customizado baseado em contexto
+        /// </summary>
+        string TranslateIdentifier(string identifier, IdentifierContext context);
+        
+        /// <summary>
+        /// Sugere traducao para novo identificador
+        /// </summary>
+        string SuggestTranslation(string originalIdentifier);
+    }
+}
+
+### 1.2 - MODELS AST ###
+
+// MultiLingualCode.Core/Models/AST/ASTNode.cs
+
+namespace MultiLingualCode.Core.Models.AST
+{
+    public abstract class ASTNode
+    {
+        public int StartPosition { get; set; }
+        public int EndPosition { get; set; }
+        public ASTNode? Parent { get; set; }
+        public List<ASTNode> Children { get; set; } = new();
+        
+        public abstract string ToCode(ILanguageAdapter adapter);
+        public abstract ASTNode Clone();
+    }
+    
+    public class KeywordNode : ASTNode
+    {
+        public int KeywordId { get; set; }
+        public string OriginalKeyword { get; set; } = string.Empty;
+        
+        public override string ToCode(ILanguageAdapter adapter)
+        {
+            var map = adapter.GetKeywordMap();
+            return map.First(kvp => kvp.Value == KeywordId).Key;
+        }
+        
+        public override ASTNode Clone()
+        {
+            return new KeywordNode 
+            { 
+                KeywordId = this.KeywordId,
+                OriginalKeyword = this.OriginalKeyword
+            };
+        }
+    }
+    
+    public class IdentifierNode : ASTNode
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool IsTranslatable { get; set; } // Se tem "tradu"
+        public string? TranslatedName { get; set; }
+        
+        public override string ToCode(ILanguageAdapter adapter)
+        {
+            return Name;
+        }
+        
+        public override ASTNode Clone()
+        {
+            return new IdentifierNode 
+            { 
+                Name = this.Name,
+                IsTranslatable = this.IsTranslatable,
+                TranslatedName = this.TranslatedName
+            };
+        }
+    }
+    
+    public class LiteralNode : ASTNode
+    {
+        public object Value { get; set; } = null!;
+        public LiteralType Type { get; set; }
+        public bool IsTranslatable { get; set; }
+        
+        public override string ToCode(ILanguageAdapter adapter)
+        {
+            if (Type == LiteralType.String)
+                return $"\"{Value}\"";
+            return Value.ToString() ?? "";
+        }
+        
+        public override ASTNode Clone()
+        {
+            return new LiteralNode 
+            { 
+                Value = this.Value,
+                Type = this.Type,
+                IsTranslatable = this.IsTranslatable
+            };
+        }
+    }
+    
+    public enum LiteralType
+    {
+        String,
+        Number,
+        Boolean,
+        Null
+    }
+}
+
+### 1.3 - TRANSLATION ORCHESTRATOR ###
+
+// MultiLingualCode.Core/Services/TranslationOrchestrator.cs
+
+namespace MultiLingualCode.Core.Services
+{
+    /// <summary>
+    /// Coordena todo o processo de traducao
+    /// </summary>
+    public class TranslationOrchestrator
+    {
+        private readonly LanguageRegistry _languageRegistry;
+        private readonly NaturalLanguageProvider _naturalLanguageProvider;
+        private readonly IdentifierMapper _identifierMapper;
+        
+        public TranslationOrchestrator(
+            LanguageRegistry languageRegistry,
+            NaturalLanguageProvider naturalLanguageProvider,
+            IdentifierMapper identifierMapper)
+        {
+            _languageRegistry = languageRegistry;
+            _naturalLanguageProvider = naturalLanguageProvider;
+            _identifierMapper = identifierMapper;
+        }
+        
+        /// <summary>
+        /// Traduz codigo de linguagem de programacao -> idioma humano
+        /// Ex: C# -> Portugues
+        /// </summary>
+        public async Task<string> TranslateToNaturalLanguageAsync(
+            string sourceCode, 
+            string fileExtension, 
+            string targetLanguage)
+        {
+            // 1. Obter adapter apropriado
+            var adapter = _languageRegistry.GetAdapter(fileExtension);
+            if (adapter == null)
+                throw new UnsupportedLanguageException($"No adapter for {fileExtension}");
+            
+            // 2. Parse codigo -> AST
+            var ast = adapter.Parse(sourceCode);
+            
+            // 3. Carregar tabela de traducao
+            await _naturalLanguageProvider.LoadTranslationTableAsync(adapter.LanguageName);
+            
+            // 4. Traduzir AST
+            var translatedAst = TranslateAST(ast, targetLanguage);
+            
+            // 5. Gerar codigo traduzido
+            return GenerateTranslatedCode(translatedAst, adapter);
+        }
+        
+        /// <summary>
+        /// Traduz de idioma humano -> linguagem de programacao
+        /// Ex: Portugues -> C#
+        /// </summary>
+        public async Task<string> TranslateFromNaturalLanguageAsync(
+            string translatedCode,
+            string fileExtension,
+            string sourceLanguage)
+        {
+            // Processo reverso
+            var adapter = _languageRegistry.GetAdapter(fileExtension);
+            await _naturalLanguageProvider.LoadTranslationTableAsync(adapter.LanguageName);
+            
+            // Parse codigo traduzido
+            var translatedAst = ParseTranslatedCode(translatedCode, sourceLanguage);
+            
+            // Converter de volta para linguagem original
+            var originalAst = ReverseTranslateAST(translatedAst, adapter);
+            
+            // Gerar codigo original
+            return adapter.Generate(originalAst);
+        }
+        
+        private ASTNode TranslateAST(ASTNode node, string targetLanguage)
+        {
+            var translated = node.Clone();
+            
+            if (node is KeywordNode keywordNode)
+            {
+                var translatedKeyword = _naturalLanguageProvider
+                    .TranslateKeyword(keywordNode.KeywordId);
+                
+                // Criar novo no com keyword traduzida
+                ((KeywordNode)translated).OriginalKeyword = translatedKeyword;
+            }
+            else if (node is IdentifierNode identifierNode && identifierNode.IsTranslatable)
+            {
+                var translatedName = _identifierMapper
+                    .GetTranslation(identifierNode.Name, targetLanguage);
+                
+                ((IdentifierNode)translated).TranslatedName = translatedName;
+            }
+            else if (node is LiteralNode literalNode && literalNode.IsTranslatable)
+            {
+                // Traduzir strings literais se marcadas com tradu
+                var translatedValue = _identifierMapper
+                    .GetLiteralTranslation(literalNode.Value.ToString()!, targetLanguage);
+                
+                ((LiteralNode)translated).Value = translatedValue;
+            }
+            
+            // Recursivo para filhos
+            foreach (var child in node.Children)
+            {
+                translated.Children.Add(TranslateAST(child, targetLanguage));
+            }
+            
+            return translated;
+        }
+        
+        private ASTNode ReverseTranslateAST(ASTNode node, ILanguageAdapter adapter)
+        {
+            // Implementacao similar, mas reversa
+            // ...
+            throw new NotImplementedException();
+        }
+        
+        private string GenerateTranslatedCode(ASTNode ast, ILanguageAdapter adapter)
+        {
+            // Gera codigo com keywords traduzidas mas estrutura preservada
+            // ...
+            throw new NotImplementedException();
+        }
+        
+        private ASTNode ParseTranslatedCode(string code, string language)
+        {
+            // Parse codigo que esta em idioma humano
+            // ...
+            throw new NotImplementedException();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+FASE 2: LANGUAGE ADAPTERS (SEMANAS 4-6)
+--------------------------------------------------------------------------------
+
+### 2.1 - C# ADAPTER ###
+
+// MultiLingualCode.Core/LanguageAdapters/CSharpAdapter.cs
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace MultiLingualCode.Core.LanguageAdapters
+{
+    public class CSharpAdapter : ILanguageAdapter
+    {
+        public string LanguageName => "CSharp";
+        public string[] FileExtensions => new[] { ".cs" };
+        public string Version => "1.0.0";
+        
+        private Dictionary<string, int>? _keywordMap;
+        
+        public ASTNode Parse(string sourceCode)
+        {
+            // Usa Roslyn para parse
+            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+            var root = syntaxTree.GetRoot();
+            
+            // Converte Roslyn AST -> Nossa AST
+            return ConvertToCustomAST(root);
+        }
+        
+        public string Generate(ASTNode ast)
+        {
+            // Converte nossa AST -> Codigo C#
+            return ast.ToCode(this);
+        }
+        
+        public Dictionary<string, int> GetKeywordMap()
+        {
+            if (_keywordMap == null)
+            {
+                // Carrega do JSON
+                var json = File.ReadAllText("languages/programming-languages/csharp/keywords-base.json");
+                _keywordMap = JsonSerializer.Deserialize<Dictionary<string, int>>(json)!;
+            }
+            return _keywordMap;
+        }
+        
+        public ValidationResult ValidateSyntax(string sourceCode)
+        {
+            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+            var diagnostics = syntaxTree.GetDiagnostics();
+            
+            return new ValidationResult
+            {
+                IsValid = !diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error),
+                Errors = diagnostics
+                    .Where(d => d.Severity == DiagnosticSeverity.Error)
+                    .Select(d => d.GetMessage())
+                    .ToList()
+            };
+        }
+        
+        public List<string> ExtractIdentifiers(string sourceCode)
+        {
+            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+            var root = syntaxTree.GetRoot();
+            
+            var identifiers = new List<string>();
+            
+            // Encontra todos os identificadores (variaveis, metodos, classes)
+            var identifierNodes = root.DescendantNodes()
+                .OfType<IdentifierNameSyntax>();
+            
+            foreach (var identifier in identifierNodes)
+            {
+                identifiers.Add(identifier.Identifier.Text);
+            }
+            
+            return identifiers.Distinct().ToList();
+        }
+        
+        private ASTNode ConvertToCustomAST(SyntaxNode roslynNode)
+        {
+            // Converte cada tipo de no Roslyn para nosso modelo
+            return roslynNode switch
+            {
+                IfStatementSyntax ifStatement => ConvertIfStatement(ifStatement),
+                VariableDeclarationSyntax varDecl => ConvertVariableDeclaration(varDecl),
+                // ... outros tipos
+                _ => throw new NotSupportedException($"Node type {roslynNode.GetType()} not supported yet")
+            };
+        }
+        
+        private ASTNode ConvertIfStatement(IfStatementSyntax ifStatement)
+        {
+            // Converte if do Roslyn para nossa AST
+            var keywordNode = new KeywordNode 
+            { 
+                KeywordId = GetKeywordMap()["if"],
+                OriginalKeyword = "if"
+            };
+            
+            // ... adiciona condicao, corpo, etc
+            
+            return keywordNode;
+        }
+        
+        private ASTNode ConvertVariableDeclaration(VariableDeclarationSyntax varDecl)
+        {
+            // Similar para declaracao de variaveis
+            throw new NotImplementedException();
+        }
+    }
+}
+
+### 2.2 - PYTHON ADAPTER ###
+
+// MultiLingualCode.Core/LanguageAdapters/PythonAdapter.cs
+
+namespace MultiLingualCode.Core.LanguageAdapters
+{
+    public class PythonAdapter : ILanguageAdapter
+    {
+        public string LanguageName => "Python";
+        public string[] FileExtensions => new[] { ".py" };
+        public string Version => "1.0.0";
+        
+        public ASTNode Parse(string sourceCode)
+        {
+            // Opcao 1: Usar biblioteca como IronPython
+            // Opcao 2: Chamar Python via processo e usar ast module
+            // Opcao 3: Parser simples customizado
+            
+            // Por simplicidade, vou mostrar abordagem de processo
+            return ParseViaPythonProcess(sourceCode);
+        }
+        
+        private ASTNode ParseViaPythonProcess(string sourceCode)
+        {
+            // Cria script Python temporario que usa ast.parse
+            var tempScript = Path.GetTempFileName() + ".py";
+            File.WriteAllText(tempScript, @"
+import ast
+import json
+import sys
+
+code = sys.stdin.read()
+tree = ast.parse(code)
+
+# Converte AST para JSON
+def ast_to_dict(node):
+    result = {'type': node.__class__.__name__}
+    for field, value in ast.iter_fields(node):
+        if isinstance(value, list):
+            result[field] = [ast_to_dict(x) if isinstance(x, ast.AST) else x for x in value]
+        elif isinstance(value, ast.AST):
+            result[field] = ast_to_dict(value)
+        else:
+            result[field] = value
+    return result
+
+print(json.dumps(ast_to_dict(tree)))
+");
+            
+            // Executa e captura JSON
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "python",
+                    Arguments = tempScript,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false
+                }
+            };
+            
+            process.Start();
+            process.StandardInput.Write(sourceCode);
+            process.StandardInput.Close();
+            
+            var jsonAst = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            
+            // Converte JSON -> Nossa AST
+            return ConvertPythonASTToCustom(jsonAst);
+        }
+        
+        public string Generate(ASTNode ast)
+        {
+            // Gera codigo Python a partir da AST
+            throw new NotImplementedException();
+        }
+        
+        public Dictionary<string, int> GetKeywordMap()
+        {
+            var json = File.ReadAllText("languages/programming-languages/python/keywords-base.json");
+            return JsonSerializer.Deserialize<Dictionary<string, int>>(json)!;
+        }
+        
+        // ... outras implementacoes
+    }
+}
+
+--------------------------------------------------------------------------------
+FASE 3: VS CODE EXTENSION (SEMANAS 7-10)
+--------------------------------------------------------------------------------
+
+### 3.1 - EXTENSION ENTRY POINT ###
+
+// vscode-extension/src/extension.ts
+
+import * as vscode from 'vscode';
+import { VSCodeIDEAdapter } from './adapters/VSCodeIDEAdapter';
+import { CoreBridge } from './services/CoreBridge';
+import { TranslatedContentProvider } from './providers/TranslatedContentProvider';
+import { EditInterceptor } from './providers/EditInterceptor';
+import { SaveHandler } from './providers/SaveHandler';
+import { LanguageSelector } from './ui/LanguageSelector';
+
+export function activate(context: vscode.ExtensionContext) {
+    console.log('MultiLingual Code Extension activated!');
+    
+    // 1. Inicializar bridge com Core C#
+    const coreBridge = new CoreBridge(context);
+    
+    // 2. Criar adapter VS Code
+    const ideAdapter = new VSCodeIDEAdapter(coreBridge);
+    
+    // 3. Registrar providers
+    const contentProvider = new TranslatedContentProvider(coreBridge);
+    const editInterceptor = new EditInterceptor(coreBridge);
+    const saveHandler = new SaveHandler(coreBridge);
+    
+    // 4. Registrar esquema customizado para visualizacao
+    const providerRegistration = vscode.workspace.registerTextDocumentContentProvider(
+        'multilingual',
+        contentProvider
+    );
+    
+    // 5. Command: Ativar/Desativar Traducao
+    const toggleCommand = vscode.commands.registerCommand(
+        'multilingual.toggleTranslation',
+        async () => {
+            const config = vscode.workspace.getConfiguration('multilingual');
+            const currentState = config.get<boolean>('enabled');
+            await config.update('enabled', !currentState, true);
+            
+            vscode.window.showInformationMessage(
+                `Translation ${!currentState ? 'enabled' : 'disabled'}`
+            );
+        }
+    );
+    
+    // 6. Command: Selecionar Idioma
+    const selectLanguageCommand = vscode.commands.registerCommand(
+        'multilingual.selectLanguage',
+        async () => {
+            const languageSelector = new LanguageSelector(coreBridge);
+            await languageSelector.show();
+        }
+    );
+    
+    // 7. Command: Abrir arquivo traduzido
+    const openTranslatedCommand = vscode.commands.registerCommand(
+        'multilingual.openTranslated',
+        async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
+            
+            const uri = editor.document.uri;
+            const translatedUri = uri.with({ scheme: 'multilingual' });
+            
+            const doc = await vscode.workspace.openTextDocument(translatedUri);
+            await vscode.window.showTextDocument(doc, { preview: false });
+        }
+    );
+    
+    // 8. Event: Intercept edit
+    const editSubscription = vscode.workspace.onDidChangeTextDocument(
+        (event) => editInterceptor.handleEdit(event)
+    );
+    
+    // 9. Event: Intercept save
+    const saveSubscription = vscode.workspace.onWillSaveTextDocument(
+        (event) => saveHandler.handleSave(event)
+    );
+    
+    // 10. Status bar item
+    const statusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        100
+    );
+    statusBarItem.command = 'multilingual.selectLanguage';
+    statusBarItem.text = '(globe) PT-BR'; // Default
+    statusBarItem.show();
+    
+    context.subscriptions.push(
+        providerRegistration,
+        toggleCommand,
+        selectLanguageCommand,
+        openTranslatedCommand,
+        editSubscription,
+        saveSubscription,
+        statusBarItem
+    );
+}
+
+export function deactivate() {
+    console.log('MultiLingual Code Extension deactivated');
+}
+
+### 3.2 - CORE BRIDGE (TYPESCRIPT <-> C#) ###
+
+// vscode-extension/src/services/CoreBridge.ts
+
+import * as vscode from 'vscode';
+import * as path from 'path';
+import { spawn, ChildProcess } from 'child_process';
+
+export class CoreBridge {
+    private coreProcess: ChildProcess | null = null;
+    private readonly corePath: string;
+    
+    constructor(context: vscode.ExtensionContext) {
+        // Path para o executavel Core C#
+        this.corePath = path.join(
+            context.extensionPath,
+            'bin',
+            'MultiLingualCode.Core.dll'
+        );
+    }
+    
+    /**
+     * Traduz codigo de linguagem de programacao -> idioma humano
+     */
+    async translateToNaturalLanguage(
+        sourceCode: string,
+        fileExtension: string,
+        targetLanguage: string
+    ): Promise<string> {
+        return this.invokeCore('TranslateToNaturalLanguage', {
+            sourceCode,
+            fileExtension,
+            targetLanguage
+        });
+    }
+    
+    /**
+     * Traduz de idioma humano -> linguagem de programacao
+     */
+    async translateFromNaturalLanguage(
+        translatedCode: string,
+        fileExtension: string,
+        sourceLanguage: string
+    ): Promise<string> {
+        return this.invokeCore('TranslateFromNaturalLanguage', {
+            translatedCode,
+            fileExtension,
+            sourceLanguage
+        });
+    }
+    
+    /**
+     * Valida sintaxe do codigo
+     */
+    async validateSyntax(
+        sourceCode: string,
+        fileExtension: string
+    ): Promise<ValidationResult> {
+        return this.invokeCore('ValidateSyntax', {
+            sourceCode,
+            fileExtension
+        });
+    }
+    
+    /**
+     * Obtem autocomplete suggestions
+     */
+    async getCompletions(
+        sourceCode: string,
+        position: number,
+        fileExtension: string,
+        language: string
+    ): Promise<CompletionItem[]> {
+        return this.invokeCore('GetCompletions', {
+            sourceCode,
+            position,
+            fileExtension,
+            language
+        });
+    }
+    
+    /**
+     * Invoca metodo no Core C# via processo
+     */
+    private async invokeCore(method: string, params: any): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const process = spawn('dotnet', [
+                this.corePath,
+                '--method', method,
+                '--params', JSON.stringify(params)
+            ]);
+            
+            let stdout = '';
+            let stderr = '';
+            
+            process.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+            
+            process.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+            
+            process.on('close', (code) => {
+                if (code !== 0) {
+                    reject(new Error(`Core process failed: ${stderr}`));
+                } else {
+                    try {
+                        const result = JSON.parse(stdout);
+                        resolve(result);
+                    } catch (e) {
+                        reject(new Error(`Failed to parse Core response: ${e}`));
+                    }
+                }
+            });
+        });
+    }
+}
+
+interface ValidationResult {
+    isValid: boolean;
+    errors: string[];
+}
+
+interface CompletionItem {
+    label: string;
+    kind: string;
+    documentation?: string;
+}
+
+### 3.3 - TRANSLATED CONTENT PROVIDER ###
+
+// vscode-extension/src/providers/TranslatedContentProvider.ts
+
+import * as vscode from 'vscode';
+import { CoreBridge } from '../services/CoreBridge';
+
+export class TranslatedContentProvider implements vscode.TextDocumentContentProvider {
+    private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
+    readonly onDidChange = this._onDidChange.event;
+    
+    constructor(private coreBridge: CoreBridge) {}
+    
+    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+        // 1. Obter URI do arquivo original
+        const originalUri = uri.with({ scheme: 'file' });
+        
+        // 2. Ler codigo original do disco
+        const originalCode = await vscode.workspace.fs.readFile(originalUri);
+        const sourceCode = Buffer.from(originalCode).toString('utf8');
+        
+        // 3. Detectar extensao do arquivo
+        const fileExtension = this.getFileExtension(originalUri.fsPath);
+        
+        // 4. Obter idioma configurado
+        const config = vscode.workspace.getConfiguration('multilingual');
+        const targetLanguage = config.get<string>('language', 'pt-br');
+        
+        // 5. Traduzir via Core
+        try {
+            const translatedCode = await this.coreBridge.translateToNaturalLanguage(
+                sourceCode,
+                fileExtension,
+                targetLanguage
+            );
+            
+            return translatedCode;
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Translation failed: ${error}`
+            );
+            return sourceCode; // Fallback para codigo original
+        }
+    }
+    
+    private getFileExtension(filePath: string): string {
+        const match = filePath.match(/\.([^.]+)$/);
+        return match ? `.${match[1]}` : '';
+    }
+    
+    refresh(uri: vscode.Uri) {
+        this._onDidChange.fire(uri);
+    }
+}
+
+### 3.4 - SAVE HANDLER ###
+
+// vscode-extension/src/providers/SaveHandler.ts
+
+import * as vscode from 'vscode';
+import { CoreBridge } from '../services/CoreBridge';
+
+export class SaveHandler {
+    constructor(private coreBridge: CoreBridge) {}
+    
+    async handleSave(event: vscode.TextDocumentWillSaveEvent) {
+        const document = event.document;
+        
+        // So processar se for esquema multilingual
+        if (document.uri.scheme !== 'multilingual') {
+            return;
+        }
+        
+        // 1. Obter codigo traduzido atual (o que o usuario editou)
+        const translatedCode = document.getText();
+        
+        // 2. Obter extensao do arquivo
+        const fileExtension = this.getFileExtension(document.uri.fsPath);
+        
+        // 3. Obter idioma configurado
+        const config = vscode.workspace.getConfiguration('multilingual');
+        const sourceLanguage = config.get<string>('language', 'pt-br');
+        
+        // 4. Traduzir DE VOLTA para linguagem de programacao original
+        try {
+            const originalCode = await this.coreBridge.translateFromNaturalLanguage(
+                translatedCode,
+                fileExtension,
+                sourceLanguage
+            );
+            
+            // 5. Salvar codigo original no arquivo real
+            const originalUri = document.uri.with({ scheme: 'file' });
+            await vscode.workspace.fs.writeFile(
+                originalUri,
+                Buffer.from(originalCode, 'utf8')
+            );
+            
+            vscode.window.showInformationMessage('File saved successfully');
+        } catch (error) {
+            vscode.window.showErrorMessage(`Save failed: ${error}`);
+        }
+    }
+    
+    private getFileExtension(filePath: string): string {
+        const match = filePath.match(/\.([^.]+)$/);
+        return match ? `.${match[1]}` : '';
+    }
+}
+
+================================================================================
+EXEMPLOS DE TABELAS JSON
+================================================================================
+
+### TABELA BASE C# ###
+
+// languages/programming-languages/csharp/keywords-base.json
+{
+  "version": "1.0.0",
+  "language": "CSharp",
+  "keywords": {
+    "abstract": 0,
+    "as": 1,
+    "base": 2,
+    "bool": 3,
+    "break": 4,
+    "byte": 5,
+    "case": 6,
+    "catch": 7,
+    "char": 8,
+    "checked": 9,
+    "class": 10,
+    "const": 11,
+    "continue": 12,
+    "decimal": 13,
+    "default": 14,
+    "delegate": 15,
+    "do": 16,
+    "double": 17,
+    "else": 18,
+    "enum": 19,
+    "event": 20,
+    "explicit": 21,
+    "extern": 22,
+    "false": 23,
+    "finally": 24,
+    "fixed": 25,
+    "float": 26,
+    "for": 27,
+    "foreach": 28,
+    "goto": 29,
+    "if": 30,
+    "implicit": 31,
+    "in": 32,
+    "int": 33,
+    "interface": 34,
+    "internal": 35,
+    "is": 36,
+    "lock": 37,
+    "long": 38,
+    "namespace": 39,
+    "new": 40,
+    "null": 41,
+    "object": 42,
+    "operator": 43,
+    "out": 44,
+    "override": 45,
+    "params": 46,
+    "private": 47,
+    "protected": 48,
+    "public": 49,
+    "readonly": 50,
+    "ref": 51,
+    "return": 52,
+    "sbyte": 53,
+    "sealed": 54,
+    "short": 55,
+    "sizeof": 56,
+    "stackalloc": 57,
+    "static": 58,
+    "string": 59,
+    "struct": 60,
+    "switch": 61,
+    "this": 62,
+    "throw": 63,
+    "true": 64,
+    "try": 65,
+    "typeof": 66,
+    "uint": 67,
+    "ulong": 68,
+    "unchecked": 69,
+    "unsafe": 70,
+    "ushort": 71,
+    "using": 72,
+    "var": 73,
+    "virtual": 74,
+    "void": 75,
+    "volatile": 76,
+    "while": 77
+  }
+}
+
+### TRADUCAO PT-BR PARA C# ###
+
+// languages/natural-languages/pt-br/csharp.json
+{
+  "version": "1.0.0",
+  "languageCode": "pt-br",
+  "languageName": "Portugues Brasileiro",
+  "programmingLanguage": "CSharp",
+  "compatibleKeywordVersion": "1.0.0",
+  "translations": {
+    "0": "abstrato",
+    "1": "como",
+    "2": "base",
+    "3": "booleano",
+    "4": "parar",
+    "5": "byte",
+    "6": "caso",
+    "7": "capturar",
+    "8": "caractere",
+    "9": "verificado",
+    "10": "classe",
+    "11": "constante",
+    "12": "continuar",
+    "13": "decimal",
+    "14": "padrao",
+    "15": "delegado",
+    "16": "fazer",
+    "17": "duplo",
+    "18": "senao",
+    "19": "enumeracao",
+    "20": "evento",
+    "21": "explicito",
+    "22": "externo",
+    "23": "falso",
+    "24": "finalmente",
+    "25": "fixo",
+    "26": "flutuante",
+    "27": "para",
+    "28": "paracada",
+    "29": "irpara",
+    "30": "se",
+    "31": "implicito",
+    "32": "em",
+    "33": "inteiro",
+    "34": "interface",
+    "35": "interno",
+    "36": "e",
+    "37": "travar",
+    "38": "longo",
+    "39": "espaconome",
+    "40": "novo",
+    "41": "nulo",
+    "42": "objeto",
+    "43": "operador",
+    "44": "saida",
+    "45": "sobrescrever",
+    "46": "parametros",
+    "47": "privado",
+    "48": "protegido",
+    "49": "publico",
+    "50": "somenteleitura",
+    "51": "referencia",
+    "52": "retornar",
+    "53": "sbyte",
+    "54": "selado",
+    "55": "curto",
+    "56": "tamanhode",
+    "57": "alocarpilha",
+    "58": "estatico",
+    "59": "texto",
+    "60": "estrutura",
+    "61": "alternar",
+    "62": "este",
+    "63": "lancar",
+    "64": "verdadeiro",
+    "65": "tentar",
+    "66": "tipode",
+    "67": "uinteiro",
+    "68": "ulongo",
+    "69": "naoverificado",
+    "70": "inseguro",
+    "71": "ucurto",
+    "72": "usando",
+    "73": "variavel",
+    "74": "virtual",
+    "75": "vazio",
+    "76": "volatil",
+    "77": "enquanto"
+  },
+  "commonIdentifiers": {
+    "count": "contagem",
+    "index": "indice",
+    "value": "valor",
+    "name": "nome",
+    "id": "id",
+    "data": "dados",
+    "result": "resultado",
+    "temp": "temporario",
+    "list": "lista",
+    "array": "array",
+    "dictionary": "dicionario",
+    "key": "chave",
+    "user": "usuario",
+    "item": "item",
+    "message": "mensagem",
+    "error": "erro",
+    "success": "sucesso",
+    "failed": "falhou",
+    "total": "total",
+    "sum": "soma",
+    "average": "media"
+  }
+}
+
+### MAPEAMENTO DE IDENTIFICADORES (POR PROJETO) ###
+
+// examples/csharp/Calculator/.multilingual/identifier-map.json
+{
+  "version": "1.0.0",
+  "projectName": "Calculator",
+  "sourceLanguage": "pt-br",
+  "mappings": {
+    "identifiers": {
+      "Calculator": "Calculadora",
+      "Add": "Somar",
+      "Subtract": "Subtrair",
+      "Multiply": "Multiplicar",
+      "Divide": "Dividir",
+      "firstNumber": "primeiroNumero",
+      "secondNumber": "segundoNumero",
+      "result": "resultado",
+      "operationHistory": "historicoOperacoes"
+    },
+    "strings": {
+      "Enter first number: ": "Digite o primeiro numero: ",
+      "Enter second number: ": "Digite o segundo numero: ",
+      "Result: ": "Resultado: ",
+      "Error: Division by zero": "Erro: Divisao por zero",
+      "Invalid operation": "Operacao invalida"
+    }
+  }
+}
+
+================================================================================
+EXEMPLOS PRATICOS DE USO
+================================================================================
+
+### EXEMPLO 1: HELLO WORLD EM C# ###
+
+--- Arquivo Original (Program.cs) ---
+using System;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Hello, World!");
+        }
+    }
+}
+
+--- O que o dev PT-BR ve no VS Code (traduzido) ---
+usando System;
+
+espaconome OlaMundo
+{
+    classe Programa
+    {
+        estatico vazio Principal(texto[] argumentos)
+        {
+            Console.WriteLine("Ola, Mundo!");
+        }
+    }
+}
+
+--- Apos editar e salvar ---
+// Dev PT-BR edita para:
+usando System;
+
+espaconome OlaMundo
+{
+    classe Programa
+    {
+        estatico vazio Principal(texto[] argumentos)
+        {
+            variavel nome = "Marco";
+            Console.WriteLine("Ola, " + nome + "!");
+        }
+    }
+}
+
+// Ao salvar, extensao traduz de volta e salva no disco como:
+using System;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            var name = "Marco";
+            Console.WriteLine("Hello, " + name + "!");
+        }
+    }
+}
+
+### EXEMPLO 2: CALCULADORA COM 'TRADU' ###
+
+--- Arquivo Original (Calculator.cs) ---
+public class Calculator
+{
+    private int operationCount = 0;  // tradu:contagemOperacoes
+    
+    public int Add(int a, int b)  // tradu:Somar,a:primeiroNumero,b:segundoNumero
+    {
+        operationCount++;
+        return a + b;
+    }
+    
+    public void ShowHistory()  // tradu:MostrarHistorico
+    {
+        Console.WriteLine("Total operations: " + operationCount);  // tradu:"Total de operacoes: "
+    }
+}
+
+--- O que dev PT-BR ve ---
+publico classe Calculadora
+{
+    privado inteiro contagemOperacoes = 0;
+    
+    publico inteiro Somar(inteiro primeiroNumero, inteiro segundoNumero)
+    {
+        contagemOperacoes++;
+        retornar primeiroNumero + segundoNumero;
+    }
+    
+    publico vazio MostrarHistorico()
+    {
+        Console.WriteLine("Total de operacoes: " + contagemOperacoes);
+    }
+}
+
+### EXEMPLO 3: PROJETO COLABORATIVO MULTILINGUE ###
+
+Equipe com 3 desenvolvedores:
+- Dev A (Brasil) -> usa extensao PT-BR
+- Dev B (Espanha) -> usa extensao ES-ES  
+- Dev C (EUA) -> nao usa extensao, ve C# puro
+
+TODOS editam o MESMO arquivo Calculator.cs no repositorio Git!
+
+--- Dev A (Brasil) ve: ---
+publico classe Calculadora
+{
+    publico inteiro Somar(inteiro a, inteiro b)
+    {
+        retornar a + b;
+    }
+}
+
+--- Dev B (Espanha) ve: ---
+publico clase Calculadora
+{
+    publico entero Sumar(entero a, entero b)
+    {
+        retornar a + b;
+    }
+}
+
+--- Dev C (EUA) ve: ---
+public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+}
+
+--- Arquivo no Git (sempre C# puro): ---
+public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+}
+
+================================================================================
+COMO ESTENDER PARA NOVAS LINGUAGENS/IDES
+================================================================================
+
+### ADICIONAR NOVA LINGUAGEM DE PROGRAMACAO (PYTHON) ###
+
+1. Criar tabela de keywords
+
+// languages/programming-languages/python/keywords-base.json
+{
+  "version": "1.0.0",
+  "language": "Python",
+  "keywords": {
+    "and": 0,
+    "as": 1,
+    "assert": 2,
+    "break": 3,
+    "class": 4,
+    "continue": 5,
+    "def": 6,
+    "del": 7,
+    "elif": 8,
+    "else": 9,
+    "except": 10,
+    "False": 11,
+    "finally": 12,
+    "for": 13,
+    "from": 14,
+    "global": 15,
+    "if": 16,
+    "import": 17,
+    "in": 18,
+    "is": 19,
+    "lambda": 20,
+    "None": 21,
+    "not": 22,
+    "or": 23,
+    "pass": 24,
+    "raise": 25,
+    "return": 26,
+    "True": 27,
+    "try": 28,
+    "while": 29,
+    "with": 30,
+    "yield": 31
+  }
+}
+
+2. Criar traducoes
+
+// languages/natural-languages/pt-br/python.json
+{
+  "translations": {
+    "0": "e",
+    "1": "como",
+    "4": "classe",
+    "6": "definir",
+    "9": "senao",
+    "16": "se",
+    "26": "retornar",
+    "29": "enquanto"
+    // ...
+  }
+}
+
+3. Implementar PythonAdapter
+
+public class PythonAdapter : ILanguageAdapter
+{
+    // Implementar interface...
+}
+
+4. Registrar no LanguageRegistry
+
+registry.RegisterAdapter(new PythonAdapter());
+
+### ADICIONAR NOVA IDE (INTELLIJ) ###
+
+1. Criar IntelliJIDEAdapter
+
+// Kotlin/Java
+class IntelliJIDEAdapter : IIDEAdapter {
+    override fun showTranslatedContent(filePath: String, content: String) {
+        // Usar IntelliJ API para mostrar conteudo
+    }
+    
+    override fun captureEditEvent(): EditEvent {
+        // Capturar edicoes via listeners
+    }
+    
+    // ...
+}
+
+2. Criar plugin IntelliJ
+
+<!-- plugin.xml -->
+<idea-plugin>
+  <name>MultiLingual Code</name>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileEditorProvider implementation="MultilingualEditorProvider"/>
+  </extensions>
+</idea-plugin>
+
+3. Comunicar com Core
+
+class CoreBridge {
+    fun translateToNaturalLanguage(code: String, ext: String, lang: String): String {
+        // Chamar MultiLingualCode.Core.dll via processo
+    }
+}
+
+================================================================================
+DOCUMENTACAO ADICIONAL
+================================================================================
+
+### GUIA DO DESENVOLVEDOR: CRIAR NOVA TRADUCAO ###
+
+Como Criar uma Nova Traducao
+
+Passo 1: Criar arquivo de traducao
+Copie template: languages/natural-languages/template.json
+Renomeie para: languages/natural-languages/[codigo-idioma]/csharp.json
+
+Passo 2: Preencher traducoes
+Para cada keyword ID, forneca traducao no seu idioma:
+{
+  "30": "se",        // if
+  "18": "senao",     // else
+  "33": "inteiro",   // int
+  ...
+}
+
+Passo 3: Testar
+1. Abra VS Code
+2. Ctrl+Shift+P -> "MultiLingual: Select Language"
+3. Escolha seu novo idioma
+4. Abra arquivo .cs e veja traducao
+
+Passo 4: Contribuir
+1. Fork repositorio
+2. Adicione sua traducao
+3. Pull Request
+
+================================================================================
+CHECKLIST DE IMPLEMENTACAO
+================================================================================
+
+### FASE 1: CORE (3 SEMANAS) ###
+[ ] Interfaces (ILanguageAdapter, IIDEAdapter, INaturalLanguageProvider)
+[ ] Models AST
+[ ] TranslationOrchestrator
+[ ] LanguageRegistry
+[ ] CSharpAdapter basico
+[ ] Testes unitarios Core
+
+### FASE 2: ADAPTERS (3 SEMANAS) ###
+[ ] CSharpAdapter completo (com Roslyn)
+[ ] PythonAdapter
+[ ] JavaScriptAdapter (opcional)
+[ ] NaturalLanguageProvider
+[ ] IdentifierMapper
+[ ] Testes adapters
+
+### FASE 3: VS CODE EXTENSION (4 SEMANAS) ###
+[ ] Setup projeto TypeScript
+[ ] CoreBridge (comunicacao TS <-> C#)
+[ ] TranslatedContentProvider
+[ ] EditInterceptor
+[ ] SaveHandler
+[ ] CompletionProvider
+[ ] HoverProvider
+[ ] Commands (toggle, select language)
+[ ] UI (status bar, selector)
+[ ] Package e publicar
+
+### FASE 4: DOCUMENTACAO E EXEMPLOS (2 SEMANAS) ###
+[ ] README principal
+[ ] Guia do usuario
+[ ] Guia do desenvolvedor
+[ ] Exemplos C# (HelloWorld, Calculator)
+[ ] Exemplos Python
+[ ] Video demonstracao
+[ ] TCC escrito
+
+================================================================================
+RESULTADO FINAL
+================================================================================
+
+Voce tera criado:
+- Extensao VS Code funcional que traduz codigo visualmente
+- Arquitetura modular que suporta multiplas linguagens
+- Sistema extensivel para novas IDEs
+- Tabelas de traducao reutilizaveis
+- Exemplos praticos
+- Documentacao completa
+- TCC diferenciado e inovador
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================

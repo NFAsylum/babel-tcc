@@ -103,11 +103,14 @@ Extension (TS) <──JSON/stdout── Processo .NET (C#)
 ```
 
 Protocolo:
-```json
-// Request
-{ "method": "TranslateToNaturalLanguage", "params": { "sourceCode": "...", "fileExtension": ".cs", "targetLanguage": "pt-br" } }
 
-// Response
+Request:
+```json
+{ "method": "TranslateToNaturalLanguage", "params": { "sourceCode": "...", "fileExtension": ".cs", "targetLanguage": "pt-br" } }
+```
+
+Response:
+```json
 { "result": "codigo traduzido...", "error": null }
 ```
 

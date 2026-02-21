@@ -23,7 +23,7 @@
 git clone https://github.com/NFAsylum/babel-tcc.git
 cd babel-tcc
 
-# Repositorio de traducoes (em pasta separada ou como submódulo)
+# Repositorio de traducoes (em pasta separada ou como submodulo)
 git clone https://github.com/NFAsylum/babel-tcc-translations.git
 ```
 
