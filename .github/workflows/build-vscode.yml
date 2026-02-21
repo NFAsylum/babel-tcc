@@ -1,0 +1,38 @@
+name: Build VS Code Extension
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/ide-adapters/vscode/**'
+      - '.github/workflows/build-vscode.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/ide-adapters/vscode/**'
+      - '.github/workflows/build-vscode.yml'
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: packages/ide-adapters/vscode
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
