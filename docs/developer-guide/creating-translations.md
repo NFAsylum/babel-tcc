@@ -16,15 +16,13 @@ As traducoes sao armazenadas em ficheiros JSON com a seguinte estrutura:
 
 ```json
 {
-  "version": "1.0",
-  "language": "CSharp",
   "keywords": {
-    "10": "class",
-    "30": "if",
-    "18": "else",
-    "75": "void",
-    "33": "int",
-    "52": "return"
+    "class": 10,
+    "if": 30,
+    "else": 18,
+    "void": 75,
+    "int": 33,
+    "return": 52
   }
 }
 ```
@@ -33,10 +31,11 @@ As traducoes sao armazenadas em ficheiros JSON com a seguinte estrutura:
 
 ```json
 {
-  "version": "1.0",
-  "language": "pt-br",
+  "version": "1.0.0",
+  "languageCode": "pt-br",
+  "languageName": "Portugues Brasileiro",
   "programmingLanguage": "CSharp",
-  "keywords": {
+  "translations": {
     "10": "classe",
     "30": "se",
     "18": "senao",
@@ -49,23 +48,24 @@ As traducoes sao armazenadas em ficheiros JSON com a seguinte estrutura:
 
 ## Adicionar novo idioma
 
-1. Criar directorio `translations/natural-languages/<codigo-idioma>/`
-2. Copiar o template: `translations/natural-languages/template.json`
+1. No repositorio `babel-tcc-translations`, criar directorio `natural-languages/<codigo-idioma>/`
+2. Copiar o template: `natural-languages/template.json`
 3. Preencher as traducoes
 4. Testar com o Core
 
 Exemplo para Espanhol (ES-ES):
 
 ```
-translations/natural-languages/es-es/csharp.json
+natural-languages/es-es/csharp.json
 ```
 
 ```json
 {
-  "version": "1.0",
-  "language": "es-es",
+  "version": "1.0.0",
+  "languageCode": "es-es",
+  "languageName": "Espanol",
   "programmingLanguage": "CSharp",
-  "keywords": {
+  "translations": {
     "10": "clase",
     "30": "si",
     "18": "sino",
@@ -92,7 +92,7 @@ As keywords C# estao organizadas por categoria:
 ## Validacao
 
 Verificar que:
-- Todas as 78 keywords C# tem traducao
+- Todas as 77 keywords C# tem traducao
 - IDs numericos correspondem ao keywords-base.json
 - JSON e valido (sem erros de parsing)
 - Nenhuma traducao esta vazia

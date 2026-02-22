@@ -67,6 +67,7 @@ Veja [repos.txt](repos.txt) para detalhes da estrategia de organizacao.
 
 ### ILanguageAdapter
 Cada linguagem de programacao suportada implementa esta interface:
+- `LanguageName` / `FileExtensions` / `Version` -> identificacao do adapter
 - `Parse(code)` -> AST
 - `Generate(AST)` -> code
 - `GetKeywordMap()` -> mapa keyword->ID
@@ -75,6 +76,8 @@ Cada linguagem de programacao suportada implementa esta interface:
 
 ### INaturalLanguageProvider
 Cada idioma humano e provido por esta interface:
+- `LanguageCode` / `LanguageName` -> identificacao do idioma
+- `LoadTranslationTableAsync(programmingLanguage)` -> carrega tabela
 - `TranslateKeyword(id)` -> texto traduzido
 - `ReverseTranslateKeyword(texto)` -> ID
 - `TranslateIdentifier(nome, contexto)` -> nome traduzido
@@ -104,14 +107,18 @@ Extension (TS) <──JSON/stdout── Processo .NET (C#)
 
 Protocolo:
 
-Request:
-```json
-{ "method": "TranslateToNaturalLanguage", "params": { "sourceCode": "...", "fileExtension": ".cs", "targetLanguage": "pt-br" } }
+Request (via argumentos CLI):
+```bash
+dotnet MultiLingualCode.Core.Host.dll \
+  --method TranslateToNaturalLanguage \
+  --params '{"sourceCode":"...","fileExtension":".cs","targetLanguage":"pt-br"}' \
+  --translations /path/to/translations \
+  --project /path/to/project
 ```
 
-Response:
+Response (via stdout):
 ```json
-{ "result": "codigo traduzido...", "error": null }
+{ "success": true, "result": "codigo traduzido...", "error": "" }
 ```
 
 ## Sistema "tradu"
@@ -122,7 +129,7 @@ Desenvolvedores podem anotar identificadores customizados para traducao:
 public int Add(int a, int b)  // tradu:Somar,a:primeiroNumero,b:segundoNumero
 ```
 
-Essas anotacoes sao detectadas pelo `CSharpAdapter` e persistidas em `.multilingual/identifier-map.json`.
+Essas anotacoes sao detectadas pelo `TraduAnnotationParser` e registradas no `IdentifierMapper`, que persiste em `.multilingual/identifier-map.json`.
 
 ## Extensibilidade
 

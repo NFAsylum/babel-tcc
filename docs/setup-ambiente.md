@@ -5,16 +5,11 @@
 | Ferramenta | Versao Minima | Download |
 |---|---|---|
 | .NET SDK | 8.0+ | https://dotnet.microsoft.com/download |
-| Node.js | 18+ | https://nodejs.org |
-| VS Code | 1.80+ | https://code.visualstudio.com |
-| Git | 2.30+ | https://git-scm.com |
+| Node.js | <!-- TODO: verificar versao minima de Node.js necessaria --> | https://nodejs.org |
+| VS Code | 1.85+ | https://code.visualstudio.com |
+| Git | <!-- TODO: verificar versao minima de Git necessaria --> | https://git-scm.com |
 
-### Extensoes VS Code Recomendadas
-
-- C# Dev Kit (Microsoft)
-- ESLint
-- Prettier
-- GitLens
+<!-- TODO: verificar quais extensoes VS Code sao realmente recomendadas/necessarias -->
 
 ## Clonar Repositorios
 
@@ -84,7 +79,8 @@ babel-tcc/
 
 ## Variaveis de Ambiente
 
-Nenhuma variavel de ambiente e necessaria para desenvolvimento local. A extensao encontra o Core automaticamente via caminho relativo.
+Nenhuma variavel de ambiente e necessaria para desenvolvimento local.
+<!-- TODO: verificar como a extensao localiza o binario Core (caminho relativo, configuracao, etc.) -->
 
 ## Problemas Comuns
 

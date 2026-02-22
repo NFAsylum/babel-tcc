@@ -41,7 +41,7 @@ public class PythonAdapter : ILanguageAdapter
         // Reconstruir codigo a partir da AST modificada
     }
 
-    public Dictionary<string, int> GetKeywordMap() => PythonKeywordMap.GetMap();
+    public Dictionary<string, int> GetKeywordMap() => PythonKeywordMap.Map;
 
     public ValidationResult ValidateSyntax(string sourceCode)
     {
@@ -76,7 +76,7 @@ public class PythonKeywordMap
         ["from"] = 103
     };
 
-    public static Dictionary<string, int> GetMap() => Map;
+    public static int GetId(string keyword) => Map.GetValueOrDefault(keyword, -1);
 }
 ```
 
@@ -94,43 +94,41 @@ registry.RegisterAdapter(new PythonAdapter()); // Novo adapter
 
 ## 4. Criar tabelas de traducao
 
-Criar estrutura de ficheiros JSON:
+Criar ficheiros JSON no repositorio `babel-tcc-translations`:
 
 ```
-translations/
-  programming-languages/
-    python/
-      keywords-base.json    # IDs e keywords originais
-  natural-languages/
-    pt-br/
-      python.json           # Traducoes PT-BR
+programming-languages/
+  python/
+    keywords-base.json    # Keywords originais -> IDs
+natural-languages/
+  pt-br/
+    python.json           # Traducoes PT-BR
 ```
 
-**keywords-base.json:**
+**keywords-base.json** (formato: keyword -> ID):
 ```json
 {
-  "version": "1.0",
-  "language": "Python",
   "keywords": {
-    "30": "if",
-    "18": "else",
-    "100": "elif",
-    "22": "for",
-    "78": "while",
-    "101": "def",
-    "10": "class",
-    "52": "return"
+    "if": 30,
+    "else": 18,
+    "elif": 100,
+    "for": 22,
+    "while": 78,
+    "def": 101,
+    "class": 10,
+    "return": 52
   }
 }
 ```
 
-**pt-br/python.json:**
+**pt-br/python.json** (formato: ID -> traducao):
 ```json
 {
-  "version": "1.0",
-  "language": "pt-br",
+  "version": "1.0.0",
+  "languageCode": "pt-br",
+  "languageName": "Portugues Brasileiro",
   "programmingLanguage": "Python",
-  "keywords": {
+  "translations": {
     "30": "se",
     "18": "senao",
     "100": "senaose",

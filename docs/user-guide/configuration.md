@@ -44,7 +44,6 @@ Para projetos que usam identificadores em ingles, criar um ficheiro `.multilingu
 
 ```json
 {
-  "version": "1.0",
   "identifiers": {
     "Calculator": {
       "pt-br": "Calculadora"

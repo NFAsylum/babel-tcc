@@ -127,15 +127,13 @@ vscode/src/
 - Indentacao: 2 espacos
 - UTF-8 sem BOM
 - Ordenar keys alfabeticamente (quando aplicavel)
-- Incluir campo `version` no topo
+- Ficheiros de traducao devem incluir campos `version`, `languageCode`, `languageName`, `programmingLanguage`
 
 ### Schema
 
 Tabela de keywords (`keywords-base.json`):
 ```json
 {
-  "version": "1.0.0",
-  "language": "CSharp",
   "keywords": {
     "if": 30,
     "else": 18,

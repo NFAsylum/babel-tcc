@@ -6,7 +6,7 @@ Obrigado pelo interesse em contribuir! Este documento explica como participar no
 
 ### Reportar bugs
 
-1. Verifique se o bug ja foi reportado nas [Issues](https://github.com/user/babel-tcc/issues)
+1. Verifique se o bug ja foi reportado nas [Issues](https://github.com/NFAsylum/babel-tcc/issues)
 2. Se nao, crie uma nova issue usando o template de bug report
 3. Inclua passos para reproduzir, comportamento esperado e atual
 
@@ -30,7 +30,7 @@ Obrigado pelo interesse em contribuir! Este documento explica como participar no
 ### Pre-requisitos
 
 - .NET 8 SDK
-- Node.js 18+
+- Node.js <!-- TODO: verificar versao minima de Node.js necessaria -->
 - VS Code (para testar a extensao)
 
 ### Build
@@ -88,16 +88,15 @@ babel-tcc/
       MultiLingualCode.Core.Tests/ # Testes unitarios
     ide-adapters/
       vscode/                      # Extensao VS Code
-  translations/                    # Tabelas de traducao
   examples/                        # Exemplos de uso
   docs/                           # Documentacao
 ```
 
 ## Adicionar novas funcionalidades
 
-- **Nova linguagem de programacao**: Ver `docs/developer-guide/adding-new-language.md`
-- **Novo IDE**: Ver `docs/developer-guide/adding-new-ide.md`
-- **Novas traducoes**: Ver `docs/developer-guide/creating-translations.md`
+- **Nova linguagem de programacao**: Ver [docs/developer-guide/adding-new-language.md](docs/developer-guide/adding-new-language.md)
+- **Novo IDE**: Ver [docs/developer-guide/adding-new-ide.md](docs/developer-guide/adding-new-ide.md)
+- **Novas traducoes**: Ver [docs/developer-guide/creating-translations.md](docs/developer-guide/creating-translations.md)
 
 ## Processo de review
 

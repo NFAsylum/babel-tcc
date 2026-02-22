@@ -10,20 +10,16 @@ O repositorio `babel-tcc-translations` contem:
 programming-languages/
 ├── csharp/
 │   └── keywords-base.json       # Keywords C# -> IDs numericos
-├── python/
-│   └── keywords-base.json
-└── javascript/
-    └── keywords-base.json
 
 natural-languages/
 ├── pt-br/
-│   ├── csharp.json              # Traducoes PT-BR para C#
-│   └── common-identifiers.json  # Termos comuns
-├── es-es/
-│   └── csharp.json
+│   └── csharp.json              # Traducoes PT-BR para C#
+├── template.json                # Template para novos idiomas
 └── [seu-idioma]/
     └── csharp.json
 ```
+
+Nota: o repositorio de traducoes e separado (`babel-tcc-translations`). Futuras linguagens de programacao (Python, JavaScript) e idiomas naturais (ES-ES, FR-FR) serao adicionados conforme necessidade.
 
 ## Como Funciona
 
@@ -80,7 +76,7 @@ Exemplos de codigos:
 
 ### 3. Criar arquivo de traducao
 
-Copiar o template stub (`docs/template.json`) e preencher:
+Copiar o template (`natural-languages/template.json` no repositorio `babel-tcc-translations`) e preencher:
 
 ```json
 {
@@ -168,4 +164,4 @@ Abrir Pull Request no GitHub com:
 | 75 | void | Sem retorno |
 | 77 | while | Loop while |
 
-Consultar `programming-languages/csharp/keywords-base.json` para a lista completa de 78 keywords.
+Consultar `programming-languages/csharp/keywords-base.json` para a lista completa de 77 keywords.

@@ -1,7 +1,8 @@
 # Babel TCC - MultiLingual Code
 
-[![Build Core](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml)
-[![Build VS Code](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml)
+<!-- TODO: criar workflows .github/workflows/build-core.yml e build-vscode.yml antes de habilitar badges -->
+<!-- [![Build Core](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml) -->
+<!-- [![Build VS Code](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml) -->
 
 
 Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
@@ -46,7 +47,7 @@ O arquivo no disco permanece **sempre em C# puro**. A traducao e apenas visual.
 
 ## Features
 
-- **Traducao visual de keywords** - Todas as 78 keywords C# traduzidas (if->se, class->classe, void->vazio, etc.)
+- **Traducao visual de keywords** - 77 keywords C# traduzidas (if->se, class->classe, void->vazio, etc.)
 - **Traducao de identificadores** - Nomes de variaveis, metodos e classes via anotacao `// tradu:`
 - **Traducao reversa ao salvar** - Ao salvar, o codigo traduzido volta para C# original no disco
 - **Autocomplete traduzido** - Sugestoes de keywords e identificadores no idioma configurado
@@ -77,18 +78,18 @@ O arquivo no disco permanece **sempre em C# puro**. A traducao e apenas visual.
 git clone https://github.com/NFAsylum/babel-tcc.git
 cd babel-tcc/packages/ide-adapters/vscode
 npm install
-npm run package
+npm run build
 ```
 
-Instalar o `.vsix` gerado: Extensions > ... > Install from VSIX.
+<!-- TODO: adicionar script "package" ao package.json para gerar .vsix -->
 
 ## Linguagens Suportadas
 
 | Linguagem de Programacao | Idioma Natural | Status |
 |--------------------------|---------------|--------|
 | C# | Portugues (PT-BR) | Suportado |
-| Python | - | Planejado |
-| JavaScript | - | Planejado |
+| Python | - | Futuro |
+| JavaScript | - | Futuro |
 
 ## Arquitetura
 
@@ -158,9 +159,9 @@ publico classe Calculadora
 
 - **Core:** C# / .NET 8, Microsoft.CodeAnalysis (Roslyn)
 - **Extension:** TypeScript, VS Code Extension API
-- **Testes:** xUnit (C#), 251+ testes
+- **Testes:** xUnit (C#), 277+ testes
 - **CI/CD:** GitHub Actions
-- **Traducoes:** JSON com schema validation
+- **Traducoes:** JSON
 
 ## Estrutura do Projeto
 
@@ -170,7 +171,7 @@ babel-tcc/
     core/
       MultiLingualCode.Core/        # Motor de traducao
       MultiLingualCode.Core.Host/   # CLI para comunicacao TS<->C#
-      MultiLingualCode.Core.Tests/  # Testes xUnit (251+)
+      MultiLingualCode.Core.Tests/  # Testes xUnit (277+)
     ide-adapters/
       vscode/                       # Extensao VS Code
         src/
@@ -191,7 +192,6 @@ babel-tcc/
 - [Decisoes Tecnicas](docs/decisoes-tecnicas.md) - Registro de decisoes e justificativas
 - [Guia do Usuario](docs/user-guide/) - Instalacao, uso e configuracao
 - [Guia do Desenvolvedor](docs/developer-guide/) - Como estender o projeto
-- [Resultado da PoC](docs/poc-resultado.md) - Validacao de viabilidade tecnica
 
 ## Contribuicao
 
