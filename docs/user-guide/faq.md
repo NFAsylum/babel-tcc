@@ -50,7 +50,8 @@ O motor de traducao usa Roslyn (Microsoft.CodeAnalysis) para parsear codigo C#, 
 Sim. Toda a traducao e feita localmente. Nenhuma conexao a internet e necessaria.
 
 ### Quanto espaco ocupa?
-A extensao com binarios Core ocupa aproximadamente 50MB (devido a dependencia do Roslyn).
+<!-- TODO: medir tamanho real da extensao com binarios Core -->
+A extensao com binarios Core ocupa espaco significativo devido a dependencia do Roslyn.
 
 ### Posso usar com outras extensoes C#?
 Sim. A extensao funciona de forma independente e nao interfere com o OmniSharp ou outras extensoes C#.

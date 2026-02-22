@@ -20,7 +20,7 @@ Registro das decisoes tecnicas tomadas no projeto e suas justificativas.
 - Semantica alem de sintaxe (resolucao de tipos, etc.)
 - Bem documentado e mantido
 
-**Tradeoff:** Dependencia pesada (~50MB), mas justificada pela qualidade.
+**Tradeoff:** Dependencia pesada (<!-- TODO: medir tamanho real do pacote Roslyn -->), mas justificada pela qualidade.
 
 ---
 

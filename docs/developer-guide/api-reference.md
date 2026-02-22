@@ -36,10 +36,12 @@ Interface para provedores de traducao de idiomas naturais.
 public interface INaturalLanguageProvider
 {
     string LanguageCode { get; }
+    string LanguageName { get; }
 
     Task LoadTranslationTableAsync(string programmingLanguage);
     OperationResult<string> TranslateKeyword(int keywordId);
     int ReverseTranslateKeyword(string translatedKeyword);
+    OperationResult<string> TranslateIdentifier(string identifier, IdentifierContext context);
 }
 ```
 
@@ -48,13 +50,18 @@ public interface INaturalLanguageProvider
 ### ASTNode (base)
 
 ```csharp
-public class ASTNode
+public abstract class ASTNode
 {
-    public List<ASTNode> Children;
-    public ASTNode Parent;
-    public int StartPosition, EndPosition;
-    public int StartLine, EndLine;
-    public ASTNode Clone();
+    public int StartPosition { get; set; }
+    public int EndPosition { get; set; }
+    public int StartLine { get; set; }
+    public int EndLine { get; set; }
+    public ASTNode Parent { get; set; }
+    public List<ASTNode> Children { get; set; }
+
+    public abstract ASTNode Clone();
+    public void CopyBaseTo(ASTNode target);
+    public static List<ASTNode> CloneChildren(List<ASTNode> children, ASTNode newParent);
 }
 ```
 
@@ -87,6 +94,16 @@ public class LiteralNode : ASTNode
     public object Value;
     public LiteralType Type;
     public bool IsTranslatable;
+}
+```
+
+### ExpressionNode
+
+```csharp
+public class ExpressionNode : ASTNode
+{
+    public string ExpressionKind;
+    public string RawText;
 }
 ```
 
@@ -140,7 +157,7 @@ Regista e obtem adaptadores de linguagens.
 ```csharp
 public class LanguageRegistry
 {
-    public void RegisterAdapter(ILanguageAdapter adapter);
+    public OperationResult RegisterAdapter(ILanguageAdapter adapter);
     public OperationResult<ILanguageAdapter> GetAdapter(string fileExtension);
 }
 ```
