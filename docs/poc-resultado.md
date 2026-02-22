@@ -12,7 +12,7 @@ Validar viabilidade tecnica: parsing com Roslyn e comunicacao TypeScript <-> C#.
 - Trivia (comentarios) acessivel para parsing de anotacoes `// tradu:`
 
 ### 2. Traducao de keywords - VALIDADO
-- 78 keywords C# mapeadas para IDs numericos (`CSharpKeywordMap`)
+- 77 keywords C# mapeadas para IDs numericos (`CSharpKeywordMap`)
 - Tabelas de traducao JSON carregam mapeamentos ID -> texto traduzido
 - Keywords traduzidas corretamente: `if` -> `se`, `class` -> `classe`, `void` -> `vazio`, etc.
 - Todas as keywords C# suportadas na traducao PT-BR
@@ -29,7 +29,7 @@ Validar viabilidade tecnica: parsing com Roslyn e comunicacao TypeScript <-> C#.
 - Limitacao: Roslyn nao reconhece keywords traduzidas como keywords (ex: "usando" e parseado como IdentifierNode, nao KeywordNode). Round-trip de keywords com Roslyn real requer mapeamento adicional.
 
 ## Metricas
-- 251 testes unitarios e de integracao passando
+- 277 testes unitarios e de integracao passando
 - Build < 5 segundos
 - Traducao de ficheiro 100 linhas < 500ms
 

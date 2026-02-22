@@ -80,7 +80,7 @@ public class Program
     public static async Task<OperationResult<CoreResponse>> ExecuteMethod(
         string method, string paramsJson, string translationsPath, string projectPath)
     {
-        TranslationOrchestrator orchestrator = CreateOrchestrator(translationsPath, projectPath);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(paramsJson, translationsPath, projectPath);
 
         switch (method)
         {
@@ -101,7 +101,7 @@ public class Program
         }
     }
 
-    public static TranslationOrchestrator CreateOrchestrator(string translationsPath, string projectPath)
+    public static TranslationOrchestrator CreateOrchestrator(string paramsJson, string translationsPath, string projectPath)
     {
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
@@ -112,7 +112,8 @@ public class Program
             translationsPath = Path.Combine(AppContext.BaseDirectory, "translations");
         }
 
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", translationsPath);
+        string languageCode = ExtractLanguageCode(paramsJson);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider(languageCode, translationsPath);
 
         IdentifierMapper mapper = new IdentifierMapper();
         if (!string.IsNullOrEmpty(projectPath))
@@ -189,6 +190,26 @@ public class Program
             Success = true,
             Result = JsonSerializer.Serialize(languages, JsonOptions)
         });
+    }
+
+    public static string ExtractLanguageCode(string paramsJson)
+    {
+        using JsonDocument doc = JsonDocument.Parse(paramsJson);
+        JsonElement root = doc.RootElement;
+
+        if (root.TryGetProperty("targetLanguage", out JsonElement targetLang)
+            && targetLang.ValueKind == JsonValueKind.String)
+        {
+            return targetLang.GetString() ?? "pt-br";
+        }
+
+        if (root.TryGetProperty("sourceLanguage", out JsonElement sourceLang)
+            && sourceLang.ValueKind == JsonValueKind.String)
+        {
+            return sourceLang.GetString() ?? "pt-br";
+        }
+
+        return "pt-br";
     }
 
     public static void WriteError(string message)
