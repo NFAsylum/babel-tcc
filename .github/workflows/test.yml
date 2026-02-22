@@ -41,11 +41,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: packages/ide-adapters/vscode/package-lock.json
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: packages/ide-adapters/vscode/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('packages/ide-adapters/vscode/package.json') }}
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         run: npm run build
