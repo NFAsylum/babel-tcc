@@ -56,20 +56,34 @@ public class Program
             return 1;
         }
 
-        OperationResult<CoreResponse> result = await ExecuteMethod(method, paramsJson, translationsPath, projectPath);
-
-        if (result.IsSuccess)
+        try
         {
-            string json = JsonSerializer.Serialize(result.Value, JsonOptions);
-            Console.WriteLine(json);
-            return 0;
+            OperationResult<CoreResponse> result = await ExecuteMethod(method, paramsJson, translationsPath, projectPath);
+
+            if (result.IsSuccess)
+            {
+                string json = JsonSerializer.Serialize(result.Value, JsonOptions);
+                Console.WriteLine(json);
+                return 0;
+            }
+            else
+            {
+                CoreResponse errorResponse = new CoreResponse
+                {
+                    Success = false,
+                    Error = result.ErrorMessage
+                };
+                string json = JsonSerializer.Serialize(errorResponse, JsonOptions);
+                Console.WriteLine(json);
+                return 1;
+            }
         }
-        else
+        catch (ArgumentException ex)
         {
             CoreResponse errorResponse = new CoreResponse
             {
                 Success = false,
-                Error = result.ErrorMessage
+                Error = ex.Message
             };
             string json = JsonSerializer.Serialize(errorResponse, JsonOptions);
             Console.WriteLine(json);
@@ -80,15 +94,19 @@ public class Program
     public static async Task<OperationResult<CoreResponse>> ExecuteMethod(
         string method, string paramsJson, string translationsPath, string projectPath)
     {
-        TranslationOrchestrator orchestrator = CreateOrchestrator(translationsPath, projectPath);
-
         switch (method)
         {
             case "TranslateToNaturalLanguage":
+            {
+                TranslationOrchestrator orchestrator = CreateOrchestrator(paramsJson, translationsPath, projectPath);
                 return await HandleTranslateToNaturalLanguage(orchestrator, paramsJson);
+            }
 
             case "TranslateFromNaturalLanguage":
+            {
+                TranslationOrchestrator orchestrator = CreateOrchestrator(paramsJson, translationsPath, projectPath);
                 return await HandleTranslateFromNaturalLanguage(orchestrator, paramsJson);
+            }
 
             case "ValidateSyntax":
                 return HandleValidateSyntax(paramsJson);
@@ -101,7 +119,7 @@ public class Program
         }
     }
 
-    public static TranslationOrchestrator CreateOrchestrator(string translationsPath, string projectPath)
+    public static TranslationOrchestrator CreateOrchestrator(string paramsJson, string translationsPath, string projectPath)
     {
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
@@ -112,7 +130,8 @@ public class Program
             translationsPath = Path.Combine(AppContext.BaseDirectory, "translations");
         }
 
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", translationsPath);
+        string languageCode = ExtractLanguageCode(paramsJson);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider(languageCode, translationsPath);
 
         IdentifierMapper mapper = new IdentifierMapper();
         if (!string.IsNullOrEmpty(projectPath))
@@ -189,6 +208,27 @@ public class Program
             Success = true,
             Result = JsonSerializer.Serialize(languages, JsonOptions)
         });
+    }
+
+    public static string ExtractLanguageCode(string paramsJson)
+    {
+        using JsonDocument doc = JsonDocument.Parse(paramsJson);
+        JsonElement root = doc.RootElement;
+
+        if (root.TryGetProperty("targetLanguage", out JsonElement targetLang)
+            && targetLang.ValueKind == JsonValueKind.String)
+        {
+            return targetLang.GetString()!;
+        }
+
+        if (root.TryGetProperty("sourceLanguage", out JsonElement sourceLang)
+            && sourceLang.ValueKind == JsonValueKind.String)
+        {
+            return sourceLang.GetString()!;
+        }
+
+        throw new ArgumentException(
+            "Language code is required. Provide 'targetLanguage' or 'sourceLanguage' in params.");
     }
 
     public static void WriteError(string message)
