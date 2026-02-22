@@ -138,4 +138,82 @@ public class KeywordTableTests
         Assert.True(keywordResult.IsSuccess);
         Assert.Equal("return", keywordResult.Value);
     }
+
+    [Fact]
+    public void Keywords_SetProperty_BuildsBothDictionaries()
+    {
+        KeywordTable table = new KeywordTable();
+        table.Keywords = new Dictionary<string, int>
+        {
+            ["test"] = 100,
+            ["hello"] = 200
+        };
+
+        Assert.Equal(100, table.GetKeywordId("test"));
+        Assert.Equal(200, table.GetKeywordId("hello"));
+
+        OperationResult<string> result = table.GetKeyword(100);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("test", result.Value);
+    }
+
+    [Fact]
+    public void Keywords_EmptyDictionary_CountIsZero()
+    {
+        KeywordTable table = new KeywordTable();
+        table.Keywords = new Dictionary<string, int>();
+
+        Assert.Equal(0, table.Count);
+        Assert.Equal(-1, table.GetKeywordId("anything"));
+    }
+
+    [Fact]
+    public void LoadFrom_InvalidJsonFile_ReturnsFailure()
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), "invalid-keywords-" + Guid.NewGuid() + ".json");
+        File.WriteAllText(tempPath, "{ invalid json content }}}");
+
+        try
+        {
+            OperationResult<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
+            Assert.False(result.IsSuccess);
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public void LoadFrom_EmptyJsonFile_ReturnsFailureOrEmptyTable()
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), "empty-keywords-" + Guid.NewGuid() + ".json");
+        File.WriteAllText(tempPath, "{}");
+
+        try
+        {
+            OperationResult<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
+            if (result.IsSuccess)
+            {
+                Assert.Equal(0, result.Value.Count);
+            }
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public void AllKeywordIds_AreNonNegative()
+    {
+        OperationResult<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        Assert.True(loadResult.IsSuccess);
+        KeywordTable table = loadResult.Value;
+
+        foreach (KeyValuePair<string, int> kvp in table.KeywordToId)
+        {
+            Assert.True(kvp.Value >= 0, $"Keyword '{kvp.Key}' has negative id: {kvp.Value}");
+        }
+    }
 }
