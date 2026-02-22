@@ -420,4 +420,190 @@ namespace Performance.Test
 
         Assert.True(translationResult.IsSuccess);
     }
+
+    [Fact]
+    public async Task RoundTrip_ForwardTranslation_ContainsTranslatedKeywords()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = @"class Program
+{
+    static void Main()
+    {
+        int x = 10;
+        if (x > 5)
+        {
+            return;
+        }
+    }
+}";
+
+        OperationResult<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+        Assert.True(forwardResult.IsSuccess);
+
+        Assert.Contains("classe", forwardResult.Value);
+        Assert.Contains("estatico", forwardResult.Value);
+        Assert.Contains("vazio", forwardResult.Value);
+        Assert.Contains("inteiro", forwardResult.Value);
+        Assert.Contains("se", forwardResult.Value);
+        Assert.Contains("retornar", forwardResult.Value);
+
+        OperationResult<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            forwardResult.Value, ".cs", "pt-br");
+        Assert.True(reverseResult.IsSuccess);
+    }
+
+    [Fact]
+    public async Task FileScopedNamespace_TranslatesCorrectly()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = @"namespace MyApp;
+
+class Program
+{
+    static void Main()
+    {
+    }
+}";
+
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("espaconome", result.Value);
+        Assert.Contains("classe", result.Value);
+    }
+
+    [Fact]
+    public async Task EnumDeclaration_TranslatesKeywords()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = @"public enum Color
+{
+    Red,
+    Green,
+    Blue
+}";
+
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("publico", result.Value);
+        Assert.Contains("enumeracao", result.Value);
+    }
+
+    [Fact]
+    public async Task StructDeclaration_TranslatesKeywords()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = @"public struct Point
+{
+    public int X;
+    public int Y;
+}";
+
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("estrutura", result.Value);
+    }
+
+    [Fact]
+    public async Task InterfaceDeclaration_TranslatesKeywords()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = @"public interface IShape
+{
+    int GetArea();
+    bool IsValid();
+}";
+
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("interface", result.Value);
+        Assert.Contains("inteiro", result.Value);
+        Assert.Contains("booleano", result.Value);
+    }
+
+    [Fact]
+    public async Task TryCatch_TranslatesKeywords()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = @"class Program
+{
+    void Run()
+    {
+        try
+        {
+            int x = 1;
+        }
+        catch
+        {
+        }
+        finally
+        {
+        }
+    }
+}";
+
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("tentar", result.Value);
+        Assert.Contains("capturar", result.Value);
+        Assert.Contains("finalmente", result.Value);
+    }
+
+    [Fact]
+    public async Task SwitchStatement_TranslatesKeywords()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = @"class Program
+{
+    string GetName(int x)
+    {
+        switch (x)
+        {
+            case 1:
+                return ""one"";
+            default:
+                return ""other"";
+        }
+    }
+}";
+
+        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("escolha", result.Value);
+        Assert.Contains("caso", result.Value);
+        Assert.Contains("padrao", result.Value);
+    }
 }
