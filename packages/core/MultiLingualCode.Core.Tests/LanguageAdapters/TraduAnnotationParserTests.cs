@@ -208,4 +208,102 @@ public class Calculator // tradu:Calculadora
         Assert.False(annotation.IsLiteralAnnotation);
         Assert.Empty(annotation.ParameterMappings);
     }
+
+    [Fact]
+    public void ExtractAnnotations_WhitespaceOnly_ReturnsEmptyList()
+    {
+        List<TraduAnnotation> annotations = _parser.ExtractAnnotations("   \n\t  ");
+
+        Assert.Empty(annotations);
+    }
+
+    [Fact]
+    public void ExtractAnnotations_CommentWithoutTradu_IgnoresComment()
+    {
+        string sourceCode = @"
+class Program // This is not a tradu annotation
+{
+    int x = 5; // just a comment
+}";
+
+        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode);
+
+        Assert.Empty(annotations);
+    }
+
+    [Fact]
+    public void ExtractAnnotations_TraduWithExtraSpaces_ExtractsCorrectly()
+    {
+        string sourceCode = @"
+class Calculator // tradu:Calculadora
+{
+}";
+
+        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode);
+
+        Assert.Single(annotations);
+        Assert.Equal("Calculadora", annotations[0].TranslatedIdentifier);
+    }
+
+    [Fact]
+    public void ExtractAnnotations_FieldAnnotation_ExtractsMapping()
+    {
+        string sourceCode = @"
+class Program
+{
+    int counter = 0; // tradu:contador
+}";
+
+        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode);
+
+        Assert.Single(annotations);
+        Assert.Equal("counter", annotations[0].OriginalIdentifier);
+        Assert.Equal("contador", annotations[0].TranslatedIdentifier);
+    }
+
+    [Fact]
+    public void ParseAnnotationText_SingleParam_ExtractsMethodAndOneParam()
+    {
+        TraduAnnotation annotation = _parser.ParseAnnotationText("Executar,x:valor");
+
+        Assert.Equal("Executar", annotation.TranslatedIdentifier);
+        Assert.Single(annotation.ParameterMappings);
+        Assert.Equal("x", annotation.ParameterMappings[0].OriginalParameterName);
+        Assert.Equal("valor", annotation.ParameterMappings[0].TranslatedParameterName);
+    }
+
+    [Fact]
+    public void ExtractAnnotations_MethodNoParams_ExtractsOnlyMethodName()
+    {
+        string sourceCode = @"
+class Program
+{
+    void Run() // tradu:Executar
+    {
+    }
+}";
+
+        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode);
+
+        Assert.Single(annotations);
+        Assert.Equal("Run", annotations[0].OriginalIdentifier);
+        Assert.Equal("Executar", annotations[0].TranslatedIdentifier);
+        Assert.Empty(annotations[0].ParameterMappings);
+    }
+
+    [Fact]
+    public void ExtractAnnotations_PropertyAnnotation_ExtractsMapping()
+    {
+        string sourceCode = @"
+class Person
+{
+    public string Name { get; set; } // tradu:Nome
+}";
+
+        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode);
+
+        Assert.Single(annotations);
+        Assert.Equal("Name", annotations[0].OriginalIdentifier);
+        Assert.Equal("Nome", annotations[0].TranslatedIdentifier);
+    }
 }
