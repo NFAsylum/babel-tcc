@@ -1,4 +1,8 @@
-# babel-tcc
+# Babel TCC - MultiLingual Code
+
+[![Build Core](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml)
+[![Build VS Code](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml)
+
 
 Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
 
@@ -56,13 +60,37 @@ O arquivo no disco permanece **sempre em C# puro**. A traducao e apenas visual.
 
 1. Instalar a extensao no VS Code (Marketplace ou .vsix local)
 2. Abrir um arquivo `.cs`
-3. Pressionar `Ctrl+Shift+P` e executar `MultiLingual: Select Language`
-4. Escolher `Portugues Brasileiro (PT-BR)`
-5. Executar `MultiLingual: Open Translated` para ver o codigo traduzido
+3. Pressionar `Ctrl+Shift+P` e executar `Babel TCC: Select Language`
+4. Escolher `pt-br`
+5. Executar `Babel TCC: Open Translated View` para ver o codigo traduzido
 
-## Especificacoes Tecnicas
+## Instalacao
 
-### Arquitetura
+### Pre-requisitos
+
+- VS Code 1.85 ou superior
+- .NET 8.0 Runtime
+
+### A partir do codigo-fonte
+
+```bash
+git clone https://github.com/NFAsylum/babel-tcc.git
+cd babel-tcc/packages/ide-adapters/vscode
+npm install
+npm run package
+```
+
+Instalar o `.vsix` gerado: Extensions > ... > Install from VSIX.
+
+## Linguagens Suportadas
+
+| Linguagem de Programacao | Idioma Natural | Status |
+|--------------------------|---------------|--------|
+| C# | Portugues (PT-BR) | Suportado |
+| Python | - | Planejado |
+| JavaScript | - | Planejado |
+
+## Arquitetura
 
 ```
 VS Code Extension (TypeScript)
@@ -76,47 +104,34 @@ Core Engine (C# / .NET 8)
 Translation Tables (JSON)
 ```
 
-O sistema e composto por camadas desacopladas:
-
 | Camada | Tecnologia | Funcao |
-|---|---|---|
+|--------|-----------|--------|
 | Core Engine | C# / .NET 8 | Motor de traducao, parsing via Roslyn |
 | Extension | TypeScript / VS Code API | Interface com o editor |
 | Traducoes | JSON | Tabelas de keywords e mapeamentos |
 | Comunicacao | JSON via stdin/stdout | Bridge entre TS e C# |
 
-### Stack
+## Configuracao
 
-- **Core:** C# / .NET 8, Microsoft.CodeAnalysis (Roslyn)
-- **Extension:** TypeScript, VS Code Extension API
-- **Testes:** xUnit (C#), Mocha (TypeScript)
-- **CI/CD:** GitHub Actions
-- **Traducoes:** JSON com schema validation
+Adicionar ao `settings.json`:
 
-### Escopo do MVP
-
-- **Linguagem de programacao:** C# (via Roslyn)
-- **Idioma alvo:** Portugues Brasileiro (PT-BR)
-- **IDE:** VS Code
-- **Keywords:** Todas as 78 keywords C#
-- **Identificadores:** Via anotacao `// tradu:` e identifier-map.json
-
-### Performance
-
-- Arquivo pequeno (< 100 linhas): < 100ms
-- Arquivo medio (100-500 linhas): < 500ms
-- Arquivo grande (500-2000 linhas): < 2s
+```json
+{
+  "babel-tcc.enabled": true,
+  "babel-tcc.language": "pt-br"
+}
+```
 
 ### Sistema "tradu"
 
 Desenvolvedores anotam identificadores customizados no codigo:
 
 ```csharp
-public class Calculator
+public class Calculator // tradu:Calculadora
 {
-    private int operationCount = 0;  // tradu:contagemOperacoes
+    public int operationCount; // tradu:contagemOperacoes
 
-    public int Add(int a, int b)  // tradu:Somar,a:primeiroNumero,b:segundoNumero
+    public int Add(int a, int b) // tradu:Somar,a:primeiroNumero,b:segundoNumero
     {
         operationCount++;
         return a + b;
@@ -129,7 +144,7 @@ O dev PT-BR ve:
 ```csharp
 publico classe Calculadora
 {
-    privado inteiro contagemOperacoes = 0;
+    publico inteiro contagemOperacoes;
 
     publico inteiro Somar(inteiro primeiroNumero, inteiro segundoNumero)
     {
@@ -139,28 +154,48 @@ publico classe Calculadora
 }
 ```
 
-## Repositorios
+## Stack
 
-| Repositorio | Descricao |
-|---|---|
-| [babel-tcc](https://github.com/NFAsylum/babel-tcc) | Core Engine + VS Code Extension + Docs |
-| [babel-tcc-translations](https://github.com/NFAsylum/babel-tcc-translations) | Tabelas de keywords e traducoes por idioma |
+- **Core:** C# / .NET 8, Microsoft.CodeAnalysis (Roslyn)
+- **Extension:** TypeScript, VS Code Extension API
+- **Testes:** xUnit (C#), 251+ testes
+- **CI/CD:** GitHub Actions
+- **Traducoes:** JSON com schema validation
+
+## Estrutura do Projeto
+
+```
+babel-tcc/
+  packages/
+    core/
+      MultiLingualCode.Core/        # Motor de traducao
+      MultiLingualCode.Core.Host/   # CLI para comunicacao TS<->C#
+      MultiLingualCode.Core.Tests/  # Testes xUnit (251+)
+    ide-adapters/
+      vscode/                       # Extensao VS Code
+        src/
+          extension.ts              # Entry point
+          services/                 # CoreBridge, Config, LanguageDetector
+          providers/                # Content, Edit, Save, Completion, Hover
+          ui/                       # StatusBar
+        syntaxes/                   # Gramaticas TextMate
+  docs/                             # Documentacao
+  examples/                         # Projetos de exemplo
+  tarefas/                          # Rastreamento de tarefas
+```
 
 ## Documentacao
 
 - [Arquitetura](docs/arquitetura.md) - Visao geral da arquitetura e fluxos
 - [Padroes de Codigo](docs/padroes-codigo.md) - Convencoes de nomenclatura e estilo
-- [Setup do Ambiente](docs/setup-ambiente.md) - Como configurar o ambiente de desenvolvimento
-- [Guia de Traducoes](docs/guia-traducoes.md) - Como contribuir com novas traducoes
 - [Decisoes Tecnicas](docs/decisoes-tecnicas.md) - Registro de decisoes e justificativas
+- [Guia do Usuario](docs/user-guide/) - Instalacao, uso e configuracao
+- [Guia do Desenvolvedor](docs/developer-guide/) - Como estender o projeto
+- [Resultado da PoC](docs/poc-resultado.md) - Validacao de viabilidade tecnica
 
 ## Contribuicao
 
-Contribuicoes sao bem-vindas! Veja o [guia de traducoes](docs/guia-traducoes.md) para contribuir com novos idiomas - **nao e necessario saber C# ou TypeScript**.
-
-## Licenca
-
-A definir.
+Contribuicoes sao bem-vindas! Veja [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes.
 
 ---
 
