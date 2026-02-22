@@ -623,6 +623,176 @@ public enum Direction
         Assert.Contains("retornar", result);
     }
 
+    [Fact]
+    public void Parse_EmptyString_ReturnsEmptyAst()
+    {
+        ASTNode ast = _adapter.Parse("");
+
+        Assert.NotNull(ast);
+        Assert.Empty(GetNodesOfType<KeywordNode>(ast));
+    }
+
+    [Fact]
+    public void Parse_WhitespaceOnly_ReturnsEmptyAst()
+    {
+        ASTNode ast = _adapter.Parse("   \n\t  ");
+
+        Assert.NotNull(ast);
+        Assert.Empty(GetNodesOfType<KeywordNode>(ast));
+    }
+
+    [Fact]
+    public void Parse_FileScopedNamespace_ExtractsKeyword()
+    {
+        string code = "namespace MyApp;\n\nclass Program { }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "namespace");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
+    }
+
+    [Fact]
+    public void Parse_AsyncAwait_ExtractsReturnKeyword()
+    {
+        string code = @"
+using System.Threading.Tasks;
+
+class Program
+{
+    async Task<int> GetValueAsync()
+    {
+        await Task.Delay(100);
+        return 42;
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "return");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "int");
+    }
+
+    [Fact]
+    public void Parse_NullableTypes_ExtractsKeywords()
+    {
+        string code = @"
+class Program
+{
+    string? name = null;
+    int? count = null;
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "null");
+    }
+
+    [Fact]
+    public void Parse_SwitchExpression_ExtractsKeywords()
+    {
+        string code = @"
+class Program
+{
+    string GetName(int value)
+    {
+        return value switch
+        {
+            1 => ""one"",
+            2 => ""two"",
+            _ => ""other""
+        };
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.OriginalKeyword == "switch");
+        Assert.Contains(keywords, k => k.OriginalKeyword == "return");
+    }
+
+    [Fact]
+    public void Parse_UnicodeIdentifiers_Extracts()
+    {
+        string code = @"
+class Programa
+{
+    string nomeDoAluno = ""teste"";
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.Contains(identifiers, i => i.Name == "Programa");
+        Assert.Contains(identifiers, i => i.Name == "nomeDoAluno");
+    }
+
+    [Fact]
+    public void Parse_VerbatimString_ExtractsLiteral()
+    {
+        string code = @"
+class Program
+{
+    string path = @""C:\Users\test"";
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<LiteralNode> literals = GetNodesOfType<LiteralNode>(ast);
+
+        Assert.NotEmpty(literals);
+    }
+
+    [Fact]
+    public void ValidateSyntax_EmptyString_IsValid()
+    {
+        ValidationResult result = _adapter.ValidateSyntax("");
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void ValidateSyntax_SyntaxErrorCode_ReturnsErrors()
+    {
+        ValidationResult result = _adapter.ValidateSyntax("class { invalid }}}");
+
+        Assert.False(result.IsValid);
+        Assert.NotEmpty(result.Diagnostics);
+    }
+
+    [Fact]
+    public void ExtractIdentifiers_EmptyString_ReturnsEmpty()
+    {
+        List<string> identifiers = _adapter.ExtractIdentifiers("");
+
+        Assert.Empty(identifiers);
+    }
+
+    [Fact]
+    public void ExtractIdentifiers_OnlyKeywords_ReturnsNoKeywords()
+    {
+        List<string> identifiers = _adapter.ExtractIdentifiers("class { }");
+
+        Assert.DoesNotContain("class", identifiers);
+    }
+
+    [Fact]
+    public void Generate_EmptyStatementNode_HandlesGracefully()
+    {
+        StatementNode ast = new StatementNode();
+        ast.Children = new List<ASTNode>();
+        ast.RawText = "";
+
+        string result = _adapter.Generate(ast);
+
+        Assert.NotNull(result);
+    }
+
     public static List<T> GetNodesOfType<T>(ASTNode root) where T : ASTNode
     {
         List<T> result = new List<T>();
@@ -630,7 +800,7 @@ public enum Direction
         return result;
     }
 
-    public static void CollectNodes<T>(ASTNode node, List<T> result) where T : ASTNode
+    static void CollectNodes<T>(ASTNode node, List<T> result) where T : ASTNode
     {
         if (node is T typed)
         {
