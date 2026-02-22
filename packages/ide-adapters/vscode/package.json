@@ -69,7 +69,11 @@
     "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
     "lint": "eslint src --ext .ts",
-    "test": "echo \"No tests configured yet\""
+    "test": "echo \"No tests configured yet\"",
+    "package": "npm run build && vsce package",
+    "publish-core": "dotnet publish ../../core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj -c Release -o bin",
+    "prepackage": "npm run publish-core && npm run copy-translations",
+    "copy-translations": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});fs.readdirSync(s).forEach(f=>{const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)})};cp('../../core/MultiLingualCode.Core.Tests/TestData/translations','translations')\""
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
