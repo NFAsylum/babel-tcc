@@ -2,7 +2,7 @@
 
 [![Build Core](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml)
 [![Build VS Code](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
 
@@ -196,10 +196,6 @@ babel-tcc/
 ## Contribuicao
 
 Contribuicoes sao bem-vindas! Veja [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes.
-
-## Licenca
-
-MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ---
 
