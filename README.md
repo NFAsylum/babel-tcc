@@ -192,6 +192,7 @@ babel-tcc/
 - [Decisoes Tecnicas](docs/decisoes-tecnicas.md) - Registro de decisoes e justificativas
 - [Guia do Usuario](docs/user-guide/) - Instalacao, uso e configuracao
 - [Guia do Desenvolvedor](docs/developer-guide/) - Como estender o projeto
+- [Resultado da PoC](docs/poc-resultado.md) - Validacao de viabilidade tecnica
 
 ## Contribuicao
 
