@@ -18,16 +18,16 @@ public class JsonLoader
         };
     }
 
-    public OperationResult<T> Load<T>(string filePath) where T : class
+    public OperationResultGeneric<T> Load<T>(string filePath) where T : class
     {
         string fullPath = Path.GetFullPath(filePath);
 
         if (Cache.TryGetValue(fullPath, out object? cached) && cached is not null)
         {
-            return OperationResult<T>.Ok((T)cached);
+            return OperationResultGeneric<T>.Ok((T)cached);
         }
 
-        OperationResult<T> result = JsonFileReader.ReadFromFile<T>(fullPath, Options);
+        OperationResultGeneric<T> result = JsonFileReader.ReadFromFile<T>(fullPath, Options);
         if (!result.IsSuccess)
         {
             return result;
@@ -37,16 +37,16 @@ public class JsonLoader
         return result;
     }
 
-    public async Task<OperationResult<T>> LoadAsync<T>(string filePath) where T : class
+    public async Task<OperationResultGeneric<T>> LoadAsync<T>(string filePath) where T : class
     {
         string fullPath = Path.GetFullPath(filePath);
 
         if (Cache.TryGetValue(fullPath, out object? cached) && cached is not null)
         {
-            return OperationResult<T>.Ok((T)cached);
+            return OperationResultGeneric<T>.Ok((T)cached);
         }
 
-        OperationResult<T> result = await JsonFileReader.ReadFromFileAsync<T>(fullPath, Options);
+        OperationResultGeneric<T> result = await JsonFileReader.ReadFromFileAsync<T>(fullPath, Options);
         if (!result.IsSuccess)
         {
             return result;

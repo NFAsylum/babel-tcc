@@ -34,7 +34,7 @@ public class OperationResultTests
     [Fact]
     public void GenericOk_ReturnsValueAndSuccess()
     {
-        OperationResult<string> result = OperationResult<string>.Ok("hello");
+        OperationResultGeneric<string> result = OperationResultGeneric<string>.Ok("hello");
 
         Assert.True(result.IsSuccess);
         Assert.Equal("hello", result.Value);
@@ -44,7 +44,7 @@ public class OperationResultTests
     [Fact]
     public void GenericOk_IntValue_ReturnsCorrectValue()
     {
-        OperationResult<int> result = OperationResult<int>.Ok(42);
+        OperationResultGeneric<int> result = OperationResultGeneric<int>.Ok(42);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(42, result.Value);
@@ -53,7 +53,7 @@ public class OperationResultTests
     [Fact]
     public void GenericFail_ReturnsFailureWithDefaultValue()
     {
-        OperationResult<string> result = OperationResult<string>.Fail("error");
+        OperationResultGeneric<string> result = OperationResultGeneric<string>.Fail("error");
 
         Assert.False(result.IsSuccess);
         Assert.Equal("error", result.ErrorMessage);
@@ -62,7 +62,7 @@ public class OperationResultTests
     [Fact]
     public void GenericFail_IntType_ReturnsDefaultInt()
     {
-        OperationResult<int> result = OperationResult<int>.Fail("error");
+        OperationResultGeneric<int> result = OperationResultGeneric<int>.Fail("error");
 
         Assert.False(result.IsSuccess);
         Assert.Equal(0, result.Value);
@@ -71,7 +71,7 @@ public class OperationResultTests
     [Fact]
     public void StaticOkGeneric_CreatesTypedResult()
     {
-        OperationResult<string> result = OperationResult.Ok<string>("test");
+        OperationResultGeneric<string> result = OperationResult.Ok<string>("test");
 
         Assert.True(result.IsSuccess);
         Assert.Equal("test", result.Value);
@@ -80,7 +80,7 @@ public class OperationResultTests
     [Fact]
     public void StaticFailGeneric_CreatesTypedResult()
     {
-        OperationResult<string> result = OperationResult.Fail<string>("error");
+        OperationResultGeneric<string> result = OperationResult.Fail<string>("error");
 
         Assert.False(result.IsSuccess);
         Assert.Equal("error", result.ErrorMessage);
@@ -89,7 +89,7 @@ public class OperationResultTests
     [Fact]
     public void GenericOk_NullValue_StillSuccess()
     {
-        OperationResult<string> result = OperationResult<string>.Ok(null!);
+        OperationResultGeneric<string> result = OperationResultGeneric<string>.Ok(null!);
 
         Assert.True(result.IsSuccess);
     }
@@ -97,7 +97,7 @@ public class OperationResultTests
     [Fact]
     public void GenericResult_IsAlsoBaseResult()
     {
-        OperationResult<string> typed = OperationResult<string>.Ok("value");
+        OperationResultGeneric<string> typed = OperationResultGeneric<string>.Ok("value");
         OperationResult baseResult = typed;
 
         Assert.True(baseResult.IsSuccess);

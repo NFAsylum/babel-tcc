@@ -7,7 +7,7 @@ public interface INaturalLanguageProvider
     string LanguageCode { get; }
     string LanguageName { get; }
     Task LoadTranslationTableAsync(string programmingLanguage);
-    OperationResult<string> TranslateKeyword(int keywordId);
+    OperationResultGeneric<string> TranslateKeyword(int keywordId);
     int ReverseTranslateKeyword(string translatedKeyword);
-    OperationResult<string> TranslateIdentifier(string identifier, IdentifierContext context);
+    OperationResultGeneric<string> TranslateIdentifier(string identifier, IdentifierContext context);
 }

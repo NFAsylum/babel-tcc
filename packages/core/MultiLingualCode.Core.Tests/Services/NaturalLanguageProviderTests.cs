@@ -27,7 +27,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void Create_NullLanguageCode_ReturnsFailure()
     {
-        OperationResult<NaturalLanguageProvider> result = NaturalLanguageProvider.Create(null!, TranslationsPath);
+        OperationResultGeneric<NaturalLanguageProvider> result = NaturalLanguageProvider.Create(null!, TranslationsPath);
 
         Assert.False(result.IsSuccess);
     }
@@ -35,7 +35,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void Create_NullPath_ReturnsFailure()
     {
-        OperationResult<NaturalLanguageProvider> result = NaturalLanguageProvider.Create("pt-br", null!);
+        OperationResultGeneric<NaturalLanguageProvider> result = NaturalLanguageProvider.Create("pt-br", null!);
 
         Assert.False(result.IsSuccess);
     }
@@ -79,11 +79,11 @@ public class NaturalLanguageProviderTests
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        OperationResult<string> ifResult = provider.TranslateKeyword(30);
-        OperationResult<string> elseResult = provider.TranslateKeyword(18);
-        OperationResult<string> classResult = provider.TranslateKeyword(10);
-        OperationResult<string> voidResult = provider.TranslateKeyword(75);
-        OperationResult<string> returnResult = provider.TranslateKeyword(52);
+        OperationResultGeneric<string> ifResult = provider.TranslateKeyword(30);
+        OperationResultGeneric<string> elseResult = provider.TranslateKeyword(18);
+        OperationResultGeneric<string> classResult = provider.TranslateKeyword(10);
+        OperationResultGeneric<string> voidResult = provider.TranslateKeyword(75);
+        OperationResultGeneric<string> returnResult = provider.TranslateKeyword(52);
 
         Assert.True(ifResult.IsSuccess);
         Assert.Equal("se", ifResult.Value);
@@ -102,7 +102,7 @@ public class NaturalLanguageProviderTests
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        OperationResult<string> result = provider.TranslateKeyword(999);
+        OperationResultGeneric<string> result = provider.TranslateKeyword(999);
         Assert.False(result.IsSuccess);
     }
 
@@ -111,7 +111,7 @@ public class NaturalLanguageProviderTests
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
 
-        OperationResult<string> result = provider.TranslateKeyword(30);
+        OperationResultGeneric<string> result = provider.TranslateKeyword(30);
         Assert.False(result.IsSuccess);
     }
 
@@ -161,7 +161,7 @@ public class NaturalLanguageProviderTests
         provider.SetIdentifierMap(map);
 
         IdentifierContext context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
-        OperationResult<string> result = provider.TranslateIdentifier("GetName", context);
+        OperationResultGeneric<string> result = provider.TranslateIdentifier("GetName", context);
         Assert.True(result.IsSuccess);
         Assert.Equal("ObterNome", result.Value);
     }
@@ -172,7 +172,7 @@ public class NaturalLanguageProviderTests
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         IdentifierContext context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
-        OperationResult<string> result = provider.TranslateIdentifier("GetName", context);
+        OperationResultGeneric<string> result = provider.TranslateIdentifier("GetName", context);
         Assert.False(result.IsSuccess);
     }
 
@@ -186,7 +186,7 @@ public class NaturalLanguageProviderTests
         provider.SetIdentifierMap(map);
 
         IdentifierContext context = new IdentifierContext { OriginalName = "Unknown", Kind = IdentifierKind.Method };
-        OperationResult<string> result = provider.TranslateIdentifier("Unknown", context);
+        OperationResultGeneric<string> result = provider.TranslateIdentifier("Unknown", context);
         Assert.False(result.IsSuccess);
     }
 
@@ -196,8 +196,8 @@ public class NaturalLanguageProviderTests
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         IdentifierContext context = new IdentifierContext { Kind = IdentifierKind.Variable };
-        OperationResult<string> emptyResult = provider.TranslateIdentifier("", context);
-        OperationResult<string> nullResult = provider.TranslateIdentifier(null!, context);
+        OperationResultGeneric<string> emptyResult = provider.TranslateIdentifier("", context);
+        OperationResultGeneric<string> nullResult = provider.TranslateIdentifier(null!, context);
         Assert.False(emptyResult.IsSuccess);
         Assert.False(nullResult.IsSuccess);
     }
@@ -211,7 +211,7 @@ public class NaturalLanguageProviderTests
         await provider.LoadIdentifierMapAsync(mapPath);
 
         IdentifierContext context = new IdentifierContext { OriginalName = "GetName", Kind = IdentifierKind.Method };
-        OperationResult<string> result = provider.TranslateIdentifier("GetName", context);
+        OperationResultGeneric<string> result = provider.TranslateIdentifier("GetName", context);
         Assert.True(result.IsSuccess);
         Assert.Equal("ObterNome", result.Value);
     }
@@ -257,7 +257,7 @@ public class NaturalLanguageProviderTests
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         // Translate forward
-        OperationResult<string> translatedResult = provider.TranslateKeyword(30); // if -> se
+        OperationResultGeneric<string> translatedResult = provider.TranslateKeyword(30); // if -> se
         Assert.True(translatedResult.IsSuccess);
         Assert.Equal("se", translatedResult.Value);
 

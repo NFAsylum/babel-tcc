@@ -11,7 +11,7 @@ public class LanguageTableTests
     [Fact]
     public void LoadFrom_ValidFile_LoadsTranslations()
     {
-        OperationResult<LanguageTable> result = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> result = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
 
         Assert.True(result.IsSuccess);
         LanguageTable table = result.Value;
@@ -25,7 +25,7 @@ public class LanguageTableTests
     [Fact]
     public void LoadFrom_NonExistentFile_ReturnsFailure()
     {
-        OperationResult<LanguageTable> result = LanguageTable.LoadFrom("nonexistent.json");
+        OperationResultGeneric<LanguageTable> result = LanguageTable.LoadFrom("nonexistent.json");
 
         Assert.False(result.IsSuccess);
     }
@@ -33,7 +33,7 @@ public class LanguageTableTests
     [Fact]
     public async Task LoadFromAsync_ValidFile_LoadsTranslations()
     {
-        OperationResult<LanguageTable> result = await LanguageTable.LoadFromAsync(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> result = await LanguageTable.LoadFromAsync(GetTestDataPath("pt-br-csharp.json"));
 
         Assert.True(result.IsSuccess);
         LanguageTable table = result.Value;
@@ -44,23 +44,23 @@ public class LanguageTableTests
     [Fact]
     public void GetTranslation_KnownId_ReturnsTranslation()
     {
-        OperationResult<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
-        OperationResult<string> ifResult = table.GetTranslation(30);       // if -> se
+        OperationResultGeneric<string> ifResult = table.GetTranslation(30);       // if -> se
         Assert.True(ifResult.IsSuccess);
         Assert.Equal("se", ifResult.Value);
 
-        OperationResult<string> elseResult = table.GetTranslation(18);     // else -> senao
+        OperationResultGeneric<string> elseResult = table.GetTranslation(18);     // else -> senao
         Assert.True(elseResult.IsSuccess);
         Assert.Equal("senao", elseResult.Value);
 
-        OperationResult<string> classResult = table.GetTranslation(10);    // class -> classe
+        OperationResultGeneric<string> classResult = table.GetTranslation(10);    // class -> classe
         Assert.True(classResult.IsSuccess);
         Assert.Equal("classe", classResult.Value);
 
-        OperationResult<string> voidResult = table.GetTranslation(75);     // void -> vazio
+        OperationResultGeneric<string> voidResult = table.GetTranslation(75);     // void -> vazio
         Assert.True(voidResult.IsSuccess);
         Assert.Equal("vazio", voidResult.Value);
     }
@@ -68,21 +68,21 @@ public class LanguageTableTests
     [Fact]
     public void GetTranslation_UnknownId_ReturnsFailure()
     {
-        OperationResult<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
-        OperationResult<string> result999 = table.GetTranslation(999);
+        OperationResultGeneric<string> result999 = table.GetTranslation(999);
         Assert.False(result999.IsSuccess);
 
-        OperationResult<string> resultNeg = table.GetTranslation(-1);
+        OperationResultGeneric<string> resultNeg = table.GetTranslation(-1);
         Assert.False(resultNeg.IsSuccess);
     }
 
     [Fact]
     public void GetKeywordId_KnownTranslation_ReturnsId()
     {
-        OperationResult<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
@@ -94,7 +94,7 @@ public class LanguageTableTests
     [Fact]
     public void GetKeywordId_CaseInsensitive()
     {
-        OperationResult<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
@@ -105,7 +105,7 @@ public class LanguageTableTests
     [Fact]
     public void GetKeywordId_UnknownTranslation_ReturnsMinusOne()
     {
-        OperationResult<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
@@ -115,7 +115,7 @@ public class LanguageTableTests
     [Fact]
     public void GetKeywordId_EmptyOrNull_ReturnsMinusOne()
     {
-        OperationResult<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
@@ -126,11 +126,11 @@ public class LanguageTableTests
     [Fact]
     public void BidirectionalLookup_IsConsistent()
     {
-        OperationResult<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
-        OperationResult<string> translationResult = table.GetTranslation(52); // return
+        OperationResultGeneric<string> translationResult = table.GetTranslation(52); // return
         Assert.True(translationResult.IsSuccess);
         Assert.Equal("retornar", translationResult.Value);
 
@@ -152,7 +152,7 @@ public class LanguageTableTests
 
         Assert.Equal(2, table.Count);
 
-        OperationResult<string> result = table.GetTranslation(1);
+        OperationResultGeneric<string> result = table.GetTranslation(1);
         Assert.False(result.IsSuccess);
     }
 }

@@ -119,7 +119,7 @@ public class TranslationOrchestratorTests
 
         TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "public class Program", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -143,7 +143,7 @@ public class TranslationOrchestratorTests
 
             TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-            OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
                 "public class Calculator", ".cs", "pt-br");
 
             Assert.True(result.IsSuccess);
@@ -166,7 +166,7 @@ public class TranslationOrchestratorTests
 
         TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        OperationResult<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             "publico classe Programa", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -190,7 +190,7 @@ public class TranslationOrchestratorTests
 
             TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-            OperationResult<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
+            OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
                 "publico classe Calculadora", ".cs", "pt-br");
 
             Assert.True(result.IsSuccess);
@@ -210,7 +210,7 @@ public class TranslationOrchestratorTests
         NaturalLanguageProvider provider = CreateProvider();
         TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "code", ".xyz", "pt-br");
 
         Assert.False(result.IsSuccess);
@@ -222,7 +222,7 @@ public class TranslationOrchestratorTests
         NaturalLanguageProvider provider = CreateProvider();
         TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
-        OperationResult<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             "code", ".xyz", "pt-br");
 
         Assert.False(result.IsSuccess);
@@ -243,9 +243,9 @@ public class TranslationOrchestratorTests
     {
         NaturalLanguageProvider provider = CreateProvider();
 
-        OperationResult<TranslationOrchestrator> nullRegistryResult = TranslationOrchestrator.Create(null!, provider, _mapper);
-        OperationResult<TranslationOrchestrator> nullProviderResult = TranslationOrchestrator.Create(_registry, null!, _mapper);
-        OperationResult<TranslationOrchestrator> nullMapperResult = TranslationOrchestrator.Create(_registry, provider, null!);
+        OperationResultGeneric<TranslationOrchestrator> nullRegistryResult = TranslationOrchestrator.Create(null!, provider, _mapper);
+        OperationResultGeneric<TranslationOrchestrator> nullProviderResult = TranslationOrchestrator.Create(_registry, null!, _mapper);
+        OperationResultGeneric<TranslationOrchestrator> nullMapperResult = TranslationOrchestrator.Create(_registry, provider, null!);
 
         Assert.False(nullRegistryResult.IsSuccess);
         Assert.False(nullProviderResult.IsSuccess);
@@ -261,14 +261,14 @@ public class TranslationOrchestratorTests
         TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
         string original = "public void Main";
-        OperationResult<string> translatedResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translatedResult = await orchestrator.TranslateToNaturalLanguageAsync(
             original, ".cs", "pt-br");
 
         Assert.True(translatedResult.IsSuccess);
         Assert.Contains("publico", translatedResult.Value);
         Assert.Contains("vazio", translatedResult.Value);
 
-        OperationResult<string> reversedResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> reversedResult = await orchestrator.TranslateFromNaturalLanguageAsync(
             translatedResult.Value, ".cs", "pt-br");
 
         Assert.True(reversedResult.IsSuccess);
@@ -285,7 +285,7 @@ public class TranslationOrchestratorTests
         TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
 
         // "x" starts with lowercase, so IsTranslatable = false in the mock adapter
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "int x", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -303,7 +303,7 @@ public class TranslationOrchestratorTests
 
         // "Main" is an identifier (uppercase), not a keyword - won't be in translation table
         // It should remain as "Main" since there's no identifier mapping for it
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "void Main", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -337,7 +337,7 @@ public class TranslationOrchestratorTests
     }
 }";
 
-            OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
                 sourceCode, ".cs", "pt-br");
 
             Assert.True(translationResult.IsSuccess);

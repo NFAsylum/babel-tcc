@@ -11,7 +11,7 @@ public class KeywordTableTests
     [Fact]
     public void LoadFrom_ValidFile_LoadsKeywords()
     {
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
 
         Assert.True(result.IsSuccess);
         Assert.True(result.Value.Count > 0);
@@ -20,7 +20,7 @@ public class KeywordTableTests
     [Fact]
     public void LoadFrom_NonExistentFile_ReturnsFailure()
     {
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom("nonexistent.json");
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom("nonexistent.json");
 
         Assert.False(result.IsSuccess);
     }
@@ -28,7 +28,7 @@ public class KeywordTableTests
     [Fact]
     public async Task LoadFromAsync_ValidFile_LoadsKeywords()
     {
-        OperationResult<KeywordTable> result = await KeywordTable.LoadFromAsync(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> result = await KeywordTable.LoadFromAsync(GetTestDataPath("keywords-base.json"));
 
         Assert.True(result.IsSuccess);
         Assert.True(result.Value.Count > 0);
@@ -37,7 +37,7 @@ public class KeywordTableTests
     [Fact]
     public void GetKeywordId_KnownKeyword_ReturnsId()
     {
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(result.IsSuccess);
         KeywordTable table = result.Value;
 
@@ -50,7 +50,7 @@ public class KeywordTableTests
     [Fact]
     public void GetKeywordId_CaseInsensitive()
     {
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(result.IsSuccess);
         KeywordTable table = result.Value;
 
@@ -61,7 +61,7 @@ public class KeywordTableTests
     [Fact]
     public void GetKeywordId_UnknownKeyword_ReturnsMinusOne()
     {
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(result.IsSuccess);
         KeywordTable table = result.Value;
 
@@ -71,7 +71,7 @@ public class KeywordTableTests
     [Fact]
     public void GetKeywordId_EmptyOrNull_ReturnsMinusOne()
     {
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(result.IsSuccess);
         KeywordTable table = result.Value;
 
@@ -82,19 +82,19 @@ public class KeywordTableTests
     [Fact]
     public void GetKeyword_KnownId_ReturnsKeyword()
     {
-        OperationResult<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(loadResult.IsSuccess);
         KeywordTable table = loadResult.Value;
 
-        OperationResult<string> ifResult = table.GetKeyword(30);
+        OperationResultGeneric<string> ifResult = table.GetKeyword(30);
         Assert.True(ifResult.IsSuccess);
         Assert.Equal("if", ifResult.Value);
 
-        OperationResult<string> elseResult = table.GetKeyword(18);
+        OperationResultGeneric<string> elseResult = table.GetKeyword(18);
         Assert.True(elseResult.IsSuccess);
         Assert.Equal("else", elseResult.Value);
 
-        OperationResult<string> classResult = table.GetKeyword(10);
+        OperationResultGeneric<string> classResult = table.GetKeyword(10);
         Assert.True(classResult.IsSuccess);
         Assert.Equal("class", classResult.Value);
     }
@@ -102,21 +102,21 @@ public class KeywordTableTests
     [Fact]
     public void GetKeyword_UnknownId_ReturnsFailure()
     {
-        OperationResult<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(loadResult.IsSuccess);
         KeywordTable table = loadResult.Value;
 
-        OperationResult<string> result999 = table.GetKeyword(999);
+        OperationResultGeneric<string> result999 = table.GetKeyword(999);
         Assert.False(result999.IsSuccess);
 
-        OperationResult<string> resultNeg = table.GetKeyword(-1);
+        OperationResultGeneric<string> resultNeg = table.GetKeyword(-1);
         Assert.False(resultNeg.IsSuccess);
     }
 
     [Fact]
     public void Count_ReturnsCorrectNumber()
     {
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(result.IsSuccess);
         KeywordTable table = result.Value;
 
@@ -127,14 +127,14 @@ public class KeywordTableTests
     [Fact]
     public void BidirectionalLookup_IsConsistent()
     {
-        OperationResult<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(loadResult.IsSuccess);
         KeywordTable table = loadResult.Value;
 
         int id = table.GetKeywordId("return");
         Assert.NotEqual(-1, id);
 
-        OperationResult<string> keywordResult = table.GetKeyword(id);
+        OperationResultGeneric<string> keywordResult = table.GetKeyword(id);
         Assert.True(keywordResult.IsSuccess);
         Assert.Equal("return", keywordResult.Value);
     }
@@ -152,7 +152,7 @@ public class KeywordTableTests
         Assert.Equal(100, table.GetKeywordId("test"));
         Assert.Equal(200, table.GetKeywordId("hello"));
 
-        OperationResult<string> result = table.GetKeyword(100);
+        OperationResultGeneric<string> result = table.GetKeyword(100);
         Assert.True(result.IsSuccess);
         Assert.Equal("test", result.Value);
     }
@@ -175,7 +175,7 @@ public class KeywordTableTests
 
         try
         {
-            OperationResult<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
+            OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
             Assert.False(result.IsSuccess);
         }
         finally
@@ -192,7 +192,7 @@ public class KeywordTableTests
 
         try
         {
-            OperationResult<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
+            OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
             if (result.IsSuccess)
             {
                 Assert.Equal(0, result.Value.Count);
@@ -207,7 +207,7 @@ public class KeywordTableTests
     [Fact]
     public void AllKeywordIds_AreNonNegative()
     {
-        OperationResult<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
+        OperationResultGeneric<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(loadResult.IsSuccess);
         KeywordTable table = loadResult.Value;
 

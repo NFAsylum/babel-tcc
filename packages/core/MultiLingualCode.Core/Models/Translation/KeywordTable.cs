@@ -39,24 +39,24 @@ public class KeywordTable
         return -1;
     }
 
-    public OperationResult<string> GetKeyword(int id)
+    public OperationResultGeneric<string> GetKeyword(int id)
     {
         if (IdToKeyword.TryGetValue(id, out string? keyword) && keyword is not null)
         {
-            return OperationResult<string>.Ok(keyword);
+            return OperationResultGeneric<string>.Ok(keyword);
         }
 
-        return OperationResult<string>.Fail($"Keyword not found for id: {id}");
+        return OperationResultGeneric<string>.Fail($"Keyword not found for id: {id}");
     }
 
     public int Count => KeywordToId.Count;
 
-    public static OperationResult<KeywordTable> LoadFrom(string filePath)
+    public static OperationResultGeneric<KeywordTable> LoadFrom(string filePath)
     {
         return JsonFileReader.ReadFromFile<KeywordTable>(filePath, JsonOptions.Default);
     }
 
-    public static async Task<OperationResult<KeywordTable>> LoadFromAsync(string filePath)
+    public static async Task<OperationResultGeneric<KeywordTable>> LoadFromAsync(string filePath)
     {
         return await JsonFileReader.ReadFromFileAsync<KeywordTable>(filePath, JsonOptions.Default);
     }

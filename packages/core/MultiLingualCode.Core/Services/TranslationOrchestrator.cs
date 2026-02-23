@@ -11,27 +11,27 @@ public class TranslationOrchestrator
     public INaturalLanguageProvider Provider { get; }
     public IdentifierMapper IdentifierMapperService { get; }
 
-    public static OperationResult<TranslationOrchestrator> Create(
+    public static OperationResultGeneric<TranslationOrchestrator> Create(
         LanguageRegistry registry,
         INaturalLanguageProvider provider,
         IdentifierMapper identifierMapper)
     {
         if (registry is null)
         {
-            return OperationResult<TranslationOrchestrator>.Fail("Registry cannot be null.");
+            return OperationResultGeneric<TranslationOrchestrator>.Fail("Registry cannot be null.");
         }
 
         if (provider is null)
         {
-            return OperationResult<TranslationOrchestrator>.Fail("Provider cannot be null.");
+            return OperationResultGeneric<TranslationOrchestrator>.Fail("Provider cannot be null.");
         }
 
         if (identifierMapper is null)
         {
-            return OperationResult<TranslationOrchestrator>.Fail("IdentifierMapper cannot be null.");
+            return OperationResultGeneric<TranslationOrchestrator>.Fail("IdentifierMapper cannot be null.");
         }
 
-        return OperationResult<TranslationOrchestrator>.Ok(
+        return OperationResultGeneric<TranslationOrchestrator>.Ok(
             new TranslationOrchestrator(registry, provider, identifierMapper));
     }
 
@@ -45,13 +45,13 @@ public class TranslationOrchestrator
         IdentifierMapperService = identifierMapper;
     }
 
-    public async Task<OperationResult<string>> TranslateToNaturalLanguageAsync(
+    public async Task<OperationResultGeneric<string>> TranslateToNaturalLanguageAsync(
         string sourceCode, string fileExtension, string targetLanguage)
     {
-        OperationResult<ILanguageAdapter> adapterResult = Registry.GetAdapter(fileExtension);
+        OperationResultGeneric<ILanguageAdapter> adapterResult = Registry.GetAdapter(fileExtension);
         if (!adapterResult.IsSuccess)
         {
-            return OperationResult<string>.Fail(adapterResult.ErrorMessage);
+            return OperationResultGeneric<string>.Fail(adapterResult.ErrorMessage);
         }
 
         ILanguageAdapter adapter = adapterResult.Value;
@@ -66,16 +66,16 @@ public class TranslationOrchestrator
         TranslateAstForward(translatedAst, targetLanguage);
 
         string result = adapter.Generate(translatedAst);
-        return OperationResult<string>.Ok(result);
+        return OperationResultGeneric<string>.Ok(result);
     }
 
-    public async Task<OperationResult<string>> TranslateFromNaturalLanguageAsync(
+    public async Task<OperationResultGeneric<string>> TranslateFromNaturalLanguageAsync(
         string translatedCode, string fileExtension, string sourceLanguage)
     {
-        OperationResult<ILanguageAdapter> adapterResult = Registry.GetAdapter(fileExtension);
+        OperationResultGeneric<ILanguageAdapter> adapterResult = Registry.GetAdapter(fileExtension);
         if (!adapterResult.IsSuccess)
         {
-            return OperationResult<string>.Fail(adapterResult.ErrorMessage);
+            return OperationResultGeneric<string>.Fail(adapterResult.ErrorMessage);
         }
 
         ILanguageAdapter adapter = adapterResult.Value;
@@ -88,7 +88,7 @@ public class TranslationOrchestrator
         TranslateAstReverse(originalAst, sourceLanguage);
 
         string result = adapter.Generate(originalAst);
-        return OperationResult<string>.Ok(result);
+        return OperationResultGeneric<string>.Ok(result);
     }
 
     public void TranslateAstForward(ASTNode node, string targetLanguage)
@@ -96,7 +96,7 @@ public class TranslationOrchestrator
         switch (node)
         {
             case KeywordNode keyword:
-                OperationResult<string> translatedResult = Provider.TranslateKeyword(keyword.KeywordId);
+                OperationResultGeneric<string> translatedResult = Provider.TranslateKeyword(keyword.KeywordId);
                 if (translatedResult.IsSuccess)
                 {
                     keyword.OriginalKeyword = translatedResult.Value;
@@ -104,7 +104,7 @@ public class TranslationOrchestrator
                 break;
 
             case IdentifierNode identifier when identifier.IsTranslatable:
-                OperationResult<string> translatedIdResult = IdentifierMapperService.GetTranslation(identifier.Name, targetLanguage);
+                OperationResultGeneric<string> translatedIdResult = IdentifierMapperService.GetTranslation(identifier.Name, targetLanguage);
                 if (translatedIdResult.IsSuccess)
                 {
                     identifier.TranslatedName = translatedIdResult.Value;
@@ -114,7 +114,7 @@ public class TranslationOrchestrator
 
             case LiteralNode literal when literal.IsTranslatable:
                 string literalText = literal.Value.ToString() ?? "";
-                OperationResult<string> translatedLitResult = IdentifierMapperService.GetLiteralTranslation(literalText, targetLanguage);
+                OperationResultGeneric<string> translatedLitResult = IdentifierMapperService.GetLiteralTranslation(literalText, targetLanguage);
                 if (translatedLitResult.IsSuccess)
                 {
                     literal.Value = translatedLitResult.Value;
@@ -137,7 +137,7 @@ public class TranslationOrchestrator
                 if (keywordId >= 0)
                 {
                     NaturalLanguageProvider provider = (NaturalLanguageProvider)Provider;
-                    OperationResult<string> originalKeywordResult = provider.GetActiveKeywordTable().GetKeyword(keywordId);
+                    OperationResultGeneric<string> originalKeywordResult = provider.GetActiveKeywordTable().GetKeyword(keywordId);
                     if (originalKeywordResult.IsSuccess)
                     {
                         keyword.OriginalKeyword = originalKeywordResult.Value;
@@ -147,7 +147,7 @@ public class TranslationOrchestrator
                 break;
 
             case IdentifierNode identifier:
-                OperationResult<string> originalIdResult = IdentifierMapperService.GetOriginal(identifier.Name, sourceLanguage);
+                OperationResultGeneric<string> originalIdResult = IdentifierMapperService.GetOriginal(identifier.Name, sourceLanguage);
                 if (originalIdResult.IsSuccess)
                 {
                     identifier.Name = originalIdResult.Value;

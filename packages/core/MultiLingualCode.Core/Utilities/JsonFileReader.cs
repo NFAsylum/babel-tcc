@@ -5,11 +5,11 @@ namespace MultiLingualCode.Core.Utilities;
 
 public class JsonFileReader
 {
-    public static OperationResult<T> ReadFromFile<T>(string filePath, JsonSerializerOptions options)
+    public static OperationResultGeneric<T> ReadFromFile<T>(string filePath, JsonSerializerOptions options)
     {
         if (!File.Exists(filePath))
         {
-            return OperationResult<T>.Fail($"File not found: {filePath}");
+            return OperationResultGeneric<T>.Fail($"File not found: {filePath}");
         }
 
         try
@@ -18,22 +18,22 @@ public class JsonFileReader
             T? result = JsonSerializer.Deserialize<T>(json, options);
             if (result is null)
             {
-                return OperationResult<T>.Fail($"Failed to deserialize file: {filePath}");
+                return OperationResultGeneric<T>.Fail($"Failed to deserialize file: {filePath}");
             }
 
-            return OperationResult<T>.Ok(result);
+            return OperationResultGeneric<T>.Ok(result);
         }
         catch (JsonException ex)
         {
-            return OperationResult<T>.Fail($"Invalid JSON in file {filePath}: {ex.Message}");
+            return OperationResultGeneric<T>.Fail($"Invalid JSON in file {filePath}: {ex.Message}");
         }
     }
 
-    public static async Task<OperationResult<T>> ReadFromFileAsync<T>(string filePath, JsonSerializerOptions options)
+    public static async Task<OperationResultGeneric<T>> ReadFromFileAsync<T>(string filePath, JsonSerializerOptions options)
     {
         if (!File.Exists(filePath))
         {
-            return OperationResult<T>.Fail($"File not found: {filePath}");
+            return OperationResultGeneric<T>.Fail($"File not found: {filePath}");
         }
 
         try
@@ -42,14 +42,14 @@ public class JsonFileReader
             T? result = await JsonSerializer.DeserializeAsync<T>(stream, options);
             if (result is null)
             {
-                return OperationResult<T>.Fail($"Failed to deserialize file: {filePath}");
+                return OperationResultGeneric<T>.Fail($"Failed to deserialize file: {filePath}");
             }
 
-            return OperationResult<T>.Ok(result);
+            return OperationResultGeneric<T>.Ok(result);
         }
         catch (JsonException ex)
         {
-            return OperationResult<T>.Fail($"Invalid JSON in file {filePath}: {ex.Message}");
+            return OperationResultGeneric<T>.Fail($"Invalid JSON in file {filePath}: {ex.Message}");
         }
     }
 
