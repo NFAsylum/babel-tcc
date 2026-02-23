@@ -23,7 +23,7 @@ public class UserPreferences
 
     public static UserPreferences LoadFrom(string filePath)
     {
-        OperationResult<UserPreferences> result = JsonFileReader.ReadFromFile<UserPreferences>(filePath, ReadOptions);
+        OperationResultGeneric<UserPreferences> result = JsonFileReader.ReadFromFile<UserPreferences>(filePath, ReadOptions);
         if (result.IsSuccess)
         {
             return result.Value;
@@ -34,7 +34,7 @@ public class UserPreferences
 
     public static async Task<UserPreferences> LoadFromAsync(string filePath)
     {
-        OperationResult<UserPreferences> result = await JsonFileReader.ReadFromFileAsync<UserPreferences>(filePath, ReadOptions);
+        OperationResultGeneric<UserPreferences> result = await JsonFileReader.ReadFromFileAsync<UserPreferences>(filePath, ReadOptions);
         if (result.IsSuccess)
         {
             return result.Value;

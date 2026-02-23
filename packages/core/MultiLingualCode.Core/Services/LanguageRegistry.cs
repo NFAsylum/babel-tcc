@@ -30,20 +30,20 @@ public class LanguageRegistry
         return OperationResult.Ok();
     }
 
-    public OperationResult<ILanguageAdapter> GetAdapter(string fileExtension)
+    public OperationResultGeneric<ILanguageAdapter> GetAdapter(string fileExtension)
     {
         if (string.IsNullOrEmpty(fileExtension))
         {
-            return OperationResult<ILanguageAdapter>.Fail("File extension is empty.");
+            return OperationResultGeneric<ILanguageAdapter>.Fail("File extension is empty.");
         }
 
         string normalized = NormalizeExtension(fileExtension);
         if (AdaptersByExtension.TryGetValue(normalized, out ILanguageAdapter? adapter) && adapter is not null)
         {
-            return OperationResult<ILanguageAdapter>.Ok(adapter);
+            return OperationResultGeneric<ILanguageAdapter>.Ok(adapter);
         }
 
-        return OperationResult<ILanguageAdapter>.Fail($"No adapter registered for extension: {fileExtension}");
+        return OperationResultGeneric<ILanguageAdapter>.Fail($"No adapter registered for extension: {fileExtension}");
     }
 
     public string[] GetSupportedExtensions()

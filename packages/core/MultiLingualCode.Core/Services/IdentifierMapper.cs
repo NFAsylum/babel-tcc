@@ -28,7 +28,7 @@ public class IdentifierMapper
             return OperationResult.Ok();
         }
 
-        OperationResult<IdentifierMapData> result = JsonFileReader.ReadFromFile<IdentifierMapData>(filePath, JsonSerializerReadOptions);
+        OperationResultGeneric<IdentifierMapData> result = JsonFileReader.ReadFromFile<IdentifierMapData>(filePath, JsonSerializerReadOptions);
         if (result.IsSuccess)
         {
             Data = result.Value;
@@ -57,7 +57,7 @@ public class IdentifierMapper
             return OperationResult.Ok();
         }
 
-        OperationResult<IdentifierMapData> result = await JsonFileReader.ReadFromFileAsync<IdentifierMapData>(filePath, JsonSerializerReadOptions);
+        OperationResultGeneric<IdentifierMapData> result = await JsonFileReader.ReadFromFileAsync<IdentifierMapData>(filePath, JsonSerializerReadOptions);
         if (result.IsSuccess)
         {
             Data = result.Value;
@@ -70,11 +70,11 @@ public class IdentifierMapper
         return OperationResult.Ok();
     }
 
-    public OperationResult<string> GetTranslation(string identifier, string targetLanguage)
+    public OperationResultGeneric<string> GetTranslation(string identifier, string targetLanguage)
     {
         if (string.IsNullOrEmpty(identifier) || string.IsNullOrEmpty(targetLanguage))
         {
-            return OperationResult<string>.Fail("Identifier or target language is empty.");
+            return OperationResultGeneric<string>.Fail("Identifier or target language is empty.");
         }
 
         if (Data.Identifiers.TryGetValue(identifier, out Dictionary<string, string>? translations)
@@ -82,17 +82,17 @@ public class IdentifierMapper
             && translations.TryGetValue(targetLanguage, out string? translated)
             && translated is not null)
         {
-            return OperationResult<string>.Ok(translated);
+            return OperationResultGeneric<string>.Ok(translated);
         }
 
-        return OperationResult<string>.Fail($"No translation found for identifier: {identifier}");
+        return OperationResultGeneric<string>.Fail($"No translation found for identifier: {identifier}");
     }
 
-    public OperationResult<string> GetOriginal(string translatedIdentifier, string sourceLanguage)
+    public OperationResultGeneric<string> GetOriginal(string translatedIdentifier, string sourceLanguage)
     {
         if (string.IsNullOrEmpty(translatedIdentifier) || string.IsNullOrEmpty(sourceLanguage))
         {
-            return OperationResult<string>.Fail("Translated identifier or source language is empty.");
+            return OperationResultGeneric<string>.Fail("Translated identifier or source language is empty.");
         }
 
         foreach (KeyValuePair<string, Dictionary<string, string>> kvp in Data.Identifiers)
@@ -101,18 +101,18 @@ public class IdentifierMapper
                 && translated is not null
                 && string.Equals(translated, translatedIdentifier, StringComparison.Ordinal))
             {
-                return OperationResult<string>.Ok(kvp.Key);
+                return OperationResultGeneric<string>.Ok(kvp.Key);
             }
         }
 
-        return OperationResult<string>.Fail($"No original found for: {translatedIdentifier}");
+        return OperationResultGeneric<string>.Fail($"No original found for: {translatedIdentifier}");
     }
 
-    public OperationResult<string> GetLiteralTranslation(string literal, string targetLanguage)
+    public OperationResultGeneric<string> GetLiteralTranslation(string literal, string targetLanguage)
     {
         if (string.IsNullOrEmpty(literal) || string.IsNullOrEmpty(targetLanguage))
         {
-            return OperationResult<string>.Fail("Literal or target language is empty.");
+            return OperationResultGeneric<string>.Fail("Literal or target language is empty.");
         }
 
         if (Data.Literals.TryGetValue(literal, out Dictionary<string, string>? translations)
@@ -120,10 +120,10 @@ public class IdentifierMapper
             && translations.TryGetValue(targetLanguage, out string? translated)
             && translated is not null)
         {
-            return OperationResult<string>.Ok(translated);
+            return OperationResultGeneric<string>.Ok(translated);
         }
 
-        return OperationResult<string>.Fail($"No translation found for literal: {literal}");
+        return OperationResultGeneric<string>.Fail($"No translation found for literal: {literal}");
     }
 
     public void SetTranslation(string identifier, string targetLanguage, string translatedName)

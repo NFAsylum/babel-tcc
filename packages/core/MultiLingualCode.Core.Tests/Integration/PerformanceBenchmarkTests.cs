@@ -81,7 +81,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(5);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -96,7 +96,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(25);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -111,7 +111,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(100);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -126,7 +126,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(200);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -144,7 +144,7 @@ public class PerformanceBenchmarkTests : IDisposable
 
         for (int i = 0; i < 50; i++)
         {
-            OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+            OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
             Assert.True(result.IsSuccess);
         }
 
@@ -165,11 +165,11 @@ public class PerformanceBenchmarkTests : IDisposable
         TranslationOrchestrator orchestrator = CreateOrchestrator();
         string code = GenerateCSharpCode(25);
 
-        OperationResult<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         Assert.True(forwardResult.IsSuccess);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResult<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
             forwardResult.Value, ".cs", "pt-br");
         stopwatch.Stop();
 

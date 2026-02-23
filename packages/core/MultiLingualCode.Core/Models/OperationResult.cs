@@ -15,40 +15,19 @@ public class OperationResult
         return new OperationResult(false, errorMessage);
     }
 
-    public static OperationResult<T> Ok<T>(T value)
+    public static OperationResultGeneric<T> Ok<T>(T value)
     {
-        return OperationResult<T>.Ok(value);
+        return OperationResultGeneric<T>.Ok(value);
     }
 
-    public static OperationResult<T> Fail<T>(string errorMessage)
+    public static OperationResultGeneric<T> Fail<T>(string errorMessage)
     {
-        return OperationResult<T>.Fail(errorMessage);
+        return OperationResultGeneric<T>.Fail(errorMessage);
     }
 
     protected OperationResult(bool isSuccess, string errorMessage)
     {
         IsSuccess = isSuccess;
         ErrorMessage = errorMessage;
-    }
-}
-
-public class OperationResult<T> : OperationResult
-{
-    public T Value { get; }
-
-    public static OperationResult<T> Ok(T value)
-    {
-        return new OperationResult<T>(true, "", value);
-    }
-
-    public new static OperationResult<T> Fail(string errorMessage)
-    {
-        return new OperationResult<T>(false, errorMessage, default!);
-    }
-
-    protected OperationResult(bool isSuccess, string errorMessage, T value)
-        : base(isSuccess, errorMessage)
-    {
-        Value = value;
     }
 }

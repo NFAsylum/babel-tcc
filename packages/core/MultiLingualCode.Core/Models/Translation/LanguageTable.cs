@@ -49,14 +49,14 @@ public class LanguageTable
         }
     }
 
-    public OperationResult<string> GetTranslation(int keywordId)
+    public OperationResultGeneric<string> GetTranslation(int keywordId)
     {
         if (IdToTranslation.TryGetValue(keywordId, out string? translation) && translation is not null)
         {
-            return OperationResult<string>.Ok(translation);
+            return OperationResultGeneric<string>.Ok(translation);
         }
 
-        return OperationResult<string>.Fail($"Translation not found for keyword id: {keywordId}");
+        return OperationResultGeneric<string>.Fail($"Translation not found for keyword id: {keywordId}");
     }
 
     public int GetKeywordId(string translatedKeyword)
@@ -76,12 +76,12 @@ public class LanguageTable
 
     public int Count => IdToTranslation.Count;
 
-    public static OperationResult<LanguageTable> LoadFrom(string filePath)
+    public static OperationResultGeneric<LanguageTable> LoadFrom(string filePath)
     {
         return JsonFileReader.ReadFromFile<LanguageTable>(filePath, JsonOptions.Default);
     }
 
-    public static async Task<OperationResult<LanguageTable>> LoadFromAsync(string filePath)
+    public static async Task<OperationResultGeneric<LanguageTable>> LoadFromAsync(string filePath)
     {
         return await JsonFileReader.ReadFromFileAsync<LanguageTable>(filePath, JsonOptions.Default);
     }

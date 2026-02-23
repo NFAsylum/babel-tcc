@@ -58,7 +58,7 @@ public class Program
 
         try
         {
-            OperationResult<CoreResponse> result = await ExecuteMethod(method, paramsJson, translationsPath, projectPath);
+            OperationResultGeneric<CoreResponse> result = await ExecuteMethod(method, paramsJson, translationsPath, projectPath);
 
             if (result.IsSuccess)
             {
@@ -91,7 +91,7 @@ public class Program
         }
     }
 
-    public static async Task<OperationResult<CoreResponse>> ExecuteMethod(
+    public static async Task<OperationResultGeneric<CoreResponse>> ExecuteMethod(
         string method, string paramsJson, string translationsPath, string projectPath)
     {
         switch (method)
@@ -115,7 +115,7 @@ public class Program
                 return HandleGetSupportedLanguages();
 
             default:
-                return OperationResult<CoreResponse>.Fail($"Unknown method: {method}");
+                return OperationResultGeneric<CoreResponse>.Fail($"Unknown method: {method}");
         }
     }
 
@@ -142,49 +142,49 @@ public class Program
         return new TranslationOrchestrator(registry, provider, mapper);
     }
 
-    public static async Task<OperationResult<CoreResponse>> HandleTranslateToNaturalLanguage(
+    public static async Task<OperationResultGeneric<CoreResponse>> HandleTranslateToNaturalLanguage(
         TranslationOrchestrator orchestrator, string paramsJson)
     {
         TranslateRequest request = JsonSerializer.Deserialize<TranslateRequest>(paramsJson, JsonOptions)
             ?? new TranslateRequest();
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             request.SourceCode, request.FileExtension, request.TargetLanguage);
 
         if (!result.IsSuccess)
         {
-            return OperationResult<CoreResponse>.Fail(result.ErrorMessage);
+            return OperationResultGeneric<CoreResponse>.Fail(result.ErrorMessage);
         }
 
-        return OperationResult<CoreResponse>.Ok(new CoreResponse
+        return OperationResultGeneric<CoreResponse>.Ok(new CoreResponse
         {
             Success = true,
             Result = result.Value
         });
     }
 
-    public static async Task<OperationResult<CoreResponse>> HandleTranslateFromNaturalLanguage(
+    public static async Task<OperationResultGeneric<CoreResponse>> HandleTranslateFromNaturalLanguage(
         TranslationOrchestrator orchestrator, string paramsJson)
     {
         ReverseTranslateRequest request = JsonSerializer.Deserialize<ReverseTranslateRequest>(paramsJson, JsonOptions)
             ?? new ReverseTranslateRequest();
 
-        OperationResult<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             request.TranslatedCode, request.FileExtension, request.SourceLanguage);
 
         if (!result.IsSuccess)
         {
-            return OperationResult<CoreResponse>.Fail(result.ErrorMessage);
+            return OperationResultGeneric<CoreResponse>.Fail(result.ErrorMessage);
         }
 
-        return OperationResult<CoreResponse>.Ok(new CoreResponse
+        return OperationResultGeneric<CoreResponse>.Ok(new CoreResponse
         {
             Success = true,
             Result = result.Value
         });
     }
 
-    public static OperationResult<CoreResponse> HandleValidateSyntax(string paramsJson)
+    public static OperationResultGeneric<CoreResponse> HandleValidateSyntax(string paramsJson)
     {
         ValidateRequest request = JsonSerializer.Deserialize<ValidateRequest>(paramsJson, JsonOptions)
             ?? new ValidateRequest();
@@ -192,18 +192,18 @@ public class Program
         CSharpAdapter adapter = new CSharpAdapter();
         ValidationResult validation = adapter.ValidateSyntax(request.SourceCode);
 
-        return OperationResult<CoreResponse>.Ok(new CoreResponse
+        return OperationResultGeneric<CoreResponse>.Ok(new CoreResponse
         {
             Success = true,
             Result = JsonSerializer.Serialize(validation, JsonOptions)
         });
     }
 
-    public static OperationResult<CoreResponse> HandleGetSupportedLanguages()
+    public static OperationResultGeneric<CoreResponse> HandleGetSupportedLanguages()
     {
         List<string> languages = new List<string> { "pt-br" };
 
-        return OperationResult<CoreResponse>.Ok(new CoreResponse
+        return OperationResultGeneric<CoreResponse>.Ok(new CoreResponse
         {
             Success = true,
             Result = JsonSerializer.Serialize(languages, JsonOptions)

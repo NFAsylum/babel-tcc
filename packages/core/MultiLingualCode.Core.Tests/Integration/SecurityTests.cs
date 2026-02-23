@@ -52,7 +52,7 @@ class Evil
     }
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             maliciousCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -65,7 +65,7 @@ class Evil
 
         string codeWithControlChars = "class Test\n{\n    string x = \"hello\\0\\r\\n\\t\";\n}";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             codeWithControlChars, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -79,7 +79,7 @@ class Evil
         string longName = new string('a', 10000);
         string code = $"class {longName} {{ }}";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             code, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -107,7 +107,7 @@ class Evil
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             sb.ToString(), ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -118,7 +118,7 @@ class Evil
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -129,7 +129,7 @@ class Evil
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "   \n\n\t\t  \r\n  ", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -146,7 +146,7 @@ class Programa
     string mensagem = ""Olá Mundo 你好世界 مرحبا"";
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             unicodeCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -158,7 +158,7 @@ class Programa
         string tempPath = Path.Combine(_tempDir, "malformed.json");
         File.WriteAllText(tempPath, "{{{{invalid json]]]]");
 
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
 
         Assert.False(result.IsSuccess);
     }
@@ -181,7 +181,7 @@ class Programa
 
         File.WriteAllText(tempPath, sb.ToString());
 
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
 
         // Deeply nested JSON should not crash - result may succeed or fail
         // The important thing is no exception/crash
@@ -204,7 +204,7 @@ class Programa
         sb.Append("}}");
         File.WriteAllText(tempPath, sb.ToString());
 
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(10000, result.Value.Count);
@@ -215,7 +215,7 @@ class Programa
     {
         string maliciousPath = Path.Combine(_tempDir, "..", "..", "..", "etc", "passwd");
 
-        OperationResult<KeywordTable> result = KeywordTable.LoadFrom(maliciousPath);
+        OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(maliciousPath);
 
         Assert.False(result.IsSuccess);
     }
@@ -231,7 +231,7 @@ class Test // tradu:Teste<script>alert('xss')</script>
     int value; // tradu:valor'; DROP TABLE users; --
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             code, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -252,7 +252,7 @@ class Program
     }
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             code, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);

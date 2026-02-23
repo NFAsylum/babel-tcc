@@ -19,13 +19,3 @@ public class LiteralNode : ASTNode
         return clone;
     }
 }
-
-public enum LiteralType
-{
-    String,
-    Number,
-    Boolean,
-    Null,
-    Char,
-    Other
-}

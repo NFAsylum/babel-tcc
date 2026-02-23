@@ -24,34 +24,34 @@ public class IdentifierMap
         }
     }
 
-    public OperationResult<string> GetTranslated(string originalName)
+    public OperationResultGeneric<string> GetTranslated(string originalName)
     {
         if (string.IsNullOrEmpty(originalName))
         {
-            return OperationResult<string>.Fail("Original name is empty");
+            return OperationResultGeneric<string>.Fail("Original name is empty");
         }
 
         if (OriginalToTranslated.TryGetValue(originalName, out string? translated) && translated is not null)
         {
-            return OperationResult<string>.Ok(translated);
+            return OperationResultGeneric<string>.Ok(translated);
         }
 
-        return OperationResult<string>.Fail($"No translation found for: {originalName}");
+        return OperationResultGeneric<string>.Fail($"No translation found for: {originalName}");
     }
 
-    public OperationResult<string> GetOriginal(string translatedName)
+    public OperationResultGeneric<string> GetOriginal(string translatedName)
     {
         if (string.IsNullOrEmpty(translatedName))
         {
-            return OperationResult<string>.Fail("Translated name is empty");
+            return OperationResultGeneric<string>.Fail("Translated name is empty");
         }
 
         if (TranslatedToOriginal.TryGetValue(translatedName, out string? original) && original is not null)
         {
-            return OperationResult<string>.Ok(original);
+            return OperationResultGeneric<string>.Ok(original);
         }
 
-        return OperationResult<string>.Fail($"No original found for: {translatedName}");
+        return OperationResultGeneric<string>.Fail($"No original found for: {translatedName}");
     }
 
     public void Set(string originalName, string translatedName)
@@ -84,12 +84,12 @@ public class IdentifierMap
 
     public int Count => OriginalToTranslated.Count;
 
-    public static OperationResult<IdentifierMap> LoadFrom(string filePath)
+    public static OperationResultGeneric<IdentifierMap> LoadFrom(string filePath)
     {
         return JsonFileReader.ReadFromFile<IdentifierMap>(filePath, JsonOptions.Default);
     }
 
-    public static async Task<OperationResult<IdentifierMap>> LoadFromAsync(string filePath)
+    public static async Task<OperationResultGeneric<IdentifierMap>> LoadFromAsync(string filePath)
     {
         return await JsonFileReader.ReadFromFileAsync<IdentifierMap>(filePath, JsonOptions.Default);
     }

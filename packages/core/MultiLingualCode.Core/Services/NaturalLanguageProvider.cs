@@ -17,19 +17,19 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
     public string LanguageCode { get; }
     public string LanguageName { get; set; } = "";
 
-    public static OperationResult<NaturalLanguageProvider> Create(string languageCode, string translationsBasePath)
+    public static OperationResultGeneric<NaturalLanguageProvider> Create(string languageCode, string translationsBasePath)
     {
         if (string.IsNullOrEmpty(languageCode))
         {
-            return OperationResult<NaturalLanguageProvider>.Fail("Language code cannot be empty.");
+            return OperationResultGeneric<NaturalLanguageProvider>.Fail("Language code cannot be empty.");
         }
 
         if (string.IsNullOrEmpty(translationsBasePath))
         {
-            return OperationResult<NaturalLanguageProvider>.Fail("Translations base path cannot be empty.");
+            return OperationResultGeneric<NaturalLanguageProvider>.Fail("Translations base path cannot be empty.");
         }
 
-        return OperationResult<NaturalLanguageProvider>.Ok(new NaturalLanguageProvider(languageCode, translationsBasePath));
+        return OperationResultGeneric<NaturalLanguageProvider>.Ok(new NaturalLanguageProvider(languageCode, translationsBasePath));
     }
 
     public NaturalLanguageProvider(string languageCode, string translationsBasePath)
@@ -50,7 +50,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
                 langKey,
                 "keywords-base.json");
 
-            OperationResult<KeywordTable> keywordResult = await KeywordTable.LoadFromAsync(keywordsPath);
+            OperationResultGeneric<KeywordTable> keywordResult = await KeywordTable.LoadFromAsync(keywordsPath);
             if (!keywordResult.IsSuccess)
             {
                 return;
@@ -67,7 +67,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
                 LanguageCode,
                 $"{langKey}.json");
 
-            OperationResult<LanguageTable> tableResult = await LanguageTable.LoadFromAsync(translationPath);
+            OperationResultGeneric<LanguageTable> tableResult = await LanguageTable.LoadFromAsync(translationPath);
             if (!tableResult.IsSuccess)
             {
                 return;
@@ -82,11 +82,11 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
         LanguageName = ActiveTable.LanguageName;
     }
 
-    public OperationResult<string> TranslateKeyword(int keywordId)
+    public OperationResultGeneric<string> TranslateKeyword(int keywordId)
     {
         if (!HasActiveTable)
         {
-            return OperationResult<string>.Fail("No active translation table loaded.");
+            return OperationResultGeneric<string>.Fail("No active translation table loaded.");
         }
 
         return ActiveTable.GetTranslation(keywordId);
@@ -107,11 +107,11 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
         return ActiveTable.GetKeywordId(translatedKeyword);
     }
 
-    public OperationResult<string> TranslateIdentifier(string identifier, IdentifierContext context)
+    public OperationResultGeneric<string> TranslateIdentifier(string identifier, IdentifierContext context)
     {
         if (string.IsNullOrEmpty(identifier))
         {
-            return OperationResult<string>.Fail("Identifier is empty.");
+            return OperationResultGeneric<string>.Fail("Identifier is empty.");
         }
 
         return IdentifierMapData.GetTranslated(identifier);
@@ -119,7 +119,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
 
     public async Task LoadIdentifierMapAsync(string filePath)
     {
-        OperationResult<IdentifierMap> result = await IdentifierMap.LoadFromAsync(filePath);
+        OperationResultGeneric<IdentifierMap> result = await IdentifierMap.LoadFromAsync(filePath);
         if (result.IsSuccess)
         {
             IdentifierMapData = result.Value;

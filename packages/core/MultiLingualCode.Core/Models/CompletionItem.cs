@@ -25,13 +25,3 @@ public class CompletionItem
     /// </summary>
     public CompletionItemKind Kind { get; set; }
 }
-
-/// <summary>
-/// Types of completion items.
-/// </summary>
-public enum CompletionItemKind
-{
-    Keyword,
-    Identifier,
-    Snippet
-}

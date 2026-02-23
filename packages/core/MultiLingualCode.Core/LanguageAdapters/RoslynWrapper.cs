@@ -129,11 +129,3 @@ public class RoslynWrapper
         return identifiersOnLine;
     }
 }
-
-public enum LiteralTokenKind
-{
-    Numeric,
-    String,
-    Character,
-    Other
-}

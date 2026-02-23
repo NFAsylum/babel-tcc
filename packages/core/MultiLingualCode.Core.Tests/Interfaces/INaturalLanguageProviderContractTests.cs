@@ -23,7 +23,7 @@ public class INaturalLanguageProviderContractTests
     [Fact]
     public void TranslateKeyword_ReturnsTranslation()
     {
-        OperationResult<string> result = ProviderInstance.TranslateKeyword(30);
+        OperationResultGeneric<string> result = ProviderInstance.TranslateKeyword(30);
         Assert.True(result.IsSuccess);
         Assert.Equal("se", result.Value);
     }
@@ -31,7 +31,7 @@ public class INaturalLanguageProviderContractTests
     [Fact]
     public void TranslateKeyword_ReturnsFailForUnknown()
     {
-        OperationResult<string> result = ProviderInstance.TranslateKeyword(999);
+        OperationResultGeneric<string> result = ProviderInstance.TranslateKeyword(999);
         Assert.False(result.IsSuccess);
     }
 
@@ -57,7 +57,7 @@ public class INaturalLanguageProviderContractTests
             OriginalName = "count",
             Kind = IdentifierKind.Variable
         };
-        OperationResult<string> result = ProviderInstance.TranslateIdentifier("count", context);
+        OperationResultGeneric<string> result = ProviderInstance.TranslateIdentifier("count", context);
         Assert.True(result.IsSuccess);
     }
 
@@ -76,14 +76,14 @@ public class INaturalLanguageProviderContractTests
         public Task LoadTranslationTableAsync(string programmingLanguage) =>
             Task.CompletedTask;
 
-        public OperationResult<string> TranslateKeyword(int keywordId)
+        public OperationResultGeneric<string> TranslateKeyword(int keywordId)
         {
             if (Keywords.TryGetValue(keywordId, out string? value) && value is not null)
             {
-                return OperationResult<string>.Ok(value);
+                return OperationResultGeneric<string>.Ok(value);
             }
 
-            return OperationResult<string>.Fail("Keyword not found");
+            return OperationResultGeneric<string>.Fail("Keyword not found");
         }
 
         public int ReverseTranslateKeyword(string translatedKeyword)
@@ -98,14 +98,14 @@ public class INaturalLanguageProviderContractTests
             return -1;
         }
 
-        public OperationResult<string> TranslateIdentifier(string identifier, IdentifierContext context)
+        public OperationResultGeneric<string> TranslateIdentifier(string identifier, IdentifierContext context)
         {
             if (identifier == "count")
             {
-                return OperationResult<string>.Ok("contador");
+                return OperationResultGeneric<string>.Ok("contador");
             }
 
-            return OperationResult<string>.Fail("Not found");
+            return OperationResultGeneric<string>.Fail("Not found");
         }
     }
 }

@@ -80,7 +80,7 @@ public class LanguageRegistryTests
         _registry.RegisterAdapter(first);
         _registry.RegisterAdapter(second);
 
-        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(".cs");
+        OperationResultGeneric<ILanguageAdapter> result = _registry.GetAdapter(".cs");
         Assert.True(result.IsSuccess);
         Assert.Same(second, result.Value);
     }
@@ -94,8 +94,8 @@ public class LanguageRegistryTests
         _registry.RegisterAdapter(csAdapter);
         _registry.RegisterAdapter(pyAdapter);
 
-        OperationResult<ILanguageAdapter> csResult = _registry.GetAdapter(".cs");
-        OperationResult<ILanguageAdapter> pyResult = _registry.GetAdapter(".py");
+        OperationResultGeneric<ILanguageAdapter> csResult = _registry.GetAdapter(".cs");
+        OperationResultGeneric<ILanguageAdapter> pyResult = _registry.GetAdapter(".py");
 
         Assert.True(csResult.IsSuccess);
         Assert.True(pyResult.IsSuccess);
@@ -109,21 +109,21 @@ public class LanguageRegistryTests
         ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
         _registry.RegisterAdapter(adapter);
 
-        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(".py");
+        OperationResultGeneric<ILanguageAdapter> result = _registry.GetAdapter(".py");
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void GetAdapter_ReturnsFailureForEmptyString()
     {
-        OperationResult<ILanguageAdapter> result = _registry.GetAdapter("");
+        OperationResultGeneric<ILanguageAdapter> result = _registry.GetAdapter("");
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void GetAdapter_ReturnsFailureForNullString()
     {
-        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(null!);
+        OperationResultGeneric<ILanguageAdapter> result = _registry.GetAdapter(null!);
         Assert.False(result.IsSuccess);
     }
 
@@ -133,8 +133,8 @@ public class LanguageRegistryTests
         ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
         _registry.RegisterAdapter(adapter);
 
-        OperationResult<ILanguageAdapter> upperResult = _registry.GetAdapter(".CS");
-        OperationResult<ILanguageAdapter> mixedResult = _registry.GetAdapter(".Cs");
+        OperationResultGeneric<ILanguageAdapter> upperResult = _registry.GetAdapter(".CS");
+        OperationResultGeneric<ILanguageAdapter> mixedResult = _registry.GetAdapter(".Cs");
 
         Assert.True(upperResult.IsSuccess);
         Assert.True(mixedResult.IsSuccess);
@@ -212,7 +212,7 @@ public class LanguageRegistryTests
         _registry.RegisterAdapter(adapter);
 
         Assert.True(_registry.IsSupported(".cs"));
-        OperationResult<ILanguageAdapter> result = _registry.GetAdapter(".cs");
+        OperationResultGeneric<ILanguageAdapter> result = _registry.GetAdapter(".cs");
         Assert.True(result.IsSuccess);
         Assert.Same(adapter, result.Value);
     }
@@ -222,7 +222,7 @@ public class LanguageRegistryTests
     {
         _registry.RegisterAdapter(CreateMockAdapter("CSharp", ".cs"));
 
-        OperationResult<ILanguageAdapter> result = _registry.GetAdapter("cs");
+        OperationResultGeneric<ILanguageAdapter> result = _registry.GetAdapter("cs");
         Assert.True(result.IsSuccess);
     }
 
@@ -237,10 +237,10 @@ public class LanguageRegistryTests
         _registry.RegisterAdapter(pyAdapter);
         _registry.RegisterAdapter(tsAdapter);
 
-        OperationResult<ILanguageAdapter> csResult = _registry.GetAdapter(".cs");
-        OperationResult<ILanguageAdapter> pyResult = _registry.GetAdapter(".py");
-        OperationResult<ILanguageAdapter> tsResult = _registry.GetAdapter(".ts");
-        OperationResult<ILanguageAdapter> tsxResult = _registry.GetAdapter(".tsx");
+        OperationResultGeneric<ILanguageAdapter> csResult = _registry.GetAdapter(".cs");
+        OperationResultGeneric<ILanguageAdapter> pyResult = _registry.GetAdapter(".py");
+        OperationResultGeneric<ILanguageAdapter> tsResult = _registry.GetAdapter(".ts");
+        OperationResultGeneric<ILanguageAdapter> tsxResult = _registry.GetAdapter(".tsx");
 
         Assert.True(csResult.IsSuccess);
         Assert.True(pyResult.IsSuccess);

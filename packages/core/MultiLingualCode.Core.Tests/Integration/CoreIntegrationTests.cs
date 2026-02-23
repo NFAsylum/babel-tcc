@@ -54,7 +54,7 @@ namespace HelloWorld
     }
 }";
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(translationResult.IsSuccess);
@@ -86,7 +86,7 @@ namespace HelloWorld
     }
 }";
 
-        OperationResult<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
         Assert.True(forwardResult.IsSuccess);
 
@@ -96,7 +96,7 @@ namespace HelloWorld
         Assert.Contains("classe", forwardResult.Value);
 
         // Reverse: identifiers restored
-        OperationResult<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
             forwardResult.Value, ".cs", "pt-br");
         Assert.True(reverseResult.IsSuccess);
 
@@ -128,7 +128,7 @@ namespace HelloWorld
     }
 }";
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(translationResult.IsSuccess);
@@ -165,7 +165,7 @@ namespace HelloWorld
     }
 }";
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(translationResult.IsSuccess);
@@ -208,7 +208,7 @@ namespace MyApp
     }
 }";
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(translationResult.IsSuccess);
@@ -246,7 +246,7 @@ namespace MyApp
     }
 }";
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(translationResult.IsSuccess);
@@ -288,7 +288,7 @@ namespace MyApp
     }
 }";
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(translationResult.IsSuccess);
@@ -386,7 +386,7 @@ namespace Performance.Test
 
         System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         stopwatch.Stop();
@@ -402,7 +402,7 @@ namespace Performance.Test
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             "code", ".xyz", "pt-br");
 
         Assert.False(translationResult.IsSuccess);
@@ -415,7 +415,7 @@ namespace Performance.Test
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        OperationResult<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
             "", ".cs", "pt-br");
 
         Assert.True(translationResult.IsSuccess);
@@ -440,7 +440,7 @@ namespace Performance.Test
     }
 }";
 
-        OperationResult<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
         Assert.True(forwardResult.IsSuccess);
 
@@ -451,7 +451,7 @@ namespace Performance.Test
         Assert.Contains("se", forwardResult.Value);
         Assert.Contains("retornar", forwardResult.Value);
 
-        OperationResult<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
             forwardResult.Value, ".cs", "pt-br");
         Assert.True(reverseResult.IsSuccess);
     }
@@ -472,7 +472,7 @@ class Program
     }
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -494,7 +494,7 @@ class Program
     Blue
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -515,7 +515,7 @@ class Program
     public int Y;
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -535,7 +535,7 @@ class Program
     bool IsValid();
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -568,7 +568,7 @@ class Program
     }
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
@@ -598,7 +598,7 @@ class Program
     }
 }";
 
-        OperationResult<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
