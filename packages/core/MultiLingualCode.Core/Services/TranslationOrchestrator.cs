@@ -110,7 +110,7 @@ public class TranslationOrchestrator
                 OperationResultGeneric<string> translatedResult = Provider.TranslateKeyword(keyword.KeywordId);
                 if (translatedResult.IsSuccess)
                 {
-                    keyword.OriginalKeyword = translatedResult.Value;
+                    keyword.Text = translatedResult.Value;
                 }
                 break;
 
@@ -124,7 +124,7 @@ public class TranslationOrchestrator
                 break;
 
             case LiteralNode literal when literal.IsTranslatable:
-                string literalText = literal.Value.ToString() ?? "";
+                string literalText = $"{literal.Value}";
                 OperationResultGeneric<string> translatedLitResult = IdentifierMapperService.GetLiteralTranslation(literalText, targetLanguage);
                 if (translatedLitResult.IsSuccess)
                 {
@@ -144,13 +144,13 @@ public class TranslationOrchestrator
         switch (node)
         {
             case KeywordNode keyword:
-                int keywordId = Provider.ReverseTranslateKeyword(keyword.OriginalKeyword);
+                int keywordId = Provider.ReverseTranslateKeyword(keyword.Text);
                 if (keywordId >= 0)
                 {
                     OperationResultGeneric<string> originalKeywordResult = Provider.GetOriginalKeyword(keywordId);
                     if (originalKeywordResult.IsSuccess)
                     {
-                        keyword.OriginalKeyword = originalKeywordResult.Value;
+                        keyword.Text = originalKeywordResult.Value;
                         keyword.KeywordId = keywordId;
                     }
                 }
@@ -166,7 +166,7 @@ public class TranslationOrchestrator
                 break;
 
             case LiteralNode literal when literal.IsTranslatable:
-                string translatedLiteralText = literal.Value.ToString() ?? "";
+                string translatedLiteralText = $"{literal.Value}";
                 foreach (KeyValuePair<string, Dictionary<string, string>> kvp in IdentifierMapperService.Data.Literals)
                 {
                     if (kvp.Value.TryGetValue(sourceLanguage, out string? translatedValue)
