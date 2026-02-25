@@ -82,6 +82,15 @@ public class RoslynWrapper
         };
     }
 
+    public static object GetLiteralValue(SyntaxToken token)
+    {
+        if (token.Value is object value)
+        {
+            return value;
+        }
+        return "";
+    }
+
     public static string GetTrailingCommentText(SyntaxToken token)
     {
         foreach (SyntaxTrivia trivia in token.TrailingTrivia)

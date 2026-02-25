@@ -67,7 +67,7 @@ public class CSharpAdapter : ILanguageAdapter
             {
                 compilationUnit.Children.Add(new LiteralNode
                 {
-                    Value = token.Value ?? "",
+                    Value = RoslynWrapper.GetLiteralValue(token),
                     Type = ConvertLiteralKind(RoslynWrapper.GetLiteralKind(token)),
                     IsTranslatable = RoslynWrapper.IsStringLiteralToken(token),
                     StartPosition = span.Start,

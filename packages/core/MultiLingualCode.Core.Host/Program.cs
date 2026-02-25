@@ -2,6 +2,7 @@ using System.Text.Json;
 using MultiLingualCode.Core.LanguageAdapters;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Services;
+using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Host;
 
@@ -100,16 +101,24 @@ public class Program
         {
             case "TranslateToNaturalLanguage":
             {
-                TranslateRequest request = JsonSerializer.Deserialize<TranslateRequest>(paramsJson, JsonOptions)
-                    ?? new TranslateRequest();
+                OperationResultGeneric<TranslateRequest> parseResult = JsonFileReader.ReadFromString<TranslateRequest>(paramsJson, JsonOptions);
+                if (!parseResult.IsSuccess)
+                {
+                    return OperationResultGeneric<CoreResponse>.Fail(parseResult.ErrorMessage);
+                }
+                TranslateRequest request = parseResult.Value;
                 TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, translationsPath, projectPath);
                 return await HandleTranslateToNaturalLanguage(orchestrator, request);
             }
 
             case "TranslateFromNaturalLanguage":
             {
-                ReverseTranslateRequest request = JsonSerializer.Deserialize<ReverseTranslateRequest>(paramsJson, JsonOptions)
-                    ?? new ReverseTranslateRequest();
+                OperationResultGeneric<ReverseTranslateRequest> parseResult = JsonFileReader.ReadFromString<ReverseTranslateRequest>(paramsJson, JsonOptions);
+                if (!parseResult.IsSuccess)
+                {
+                    return OperationResultGeneric<CoreResponse>.Fail(parseResult.ErrorMessage);
+                }
+                ReverseTranslateRequest request = parseResult.Value;
                 TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, translationsPath, projectPath);
                 return await HandleTranslateFromNaturalLanguage(orchestrator, request);
             }
@@ -185,8 +194,12 @@ public class Program
 
     public static OperationResultGeneric<CoreResponse> HandleValidateSyntax(string paramsJson)
     {
-        ValidateRequest request = JsonSerializer.Deserialize<ValidateRequest>(paramsJson, JsonOptions)
-            ?? new ValidateRequest();
+        OperationResultGeneric<ValidateRequest> parseResult = JsonFileReader.ReadFromString<ValidateRequest>(paramsJson, JsonOptions);
+        if (!parseResult.IsSuccess)
+        {
+            return OperationResultGeneric<CoreResponse>.Fail(parseResult.ErrorMessage);
+        }
+        ValidateRequest request = parseResult.Value;
 
         CSharpAdapter adapter = new CSharpAdapter();
         ValidationResult validation = adapter.ValidateSyntax(request.SourceCode);
