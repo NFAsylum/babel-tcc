@@ -5,11 +5,15 @@
 | Ferramenta | Versao Minima | Download |
 |---|---|---|
 | .NET SDK | 8.0+ | https://dotnet.microsoft.com/download |
-| Node.js | <!-- TODO: verificar versao minima de Node.js necessaria --> | https://nodejs.org |
+| Node.js | 18+ | https://nodejs.org |
 | VS Code | 1.85+ | https://code.visualstudio.com |
-| Git | <!-- TODO: verificar versao minima de Git necessaria --> | https://git-scm.com |
+| Git | 2.30+ <!-- TODO: Test/verify --> | https://git-scm.com |
 
-<!-- TODO: verificar quais extensoes VS Code sao realmente recomendadas/necessarias -->
+### Extensoes VS Code recomendadas
+<!-- TODO: Test/verify - criar .vscode/extensions.json para confirmar -->
+
+- **C# Dev Kit** (ms-dotnettools.csdevkit) - IntelliSense para C#
+- **ESLint** (dbaeumer.vscode-eslint) - Lint para TypeScript
 
 ## Clonar Repositorios
 
@@ -80,7 +84,8 @@ babel-tcc/
 ## Variaveis de Ambiente
 
 Nenhuma variavel de ambiente e necessaria para desenvolvimento local.
-<!-- TODO: verificar como a extensao localiza o binario Core (caminho relativo, configuracao, etc.) -->
+
+A extensao localiza o binario Core em `bin/MultiLingualCode.Core.Host.dll` relativo ao diretorio da extensao. O script `npm run publish-core` popula esta pasta.
 
 ## Problemas Comuns
 

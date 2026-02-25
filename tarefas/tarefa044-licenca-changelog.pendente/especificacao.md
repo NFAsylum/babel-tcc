@@ -9,6 +9,7 @@ Definir licenciamento do projeto, criar changelog estruturado e verificar compat
 ## Escopo
 - Escolher licenca do projeto:
   - MIT recomendado (permissiva, amplamente aceita, compativel com Marketplace)
+  <!-- TODO: Test/verify - confirmar escolha de licenca MIT com stakeholders -->
   - Criar arquivo LICENSE na raiz do repositorio
   - Adicionar campo license no package.json
   - Adicionar header de licenca em .csproj se necessario

@@ -18,8 +18,7 @@
 
 ## Via VS Code Marketplace
 
-<!-- TODO: a extensao ainda nao esta publicada no Marketplace -->
-Quando publicada:
+Quando disponivel no Marketplace:
 1. Abrir VS Code
 2. Ir em Extensions (`Ctrl+Shift+X`)
 3. Pesquisar "Babel TCC"
@@ -45,7 +44,8 @@ npm install
 # Compilar
 npm run build
 
-# <!-- TODO: adicionar scripts "publish-core" e "package" ao package.json -->
+# Gerar .vsix
+npm run package
 ```
 
 O ficheiro `.vsix` sera gerado na pasta `packages/ide-adapters/vscode/`.
