@@ -11,6 +11,7 @@ public interface ILanguageAdapter
     ASTNode Parse(string sourceCode);
     string Generate(ASTNode ast);
     Dictionary<string, int> GetKeywordMap();
+    string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword);
     ValidationResult ValidateSyntax(string sourceCode);
     List<string> ExtractIdentifiers(string sourceCode);
 }

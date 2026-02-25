@@ -69,6 +69,7 @@ public class ILanguageAdapterContractTests
         public ASTNode Parse(string sourceCode) => new MockASTNode();
         public string Generate(ASTNode ast) => "generated";
         public Dictionary<string, int> GetKeywordMap() => new() { { "if", 30 } };
+        public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword) => translatedCode;
         public ValidationResult ValidateSyntax(string sourceCode) => new() { IsValid = true };
         public List<string> ExtractIdentifiers(string sourceCode) => new() { "test" };
     }

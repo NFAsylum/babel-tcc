@@ -606,4 +606,131 @@ class Program
         Assert.Contains("caso", result.Value);
         Assert.Contains("padrao", result.Value);
     }
+
+    [Fact]
+    public async Task ReverseTranslation_KeywordsRevertToCSharp()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string translatedCode = @"usando System;
+
+espaconome HelloWorld
+{
+    publico classe Program
+    {
+        publico estatico vazio Main()
+        {
+        }
+    }
+}";
+
+        OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translatedCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("using", result.Value);
+        Assert.Contains("namespace", result.Value);
+        Assert.Contains("public", result.Value);
+        Assert.Contains("class", result.Value);
+        Assert.Contains("static", result.Value);
+        Assert.Contains("void", result.Value);
+        Assert.DoesNotContain("usando", result.Value);
+        Assert.DoesNotContain("espaconome", result.Value);
+        Assert.DoesNotContain("publico", result.Value);
+        Assert.DoesNotContain("classe", result.Value);
+    }
+
+    [Fact]
+    public async Task RoundTrip_FullProgram_ProducesOriginalCode()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string originalCode = @"using System;
+
+namespace HelloWorld
+{
+    public class Program
+    {
+        public static void Main()
+        {
+            if (true)
+            {
+                int x = 42;
+                return;
+            }
+        }
+    }
+}";
+
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            originalCode, ".cs", "pt-br");
+        Assert.True(forwardResult.IsSuccess);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            forwardResult.Value, ".cs", "pt-br");
+        Assert.True(reverseResult.IsSuccess);
+
+        Assert.Equal(originalCode, reverseResult.Value);
+    }
+
+    [Fact]
+    public async Task ReverseTranslation_KeywordsInStrings_NotReplaced()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string translatedCode = @"classe Program
+{
+    texto GetMessage()
+    {
+        retornar ""classe e uma palavra"";
+    }
+}";
+
+        OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translatedCode, ".cs", "pt-br");
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("class", result.Value);
+        Assert.Contains("string", result.Value);
+        Assert.Contains("return", result.Value);
+        Assert.Contains("classe e uma palavra", result.Value);
+    }
+
+    [Fact]
+    public async Task RoundTrip_WithIdentifiers_ReversesAll()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(_tempDir);
+        mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+        mapper.SetTranslation("Add", "pt-br", "Somar");
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string originalCode = @"public class Calculator
+{
+    public int Add(int a, int b)
+    {
+        return a + b;
+    }
+}";
+
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            originalCode, ".cs", "pt-br");
+        Assert.True(forwardResult.IsSuccess);
+        Assert.Contains("Calculadora", forwardResult.Value);
+        Assert.Contains("Somar", forwardResult.Value);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            forwardResult.Value, ".cs", "pt-br");
+        Assert.True(reverseResult.IsSuccess);
+        Assert.Contains("Calculator", reverseResult.Value);
+        Assert.Contains("Add", reverseResult.Value);
+        Assert.Contains("public", reverseResult.Value);
+        Assert.Contains("class", reverseResult.Value);
+    }
 }

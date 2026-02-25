@@ -73,7 +73,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const selectLanguageCommand: vscode.Disposable = vscode.commands.registerCommand(
     'babel-tcc.selectLanguage',
     async (): Promise<void> => {
-      const languages: string[] = ['pt-br'];
+      let languages: string[];
+      try {
+        languages = await coreBridge.getSupportedLanguages();
+      } catch {
+        languages = [configService.getLanguage()];
+      }
       const selected: string | undefined = await vscode.window.showQuickPick(languages, {
         placeHolder: 'Select target language for translation'
       });

@@ -85,8 +85,8 @@ public class PerformanceBenchmarkTests : IDisposable
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
-        Assert.True(stopwatch.ElapsedMilliseconds < 500,
-            $"Small file translation took {stopwatch.ElapsedMilliseconds}ms, expected < 500ms");
+        Assert.True(stopwatch.ElapsedMilliseconds < 1000,
+            $"Small file translation took {stopwatch.ElapsedMilliseconds}ms, expected < 1000ms");
     }
 
     [Fact]

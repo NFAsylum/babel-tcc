@@ -117,6 +117,49 @@ public class CSharpAdapter : ILanguageAdapter
 
     public Dictionary<string, int> GetKeywordMap() => CSharpKeywordMap.GetMap();
 
+    public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword)
+    {
+        SyntaxTree tree = RoslynWrapper.ParseSourceCode(translatedCode);
+        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+
+        List<(int Start, int End, string OriginalKeyword)> replacements = new();
+
+        foreach (SyntaxToken token in root.DescendantTokens())
+        {
+            if (!token.IsKind(SyntaxKind.IdentifierToken))
+            {
+                continue;
+            }
+
+            int keywordId = lookupTranslatedKeyword(token.Text);
+            if (keywordId < 0)
+            {
+                continue;
+            }
+
+            string originalKeyword = CSharpKeywordMap.GetText(keywordId);
+            if (!string.IsNullOrEmpty(originalKeyword))
+            {
+                replacements.Add((token.Span.Start, token.Span.End, originalKeyword));
+            }
+        }
+
+        if (replacements.Count == 0)
+        {
+            return translatedCode;
+        }
+
+        replacements.Sort((a, b) => b.Start.CompareTo(a.Start));
+
+        string result = translatedCode;
+        foreach ((int start, int end, string originalKeyword) in replacements)
+        {
+            result = string.Concat(result.AsSpan(0, start), originalKeyword, result.AsSpan(end));
+        }
+
+        return result;
+    }
+
     public ValidationResult ValidateSyntax(string sourceCode)
     {
         SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
