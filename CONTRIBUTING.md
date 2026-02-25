@@ -30,7 +30,7 @@ Obrigado pelo interesse em contribuir! Este documento explica como participar no
 ### Pre-requisitos
 
 - .NET 8 SDK
-- Node.js <!-- TODO: verificar versao minima de Node.js necessaria -->
+- Node.js 18+
 - VS Code (para testar a extensao)
 
 ### Build

@@ -1,8 +1,8 @@
 # Babel TCC - MultiLingual Code
 
-<!-- TODO: criar workflows .github/workflows/build-core.yml e build-vscode.yml antes de habilitar badges -->
-<!-- [![Build Core](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml) -->
-<!-- [![Build VS Code](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml) -->
+[![Build Core](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml)
+[![Build VS Code](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml)
+[![Tests](https://github.com/NFAsylum/babel-tcc/actions/workflows/test.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/test.yml)
 
 
 Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
@@ -81,7 +81,7 @@ npm install
 npm run build
 ```
 
-<!-- TODO: adicionar script "package" ao package.json para gerar .vsix -->
+Para gerar o `.vsix`: `npm run package` (requer [vsce](https://github.com/microsoft/vscode-vsce))
 
 ## Linguagens Suportadas
 
