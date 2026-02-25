@@ -110,7 +110,7 @@ public class TranslationOrchestrator
                 OperationResultGeneric<string> translatedResult = Provider.TranslateKeyword(keyword.KeywordId);
                 if (translatedResult.IsSuccess)
                 {
-                    keyword.OriginalKeyword = translatedResult.Value;
+                    keyword.Text = translatedResult.Value;
                 }
                 break;
 
@@ -144,13 +144,13 @@ public class TranslationOrchestrator
         switch (node)
         {
             case KeywordNode keyword:
-                int keywordId = Provider.ReverseTranslateKeyword(keyword.OriginalKeyword);
+                int keywordId = Provider.ReverseTranslateKeyword(keyword.Text);
                 if (keywordId >= 0)
                 {
                     OperationResultGeneric<string> originalKeywordResult = Provider.GetOriginalKeyword(keywordId);
                     if (originalKeywordResult.IsSuccess)
                     {
-                        keyword.OriginalKeyword = originalKeywordResult.Value;
+                        keyword.Text = originalKeywordResult.Value;
                         keyword.KeywordId = keywordId;
                     }
                 }

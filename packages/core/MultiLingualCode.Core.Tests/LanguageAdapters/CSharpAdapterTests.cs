@@ -41,11 +41,11 @@ namespace HelloWorld
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
         // Should find keywords: using, namespace, class, static, void
-        Assert.Contains(keywords, k => k.OriginalKeyword == "using" && k.KeywordId == 72);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "namespace" && k.KeywordId == 39);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "class" && k.KeywordId == 10);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "static" && k.KeywordId == 58);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "void" && k.KeywordId == 75);
+        Assert.Contains(keywords, k => k.Text == "using" && k.KeywordId == 72);
+        Assert.Contains(keywords, k => k.Text == "namespace" && k.KeywordId == 39);
+        Assert.Contains(keywords, k => k.Text == "class" && k.KeywordId == 10);
+        Assert.Contains(keywords, k => k.Text == "static" && k.KeywordId == 58);
+        Assert.Contains(keywords, k => k.Text == "void" && k.KeywordId == 75);
 
         // Should find identifiers: System, HelloWorld, Program, Main, Console, WriteLine
         Assert.Contains(identifiers, i => i.Name == "System");
@@ -72,11 +72,11 @@ else
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "if" && k.KeywordId == 30);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "else" && k.KeywordId == 18);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "return" && k.KeywordId == 52);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "true" && k.KeywordId == 64);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "false" && k.KeywordId == 23);
+        Assert.Contains(keywords, k => k.Text == "if" && k.KeywordId == 30);
+        Assert.Contains(keywords, k => k.Text == "else" && k.KeywordId == 18);
+        Assert.Contains(keywords, k => k.Text == "return" && k.KeywordId == 52);
+        Assert.Contains(keywords, k => k.Text == "true" && k.KeywordId == 64);
+        Assert.Contains(keywords, k => k.Text == "false" && k.KeywordId == 23);
     }
 
     [Fact]
@@ -87,10 +87,10 @@ else
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "for" && k.KeywordId == 27);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "int" && k.KeywordId == 33);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "break" && k.KeywordId == 4);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "continue" && k.KeywordId == 12);
+        Assert.Contains(keywords, k => k.Text == "for" && k.KeywordId == 27);
+        Assert.Contains(keywords, k => k.Text == "int" && k.KeywordId == 33);
+        Assert.Contains(keywords, k => k.Text == "break" && k.KeywordId == 4);
+        Assert.Contains(keywords, k => k.Text == "continue" && k.KeywordId == 12);
     }
 
     [Fact]
@@ -109,13 +109,13 @@ public class Calculator
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "public" && k.KeywordId == 49);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "private" && k.KeywordId == 47);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "protected" && k.KeywordId == 48);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "readonly" && k.KeywordId == 50);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "static" && k.KeywordId == 58);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "internal" && k.KeywordId == 35);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "virtual" && k.KeywordId == 73);
+        Assert.Contains(keywords, k => k.Text == "public" && k.KeywordId == 49);
+        Assert.Contains(keywords, k => k.Text == "private" && k.KeywordId == 47);
+        Assert.Contains(keywords, k => k.Text == "protected" && k.KeywordId == 48);
+        Assert.Contains(keywords, k => k.Text == "readonly" && k.KeywordId == 50);
+        Assert.Contains(keywords, k => k.Text == "static" && k.KeywordId == 58);
+        Assert.Contains(keywords, k => k.Text == "internal" && k.KeywordId == 35);
+        Assert.Contains(keywords, k => k.Text == "virtual" && k.KeywordId == 73);
     }
 
     [Fact]
@@ -127,12 +127,12 @@ public class Calculator
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        KeywordNode publicKw = keywords.First(k => k.OriginalKeyword == "public");
+        KeywordNode publicKw = keywords.First(k => k.Text == "public");
         Assert.Equal(0, publicKw.StartPosition);
         Assert.Equal(6, publicKw.EndPosition);
         Assert.Equal(0, publicKw.StartLine);
 
-        KeywordNode classKw = keywords.First(k => k.OriginalKeyword == "class");
+        KeywordNode classKw = keywords.First(k => k.Text == "class");
         Assert.Equal(7, classKw.StartPosition);
         Assert.Equal(12, classKw.EndPosition);
     }
@@ -145,13 +145,13 @@ public class Calculator
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        KeywordNode usingKw = keywords.First(k => k.OriginalKeyword == "using");
+        KeywordNode usingKw = keywords.First(k => k.Text == "using");
         Assert.Equal(0, usingKw.StartLine);
 
-        KeywordNode namespaceKw = keywords.First(k => k.OriginalKeyword == "namespace");
+        KeywordNode namespaceKw = keywords.First(k => k.Text == "namespace");
         Assert.Equal(1, namespaceKw.StartLine);
 
-        KeywordNode classKw = keywords.First(k => k.OriginalKeyword == "class");
+        KeywordNode classKw = keywords.First(k => k.Text == "class");
         Assert.Equal(3, classKw.StartLine);
     }
 
@@ -203,11 +203,11 @@ finally { }";
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "try" && k.KeywordId == 65);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "throw" && k.KeywordId == 63);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "new" && k.KeywordId == 40);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "catch" && k.KeywordId == 7);
-        Assert.Contains(keywords, k => k.OriginalKeyword == "finally" && k.KeywordId == 24);
+        Assert.Contains(keywords, k => k.Text == "try" && k.KeywordId == 65);
+        Assert.Contains(keywords, k => k.Text == "throw" && k.KeywordId == 63);
+        Assert.Contains(keywords, k => k.Text == "new" && k.KeywordId == 40);
+        Assert.Contains(keywords, k => k.Text == "catch" && k.KeywordId == 7);
+        Assert.Contains(keywords, k => k.Text == "finally" && k.KeywordId == 24);
     }
 
     [Fact]
@@ -233,11 +233,11 @@ finally { }";
         {
             if (child is KeywordNode kw)
             {
-                kw.OriginalKeyword = kw.KeywordId switch
+                kw.Text = kw.KeywordId switch
                 {
                     49 => "publico",  // public
                     10 => "classe",   // class
-                    _ => kw.OriginalKeyword
+                    _ => kw.Text
                 };
             }
         }
@@ -276,9 +276,9 @@ finally { }";
 
         foreach (ASTNode child in ast.Children)
         {
-            if (child is KeywordNode kw && kw.OriginalKeyword == "public")
+            if (child is KeywordNode kw && kw.Text == "public")
             {
-                kw.OriginalKeyword = "publico";
+                kw.Text = "publico";
             }
         }
 
@@ -384,11 +384,11 @@ public class Person
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "public");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "string");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "int");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "return");
+        Assert.Contains(keywords, k => k.Text == "class");
+        Assert.Contains(keywords, k => k.Text == "public");
+        Assert.Contains(keywords, k => k.Text == "string");
+        Assert.Contains(keywords, k => k.Text == "int");
+        Assert.Contains(keywords, k => k.Text == "return");
         Assert.Contains(identifiers, i => i.Name == "Person");
         Assert.Contains(identifiers, i => i.Name == "FirstName");
         Assert.Contains(identifiers, i => i.Name == "LastName");
@@ -410,7 +410,7 @@ public struct Point
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "struct");
+        Assert.Contains(keywords, k => k.Text == "struct");
         Assert.Contains(identifiers, i => i.Name == "Point");
         Assert.Contains(identifiers, i => i.Name == "X");
         Assert.Contains(identifiers, i => i.Name == "Y");
@@ -431,7 +431,7 @@ public enum Color
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "enum");
+        Assert.Contains(keywords, k => k.Text == "enum");
         Assert.Contains(identifiers, i => i.Name == "Color");
         Assert.Contains(identifiers, i => i.Name == "Red");
         Assert.Contains(identifiers, i => i.Name == "Green");
@@ -478,9 +478,9 @@ namespace MyApp.Models
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "using");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "namespace");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
+        Assert.Contains(keywords, k => k.Text == "using");
+        Assert.Contains(keywords, k => k.Text == "namespace");
+        Assert.Contains(keywords, k => k.Text == "class");
         Assert.Contains(identifiers, i => i.Name == "System");
         Assert.Contains(identifiers, i => i.Name == "Collections");
         Assert.Contains(identifiers, i => i.Name == "Generic");
@@ -592,13 +592,13 @@ public enum Direction
         {
             if (child is KeywordNode kw)
             {
-                kw.OriginalKeyword = kw.KeywordId switch
+                kw.Text = kw.KeywordId switch
                 {
                     49 => "publico",
                     10 => "classe",
                     33 => "inteiro",
                     52 => "retornar",
-                    _ => kw.OriginalKeyword
+                    _ => kw.Text
                 };
             }
 
@@ -649,8 +649,8 @@ public enum Direction
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "namespace");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
+        Assert.Contains(keywords, k => k.Text == "namespace");
+        Assert.Contains(keywords, k => k.Text == "class");
     }
 
     [Fact]
@@ -671,9 +671,9 @@ class Program
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "return");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "int");
+        Assert.Contains(keywords, k => k.Text == "return");
+        Assert.Contains(keywords, k => k.Text == "class");
+        Assert.Contains(keywords, k => k.Text == "int");
     }
 
     [Fact]
@@ -689,8 +689,8 @@ class Program
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "class");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "null");
+        Assert.Contains(keywords, k => k.Text == "class");
+        Assert.Contains(keywords, k => k.Text == "null");
     }
 
     [Fact]
@@ -713,8 +713,8 @@ class Program
         ASTNode ast = _adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
-        Assert.Contains(keywords, k => k.OriginalKeyword == "switch");
-        Assert.Contains(keywords, k => k.OriginalKeyword == "return");
+        Assert.Contains(keywords, k => k.Text == "switch");
+        Assert.Contains(keywords, k => k.Text == "return");
     }
 
     [Fact]

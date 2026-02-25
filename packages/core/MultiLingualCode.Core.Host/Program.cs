@@ -7,6 +7,8 @@ namespace MultiLingualCode.Core.Host;
 
 public class Program
 {
+    public static List<string> SupportedLanguages = new List<string> { "pt-br" };
+
     public static JsonSerializerOptions JsonOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -98,14 +100,18 @@ public class Program
         {
             case "TranslateToNaturalLanguage":
             {
-                TranslationOrchestrator orchestrator = CreateOrchestrator(paramsJson, translationsPath, projectPath);
-                return await HandleTranslateToNaturalLanguage(orchestrator, paramsJson);
+                TranslateRequest request = JsonSerializer.Deserialize<TranslateRequest>(paramsJson, JsonOptions)
+                    ?? new TranslateRequest();
+                TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, translationsPath, projectPath);
+                return await HandleTranslateToNaturalLanguage(orchestrator, request);
             }
 
             case "TranslateFromNaturalLanguage":
             {
-                TranslationOrchestrator orchestrator = CreateOrchestrator(paramsJson, translationsPath, projectPath);
-                return await HandleTranslateFromNaturalLanguage(orchestrator, paramsJson);
+                ReverseTranslateRequest request = JsonSerializer.Deserialize<ReverseTranslateRequest>(paramsJson, JsonOptions)
+                    ?? new ReverseTranslateRequest();
+                TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, translationsPath, projectPath);
+                return await HandleTranslateFromNaturalLanguage(orchestrator, request);
             }
 
             case "ValidateSyntax":
@@ -119,7 +125,7 @@ public class Program
         }
     }
 
-    public static TranslationOrchestrator CreateOrchestrator(string paramsJson, string translationsPath, string projectPath)
+    public static TranslationOrchestrator CreateOrchestrator(string languageCode, string translationsPath, string projectPath)
     {
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
@@ -130,7 +136,6 @@ public class Program
             translationsPath = Path.Combine(AppContext.BaseDirectory, "translations");
         }
 
-        string languageCode = ExtractLanguageCode(paramsJson);
         NaturalLanguageProvider provider = new NaturalLanguageProvider(languageCode, translationsPath);
 
         IdentifierMapper mapper = new IdentifierMapper();
@@ -143,11 +148,8 @@ public class Program
     }
 
     public static async Task<OperationResultGeneric<CoreResponse>> HandleTranslateToNaturalLanguage(
-        TranslationOrchestrator orchestrator, string paramsJson)
+        TranslationOrchestrator orchestrator, TranslateRequest request)
     {
-        TranslateRequest request = JsonSerializer.Deserialize<TranslateRequest>(paramsJson, JsonOptions)
-            ?? new TranslateRequest();
-
         OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             request.SourceCode, request.FileExtension, request.TargetLanguage);
 
@@ -164,11 +166,8 @@ public class Program
     }
 
     public static async Task<OperationResultGeneric<CoreResponse>> HandleTranslateFromNaturalLanguage(
-        TranslationOrchestrator orchestrator, string paramsJson)
+        TranslationOrchestrator orchestrator, ReverseTranslateRequest request)
     {
-        ReverseTranslateRequest request = JsonSerializer.Deserialize<ReverseTranslateRequest>(paramsJson, JsonOptions)
-            ?? new ReverseTranslateRequest();
-
         OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             request.TranslatedCode, request.FileExtension, request.SourceLanguage);
 
@@ -201,34 +200,11 @@ public class Program
 
     public static OperationResultGeneric<CoreResponse> HandleGetSupportedLanguages()
     {
-        List<string> languages = new List<string> { "pt-br" };
-
         return OperationResultGeneric<CoreResponse>.Ok(new CoreResponse
         {
             Success = true,
-            Result = JsonSerializer.Serialize(languages, JsonOptions)
+            Result = JsonSerializer.Serialize(SupportedLanguages, JsonOptions)
         });
-    }
-
-    public static string ExtractLanguageCode(string paramsJson)
-    {
-        using JsonDocument doc = JsonDocument.Parse(paramsJson);
-        JsonElement root = doc.RootElement;
-
-        if (root.TryGetProperty("targetLanguage", out JsonElement targetLang)
-            && targetLang.ValueKind == JsonValueKind.String)
-        {
-            return targetLang.GetString()!;
-        }
-
-        if (root.TryGetProperty("sourceLanguage", out JsonElement sourceLang)
-            && sourceLang.ValueKind == JsonValueKind.String)
-        {
-            return sourceLang.GetString()!;
-        }
-
-        throw new ArgumentException(
-            "Language code is required. Provide 'targetLanguage' or 'sourceLanguage' in params.");
     }
 
     public static void WriteError(string message)

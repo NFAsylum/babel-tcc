@@ -10,7 +10,7 @@ public class KeywordNodeTests
         KeywordNode node = new KeywordNode
         {
             KeywordId = 30,
-            OriginalKeyword = "if",
+            Text = "if",
             StartPosition = 10,
             EndPosition = 12,
             StartLine = 1,
@@ -20,7 +20,7 @@ public class KeywordNodeTests
         KeywordNode clone = (KeywordNode)node.Clone();
 
         Assert.Equal(30, clone.KeywordId);
-        Assert.Equal("if", clone.OriginalKeyword);
+        Assert.Equal("if", clone.Text);
         Assert.Equal(10, clone.StartPosition);
         Assert.Equal(12, clone.EndPosition);
         Assert.Equal(1, clone.StartLine);
@@ -30,7 +30,7 @@ public class KeywordNodeTests
     [Fact]
     public void Clone_IsDeepCopy()
     {
-        KeywordNode node = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
+        KeywordNode node = new KeywordNode { KeywordId = 30, Text = "if" };
         KeywordNode clone = (KeywordNode)node.Clone();
 
         clone.KeywordId = 99;
@@ -40,7 +40,7 @@ public class KeywordNodeTests
     [Fact]
     public void Clone_DeepClonesChildren()
     {
-        KeywordNode parent = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
+        KeywordNode parent = new KeywordNode { KeywordId = 30, Text = "if" };
         IdentifierNode child = new IdentifierNode { Name = "x" };
         child.Parent = parent;
         parent.Children.Add(child);
@@ -200,7 +200,7 @@ public class StatementNodeTests
     public void Clone_DeepClonesNestedHierarchy()
     {
         StatementNode ifStmt = new StatementNode { StatementKind = "IfStatement" };
-        KeywordNode keyword = new KeywordNode { KeywordId = 30, OriginalKeyword = "if" };
+        KeywordNode keyword = new KeywordNode { KeywordId = 30, Text = "if" };
         keyword.Parent = ifStmt;
         ifStmt.Children.Add(keyword);
 
