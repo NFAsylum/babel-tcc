@@ -38,7 +38,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
         TranslationsBasePath = translationsBasePath;
     }
 
-    public async Task LoadTranslationTableAsync(string programmingLanguage)
+    public async Task<OperationResult> LoadTranslationTableAsync(string programmingLanguage)
     {
         string langKey = programmingLanguage.ToLowerInvariant();
 
@@ -53,7 +53,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
             OperationResultGeneric<KeywordTable> keywordResult = await KeywordTable.LoadFromAsync(keywordsPath);
             if (!keywordResult.IsSuccess)
             {
-                return;
+                return OperationResult.Fail($"Failed to load keyword table: {keywordResult.ErrorMessage}");
             }
 
             KeywordTables[langKey] = keywordResult.Value;
@@ -70,7 +70,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
             OperationResultGeneric<LanguageTable> tableResult = await LanguageTable.LoadFromAsync(translationPath);
             if (!tableResult.IsSuccess)
             {
-                return;
+                return OperationResult.Fail($"Failed to load translation table: {tableResult.ErrorMessage}");
             }
 
             LoadedTables[langKey] = tableResult.Value;
@@ -80,6 +80,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
         ActiveKeywordTable = KeywordTables[langKey];
         HasActiveTable = true;
         LanguageName = ActiveTable.LanguageName;
+        return OperationResult.Ok();
     }
 
     public OperationResultGeneric<string> TranslateKeyword(int keywordId)
@@ -105,6 +106,16 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
         }
 
         return ActiveTable.GetKeywordId(translatedKeyword);
+    }
+
+    public OperationResultGeneric<string> GetOriginalKeyword(int keywordId)
+    {
+        if (!HasActiveTable)
+        {
+            return OperationResultGeneric<string>.Fail("No active keyword table loaded.");
+        }
+
+        return ActiveKeywordTable.GetKeyword(keywordId);
     }
 
     public OperationResultGeneric<string> TranslateIdentifier(string identifier, IdentifierContext context)

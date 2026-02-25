@@ -15,9 +15,10 @@ public class INaturalLanguageProviderContractTests
     }
 
     [Fact]
-    public async Task LoadTranslationTableAsync_Completes()
+    public async Task LoadTranslationTableAsync_ReturnsSuccess()
     {
-        await ProviderInstance.LoadTranslationTableAsync("CSharp");
+        OperationResult result = await ProviderInstance.LoadTranslationTableAsync("CSharp");
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
@@ -73,8 +74,25 @@ public class INaturalLanguageProviderContractTests
         public string LanguageCode => "pt-br";
         public string LanguageName => "Portugues Brasileiro";
 
-        public Task LoadTranslationTableAsync(string programmingLanguage) =>
-            Task.CompletedTask;
+        public Task<OperationResult> LoadTranslationTableAsync(string programmingLanguage) =>
+            Task.FromResult(OperationResult.Ok());
+
+        public OperationResultGeneric<string> GetOriginalKeyword(int keywordId)
+        {
+            Dictionary<int, string> originalKeywords = new()
+            {
+                { 30, "if" },
+                { 18, "else" },
+                { 10, "class" }
+            };
+
+            if (originalKeywords.TryGetValue(keywordId, out string? value) && value is not null)
+            {
+                return OperationResultGeneric<string>.Ok(value);
+            }
+
+            return OperationResultGeneric<string>.Fail("Original keyword not found");
+        }
 
         public OperationResultGeneric<string> TranslateKeyword(int keywordId)
         {

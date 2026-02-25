@@ -56,7 +56,11 @@ public class TranslationOrchestrator
 
         ILanguageAdapter adapter = adapterResult.Value;
 
-        await Provider.LoadTranslationTableAsync(adapter.LanguageName);
+        OperationResult loadResult = await Provider.LoadTranslationTableAsync(adapter.LanguageName);
+        if (!loadResult.IsSuccess)
+        {
+            return OperationResultGeneric<string>.Fail(loadResult.ErrorMessage);
+        }
 
         ApplyTraduAnnotations(sourceCode, targetLanguage);
 
@@ -80,7 +84,11 @@ public class TranslationOrchestrator
 
         ILanguageAdapter adapter = adapterResult.Value;
 
-        await Provider.LoadTranslationTableAsync(adapter.LanguageName);
+        OperationResult loadResult = await Provider.LoadTranslationTableAsync(adapter.LanguageName);
+        if (!loadResult.IsSuccess)
+        {
+            return OperationResultGeneric<string>.Fail(loadResult.ErrorMessage);
+        }
 
         string preSubstituted = adapter.ReverseSubstituteKeywords(
             translatedCode, Provider.ReverseTranslateKeyword);
@@ -139,8 +147,7 @@ public class TranslationOrchestrator
                 int keywordId = Provider.ReverseTranslateKeyword(keyword.OriginalKeyword);
                 if (keywordId >= 0)
                 {
-                    NaturalLanguageProvider provider = (NaturalLanguageProvider)Provider;
-                    OperationResultGeneric<string> originalKeywordResult = provider.GetActiveKeywordTable().GetKeyword(keywordId);
+                    OperationResultGeneric<string> originalKeywordResult = Provider.GetOriginalKeyword(keywordId);
                     if (originalKeywordResult.IsSuccess)
                     {
                         keyword.OriginalKeyword = originalKeywordResult.Value;
