@@ -124,7 +124,7 @@ public class TranslationOrchestrator
                 break;
 
             case LiteralNode literal when literal.IsTranslatable:
-                string literalText = $"{literal.Value}";
+                string literalText = literal.Value.ToString() ?? "";
                 OperationResultGeneric<string> translatedLitResult = IdentifierMapperService.GetLiteralTranslation(literalText, targetLanguage);
                 if (translatedLitResult.IsSuccess)
                 {
@@ -166,7 +166,7 @@ public class TranslationOrchestrator
                 break;
 
             case LiteralNode literal when literal.IsTranslatable:
-                string translatedLiteralText = $"{literal.Value}";
+                string translatedLiteralText = literal.Value.ToString() ?? "";
                 foreach (KeyValuePair<string, Dictionary<string, string>> kvp in IdentifierMapperService.Data.Literals)
                 {
                     if (kvp.Value.TryGetValue(sourceLanguage, out string? translatedValue)
