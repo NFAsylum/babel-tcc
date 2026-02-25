@@ -89,6 +89,10 @@ public class TranslationOrchestratorTests
             return string.Join(" ", parts);
         });
 
+        // ReverseSubstituteKeywords: mock returns input unchanged (mock Parse already handles PT-BR)
+        adapter.ReverseSubstituteKeywords(Arg.Any<string>(), Arg.Any<Func<string, int>>())
+            .Returns(callInfo => callInfo.ArgAt<string>(0));
+
         return adapter;
     }
 

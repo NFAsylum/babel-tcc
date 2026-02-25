@@ -82,7 +82,10 @@ public class TranslationOrchestrator
 
         await Provider.LoadTranslationTableAsync(adapter.LanguageName);
 
-        ASTNode ast = adapter.Parse(translatedCode);
+        string preSubstituted = adapter.ReverseSubstituteKeywords(
+            translatedCode, Provider.ReverseTranslateKeyword);
+
+        ASTNode ast = adapter.Parse(preSubstituted);
         ASTNode originalAst = ast.Clone();
 
         TranslateAstReverse(originalAst, sourceLanguage);
