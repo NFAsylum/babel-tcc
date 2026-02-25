@@ -62,7 +62,7 @@ public class TranslationOrchestratorTests
                     root.Children.Add(new KeywordNode
                     {
                         KeywordId = id,
-                        OriginalKeyword = clean,
+                        Text = clean,
                         Parent = root
                     });
                 }
@@ -101,7 +101,7 @@ public class TranslationOrchestratorTests
         switch (node)
         {
             case KeywordNode kw:
-                parts.Add(kw.OriginalKeyword);
+                parts.Add(kw.Text);
                 break;
             case IdentifierNode id:
                 parts.Add(id.Name);

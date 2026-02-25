@@ -41,7 +41,7 @@ public class CSharpAdapter : ILanguageAdapter
                     compilationUnit.Children.Add(new KeywordNode
                     {
                         KeywordId = keywordId,
-                        OriginalKeyword = token.Text,
+                        Text = token.Text,
                         StartPosition = span.Start,
                         EndPosition = span.End,
                         StartLine = lineSpan.StartLinePosition.Line,
@@ -122,7 +122,7 @@ public class CSharpAdapter : ILanguageAdapter
         SyntaxTree tree = RoslynWrapper.ParseSourceCode(translatedCode);
         SyntaxNode root = RoslynWrapper.GetRoot(tree);
 
-        List<(int Start, int End, string OriginalKeyword)> replacements = new();
+        List<(int Start, int End, string Text)> replacements = new();
 
         foreach (SyntaxToken token in root.DescendantTokens())
         {
@@ -202,7 +202,7 @@ public class CSharpAdapter : ILanguageAdapter
         switch (node)
         {
             case KeywordNode keyword:
-                replacements.Add((keyword.StartPosition, keyword.EndPosition, keyword.OriginalKeyword));
+                replacements.Add((keyword.StartPosition, keyword.EndPosition, keyword.Text));
                 break;
             case IdentifierNode identifier:
                 replacements.Add((identifier.StartPosition, identifier.EndPosition, identifier.Name));
