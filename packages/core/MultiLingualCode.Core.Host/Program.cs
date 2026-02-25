@@ -7,8 +7,6 @@ namespace MultiLingualCode.Core.Host;
 
 public class Program
 {
-    public static List<string> SupportedLanguages = new List<string> { "pt-br" };
-
     public static JsonSerializerOptions JsonOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -93,22 +91,39 @@ public class Program
         }
     }
 
+    public static string ResolveTranslationsPath(string translationsPath)
+    {
+        if (string.IsNullOrEmpty(translationsPath))
+        {
+            return Path.Combine(AppContext.BaseDirectory, "translations");
+        }
+        return translationsPath;
+    }
+
     public static async Task<OperationResultGeneric<CoreResponse>> ExecuteMethod(
         string method, string paramsJson, string translationsPath, string projectPath)
     {
+        string resolvedTranslationsPath = ResolveTranslationsPath(translationsPath);
+
         switch (method)
         {
             case "TranslateToNaturalLanguage":
             {
-                TranslateRequest request = DeserializeRequest<TranslateRequest>(paramsJson);
-                TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, translationsPath, projectPath);
+                if (JsonSerializer.Deserialize<TranslateRequest>(paramsJson, JsonOptions) is not TranslateRequest request)
+                {
+                    return OperationResultGeneric<CoreResponse>.Fail("Failed to parse TranslateToNaturalLanguage request.");
+                }
+                TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, resolvedTranslationsPath, projectPath);
                 return await HandleTranslateToNaturalLanguage(orchestrator, request);
             }
 
             case "TranslateFromNaturalLanguage":
             {
-                ReverseTranslateRequest request = DeserializeRequest<ReverseTranslateRequest>(paramsJson);
-                TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, translationsPath, projectPath);
+                if (JsonSerializer.Deserialize<ReverseTranslateRequest>(paramsJson, JsonOptions) is not ReverseTranslateRequest request)
+                {
+                    return OperationResultGeneric<CoreResponse>.Fail("Failed to parse TranslateFromNaturalLanguage request.");
+                }
+                TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, resolvedTranslationsPath, projectPath);
                 return await HandleTranslateFromNaturalLanguage(orchestrator, request);
             }
 
@@ -116,25 +131,20 @@ public class Program
                 return HandleValidateSyntax(paramsJson);
 
             case "GetSupportedLanguages":
-                return HandleGetSupportedLanguages();
+                return HandleGetSupportedLanguages(resolvedTranslationsPath);
 
             default:
                 return OperationResultGeneric<CoreResponse>.Fail($"Unknown method: {method}");
         }
     }
 
-    public static TranslationOrchestrator CreateOrchestrator(string languageCode, string translationsPath, string projectPath)
+    public static TranslationOrchestrator CreateOrchestrator(string languageCode, string resolvedTranslationsPath, string projectPath)
     {
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(adapter);
 
-        if (string.IsNullOrEmpty(translationsPath))
-        {
-            translationsPath = Path.Combine(AppContext.BaseDirectory, "translations");
-        }
-
-        NaturalLanguageProvider provider = new NaturalLanguageProvider(languageCode, translationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider(languageCode, resolvedTranslationsPath);
 
         IdentifierMapper mapper = new IdentifierMapper();
         if (!string.IsNullOrEmpty(projectPath))
@@ -183,7 +193,10 @@ public class Program
 
     public static OperationResultGeneric<CoreResponse> HandleValidateSyntax(string paramsJson)
     {
-        ValidateRequest request = DeserializeRequest<ValidateRequest>(paramsJson);
+        if (JsonSerializer.Deserialize<ValidateRequest>(paramsJson, JsonOptions) is not ValidateRequest request)
+        {
+            return OperationResultGeneric<CoreResponse>.Fail("Failed to parse ValidateSyntax request.");
+        }
 
         CSharpAdapter adapter = new CSharpAdapter();
         ValidationResult validation = adapter.ValidateSyntax(request.SourceCode);
@@ -195,22 +208,24 @@ public class Program
         });
     }
 
-    public static OperationResultGeneric<CoreResponse> HandleGetSupportedLanguages()
+    public static OperationResultGeneric<CoreResponse> HandleGetSupportedLanguages(string translationsPath)
     {
+        string naturalLanguagesPath = Path.Combine(translationsPath, "natural-languages");
+        List<string> languages = new List<string>();
+
+        if (Directory.Exists(naturalLanguagesPath))
+        {
+            foreach (string dir in Directory.GetDirectories(naturalLanguagesPath))
+            {
+                languages.Add(Path.GetFileName(dir));
+            }
+        }
+
         return OperationResultGeneric<CoreResponse>.Ok(new CoreResponse
         {
             Success = true,
-            Result = JsonSerializer.Serialize(SupportedLanguages, JsonOptions)
+            Result = JsonSerializer.Serialize(languages, JsonOptions)
         });
-    }
-
-    public static T DeserializeRequest<T>(string json) where T : new()
-    {
-        if (JsonSerializer.Deserialize<T>(json, JsonOptions) is T result)
-        {
-            return result;
-        }
-        return new T();
     }
 
     public static void WriteError(string message)
