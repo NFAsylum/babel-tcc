@@ -53,6 +53,23 @@ public class JsonFileReader
         }
     }
 
+    public static OperationResultGeneric<T> ReadFromString<T>(string json, JsonSerializerOptions options)
+    {
+        try
+        {
+            if (JsonSerializer.Deserialize(json, typeof(T), options) is T result)
+            {
+                return OperationResultGeneric<T>.Ok(result);
+            }
+
+            return OperationResultGeneric<T>.Fail("Failed to deserialize JSON string.");
+        }
+        catch (JsonException ex)
+        {
+            return OperationResultGeneric<T>.Fail($"Invalid JSON: {ex.Message}");
+        }
+    }
+
     public static OperationResult WriteToFile<T>(string filePath, T data, JsonSerializerOptions options)
     {
         string directory = Path.GetDirectoryName(filePath) ?? "";
