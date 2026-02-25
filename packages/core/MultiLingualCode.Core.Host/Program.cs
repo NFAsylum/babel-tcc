@@ -100,16 +100,14 @@ public class Program
         {
             case "TranslateToNaturalLanguage":
             {
-                TranslateRequest request = JsonSerializer.Deserialize<TranslateRequest>(paramsJson, JsonOptions)
-                    ?? new TranslateRequest();
+                TranslateRequest request = DeserializeRequest<TranslateRequest>(paramsJson);
                 TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, translationsPath, projectPath);
                 return await HandleTranslateToNaturalLanguage(orchestrator, request);
             }
 
             case "TranslateFromNaturalLanguage":
             {
-                ReverseTranslateRequest request = JsonSerializer.Deserialize<ReverseTranslateRequest>(paramsJson, JsonOptions)
-                    ?? new ReverseTranslateRequest();
+                ReverseTranslateRequest request = DeserializeRequest<ReverseTranslateRequest>(paramsJson);
                 TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, translationsPath, projectPath);
                 return await HandleTranslateFromNaturalLanguage(orchestrator, request);
             }
@@ -185,8 +183,7 @@ public class Program
 
     public static OperationResultGeneric<CoreResponse> HandleValidateSyntax(string paramsJson)
     {
-        ValidateRequest request = JsonSerializer.Deserialize<ValidateRequest>(paramsJson, JsonOptions)
-            ?? new ValidateRequest();
+        ValidateRequest request = DeserializeRequest<ValidateRequest>(paramsJson);
 
         CSharpAdapter adapter = new CSharpAdapter();
         ValidationResult validation = adapter.ValidateSyntax(request.SourceCode);
@@ -205,6 +202,15 @@ public class Program
             Success = true,
             Result = JsonSerializer.Serialize(SupportedLanguages, JsonOptions)
         });
+    }
+
+    public static T DeserializeRequest<T>(string json) where T : new()
+    {
+        if (JsonSerializer.Deserialize<T>(json, JsonOptions) is T result)
+        {
+            return result;
+        }
+        return new T();
     }
 
     public static void WriteError(string message)
