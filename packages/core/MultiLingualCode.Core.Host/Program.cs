@@ -109,20 +109,24 @@ public class Program
         {
             case "TranslateToNaturalLanguage":
             {
-                if (JsonSerializer.Deserialize<TranslateRequest>(paramsJson, JsonOptions) is not TranslateRequest request)
+                OperationResultGeneric<TranslateRequest> parseResult = DeserializeJson<TranslateRequest>(paramsJson);
+                if (!parseResult.IsSuccess)
                 {
-                    return OperationResultGeneric<CoreResponse>.Fail("Failed to parse TranslateToNaturalLanguage request.");
+                    return OperationResultGeneric<CoreResponse>.Fail(parseResult.ErrorMessage);
                 }
+                TranslateRequest request = parseResult.Value;
                 TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, resolvedTranslationsPath, projectPath);
                 return await HandleTranslateToNaturalLanguage(orchestrator, request);
             }
 
             case "TranslateFromNaturalLanguage":
             {
-                if (JsonSerializer.Deserialize<ReverseTranslateRequest>(paramsJson, JsonOptions) is not ReverseTranslateRequest request)
+                OperationResultGeneric<ReverseTranslateRequest> parseResult = DeserializeJson<ReverseTranslateRequest>(paramsJson);
+                if (!parseResult.IsSuccess)
                 {
-                    return OperationResultGeneric<CoreResponse>.Fail("Failed to parse TranslateFromNaturalLanguage request.");
+                    return OperationResultGeneric<CoreResponse>.Fail(parseResult.ErrorMessage);
                 }
+                ReverseTranslateRequest request = parseResult.Value;
                 TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, resolvedTranslationsPath, projectPath);
                 return await HandleTranslateFromNaturalLanguage(orchestrator, request);
             }
@@ -193,13 +197,14 @@ public class Program
 
     public static OperationResultGeneric<CoreResponse> HandleValidateSyntax(string paramsJson)
     {
-        if (JsonSerializer.Deserialize<ValidateRequest>(paramsJson, JsonOptions) is not ValidateRequest request)
+        OperationResultGeneric<ValidateRequest> parseResult = DeserializeJson<ValidateRequest>(paramsJson);
+        if (!parseResult.IsSuccess)
         {
-            return OperationResultGeneric<CoreResponse>.Fail("Failed to parse ValidateSyntax request.");
+            return OperationResultGeneric<CoreResponse>.Fail(parseResult.ErrorMessage);
         }
 
         CSharpAdapter adapter = new CSharpAdapter();
-        ValidationResult validation = adapter.ValidateSyntax(request.SourceCode);
+        ValidationResult validation = adapter.ValidateSyntax(parseResult.Value.SourceCode);
 
         return OperationResultGeneric<CoreResponse>.Ok(new CoreResponse
         {
@@ -226,6 +231,23 @@ public class Program
             Success = true,
             Result = JsonSerializer.Serialize(languages, JsonOptions)
         });
+    }
+
+    // I/O boundary: JsonSerializer.Deserialize retorna nullable por API do .NET
+    public static OperationResultGeneric<T> DeserializeJson<T>(string json) where T : class
+    {
+        try
+        {
+            if (JsonSerializer.Deserialize(json, typeof(T), JsonOptions) is T typed)
+            {
+                return OperationResultGeneric<T>.Ok(typed);
+            }
+            return OperationResultGeneric<T>.Fail("Failed to deserialize JSON request.");
+        }
+        catch (JsonException ex)
+        {
+            return OperationResultGeneric<T>.Fail($"Invalid JSON: {ex.Message}");
+        }
     }
 
     public static void WriteError(string message)
