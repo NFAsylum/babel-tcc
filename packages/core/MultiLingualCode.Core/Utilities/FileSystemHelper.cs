@@ -18,7 +18,12 @@ public static class FileSystemHelper
             return Path.GetFullPath(path);
         }
 
-        string baseDir = string.IsNullOrEmpty(basePath) ? Directory.GetCurrentDirectory() : basePath;
+        string baseDir = basePath;
+        if (string.IsNullOrEmpty(basePath))
+        {
+            baseDir = Directory.GetCurrentDirectory();
+        }
+
         return Path.GetFullPath(Path.Combine(baseDir, path));
     }
 
@@ -53,9 +58,22 @@ public static class FileSystemHelper
     /// <returns>The project root directory path, or an empty string if not found.</returns>
     public static string FindProjectRoot(string startPath, string markerName = ".multilingual")
     {
-        string dir = File.Exists(startPath)
-            ? (Path.GetDirectoryName(startPath) is string parentDir ? parentDir : string.Empty)
-            : startPath;
+        string dir;
+        if (File.Exists(startPath))
+        {
+            if (Path.GetDirectoryName(startPath) is string parentDir)
+            {
+                dir = parentDir;
+            }
+            else
+            {
+                dir = string.Empty;
+            }
+        }
+        else
+        {
+            dir = startPath;
+        }
 
         while (!string.IsNullOrEmpty(dir))
         {
@@ -65,7 +83,14 @@ public static class FileSystemHelper
                 return dir;
             }
 
-            dir = Path.GetDirectoryName(dir) is string nextDir ? nextDir : string.Empty;
+            if (Path.GetDirectoryName(dir) is string nextDir)
+            {
+                dir = nextDir;
+            }
+            else
+            {
+                dir = string.Empty;
+            }
         }
 
         return "";

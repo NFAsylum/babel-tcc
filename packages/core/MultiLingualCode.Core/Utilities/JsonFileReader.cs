@@ -102,7 +102,11 @@ public class JsonFileReader
     /// <returns>An operation result indicating success or failure.</returns>
     public static OperationResult WriteToFile<T>(string filePath, T data, JsonSerializerOptions options)
     {
-        string directory = Path.GetDirectoryName(filePath) is string dir ? dir : string.Empty;
+        string directory = string.Empty;
+        if (Path.GetDirectoryName(filePath) is string dir)
+        {
+            directory = dir;
+        }
         if (!string.IsNullOrEmpty(directory))
         {
             Directory.CreateDirectory(directory);

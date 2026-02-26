@@ -61,8 +61,14 @@ public static class StringExtensions
 
         string[] words = SplitIntoWords(value);
         return string.Concat(words.Select(w =>
-            w.Length == 0 ? "" : char.ToUpperInvariant(w[0]) + w[1..].ToLowerInvariant()
-        ));
+        {
+            if (w.Length == 0)
+            {
+                return "";
+            }
+
+            return char.ToUpperInvariant(w[0]) + w[1..].ToLowerInvariant();
+        }));
     }
 
     /// <summary>
