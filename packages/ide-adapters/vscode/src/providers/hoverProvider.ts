@@ -62,7 +62,15 @@ const KEYWORD_REVERSE_MAP: Record<string, string> = {
   'e': 'is'
 };
 
+/** Shows the original C# keyword when hovering over translated keywords. */
 export class HoverProvider implements vscode.HoverProvider {
+  /**
+   * Provides a hover tooltip displaying the original C# keyword for a translated keyword under the cursor.
+   * Only active in documents using the translated URI scheme.
+   * @param document - The text document where the hover was triggered.
+   * @param position - The cursor position where the hover was triggered.
+   * @returns A Hover with the original C# keyword, or undefined if the word is not a translated keyword.
+   */
   public provideHover(
     document: vscode.TextDocument,
     position: vscode.Position

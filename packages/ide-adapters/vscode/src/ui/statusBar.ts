@@ -3,6 +3,7 @@ import { ConfigurationService } from '../services/configurationService';
 
 const STATUS_BAR_PRIORITY = 100;
 
+/** Displays the current translation status and language in the VS Code status bar. */
 export class StatusBar implements vscode.Disposable {
   public statusBarItem: vscode.StatusBarItem;
   public configService: ConfigurationService;
@@ -23,6 +24,7 @@ export class StatusBar implements vscode.Disposable {
     });
   }
 
+  /** Updates the status bar item text and tooltip based on the current translation enabled state and language. */
   public update(): void {
     const enabled: boolean = this.configService.isEnabled();
     const language: string = this.configService.getLanguage().toUpperCase();
@@ -36,6 +38,7 @@ export class StatusBar implements vscode.Disposable {
     }
   }
 
+  /** Disposes of the configuration change subscription and the status bar item. */
   public dispose(): void {
     this.configSubscription.dispose();
     this.statusBarItem.dispose();

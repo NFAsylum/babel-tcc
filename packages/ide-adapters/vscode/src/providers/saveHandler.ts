@@ -4,6 +4,7 @@ import { LanguageDetector } from '../services/languageDetector';
 import { ConfigurationService } from '../services/configurationService';
 import { TRANSLATED_SCHEME } from './translatedContentProvider';
 
+/** Handles save events on translated documents by reverse-translating and writing the original file. */
 export class SaveHandler implements vscode.Disposable {
   public coreBridge: CoreBridge;
   public languageDetector: LanguageDetector;
@@ -31,6 +32,12 @@ export class SaveHandler implements vscode.Disposable {
     );
   }
 
+  /**
+   * Reverse-translates the content of a translated document back to original C# and writes it to disk.
+   * Shows an information message on success or an error message if reverse translation fails.
+   * @param document - The translated virtual document being saved.
+   * @returns An empty array of text edits (no in-place edits are applied to the translated document).
+   */
   public async handleSave(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
     const translatedContent: string = document.getText();
     const originalPath: string = document.uri.path;
@@ -61,6 +68,7 @@ export class SaveHandler implements vscode.Disposable {
     return [];
   }
 
+  /** Disposes of the save event subscription. */
   public dispose(): void {
     this.saveSubscription.dispose();
   }

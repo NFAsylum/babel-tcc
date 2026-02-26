@@ -4,29 +4,47 @@ import { spawn } from 'child_process';
 
 const DEFAULT_TIMEOUT_MS = 10000;
 
+/** Response object returned by the .NET Core process. */
 export interface CoreResponse {
+  /** Whether the Core operation completed successfully. */
   success: boolean;
+  /** The serialized result payload on success. */
   result: string;
+  /** The error message when the operation fails. */
   error: string;
 }
 
+/** Result of a syntax validation check. */
 export interface ValidationResult {
+  /** Whether the source code is syntactically valid. */
   isValid: boolean;
+  /** List of diagnostic entries describing any syntax issues found. */
   diagnostics: DiagnosticEntry[];
 }
 
+/** A single diagnostic entry from syntax validation. */
 export interface DiagnosticEntry {
+  /** Severity level of the diagnostic (e.g., "Error", "Warning"). */
   severity: string;
+  /** Human-readable description of the issue. */
   message: string;
+  /** 1-based line number where the issue occurs. */
   line: number;
+  /** 1-based column number where the issue occurs. */
   column: number;
 }
 
+/** Bridge to the .NET Core translation engine, spawning a child process for each request. */
 export class CoreBridge {
+  /** Absolute path to the Core host DLL. */
   public coreDllPath: string;
+  /** Absolute path to the translations resource directory. */
   public translationsPath: string;
+  /** Absolute path to the current workspace project root. */
   public projectPath: string;
+  /** Output channel used for logging Core bridge activity. */
   public outputChannel: vscode.OutputChannel;
+  /** Maximum time in milliseconds to wait for a Core process response before timing out. */
   public timeoutMs: number;
 
   constructor(
@@ -54,6 +72,13 @@ export class CoreBridge {
     }
   }
 
+  /**
+   * Translates source code keywords and identifiers into a target natural language.
+   * @param sourceCode - The original source code to translate.
+   * @param fileExtension - The file extension indicating the programming language (e.g., ".cs").
+   * @param targetLanguage - The target natural language code (e.g., "pt-br").
+   * @returns The translated source code as a string.
+   */
   public async translateToNaturalLanguage(
     sourceCode: string,
     fileExtension: string,
@@ -68,6 +93,13 @@ export class CoreBridge {
     return response.result;
   }
 
+  /**
+   * Translates natural-language code back into valid programming-language source code.
+   * @param translatedCode - The translated code to convert back.
+   * @param fileExtension - The file extension indicating the programming language (e.g., ".cs").
+   * @param sourceLanguage - The natural language code the input is written in (e.g., "pt-br").
+   * @returns The original programming-language source code as a string.
+   */
   public async translateFromNaturalLanguage(
     translatedCode: string,
     fileExtension: string,
@@ -82,6 +114,12 @@ export class CoreBridge {
     return response.result;
   }
 
+  /**
+   * Validates the syntax of the given source code.
+   * @param sourceCode - The source code to validate.
+   * @param fileExtension - The file extension indicating the programming language (e.g., ".cs").
+   * @returns A validation result containing diagnostics if any issues are found.
+   */
   public async validateSyntax(
     sourceCode: string,
     fileExtension: string
@@ -95,12 +133,22 @@ export class CoreBridge {
     return parsed;
   }
 
+  /**
+   * Retrieves the list of natural languages supported by the Core translation engine.
+   * @returns An array of language codes (e.g., ["pt-br", "es"]).
+   */
   public async getSupportedLanguages(): Promise<string[]> {
     const response: CoreResponse = await this.invokeCore('GetSupportedLanguages', {});
     const parsed: string[] = JSON.parse(response.result) as string[];
     return parsed;
   }
 
+  /**
+   * Spawns a .NET Core child process to invoke the specified method with the given parameters.
+   * @param method - The Core host method name to invoke (e.g., "TranslateToNaturalLanguage").
+   * @param params - A key-value map of parameters to pass to the Core method.
+   * @returns The parsed Core response containing success status, result, or error.
+   */
   public invokeCore(method: string, params: Record<string, unknown>): Promise<CoreResponse> {
     return new Promise<CoreResponse>((resolve, reject): void => {
       const args: string[] = [
@@ -169,6 +217,7 @@ export class CoreBridge {
     });
   }
 
+  /** Disposes of the CoreBridge, logging the disposal event. */
   public dispose(): void {
     this.outputChannel.appendLine('CoreBridge: disposed');
   }
