@@ -1,7 +1,13 @@
 namespace MultiLingualCode.Core.LanguageAdapters;
 
+/// <summary>
+/// Provides a bidirectional mapping between C# keyword text and integer IDs.
+/// </summary>
 public static class CSharpKeywordMap
 {
+    /// <summary>
+    /// Maps C# keyword text (case-insensitive) to its corresponding integer ID.
+    /// </summary>
     public static readonly Dictionary<string, int> TextToId = new(StringComparer.OrdinalIgnoreCase)
     {
         ["abstract"] = 0,
@@ -83,6 +89,9 @@ public static class CSharpKeywordMap
         ["while"] = 77,
     };
 
+    /// <summary>
+    /// Maps integer IDs back to their corresponding C# keyword text.
+    /// </summary>
     public static readonly Dictionary<int, string> IdToText;
 
     static CSharpKeywordMap()
@@ -94,8 +103,17 @@ public static class CSharpKeywordMap
         }
     }
 
+    /// <summary>
+    /// Returns a copy of the keyword-to-ID dictionary.
+    /// </summary>
+    /// <returns>A new dictionary containing all keyword text to ID mappings.</returns>
     public static Dictionary<string, int> GetMap() => new(TextToId);
 
+    /// <summary>
+    /// Gets the integer ID for a given keyword text.
+    /// </summary>
+    /// <param name="keywordText">The keyword text to look up.</param>
+    /// <returns>The keyword ID, or -1 if the text is not a recognized keyword.</returns>
     public static int GetId(string keywordText)
     {
         if (TextToId.TryGetValue(keywordText, out int id))
@@ -106,16 +124,26 @@ public static class CSharpKeywordMap
         return -1;
     }
 
+    /// <summary>
+    /// Gets the keyword text for a given integer ID.
+    /// </summary>
+    /// <param name="id">The keyword ID to look up.</param>
+    /// <returns>The keyword text, or an empty string if the ID is not recognized.</returns>
     public static string GetText(int id)
     {
-        if (IdToText.TryGetValue(id, out string? text) && text is not null)
+        if (IdToText.ContainsKey(id))
         {
-            return text;
+            return IdToText[id];
         }
 
         return "";
     }
 
+    /// <summary>
+    /// Determines whether a Roslyn <see cref="Microsoft.CodeAnalysis.CSharp.SyntaxKind"/> represents a C# keyword.
+    /// </summary>
+    /// <param name="kind">The syntax kind to check.</param>
+    /// <returns>True if the syntax kind is a keyword; otherwise false.</returns>
     public static bool IsKeyword(Microsoft.CodeAnalysis.CSharp.SyntaxKind kind)
     {
         return RoslynWrapper.IsKeywordKind(kind);

@@ -86,9 +86,9 @@ public class INaturalLanguageProviderContractTests
                 { 10, "class" }
             };
 
-            if (originalKeywords.TryGetValue(keywordId, out string? value) && value is not null)
+            if (originalKeywords.ContainsKey(keywordId))
             {
-                return OperationResultGeneric<string>.Ok(value);
+                return OperationResultGeneric<string>.Ok(originalKeywords[keywordId]);
             }
 
             return OperationResultGeneric<string>.Fail("Original keyword not found");
@@ -96,9 +96,9 @@ public class INaturalLanguageProviderContractTests
 
         public OperationResultGeneric<string> TranslateKeyword(int keywordId)
         {
-            if (Keywords.TryGetValue(keywordId, out string? value) && value is not null)
+            if (Keywords.ContainsKey(keywordId))
             {
-                return OperationResultGeneric<string>.Ok(value);
+                return OperationResultGeneric<string>.Ok(Keywords[keywordId]);
             }
 
             return OperationResultGeneric<string>.Fail("Keyword not found");

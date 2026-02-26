@@ -30,8 +30,8 @@ public class CoreIntegrationTests : IDisposable
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(adapter);
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", _translationsPath);
-        return new TranslationOrchestrator(registry, provider, mapper);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = _translationsPath };
+        return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
 
     [Fact]

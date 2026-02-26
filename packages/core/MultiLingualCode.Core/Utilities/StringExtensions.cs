@@ -1,7 +1,15 @@
 namespace MultiLingualCode.Core.Utilities;
 
+/// <summary>
+/// Extension methods for string case conversion (camelCase, PascalCase, word splitting).
+/// </summary>
 public static class StringExtensions
 {
+    /// <summary>
+    /// Converts the string to camelCase (e.g. "my_variable" becomes "myVariable").
+    /// </summary>
+    /// <param name="value">The string to convert.</param>
+    /// <returns>The camelCase representation of the string.</returns>
     public static string ToCamelCase(this string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -39,6 +47,11 @@ public static class StringExtensions
         return char.ToLowerInvariant(pascal[0]) + pascal[1..];
     }
 
+    /// <summary>
+    /// Converts the string to PascalCase (e.g. "my_variable" becomes "MyVariable").
+    /// </summary>
+    /// <param name="value">The string to convert.</param>
+    /// <returns>The PascalCase representation of the string.</returns>
     public static string ToPascalCase(this string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -48,10 +61,21 @@ public static class StringExtensions
 
         string[] words = SplitIntoWords(value);
         return string.Concat(words.Select(w =>
-            w.Length == 0 ? "" : char.ToUpperInvariant(w[0]) + w[1..].ToLowerInvariant()
-        ));
+        {
+            if (w.Length == 0)
+            {
+                return "";
+            }
+
+            return char.ToUpperInvariant(w[0]) + w[1..].ToLowerInvariant();
+        }));
     }
 
+    /// <summary>
+    /// Splits a string into individual words by detecting camelCase, PascalCase, underscores, and hyphens.
+    /// </summary>
+    /// <param name="value">The string to split.</param>
+    /// <returns>An array of the individual words found in the string.</returns>
     public static string[] SplitIntoWords(this string value)
     {
         if (string.IsNullOrEmpty(value))

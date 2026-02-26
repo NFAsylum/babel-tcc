@@ -62,7 +62,15 @@ const TRANSLATED_KEYWORDS: Record<string, string> = {
   'e': 'is'
 };
 
+/** Provides autocomplete suggestions for translated keywords in translated documents. */
 export class CompletionProvider implements vscode.CompletionItemProvider {
+  /**
+   * Returns completion items for translated C# keywords matching the current word prefix.
+   * Only active in documents using the translated URI scheme.
+   * @param document - The text document in which completion was triggered.
+   * @param position - The cursor position where completion was triggered.
+   * @returns An array of completion items for matching translated keywords.
+   */
   public provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position

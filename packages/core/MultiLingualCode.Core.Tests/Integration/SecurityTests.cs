@@ -31,10 +31,10 @@ public class SecurityTests : IDisposable
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(adapter);
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", _translationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = _translationsPath };
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(_tempDir);
-        return new TranslationOrchestrator(registry, provider, mapper);
+        return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
 
     [Fact]

@@ -16,6 +16,7 @@
 |---|---|---|
 | `var` | Tipos devem ser explicitos sempre | Tipo explicito: `List<string> items = new List<string>()` |
 | `?`, `?.`, `??` (nullable) | Null nao deve existir no sistema | Result pattern, valores default, string vazia |
+| `? :` (ternario) | Reduz legibilidade e dificulta debug | Bloco `if/else` explicito |
 | `throw` | Excecoes quebram o fluxo de controle | Return com Result/status de sucesso/falha |
 | `internal` | Tudo deve ser publico e testavel | `public` |
 | `partial` | Fragmenta a classe em multiplos arquivos | Uma classe completa por arquivo |

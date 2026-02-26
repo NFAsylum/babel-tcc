@@ -20,6 +20,10 @@ let editInterceptor: EditInterceptor;
 let saveHandler: SaveHandler;
 let statusBar: StatusBar;
 
+/**
+ * Activates the Babel TCC extension, initializing all services, providers, and commands.
+ * @param context - The VS Code extension context used for managing subscriptions and extension paths.
+ */
 export function activate(context: vscode.ExtensionContext): void {
   outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME);
   outputChannel.appendLine('Babel TCC extension activated.');
@@ -153,6 +157,7 @@ export function activate(context: vscode.ExtensionContext): void {
   outputChannel.appendLine('All commands registered successfully.');
 }
 
+/** Deactivates the extension, disposing of the content provider, core bridge, and output channel. */
 export function deactivate(): void {
   if (translatedContentProvider) {
     translatedContentProvider.dispose();
