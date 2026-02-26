@@ -4,10 +4,21 @@ using MultiLingualCode.Core.Models;
 
 namespace MultiLingualCode.Core.LanguageAdapters;
 
+/// <summary>
+/// Parses "tradu:" annotations from trailing comments in C# source code to extract translation hints.
+/// </summary>
 public class TraduAnnotationParser
 {
+    /// <summary>
+    /// The prefix that identifies a translation annotation in a comment (e.g. "// tradu:NomeMetodo").
+    /// </summary>
     public const string TraduPrefix = "tradu:";
 
+    /// <summary>
+    /// Extracts all "tradu:" annotations from the source code and associates them with their target tokens.
+    /// </summary>
+    /// <param name="sourceCode">The C# source code containing tradu annotations in comments.</param>
+    /// <returns>A list of parsed annotations with their associated identifiers or literals.</returns>
     public List<TraduAnnotation> ExtractAnnotations(string sourceCode)
     {
         List<TraduAnnotation> annotations = new List<TraduAnnotation>();
@@ -49,6 +60,12 @@ public class TraduAnnotationParser
         return annotations;
     }
 
+    /// <summary>
+    /// Parses the text after the "tradu:" prefix into a structured annotation,
+    /// handling identifier translations, literal translations, and parameter mappings.
+    /// </summary>
+    /// <param name="annotationText">The annotation text after the "tradu:" prefix.</param>
+    /// <returns>A parsed annotation with the translated identifier, literal, or parameter mappings.</returns>
     public TraduAnnotation ParseAnnotationText(string annotationText)
     {
         TraduAnnotation annotation = new TraduAnnotation();
@@ -93,6 +110,12 @@ public class TraduAnnotationParser
         return annotation;
     }
 
+    /// <summary>
+    /// Associates the annotation with the first identifier token found on the specified source line.
+    /// </summary>
+    /// <param name="rootNode">The root syntax node of the parsed source code.</param>
+    /// <param name="line">The zero-based line number where the annotation was found.</param>
+    /// <param name="annotation">The annotation to associate with an identifier.</param>
     public static void AssociateIdentifierOnLine(SyntaxNode rootNode, int line, TraduAnnotation annotation)
     {
         List<SyntaxToken> identifiersOnLine = RoslynWrapper.GetIdentifierTokensOnLine(rootNode, line);
@@ -103,6 +126,12 @@ public class TraduAnnotationParser
         }
     }
 
+    /// <summary>
+    /// Associates the annotation with the first string literal token found on the specified source line.
+    /// </summary>
+    /// <param name="rootNode">The root syntax node of the parsed source code.</param>
+    /// <param name="line">The zero-based line number where the annotation was found.</param>
+    /// <param name="annotation">The annotation to associate with a string literal.</param>
     public static void AssociateLiteralOnLine(SyntaxNode rootNode, int line, TraduAnnotation annotation)
     {
         List<SyntaxToken> tokensOnLine = RoslynWrapper.GetAllTokensOnLine(rootNode, line);

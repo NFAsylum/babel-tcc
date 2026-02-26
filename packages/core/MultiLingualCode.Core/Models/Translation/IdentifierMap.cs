@@ -4,11 +4,24 @@ using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Models.Translation;
 
+/// <summary>
+/// Bidirectional map between original and translated identifiers, supporting lookup in both directions.
+/// </summary>
 public class IdentifierMap
 {
+    /// <summary>
+    /// Dictionary mapping original identifier names to their translated equivalents.
+    /// </summary>
     public Dictionary<string, string> OriginalToTranslated = new();
+
+    /// <summary>
+    /// Dictionary mapping translated identifier names back to their originals.
+    /// </summary>
     public Dictionary<string, string> TranslatedToOriginal = new();
 
+    /// <summary>
+    /// JSON-serializable dictionary of identifier mappings. Setting this property rebuilds both lookup dictionaries.
+    /// </summary>
     [JsonPropertyName("identifiers")]
     public Dictionary<string, string> Identifiers
     {
@@ -24,6 +37,11 @@ public class IdentifierMap
         }
     }
 
+    /// <summary>
+    /// Looks up the translated name for a given original identifier.
+    /// </summary>
+    /// <param name="originalName">The original identifier name to translate.</param>
+    /// <returns>An operation result containing the translated name, or a failure if not found.</returns>
     public OperationResultGeneric<string> GetTranslated(string originalName)
     {
         if (string.IsNullOrEmpty(originalName))
@@ -39,6 +57,11 @@ public class IdentifierMap
         return OperationResultGeneric<string>.Fail($"No translation found for: {originalName}");
     }
 
+    /// <summary>
+    /// Looks up the original identifier name for a given translated name.
+    /// </summary>
+    /// <param name="translatedName">The translated identifier name to reverse-lookup.</param>
+    /// <returns>An operation result containing the original name, or a failure if not found.</returns>
     public OperationResultGeneric<string> GetOriginal(string translatedName)
     {
         if (string.IsNullOrEmpty(translatedName))
@@ -54,6 +77,11 @@ public class IdentifierMap
         return OperationResultGeneric<string>.Fail($"No original found for: {translatedName}");
     }
 
+    /// <summary>
+    /// Adds or updates a bidirectional mapping between an original and translated identifier name.
+    /// </summary>
+    /// <param name="originalName">The original identifier name.</param>
+    /// <param name="translatedName">The translated identifier name.</param>
     public void Set(string originalName, string translatedName)
     {
         if (string.IsNullOrEmpty(originalName) || string.IsNullOrEmpty(translatedName))
@@ -70,6 +98,11 @@ public class IdentifierMap
         TranslatedToOriginal[translatedName] = originalName;
     }
 
+    /// <summary>
+    /// Removes a bidirectional mapping by the original identifier name.
+    /// </summary>
+    /// <param name="originalName">The original identifier name to remove.</param>
+    /// <returns>True if the mapping was found and removed; false otherwise.</returns>
     public bool Remove(string originalName)
     {
         if (!OriginalToTranslated.ContainsKey(originalName))
@@ -83,13 +116,26 @@ public class IdentifierMap
         return true;
     }
 
+    /// <summary>
+    /// Gets the number of identifier mappings in the map.
+    /// </summary>
     public int Count => OriginalToTranslated.Count;
 
+    /// <summary>
+    /// Loads an <see cref="IdentifierMap"/> from a JSON file synchronously.
+    /// </summary>
+    /// <param name="filePath">The path to the JSON file.</param>
+    /// <returns>An operation result containing the loaded map, or a failure if the file could not be read.</returns>
     public static OperationResultGeneric<IdentifierMap> LoadFrom(string filePath)
     {
         return JsonFileReader.ReadFromFile<IdentifierMap>(filePath, JsonOptions.Default);
     }
 
+    /// <summary>
+    /// Loads an <see cref="IdentifierMap"/> from a JSON file asynchronously.
+    /// </summary>
+    /// <param name="filePath">The path to the JSON file.</param>
+    /// <returns>An operation result containing the loaded map, or a failure if the file could not be read.</returns>
     public static async Task<OperationResultGeneric<IdentifierMap>> LoadFromAsync(string filePath)
     {
         return await JsonFileReader.ReadFromFileAsync<IdentifierMap>(filePath, JsonOptions.Default);

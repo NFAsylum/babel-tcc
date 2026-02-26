@@ -7,12 +7,31 @@ using MultiLingualCode.Core.Models.AST;
 
 namespace MultiLingualCode.Core.LanguageAdapters;
 
+/// <summary>
+/// Language adapter for C# that uses Roslyn to parse and generate translated source code.
+/// </summary>
 public class CSharpAdapter : ILanguageAdapter
 {
+    /// <summary>
+    /// The name of the programming language handled by this adapter.
+    /// </summary>
     public string LanguageName => "CSharp";
+
+    /// <summary>
+    /// The file extensions associated with C# source files.
+    /// </summary>
     public string[] FileExtensions => [".cs"];
+
+    /// <summary>
+    /// The version of this adapter implementation.
+    /// </summary>
     public string Version => "1.0.0";
 
+    /// <summary>
+    /// Parses C# source code into an AST with keyword, identifier, and literal nodes.
+    /// </summary>
+    /// <param name="sourceCode">The C# source code to parse.</param>
+    /// <returns>The root AST node representing the parsed compilation unit.</returns>
     public ASTNode Parse(string sourceCode)
     {
         SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
@@ -82,6 +101,11 @@ public class CSharpAdapter : ILanguageAdapter
         return compilationUnit;
     }
 
+    /// <summary>
+    /// Generates source code from an AST by applying text replacements to the original source.
+    /// </summary>
+    /// <param name="ast">The root AST node containing the translated tokens.</param>
+    /// <returns>The regenerated source code with all replacements applied.</returns>
     public string Generate(ASTNode ast)
     {
         StatementNode root = (StatementNode)ast;
@@ -115,8 +139,18 @@ public class CSharpAdapter : ILanguageAdapter
         return result;
     }
 
+    /// <summary>
+    /// Returns a copy of the C# keyword-to-ID mapping dictionary.
+    /// </summary>
+    /// <returns>A dictionary mapping keyword text to integer IDs.</returns>
     public Dictionary<string, int> GetKeywordMap() => CSharpKeywordMap.GetMap();
 
+    /// <summary>
+    /// Replaces translated keywords back with their original C# keyword text.
+    /// </summary>
+    /// <param name="translatedCode">The source code containing translated keywords.</param>
+    /// <param name="lookupTranslatedKeyword">Function that returns a keyword ID for a translated keyword text, or -1 if not found.</param>
+    /// <returns>The source code with original C# keywords restored.</returns>
     public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword)
     {
         SyntaxTree tree = RoslynWrapper.ParseSourceCode(translatedCode);
@@ -160,6 +194,11 @@ public class CSharpAdapter : ILanguageAdapter
         return result;
     }
 
+    /// <summary>
+    /// Validates C# source code syntax and returns any error diagnostics.
+    /// </summary>
+    /// <param name="sourceCode">The C# source code to validate.</param>
+    /// <returns>A validation result indicating whether the syntax is valid and any diagnostics found.</returns>
     public ValidationResult ValidateSyntax(string sourceCode)
     {
         SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
@@ -185,6 +224,11 @@ public class CSharpAdapter : ILanguageAdapter
         };
     }
 
+    /// <summary>
+    /// Extracts all distinct identifier names from C# source code.
+    /// </summary>
+    /// <param name="sourceCode">The C# source code to extract identifiers from.</param>
+    /// <returns>A list of unique identifier names found in the source code.</returns>
     public List<string> ExtractIdentifiers(string sourceCode)
     {
         SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
@@ -197,6 +241,11 @@ public class CSharpAdapter : ILanguageAdapter
             .ToList();
     }
 
+    /// <summary>
+    /// Recursively collects text replacements from the AST for code generation.
+    /// </summary>
+    /// <param name="node">The current AST node to process.</param>
+    /// <param name="replacements">The list to accumulate replacement tuples (start, end, new text) into.</param>
     public static void CollectReplacements(ASTNode node, List<(int Start, int End, string NewText)> replacements)
     {
         switch (node)
@@ -219,6 +268,11 @@ public class CSharpAdapter : ILanguageAdapter
         }
     }
 
+    /// <summary>
+    /// Converts a Roslyn-based <see cref="LiteralTokenKind"/> to the AST model's <see cref="LiteralType"/>.
+    /// </summary>
+    /// <param name="kind">The Roslyn literal token kind.</param>
+    /// <returns>The corresponding AST literal type.</returns>
     public static LiteralType ConvertLiteralKind(LiteralTokenKind kind)
     {
         return kind switch

@@ -3,8 +3,18 @@ using MultiLingualCode.Core.Models;
 
 namespace MultiLingualCode.Core.Utilities;
 
+/// <summary>
+/// Provides static methods for reading and writing JSON files using the OperationResult pattern.
+/// </summary>
 public class JsonFileReader
 {
+    /// <summary>
+    /// Reads and deserializes a JSON file into the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type to deserialize the JSON into.</typeparam>
+    /// <param name="filePath">The path to the JSON file.</param>
+    /// <param name="options">JSON serializer options to use for deserialization.</param>
+    /// <returns>An operation result containing the deserialized object or an error message.</returns>
     public static OperationResultGeneric<T> ReadFromFile<T>(string filePath, JsonSerializerOptions options)
     {
         if (!File.Exists(filePath))
@@ -28,6 +38,13 @@ public class JsonFileReader
         }
     }
 
+    /// <summary>
+    /// Asynchronously reads and deserializes a JSON file into the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type to deserialize the JSON into.</typeparam>
+    /// <param name="filePath">The path to the JSON file.</param>
+    /// <param name="options">JSON serializer options to use for deserialization.</param>
+    /// <returns>An operation result containing the deserialized object or an error message.</returns>
     public static async Task<OperationResultGeneric<T>> ReadFromFileAsync<T>(string filePath, JsonSerializerOptions options)
     {
         if (!File.Exists(filePath))
@@ -51,6 +68,13 @@ public class JsonFileReader
         }
     }
 
+    /// <summary>
+    /// Deserializes a JSON string into the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type to deserialize the JSON into.</typeparam>
+    /// <param name="json">The JSON string to deserialize.</param>
+    /// <param name="options">JSON serializer options to use for deserialization.</param>
+    /// <returns>An operation result containing the deserialized object or an error message.</returns>
     public static OperationResultGeneric<T> ReadFromString<T>(string json, JsonSerializerOptions options)
     {
         try
@@ -68,6 +92,14 @@ public class JsonFileReader
         }
     }
 
+    /// <summary>
+    /// Serializes an object to JSON and writes it to a file, creating directories as needed.
+    /// </summary>
+    /// <typeparam name="T">The type of the object to serialize.</typeparam>
+    /// <param name="filePath">The destination file path.</param>
+    /// <param name="data">The object to serialize and write.</param>
+    /// <param name="options">JSON serializer options to use for serialization.</param>
+    /// <returns>An operation result indicating success or failure.</returns>
     public static OperationResult WriteToFile<T>(string filePath, T data, JsonSerializerOptions options)
     {
         string directory = Path.GetDirectoryName(filePath) is string dir ? dir : string.Empty;

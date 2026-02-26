@@ -6,14 +6,25 @@ using MultiLingualCode.Core.Utilities;
 
 namespace MultiLingualCode.Core.Host;
 
+/// <summary>
+/// CLI host entry point that dispatches translation and validation requests to the core engine.
+/// </summary>
 public class Program
 {
+    /// <summary>
+    /// Shared JSON serializer options using camelCase naming for CLI input/output.
+    /// </summary>
     public static JsonSerializerOptions JsonOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false
     };
 
+    /// <summary>
+    /// Application entry point. Parses CLI arguments and dispatches to the appropriate handler method.
+    /// </summary>
+    /// <param name="args">Command-line arguments: --method, --params, --translations, --project.</param>
+    /// <returns>Exit code 0 on success, 1 on failure.</returns>
     public static async Task<int> Main(string[] args)
     {
         if (args.Length < 2)
@@ -77,6 +88,14 @@ public class Program
         }
     }
 
+    /// <summary>
+    /// Routes a method name to its handler, deserializes parameters, and returns the response.
+    /// </summary>
+    /// <param name="method">The method name to execute (e.g. "TranslateToNaturalLanguage").</param>
+    /// <param name="paramsJson">JSON string containing the request parameters.</param>
+    /// <param name="translationsPath">Path to the translations directory.</param>
+    /// <param name="projectPath">Path to the project root for identifier mapping.</param>
+    /// <returns>A response indicating success or failure with result data or error message.</returns>
     public static async Task<CoreResponse> ExecuteMethod(
         string method, string paramsJson, string translationsPath, string projectPath)
     {
@@ -124,6 +143,13 @@ public class Program
         }
     }
 
+    /// <summary>
+    /// Creates and configures a translation orchestrator with the C# adapter, language provider, and identifier mapper.
+    /// </summary>
+    /// <param name="languageCode">The natural language code (e.g. "pt-br").</param>
+    /// <param name="translationsPath">Path to the translations base directory.</param>
+    /// <param name="projectPath">Path to the project root for loading identifier maps.</param>
+    /// <returns>A fully configured translation orchestrator.</returns>
     public static TranslationOrchestrator CreateOrchestrator(string languageCode, string translationsPath, string projectPath)
     {
         CSharpAdapter adapter = new CSharpAdapter();
@@ -141,6 +167,12 @@ public class Program
         return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
 
+    /// <summary>
+    /// Handles translating source code from a programming language to a natural language.
+    /// </summary>
+    /// <param name="orchestrator">The configured translation orchestrator.</param>
+    /// <param name="request">The translation request containing source code and target language.</param>
+    /// <returns>A response containing the translated code or an error message.</returns>
     public static async Task<CoreResponse> HandleTranslateToNaturalLanguage(
         TranslationOrchestrator orchestrator, TranslateRequest request)
     {
@@ -155,6 +187,12 @@ public class Program
         return new CoreResponse { Success = true, Result = result.Value };
     }
 
+    /// <summary>
+    /// Handles reverse-translating code from a natural language back to the original programming language.
+    /// </summary>
+    /// <param name="orchestrator">The configured translation orchestrator.</param>
+    /// <param name="request">The reverse translation request containing translated code and source language.</param>
+    /// <returns>A response containing the restored original code or an error message.</returns>
     public static async Task<CoreResponse> HandleTranslateFromNaturalLanguage(
         TranslationOrchestrator orchestrator, ReverseTranslateRequest request)
     {
@@ -169,6 +207,11 @@ public class Program
         return new CoreResponse { Success = true, Result = result.Value };
     }
 
+    /// <summary>
+    /// Handles validating C# source code syntax and returning diagnostics.
+    /// </summary>
+    /// <param name="request">The validation request containing the source code to check.</param>
+    /// <returns>A response containing the serialized validation result.</returns>
     public static CoreResponse HandleValidateSyntax(ValidateRequest request)
     {
         CSharpAdapter adapter = new CSharpAdapter();
@@ -181,6 +224,11 @@ public class Program
         };
     }
 
+    /// <summary>
+    /// Returns the list of supported natural languages by scanning the translations directory.
+    /// </summary>
+    /// <param name="translationsPath">Path to the translations base directory.</param>
+    /// <returns>A response containing a serialized list of supported language codes.</returns>
     public static CoreResponse HandleGetSupportedLanguages(string translationsPath)
     {
         string naturalLanguagesPath = Path.Combine(translationsPath, "natural-languages");
@@ -201,6 +249,10 @@ public class Program
         };
     }
 
+    /// <summary>
+    /// Writes an error response as JSON to stderr.
+    /// </summary>
+    /// <param name="message">The error message to include in the response.</param>
     public static void WriteError(string message)
     {
         CoreResponse errorResponse = new CoreResponse

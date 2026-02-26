@@ -5,12 +5,33 @@ using MultiLingualCode.Core.Models.AST;
 
 namespace MultiLingualCode.Core.Services;
 
+/// <summary>
+/// Orchestrates end-to-end code translation between programming languages and natural languages.
+/// </summary>
 public class TranslationOrchestrator
 {
+    /// <summary>
+    /// The language registry used to resolve adapters for file extensions.
+    /// </summary>
     public required LanguageRegistry Registry { get; init; }
+
+    /// <summary>
+    /// The natural language provider used for keyword and identifier translation.
+    /// </summary>
     public required INaturalLanguageProvider Provider { get; init; }
+
+    /// <summary>
+    /// The identifier mapper service used for persisting and retrieving identifier translations.
+    /// </summary>
     public required IdentifierMapper IdentifierMapperService { get; init; }
 
+    /// <summary>
+    /// Creates a new <see cref="TranslationOrchestrator"/> with the specified dependencies.
+    /// </summary>
+    /// <param name="registry">The language registry for resolving adapters.</param>
+    /// <param name="provider">The natural language provider for translations.</param>
+    /// <param name="identifierMapper">The identifier mapper for identifier persistence.</param>
+    /// <returns>An operation result containing the created orchestrator, or a failure if any parameter is null.</returns>
     public static OperationResultGeneric<TranslationOrchestrator> Create(
         LanguageRegistry registry,
         INaturalLanguageProvider provider,
@@ -35,6 +56,13 @@ public class TranslationOrchestrator
             new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = identifierMapper });
     }
 
+    /// <summary>
+    /// Translates source code from a programming language into a natural language representation.
+    /// </summary>
+    /// <param name="sourceCode">The original source code to translate.</param>
+    /// <param name="fileExtension">The file extension identifying the programming language.</param>
+    /// <param name="targetLanguage">The target natural language code.</param>
+    /// <returns>An operation result containing the translated source code, or a failure on error.</returns>
     public async Task<OperationResultGeneric<string>> TranslateToNaturalLanguageAsync(
         string sourceCode, string fileExtension, string targetLanguage)
     {
@@ -63,6 +91,13 @@ public class TranslationOrchestrator
         return OperationResultGeneric<string>.Ok(result);
     }
 
+    /// <summary>
+    /// Translates natural-language code back into the original programming language.
+    /// </summary>
+    /// <param name="translatedCode">The natural-language translated code to reverse.</param>
+    /// <param name="fileExtension">The file extension identifying the programming language.</param>
+    /// <param name="sourceLanguage">The source natural language code the code was translated to.</param>
+    /// <returns>An operation result containing the restored original source code, or a failure on error.</returns>
     public async Task<OperationResultGeneric<string>> TranslateFromNaturalLanguageAsync(
         string translatedCode, string fileExtension, string sourceLanguage)
     {
@@ -92,6 +127,11 @@ public class TranslationOrchestrator
         return OperationResultGeneric<string>.Ok(result);
     }
 
+    /// <summary>
+    /// Recursively translates AST nodes from programming language to natural language (forward translation).
+    /// </summary>
+    /// <param name="node">The AST node to translate.</param>
+    /// <param name="targetLanguage">The target natural language code.</param>
     public void TranslateAstForward(ASTNode node, string targetLanguage)
     {
         switch (node)
@@ -129,6 +169,11 @@ public class TranslationOrchestrator
         }
     }
 
+    /// <summary>
+    /// Recursively translates AST nodes from natural language back to the original programming language (reverse translation).
+    /// </summary>
+    /// <param name="node">The AST node to reverse-translate.</param>
+    /// <param name="sourceLanguage">The natural language code the AST was translated to.</param>
     public void TranslateAstReverse(ASTNode node, string sourceLanguage)
     {
         switch (node)
@@ -175,6 +220,11 @@ public class TranslationOrchestrator
         }
     }
 
+    /// <summary>
+    /// Extracts @tradu annotations from source code and applies them as identifier and literal translations.
+    /// </summary>
+    /// <param name="sourceCode">The source code containing @tradu annotations.</param>
+    /// <param name="targetLanguage">The target natural language code for the translations.</param>
     public void ApplyTraduAnnotations(string sourceCode, string targetLanguage)
     {
         TraduAnnotationParser parser = new TraduAnnotationParser();
