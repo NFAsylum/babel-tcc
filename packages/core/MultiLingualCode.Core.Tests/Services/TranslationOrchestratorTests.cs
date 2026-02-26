@@ -20,7 +20,7 @@ public class TranslationOrchestratorTests
 
     private NaturalLanguageProvider CreateProvider()
     {
-        return new NaturalLanguageProvider("pt-br", _translationsPath);
+        return new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = _translationsPath };
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class TranslationOrchestratorTests
         _registry.RegisterAdapter(adapter);
         NaturalLanguageProvider provider = CreateProvider();
 
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "public class Program", ".cs", "pt-br");
@@ -145,7 +145,7 @@ public class TranslationOrchestratorTests
             _mapper.LoadMap(tempDir);
             _mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
 
-            TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
             OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
                 "public class Calculator", ".cs", "pt-br");
@@ -168,7 +168,7 @@ public class TranslationOrchestratorTests
         _registry.RegisterAdapter(adapter);
         NaturalLanguageProvider provider = CreateProvider();
 
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             "publico classe Programa", ".cs", "pt-br");
@@ -192,7 +192,7 @@ public class TranslationOrchestratorTests
             _mapper.LoadMap(tempDir);
             _mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
 
-            TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
             OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
                 "publico classe Calculadora", ".cs", "pt-br");
@@ -212,7 +212,7 @@ public class TranslationOrchestratorTests
     public async Task TranslateToNaturalLanguage_UnsupportedExtension_ReturnsFailure()
     {
         NaturalLanguageProvider provider = CreateProvider();
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
             "code", ".xyz", "pt-br");
@@ -224,7 +224,7 @@ public class TranslationOrchestratorTests
     public async Task TranslateFromNaturalLanguage_UnsupportedExtension_ReturnsFailure()
     {
         NaturalLanguageProvider provider = CreateProvider();
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             "code", ".xyz", "pt-br");
@@ -237,7 +237,7 @@ public class TranslationOrchestratorTests
     {
         NaturalLanguageProvider provider = CreateProvider();
 
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         Assert.NotNull(orchestrator);
     }
@@ -262,7 +262,7 @@ public class TranslationOrchestratorTests
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
         NaturalLanguageProvider provider = CreateProvider();
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         string original = "public void Main";
         OperationResultGeneric<string> translatedResult = await orchestrator.TranslateToNaturalLanguageAsync(
@@ -286,7 +286,7 @@ public class TranslationOrchestratorTests
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
         NaturalLanguageProvider provider = CreateProvider();
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         // "x" starts with lowercase, so IsTranslatable = false in the mock adapter
         OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
@@ -303,7 +303,7 @@ public class TranslationOrchestratorTests
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         _registry.RegisterAdapter(adapter);
         NaturalLanguageProvider provider = CreateProvider();
-        TranslationOrchestrator orchestrator = new TranslationOrchestrator(_registry, provider, _mapper);
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
 
         // "Main" is an identifier (uppercase), not a keyword - won't be in translation table
         // It should remain as "Main" since there's no identifier mapping for it
@@ -331,7 +331,7 @@ public class TranslationOrchestratorTests
             IdentifierMapper mapper = new IdentifierMapper();
             mapper.LoadMap(tempDir);
 
-            TranslationOrchestrator orchestrator = new TranslationOrchestrator(registry, provider, mapper);
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
 
             string sourceCode = @"public class Calculator // tradu:Calculadora
 {

@@ -11,7 +11,7 @@ public class NaturalLanguageProviderTests
 
     private static async Task<NaturalLanguageProvider> CreateLoadedProvider()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
         await provider.LoadTranslationTableAsync("csharp");
         return provider;
     }
@@ -19,7 +19,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void Constructor_SetsLanguageCode()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
         Assert.Equal("pt-br", provider.LanguageCode);
     }
@@ -52,7 +52,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task LoadTranslationTableAsync_CachesTable()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
         await provider.LoadTranslationTableAsync("csharp");
         LanguageTable table1 = provider.GetActiveLanguageTable();
@@ -67,7 +67,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public async Task LoadTranslationTableAsync_InvalidPath_DoesNotLoad()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", "/nonexistent/path");
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = "/nonexistent/path" };
 
         await provider.LoadTranslationTableAsync("csharp");
 
@@ -109,7 +109,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void TranslateKeyword_BeforeLoad_ReturnsFailure()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
         OperationResultGeneric<string> result = provider.TranslateKeyword(30);
         Assert.False(result.IsSuccess);
@@ -136,7 +136,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void ReverseTranslateKeyword_BeforeLoad_ReturnsMinusOne()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
         Assert.Equal(-1, provider.ReverseTranslateKeyword("se"));
     }
@@ -219,7 +219,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void IsLoaded_ReturnsFalseBeforeLoad()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
         Assert.False(provider.IsLoaded("csharp"));
     }
@@ -246,7 +246,7 @@ public class NaturalLanguageProviderTests
     [Fact]
     public void ActiveKeywordTable_HasActiveTableIsFalseBeforeLoad()
     {
-        NaturalLanguageProvider provider = new NaturalLanguageProvider("pt-br", TranslationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
         Assert.False(provider.HasActiveTable);
     }

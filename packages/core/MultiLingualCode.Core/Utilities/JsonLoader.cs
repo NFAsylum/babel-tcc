@@ -7,16 +7,11 @@ namespace MultiLingualCode.Core.Utilities;
 public class JsonLoader
 {
     public ConcurrentDictionary<string, object> Cache = new();
-    public JsonSerializerOptions Options;
-
-    public JsonLoader()
+    public JsonSerializerOptions Options = new JsonSerializerOptions
     {
-        Options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip
-        };
-    }
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip
+    };
 
     public OperationResultGeneric<T> Load<T>(string filePath) where T : class
     {

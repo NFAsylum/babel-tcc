@@ -130,7 +130,7 @@ public class Program
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(adapter);
 
-        NaturalLanguageProvider provider = new NaturalLanguageProvider(languageCode, translationsPath);
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = languageCode, TranslationsBasePath = translationsPath };
 
         IdentifierMapper mapper = new IdentifierMapper();
         if (!string.IsNullOrEmpty(projectPath))
@@ -138,7 +138,7 @@ public class Program
             mapper.LoadMap(projectPath);
         }
 
-        return new TranslationOrchestrator(registry, provider, mapper);
+        return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
 
     public static async Task<CoreResponse> HandleTranslateToNaturalLanguage(

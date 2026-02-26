@@ -7,9 +7,9 @@ namespace MultiLingualCode.Core.Services;
 
 public class TranslationOrchestrator
 {
-    public LanguageRegistry Registry { get; }
-    public INaturalLanguageProvider Provider { get; }
-    public IdentifierMapper IdentifierMapperService { get; }
+    public required LanguageRegistry Registry { get; init; }
+    public required INaturalLanguageProvider Provider { get; init; }
+    public required IdentifierMapper IdentifierMapperService { get; init; }
 
     public static OperationResultGeneric<TranslationOrchestrator> Create(
         LanguageRegistry registry,
@@ -32,17 +32,7 @@ public class TranslationOrchestrator
         }
 
         return OperationResultGeneric<TranslationOrchestrator>.Ok(
-            new TranslationOrchestrator(registry, provider, identifierMapper));
-    }
-
-    public TranslationOrchestrator(
-        LanguageRegistry registry,
-        INaturalLanguageProvider provider,
-        IdentifierMapper identifierMapper)
-    {
-        Registry = registry;
-        Provider = provider;
-        IdentifierMapperService = identifierMapper;
+            new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = identifierMapper });
     }
 
     public async Task<OperationResultGeneric<string>> TranslateToNaturalLanguageAsync(

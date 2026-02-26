@@ -6,7 +6,7 @@ namespace MultiLingualCode.Core.Services;
 
 public class NaturalLanguageProvider : INaturalLanguageProvider
 {
-    public string TranslationsBasePath { get; }
+    public string TranslationsBasePath { get; init; } = "";
     public Dictionary<string, LanguageTable> LoadedTables = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, KeywordTable> KeywordTables = new(StringComparer.OrdinalIgnoreCase);
     public IdentifierMap IdentifierMapData = new();
@@ -14,7 +14,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
     public KeywordTable ActiveKeywordTable = new();
     public bool HasActiveTable { get; set; }
 
-    public string LanguageCode { get; }
+    public string LanguageCode { get; init; } = "";
     public string LanguageName { get; set; } = "";
 
     public static OperationResultGeneric<NaturalLanguageProvider> Create(string languageCode, string translationsBasePath)
@@ -29,13 +29,7 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
             return OperationResultGeneric<NaturalLanguageProvider>.Fail("Translations base path cannot be empty.");
         }
 
-        return OperationResultGeneric<NaturalLanguageProvider>.Ok(new NaturalLanguageProvider(languageCode, translationsBasePath));
-    }
-
-    public NaturalLanguageProvider(string languageCode, string translationsBasePath)
-    {
-        LanguageCode = languageCode;
-        TranslationsBasePath = translationsBasePath;
+        return OperationResultGeneric<NaturalLanguageProvider>.Ok(new NaturalLanguageProvider { LanguageCode = languageCode, TranslationsBasePath = translationsBasePath });
     }
 
     public async Task<OperationResult> LoadTranslationTableAsync(string programmingLanguage)
