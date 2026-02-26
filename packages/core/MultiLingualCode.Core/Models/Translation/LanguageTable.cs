@@ -51,9 +51,9 @@ public class LanguageTable
 
     public OperationResultGeneric<string> GetTranslation(int keywordId)
     {
-        if (IdToTranslation.TryGetValue(keywordId, out string? translation) && translation is not null)
+        if (IdToTranslation.ContainsKey(keywordId))
         {
-            return OperationResultGeneric<string>.Ok(translation);
+            return OperationResultGeneric<string>.Ok(IdToTranslation[keywordId]);
         }
 
         return OperationResultGeneric<string>.Fail($"Translation not found for keyword id: {keywordId}");

@@ -159,9 +159,8 @@ public class TranslationOrchestrator
                 string translatedLiteralText = $"{literal.Value}";
                 foreach (KeyValuePair<string, Dictionary<string, string>> kvp in IdentifierMapperService.Data.Literals)
                 {
-                    if (kvp.Value.TryGetValue(sourceLanguage, out string? translatedValue)
-                        && translatedValue is not null
-                        && string.Equals(translatedValue, translatedLiteralText, StringComparison.Ordinal))
+                    if (kvp.Value.ContainsKey(sourceLanguage)
+                        && string.Equals(kvp.Value[sourceLanguage], translatedLiteralText, StringComparison.Ordinal))
                     {
                         literal.Value = kvp.Key;
                         break;

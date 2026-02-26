@@ -38,9 +38,9 @@ public class LanguageRegistry
         }
 
         string normalized = NormalizeExtension(fileExtension);
-        if (AdaptersByExtension.TryGetValue(normalized, out ILanguageAdapter? adapter) && adapter is not null)
+        if (AdaptersByExtension.ContainsKey(normalized))
         {
-            return OperationResultGeneric<ILanguageAdapter>.Ok(adapter);
+            return OperationResultGeneric<ILanguageAdapter>.Ok(AdaptersByExtension[normalized]);
         }
 
         return OperationResultGeneric<ILanguageAdapter>.Fail($"No adapter registered for extension: {fileExtension}");

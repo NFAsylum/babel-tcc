@@ -17,9 +17,9 @@ public class JsonLoader
     {
         string fullPath = Path.GetFullPath(filePath);
 
-        if (Cache.TryGetValue(fullPath, out object? cached) && cached is not null)
+        if (Cache.ContainsKey(fullPath))
         {
-            return OperationResultGeneric<T>.Ok((T)cached);
+            return OperationResultGeneric<T>.Ok((T)Cache[fullPath]);
         }
 
         OperationResultGeneric<T> result = JsonFileReader.ReadFromFile<T>(fullPath, Options);
@@ -36,9 +36,9 @@ public class JsonLoader
     {
         string fullPath = Path.GetFullPath(filePath);
 
-        if (Cache.TryGetValue(fullPath, out object? cached) && cached is not null)
+        if (Cache.ContainsKey(fullPath))
         {
-            return OperationResultGeneric<T>.Ok((T)cached);
+            return OperationResultGeneric<T>.Ok((T)Cache[fullPath]);
         }
 
         OperationResultGeneric<T> result = await JsonFileReader.ReadFromFileAsync<T>(fullPath, Options);

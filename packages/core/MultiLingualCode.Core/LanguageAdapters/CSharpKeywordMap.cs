@@ -108,9 +108,9 @@ public static class CSharpKeywordMap
 
     public static string GetText(int id)
     {
-        if (IdToText.TryGetValue(id, out string? text) && text is not null)
+        if (IdToText.ContainsKey(id))
         {
-            return text;
+            return IdToText[id];
         }
 
         return "";

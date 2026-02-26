@@ -41,9 +41,9 @@ public class KeywordTable
 
     public OperationResultGeneric<string> GetKeyword(int id)
     {
-        if (IdToKeyword.TryGetValue(id, out string? keyword) && keyword is not null)
+        if (IdToKeyword.ContainsKey(id))
         {
-            return OperationResultGeneric<string>.Ok(keyword);
+            return OperationResultGeneric<string>.Ok(IdToKeyword[id]);
         }
 
         return OperationResultGeneric<string>.Fail($"Keyword not found for id: {id}");

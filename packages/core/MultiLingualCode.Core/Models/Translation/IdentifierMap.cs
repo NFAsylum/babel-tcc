@@ -31,9 +31,9 @@ public class IdentifierMap
             return OperationResultGeneric<string>.Fail("Original name is empty");
         }
 
-        if (OriginalToTranslated.TryGetValue(originalName, out string? translated) && translated is not null)
+        if (OriginalToTranslated.ContainsKey(originalName))
         {
-            return OperationResultGeneric<string>.Ok(translated);
+            return OperationResultGeneric<string>.Ok(OriginalToTranslated[originalName]);
         }
 
         return OperationResultGeneric<string>.Fail($"No translation found for: {originalName}");
@@ -46,9 +46,9 @@ public class IdentifierMap
             return OperationResultGeneric<string>.Fail("Translated name is empty");
         }
 
-        if (TranslatedToOriginal.TryGetValue(translatedName, out string? original) && original is not null)
+        if (TranslatedToOriginal.ContainsKey(translatedName))
         {
-            return OperationResultGeneric<string>.Ok(original);
+            return OperationResultGeneric<string>.Ok(TranslatedToOriginal[translatedName]);
         }
 
         return OperationResultGeneric<string>.Fail($"No original found for: {translatedName}");
@@ -61,9 +61,9 @@ public class IdentifierMap
             return;
         }
 
-        if (OriginalToTranslated.TryGetValue(originalName, out string? oldTranslated) && oldTranslated is not null)
+        if (OriginalToTranslated.ContainsKey(originalName))
         {
-            TranslatedToOriginal.Remove(oldTranslated);
+            TranslatedToOriginal.Remove(OriginalToTranslated[originalName]);
         }
 
         OriginalToTranslated[originalName] = translatedName;
@@ -72,11 +72,12 @@ public class IdentifierMap
 
     public bool Remove(string originalName)
     {
-        if (!OriginalToTranslated.TryGetValue(originalName, out string? translated) || translated is null)
+        if (!OriginalToTranslated.ContainsKey(originalName))
         {
             return false;
         }
 
+        string translated = OriginalToTranslated[originalName];
         OriginalToTranslated.Remove(originalName);
         TranslatedToOriginal.Remove(translated);
         return true;

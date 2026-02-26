@@ -77,12 +77,10 @@ public class IdentifierMapper
             return OperationResultGeneric<string>.Fail("Identifier or target language is empty.");
         }
 
-        if (Data.Identifiers.TryGetValue(identifier, out Dictionary<string, string>? translations)
-            && translations is not null
-            && translations.TryGetValue(targetLanguage, out string? translated)
-            && translated is not null)
+        if (Data.Identifiers.ContainsKey(identifier)
+            && Data.Identifiers[identifier].ContainsKey(targetLanguage))
         {
-            return OperationResultGeneric<string>.Ok(translated);
+            return OperationResultGeneric<string>.Ok(Data.Identifiers[identifier][targetLanguage]);
         }
 
         return OperationResultGeneric<string>.Fail($"No translation found for identifier: {identifier}");
@@ -97,9 +95,8 @@ public class IdentifierMapper
 
         foreach (KeyValuePair<string, Dictionary<string, string>> kvp in Data.Identifiers)
         {
-            if (kvp.Value.TryGetValue(sourceLanguage, out string? translated)
-                && translated is not null
-                && string.Equals(translated, translatedIdentifier, StringComparison.Ordinal))
+            if (kvp.Value.ContainsKey(sourceLanguage)
+                && string.Equals(kvp.Value[sourceLanguage], translatedIdentifier, StringComparison.Ordinal))
             {
                 return OperationResultGeneric<string>.Ok(kvp.Key);
             }
@@ -115,12 +112,10 @@ public class IdentifierMapper
             return OperationResultGeneric<string>.Fail("Literal or target language is empty.");
         }
 
-        if (Data.Literals.TryGetValue(literal, out Dictionary<string, string>? translations)
-            && translations is not null
-            && translations.TryGetValue(targetLanguage, out string? translated)
-            && translated is not null)
+        if (Data.Literals.ContainsKey(literal)
+            && Data.Literals[literal].ContainsKey(targetLanguage))
         {
-            return OperationResultGeneric<string>.Ok(translated);
+            return OperationResultGeneric<string>.Ok(Data.Literals[literal][targetLanguage]);
         }
 
         return OperationResultGeneric<string>.Fail($"No translation found for literal: {literal}");

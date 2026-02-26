@@ -26,7 +26,9 @@ public static class FileSystemHelper
 
     public static string FindProjectRoot(string startPath, string markerName = ".multilingual")
     {
-        string dir = File.Exists(startPath) ? Path.GetDirectoryName(startPath) ?? "" : startPath;
+        string dir = File.Exists(startPath)
+            ? (Path.GetDirectoryName(startPath) is string parentDir ? parentDir : string.Empty)
+            : startPath;
 
         while (!string.IsNullOrEmpty(dir))
         {
@@ -36,7 +38,7 @@ public static class FileSystemHelper
                 return dir;
             }
 
-            dir = Path.GetDirectoryName(dir) ?? "";
+            dir = Path.GetDirectoryName(dir) is string nextDir ? nextDir : string.Empty;
         }
 
         return "";
