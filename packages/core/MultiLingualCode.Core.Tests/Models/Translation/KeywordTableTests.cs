@@ -120,8 +120,8 @@ public class KeywordTableTests
         Assert.True(result.IsSuccess);
         KeywordTable table = result.Value;
 
-        // keywords-base.json has 77 entries (IDs 0-77, skipping 74)
-        Assert.Equal(77, table.Count);
+        // keywords-base.json has 89 entries (IDs 0-88)
+        Assert.Equal(89, table.Count);
     }
 
     [Fact]
