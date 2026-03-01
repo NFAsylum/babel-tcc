@@ -3,8 +3,16 @@ import { CoreBridge } from '../services/coreBridge';
 import { LanguageDetector } from '../services/languageDetector';
 import { ConfigurationService } from '../services/configurationService';
 
-/** The URI scheme used for translated document views. */
+/** The URI scheme used for editable translated document views. */
 export const TRANSLATED_SCHEME = 'babel-tcc-translated';
+
+/** The URI scheme used for readonly translated document views. */
+export const READONLY_SCHEME = 'babel-tcc-readonly';
+
+/** Returns true if the given scheme is any translated scheme (editable or readonly). */
+export function isTranslatedScheme(scheme: string): boolean {
+  return scheme === TRANSLATED_SCHEME || scheme === READONLY_SCHEME;
+}
 
 /** Provides a virtual filesystem for translated documents, supporting read and write operations. */
 export class TranslatedContentProvider implements vscode.FileSystemProvider {
@@ -144,10 +152,14 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public invalidateCache(uri: vscode.Uri): void {
     const cacheKey: string = this.buildCacheKey(uri.path);
     this.cache.delete(cacheKey);
-    this.changeEmitter.fire([{
-      type: vscode.FileChangeType.Changed,
-      uri: uri
-    }]);
+
+    const otherScheme: string = uri.scheme === TRANSLATED_SCHEME ? READONLY_SCHEME : TRANSLATED_SCHEME;
+    const otherUri: vscode.Uri = vscode.Uri.parse(`${otherScheme}:${uri.path}`);
+
+    this.changeEmitter.fire([
+      { type: vscode.FileChangeType.Changed, uri: uri },
+      { type: vscode.FileChangeType.Changed, uri: otherUri }
+    ]);
   }
 
   /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */

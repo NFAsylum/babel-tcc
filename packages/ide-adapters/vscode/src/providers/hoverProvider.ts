@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TRANSLATED_SCHEME } from './translatedContentProvider';
+import { isTranslatedScheme } from './translatedContentProvider';
 
 const KEYWORD_REVERSE_MAP: Record<string, string> = {
   'usando': 'using',
@@ -75,7 +75,7 @@ export class HoverProvider implements vscode.HoverProvider {
     document: vscode.TextDocument,
     position: vscode.Position
   ): vscode.Hover | undefined {
-    if (document.uri.scheme !== TRANSLATED_SCHEME) {
+    if (!isTranslatedScheme(document.uri.scheme)) {
       return undefined;
     }
 
