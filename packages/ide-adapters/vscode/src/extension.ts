@@ -8,6 +8,7 @@ import { SaveHandler } from './providers/saveHandler';
 import { CompletionProvider } from './providers/completionProvider';
 import { HoverProvider } from './providers/hoverProvider';
 import { StatusBar } from './ui/statusBar';
+import { AutoTranslateManager } from './providers/autoTranslateManager';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -19,6 +20,7 @@ let translatedContentProvider: TranslatedContentProvider;
 let editInterceptor: EditInterceptor;
 let saveHandler: SaveHandler;
 let statusBar: StatusBar;
+let autoTranslateManager: AutoTranslateManager;
 
 /**
  * Activates the Babel TCC extension, initializing all services, providers, and commands.
@@ -41,6 +43,9 @@ export function activate(context: vscode.ExtensionContext): void {
     coreBridge, languageDetector, configService, outputChannel
   );
   statusBar = new StatusBar(configService);
+  autoTranslateManager = new AutoTranslateManager(
+    configService, languageDetector, translatedContentProvider, outputChannel
+  );
 
   const providerRegistration: vscode.Disposable = vscode.workspace.registerTextDocumentContentProvider(
     TRANSLATED_SCHEME,
@@ -149,6 +154,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(editInterceptor);
   context.subscriptions.push(saveHandler);
   context.subscriptions.push(statusBar);
+  context.subscriptions.push(autoTranslateManager);
   context.subscriptions.push(toggleCommand);
   context.subscriptions.push(selectLanguageCommand);
   context.subscriptions.push(openTranslatedCommand);
