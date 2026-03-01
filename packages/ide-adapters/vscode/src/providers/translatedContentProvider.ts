@@ -3,18 +3,27 @@ import { CoreBridge } from '../services/coreBridge';
 import { LanguageDetector } from '../services/languageDetector';
 import { ConfigurationService } from '../services/configurationService';
 
-/** The URI scheme used for translated document views. */
+/** The URI scheme used for editable translated document views. */
 export const TRANSLATED_SCHEME = 'babel-tcc-translated';
 
-/** Provides virtual document content by translating source files via the Core engine. */
-export class TranslatedContentProvider implements vscode.TextDocumentContentProvider {
+/** The URI scheme used for readonly translated document views. */
+export const READONLY_SCHEME = 'babel-tcc-readonly';
+
+/** Returns true if the given scheme is any translated scheme (editable or readonly). */
+export function isTranslatedScheme(scheme: string): boolean {
+  return scheme === TRANSLATED_SCHEME || scheme === READONLY_SCHEME;
+}
+
+/** Provides a virtual filesystem for translated documents, supporting read and write operations. */
+export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public coreBridge: CoreBridge;
   public languageDetector: LanguageDetector;
   public configService: ConfigurationService;
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
-  public changeEmitter: vscode.EventEmitter<vscode.Uri> = new vscode.EventEmitter<vscode.Uri>();
-  public onDidChange: vscode.Event<vscode.Uri> = this.changeEmitter.event;
+  public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
+    new vscode.EventEmitter<vscode.FileChangeEvent[]>();
+  public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
 
   constructor(
     coreBridge: CoreBridge,
@@ -28,13 +37,67 @@ export class TranslatedContentProvider implements vscode.TextDocumentContentProv
     this.outputChannel = outputChannel;
   }
 
+  public watch(): vscode.Disposable {
+    return new vscode.Disposable((): void => {});
+  }
+
+  public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
+    const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
+    return vscode.workspace.fs.stat(originalUri);
+  }
+
+  public async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+    const content: string = await this.provideContent(uri);
+    const encoder: TextEncoder = new TextEncoder();
+    return encoder.encode(content);
+  }
+
+  public async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
+    const translatedContent: string = Buffer.from(content).toString('utf-8');
+    const originalPath: string = uri.path;
+    const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
+    const sourceLanguage: string = this.configService.getLanguage();
+
+    this.outputChannel.appendLine(`TranslatedContentProvider: reverse translating ${originalPath}`);
+
+    try {
+      const originalCode: string = await this.coreBridge.translateFromNaturalLanguage(
+        translatedContent, fileExtension, sourceLanguage
+      );
+
+      const originalUri: vscode.Uri = vscode.Uri.file(originalPath);
+      const encoder: TextEncoder = new TextEncoder();
+      await vscode.workspace.fs.writeFile(originalUri, encoder.encode(originalCode));
+
+      const cacheKey: string = this.buildCacheKey(originalPath);
+      this.cache.delete(cacheKey);
+
+      this.outputChannel.appendLine(`TranslatedContentProvider: saved original C# to ${originalPath}`);
+      vscode.window.showInformationMessage('Babel TCC: File saved successfully.');
+    } catch (error: unknown) {
+      const message: string = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`TranslatedContentProvider: reverse translation failed - ${message}`);
+      vscode.window.showErrorMessage(
+        'Babel TCC: Failed to reverse translate. Original file was NOT overwritten.'
+      );
+    }
+  }
+
+  public readDirectory(): [string, vscode.FileType][] {
+    return [];
+  }
+
+  public createDirectory(): void {}
+
+  public delete(): void {}
+
+  public rename(): void {}
+
   /**
    * Resolves the content for a translated virtual document.
    * Returns cached content if available, otherwise reads the original file, translates it, and caches the result.
-   * @param uri - The URI of the translated virtual document.
-   * @returns The translated file content, or the original content if translation is disabled or unsupported.
    */
-  public async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+  public async provideContent(uri: vscode.Uri): Promise<string> {
     const originalPath: string = uri.path;
     const cacheKey: string = this.buildCacheKey(originalPath);
 
@@ -65,10 +128,6 @@ export class TranslatedContentProvider implements vscode.TextDocumentContentProv
   /**
    * Translates source code into the specified natural language using the Core engine.
    * Falls back to returning the original source code if translation fails.
-   * @param sourceCode - The original source code to translate.
-   * @param fileExtension - The file extension (e.g. '.cs') to determine the programming language.
-   * @param targetLanguage - The target natural language code (e.g. 'pt-BR').
-   * @returns The translated source code, or the original on failure.
    */
   public async translateContent(
     sourceCode: string,
@@ -89,12 +148,18 @@ export class TranslatedContentProvider implements vscode.TextDocumentContentProv
 
   /**
    * Removes the cached translation for a specific URI and fires a change event to refresh the document.
-   * @param uri - The URI of the translated document to invalidate.
    */
   public invalidateCache(uri: vscode.Uri): void {
     const cacheKey: string = this.buildCacheKey(uri.path);
     this.cache.delete(cacheKey);
-    this.changeEmitter.fire(uri);
+
+    const otherScheme: string = uri.scheme === TRANSLATED_SCHEME ? READONLY_SCHEME : TRANSLATED_SCHEME;
+    const otherUri: vscode.Uri = vscode.Uri.parse(`${otherScheme}:${uri.path}`);
+
+    this.changeEmitter.fire([
+      { type: vscode.FileChangeType.Changed, uri: uri },
+      { type: vscode.FileChangeType.Changed, uri: otherUri }
+    ]);
   }
 
   /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */
@@ -104,8 +169,6 @@ export class TranslatedContentProvider implements vscode.TextDocumentContentProv
 
   /**
    * Builds a cache key combining the file path and the current target language.
-   * @param filePath - The path of the original source file.
-   * @returns A composite key in the format `filePath::language`.
    */
   public buildCacheKey(filePath: string): string {
     const language: string = this.configService.getLanguage();
@@ -114,8 +177,6 @@ export class TranslatedContentProvider implements vscode.TextDocumentContentProv
 
   /**
    * Reads the original source file from disk as a UTF-8 string.
-   * @param filePath - The absolute path of the file to read.
-   * @returns The file content as a string.
    */
   public async readOriginalFile(filePath: string): Promise<string> {
     const uri: vscode.Uri = vscode.Uri.file(filePath);

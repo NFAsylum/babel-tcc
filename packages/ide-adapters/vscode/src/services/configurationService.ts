@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 const CONFIG_SECTION = 'babel-tcc';
 const KEY_ENABLED = 'enabled';
 const KEY_LANGUAGE = 'language';
+const KEY_READONLY = 'readonly';
 
 /** Manages VS Code workspace configuration for the Babel TCC extension. */
 export class ConfigurationService implements vscode.Disposable {
@@ -57,6 +58,18 @@ export class ConfigurationService implements vscode.Disposable {
   public async setLanguage(language: string): Promise<void> {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
     await config.update(KEY_LANGUAGE, language, vscode.ConfigurationTarget.Global);
+  }
+
+  /** Returns whether translated views should open in readonly mode. Defaults to false. */
+  public isReadonly(): boolean {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    return config.get<boolean>(KEY_READONLY, false);
+  }
+
+  /** Sets whether translated views should open in readonly mode. */
+  public async setReadonly(readonly: boolean): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    await config.update(KEY_READONLY, readonly, vscode.ConfigurationTarget.Global);
   }
 
   /** Disposes of the configuration change subscription and the event emitter. */

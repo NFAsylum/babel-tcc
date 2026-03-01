@@ -2,9 +2,7 @@ import * as vscode from 'vscode';
 import { CoreBridge } from './services/coreBridge';
 import { LanguageDetector } from './services/languageDetector';
 import { ConfigurationService } from './services/configurationService';
-import { TranslatedContentProvider, TRANSLATED_SCHEME } from './providers/translatedContentProvider';
-import { EditInterceptor } from './providers/editInterceptor';
-import { SaveHandler } from './providers/saveHandler';
+import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './providers/translatedContentProvider';
 import { CompletionProvider } from './providers/completionProvider';
 import { HoverProvider } from './providers/hoverProvider';
 import { StatusBar } from './ui/statusBar';
@@ -17,8 +15,6 @@ let coreBridge: CoreBridge;
 let languageDetector: LanguageDetector;
 let configService: ConfigurationService;
 let translatedContentProvider: TranslatedContentProvider;
-let editInterceptor: EditInterceptor;
-let saveHandler: SaveHandler;
 let statusBar: StatusBar;
 let autoTranslateManager: AutoTranslateManager;
 
@@ -36,30 +32,40 @@ export function activate(context: vscode.ExtensionContext): void {
   translatedContentProvider = new TranslatedContentProvider(
     coreBridge, languageDetector, configService, outputChannel
   );
-  editInterceptor = new EditInterceptor(
-    coreBridge, languageDetector, configService, translatedContentProvider, outputChannel
-  );
-  saveHandler = new SaveHandler(
-    coreBridge, languageDetector, configService, outputChannel
-  );
   statusBar = new StatusBar(configService);
   autoTranslateManager = new AutoTranslateManager(
     configService, languageDetector, translatedContentProvider, outputChannel
   );
 
-  const providerRegistration: vscode.Disposable = vscode.workspace.registerTextDocumentContentProvider(
+  const providerRegistration: vscode.Disposable = vscode.workspace.registerFileSystemProvider(
     TRANSLATED_SCHEME,
     translatedContentProvider
   );
 
-  const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
-    { scheme: TRANSLATED_SCHEME },
-    new CompletionProvider()
+  const readonlyProviderRegistration: vscode.Disposable = vscode.workspace.registerFileSystemProvider(
+    READONLY_SCHEME,
+    translatedContentProvider,
+    { isReadonly: true }
   );
 
+  const completionProvider: CompletionProvider = new CompletionProvider();
+  const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
+    { scheme: TRANSLATED_SCHEME },
+    completionProvider
+  );
+  const completionRegistrationReadonly: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
+    { scheme: READONLY_SCHEME },
+    completionProvider
+  );
+
+  const hoverProviderInstance: HoverProvider = new HoverProvider();
   const hoverRegistration: vscode.Disposable = vscode.languages.registerHoverProvider(
     { scheme: TRANSLATED_SCHEME },
-    new HoverProvider()
+    hoverProviderInstance
+  );
+  const hoverRegistrationReadonly: vscode.Disposable = vscode.languages.registerHoverProvider(
+    { scheme: READONLY_SCHEME },
+    hoverProviderInstance
   );
 
   outputChannel.appendLine('All services and providers initialized.');
@@ -100,8 +106,8 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
-  const openTranslatedCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.openTranslated',
+  const openTranslatedEditableCommand: vscode.Disposable = vscode.commands.registerCommand(
+    'babel-tcc.openTranslatedEditable',
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
@@ -115,13 +121,40 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
+      await configService.setReadonly(false);
       const translatedUri: vscode.Uri = vscode.Uri.parse(
         `${TRANSLATED_SCHEME}:${originalUri.path}`
       );
 
       const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
-      outputChannel.appendLine(`Opened translated view for: ${originalUri.fsPath}`);
+      outputChannel.appendLine(`Opened editable translated view for: ${originalUri.fsPath}`);
+    }
+  );
+
+  const openTranslatedReadonlyCommand: vscode.Disposable = vscode.commands.registerCommand(
+    'babel-tcc.openTranslatedReadonly',
+    async (): Promise<void> => {
+      const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showWarningMessage('Babel TCC: No active editor.');
+        return;
+      }
+
+      const originalUri: vscode.Uri = editor.document.uri;
+      if (!languageDetector.isSupported(originalUri.fsPath)) {
+        vscode.window.showWarningMessage('Babel TCC: File type not supported for translation.');
+        return;
+      }
+
+      await configService.setReadonly(true);
+      const translatedUri: vscode.Uri = vscode.Uri.parse(
+        `${READONLY_SCHEME}:${originalUri.path}`
+      );
+
+      const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
+      await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+      outputChannel.appendLine(`Opened readonly translated view for: ${originalUri.fsPath}`);
     }
   );
 
@@ -135,7 +168,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       const uri: vscode.Uri = editor.document.uri;
-      if (uri.scheme === TRANSLATED_SCHEME) {
+      if (isTranslatedScheme(uri.scheme)) {
         const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
         const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(originalUri);
         await vscode.window.showTextDocument(doc);
@@ -148,16 +181,18 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(outputChannel);
   context.subscriptions.push(providerRegistration);
+  context.subscriptions.push(readonlyProviderRegistration);
   context.subscriptions.push(completionRegistration);
+  context.subscriptions.push(completionRegistrationReadonly);
   context.subscriptions.push(hoverRegistration);
+  context.subscriptions.push(hoverRegistrationReadonly);
   context.subscriptions.push(configService);
-  context.subscriptions.push(editInterceptor);
-  context.subscriptions.push(saveHandler);
   context.subscriptions.push(statusBar);
   context.subscriptions.push(autoTranslateManager);
   context.subscriptions.push(toggleCommand);
   context.subscriptions.push(selectLanguageCommand);
-  context.subscriptions.push(openTranslatedCommand);
+  context.subscriptions.push(openTranslatedEditableCommand);
+  context.subscriptions.push(openTranslatedReadonlyCommand);
   context.subscriptions.push(showOriginalCommand);
 
   outputChannel.appendLine('All commands registered successfully.');
