@@ -21,6 +21,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public configService: ConfigurationService;
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
+  public writingPaths: Set<string> = new Set<string>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
     new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
@@ -67,7 +68,9 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
       const originalUri: vscode.Uri = vscode.Uri.file(originalPath);
       const encoder: TextEncoder = new TextEncoder();
+      this.writingPaths.add(originalPath);
       await vscode.workspace.fs.writeFile(originalUri, encoder.encode(originalCode));
+      setTimeout((): void => { this.writingPaths.delete(originalPath); }, 500);
 
       const cacheKey: string = this.buildCacheKey(originalPath);
       this.cache.delete(cacheKey);
