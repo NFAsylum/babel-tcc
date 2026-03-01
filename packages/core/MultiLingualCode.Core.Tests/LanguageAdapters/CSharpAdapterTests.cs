@@ -978,6 +978,288 @@ class C
         Assert.Equal(code, result);
     }
 
+    // --- ReverseSubstituteKeywords tests ---
+
+    public static int MockLookupPtBr(string word)
+    {
+        Dictionary<string, int> ptBrKeywords = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["publico"] = 49,
+            ["classe"] = 10,
+            ["estatico"] = 58,
+            ["vazio"] = 75,
+            ["texto"] = 59,
+            ["usando"] = 72,
+            ["se"] = 30,
+            ["senao"] = 18,
+            ["retornar"] = 52,
+            ["para"] = 27,
+            ["enquanto"] = 77,
+            ["inteiro"] = 33,
+            ["novo"] = 40,
+            ["nulo"] = 41,
+            ["verdadeiro"] = 64,
+            ["falso"] = 23,
+            ["espaco_de_nomes"] = 39,
+            ["privado"] = 47,
+            ["somenteleitura"] = 50,
+            ["booleano"] = 3,
+            ["espaconome"] = 39,
+            ["paracada"] = 28,
+            ["em"] = 32,
+            ["saida"] = 44,
+        };
+
+        if (ptBrKeywords.TryGetValue(word, out int id))
+        {
+            return id;
+        }
+        return -1;
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_SimpleCode_ReplacesAllKeywords()
+    {
+        string translatedCode = @"usando Sistema;
+
+espaco_de_nomes MeuProjeto
+{
+    publico classe Programa { }
+}";
+        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+
+        Assert.Contains("using", result);
+        Assert.Contains("namespace", result);
+        Assert.Contains("public", result);
+        Assert.Contains("class", result);
+        Assert.DoesNotContain("usando", result);
+        Assert.DoesNotContain("espaco_de_nomes", result);
+        Assert.DoesNotContain("publico", result);
+        Assert.DoesNotContain("classe", result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_ManuallyAddedLine_ReplacesNewKeywords()
+    {
+        string translatedCode = @"usando Sistema;
+
+espaco_de_nomes MeuProjeto
+{
+    publico classe Programa
+    {
+        publico estatico vazio Principal()
+        {
+        }
+        publico estatico texto teste = ""oi"";
+    }
+}";
+
+        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+
+        Assert.Contains("public", result);
+        Assert.Contains("class", result);
+        Assert.Contains("static", result);
+        Assert.Contains("void", result);
+        Assert.Contains("string", result);
+        Assert.DoesNotContain("publico", result);
+        Assert.DoesNotContain("classe", result);
+        Assert.DoesNotContain("estatico", result);
+        Assert.DoesNotContain("vazio", result);
+        Assert.DoesNotContain("texto", result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_PreservesStringLiterals()
+    {
+        string translatedCode = @"usando Sistema;
+
+espaco_de_nomes MeuProjeto
+{
+    publico classe Programa
+    {
+        publico texto nome = ""publico estatico"";
+    }
+}";
+
+        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+
+        Assert.Contains("public", result);
+        Assert.Contains("class", result);
+        Assert.Contains("string", result);
+        Assert.Contains("\"publico estatico\"", result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_PreservesComments()
+    {
+        string translatedCode = @"usando Sistema;
+
+espaco_de_nomes MeuProjeto
+{
+    publico classe Programa
+    {
+        // publico estatico vazio
+        /* publico estatico */
+        publico vazio Metodo() { }
+    }
+}";
+
+        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+
+        Assert.Contains("public", result);
+        Assert.Contains("class", result);
+        Assert.Contains("// publico estatico vazio", result);
+        Assert.Contains("/* publico estatico */", result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_NoTranslatedKeywords_ReturnsUnchanged()
+    {
+        string code = "using System;\n\nnamespace Test\n{\n    public class Program { }\n}";
+        string result = _adapter.ReverseSubstituteKeywords(code, MockLookupPtBr);
+
+        Assert.Equal(code, result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_EmptyString_ReturnsEmpty()
+    {
+        string result = _adapter.ReverseSubstituteKeywords("", MockLookupPtBr);
+        Assert.Equal("", result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_MultipleMembers_ReplacesAll()
+    {
+        string translatedCode = @"usando Sistema;
+
+espaco_de_nomes MeuProjeto
+{
+    publico classe MinhaClasse
+    {
+        publico estatico vazio Principal()
+        {
+            Console.WriteLine(""Ola"");
+        }
+        publico estatico inteiro valor = 42;
+        publico texto nome = ""teste"";
+    }
+}";
+
+        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+
+        Assert.Contains("using", result);
+        Assert.Contains("namespace", result);
+        Assert.Contains("public", result);
+        Assert.Contains("class", result);
+        Assert.Contains("static", result);
+        Assert.Contains("void", result);
+        Assert.Contains("int", result);
+        Assert.Contains("string", result);
+        Assert.DoesNotContain("usando", result);
+        Assert.DoesNotContain("espaco_de_nomes", result);
+        Assert.DoesNotContain("publico", result);
+        Assert.DoesNotContain("estatico", result);
+        Assert.DoesNotContain("inteiro", result);
+        Assert.DoesNotContain("texto", result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_ComplexFile_ReplacesAllKeywords()
+    {
+        string translatedCode = @"espaconome MultiLingualCode.Core.LanguageAdapters;
+
+publico estatico classe CSharpKeywordMap
+{
+    publico estatico somenteleitura Dictionary<texto, inteiro> TextToId = novo(StringComparer.OrdinalIgnoreCase)
+    {
+        [""abstract""] = 0,
+        [""class""] = 10,
+        [""int""] = 33,
+    };
+
+    publico estatico somenteleitura Dictionary<inteiro, texto> IdToText;
+
+    estatico CSharpKeywordMap()
+    {
+        IdToText = novo Dictionary<inteiro, texto>(TextToId.Count);
+        paracada (KeyValuePair<texto, inteiro> kvp em TextToId)
+        {
+            IdToText[kvp.Value] = kvp.Key;
+        }
+    }
+
+    publico estatico inteiro GetId(texto keywordText)
+    {
+        se (TextToId.TryGetValue(keywordText, saida inteiro id))
+        {
+            retornar id;
+        }
+        retornar -1;
+    }
+
+    publico estatico booleano IsKeyword(Microsoft.CodeAnalysis.CSharp.SyntaxKind kind)
+    {
+        retornar RoslynWrapper.IsKeywordKind(kind);
+    }
+}";
+
+        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+
+        Assert.DoesNotContain("espaconome", result);
+        Assert.DoesNotContain("publico", result);
+        Assert.DoesNotContain("estatico", result);
+        Assert.DoesNotContain("classe", result);
+        Assert.DoesNotContain("somenteleitura", result);
+        Assert.DoesNotContain("texto", result);
+        Assert.DoesNotContain("inteiro", result);
+        Assert.DoesNotContain("novo", result);
+        Assert.DoesNotContain("paracada", result);
+        Assert.DoesNotContain("saida", result);
+        Assert.DoesNotContain("retornar", result);
+        Assert.DoesNotContain("booleano", result);
+
+        Assert.Contains("namespace", result);
+        Assert.Contains("public", result);
+        Assert.Contains("static", result);
+        Assert.Contains("class", result);
+        Assert.Contains("readonly", result);
+        Assert.Contains("string", result);
+        Assert.Contains("int", result);
+        Assert.Contains("new", result);
+        Assert.Contains("foreach", result);
+        Assert.Contains("out", result);
+        Assert.Contains("return", result);
+        Assert.Contains("bool", result);
+
+        // String literals must be preserved
+        Assert.Contains("\"abstract\"", result);
+        Assert.Contains("\"class\"", result);
+        Assert.Contains("\"int\"", result);
+    }
+
+    [Fact]
+    public void ReverseSubstituteKeywords_VerbatimStrings_PreservesContent()
+    {
+        string translatedCode = @"usando Sistema;
+
+espaconome MeuProjeto
+{
+    publico classe Programa
+    {
+        publico texto s = @""publico classe"";
+    }
+}";
+
+        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+
+        Assert.Contains("public", result);
+        Assert.Contains("string", result);
+        Assert.Contains("@\"publico classe\"", result);
+    }
+
+    // --- Helper methods ---
+
     public static List<T> GetNodesOfType<T>(ASTNode root) where T : ASTNode
     {
         List<T> result = new List<T>();

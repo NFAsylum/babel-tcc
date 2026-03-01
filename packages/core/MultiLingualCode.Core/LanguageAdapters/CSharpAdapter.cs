@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -164,51 +165,143 @@ public class CSharpAdapter : ILanguageAdapter
 
     /// <summary>
     /// Replaces translated keywords back with their original C# keyword text.
+    /// Uses text-based scanning with word boundaries, skipping string literals,
+    /// character literals, and comments to avoid false positives.
     /// </summary>
     /// <param name="translatedCode">The source code containing translated keywords.</param>
     /// <param name="lookupTranslatedKeyword">Function that returns a keyword ID for a translated keyword text, or -1 if not found.</param>
     /// <returns>The source code with original C# keywords restored.</returns>
     public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword)
     {
-        SyntaxTree tree = RoslynWrapper.ParseSourceCode(translatedCode);
-        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+        StringBuilder result = new StringBuilder(translatedCode.Length);
+        int i = 0;
 
-        List<(int Start, int End, string Text)> replacements = new();
-
-        foreach (SyntaxToken token in root.DescendantTokens())
+        while (i < translatedCode.Length)
         {
-            if (!token.IsKind(SyntaxKind.IdentifierToken))
+            if (i + 1 < translatedCode.Length && translatedCode[i] == '/' && translatedCode[i + 1] == '/')
             {
+                int start = i;
+                while (i < translatedCode.Length && translatedCode[i] != '\n')
+                {
+                    i++;
+                }
+                result.Append(translatedCode, start, i - start);
                 continue;
             }
 
-            int keywordId = lookupTranslatedKeyword(token.Text);
-            if (keywordId < 0)
+            if (i + 1 < translatedCode.Length && translatedCode[i] == '/' && translatedCode[i + 1] == '*')
             {
+                int start = i;
+                i += 2;
+                while (i + 1 < translatedCode.Length && !(translatedCode[i] == '*' && translatedCode[i + 1] == '/'))
+                {
+                    i++;
+                }
+                if (i + 1 < translatedCode.Length)
+                {
+                    i += 2;
+                }
+                result.Append(translatedCode, start, i - start);
                 continue;
             }
 
-            string originalKeyword = CSharpKeywordMap.GetText(keywordId);
-            if (!string.IsNullOrEmpty(originalKeyword))
+            if (translatedCode[i] == '@' && i + 1 < translatedCode.Length && translatedCode[i + 1] == '"')
             {
-                replacements.Add((token.Span.Start, token.Span.End, originalKeyword));
+                int start = i;
+                i += 2;
+                while (i < translatedCode.Length)
+                {
+                    if (translatedCode[i] == '"')
+                    {
+                        if (i + 1 < translatedCode.Length && translatedCode[i + 1] == '"')
+                        {
+                            i += 2;
+                        }
+                        else
+                        {
+                            i++;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+                result.Append(translatedCode, start, i - start);
+                continue;
             }
+
+            if (translatedCode[i] == '"')
+            {
+                int start = i;
+                i++;
+                while (i < translatedCode.Length && translatedCode[i] != '"' && translatedCode[i] != '\n')
+                {
+                    if (translatedCode[i] == '\\' && i + 1 < translatedCode.Length)
+                    {
+                        i++;
+                    }
+                    i++;
+                }
+                if (i < translatedCode.Length && translatedCode[i] == '"')
+                {
+                    i++;
+                }
+                result.Append(translatedCode, start, i - start);
+                continue;
+            }
+
+            if (translatedCode[i] == '\'')
+            {
+                int start = i;
+                i++;
+                while (i < translatedCode.Length && translatedCode[i] != '\'' && translatedCode[i] != '\n')
+                {
+                    if (translatedCode[i] == '\\' && i + 1 < translatedCode.Length)
+                    {
+                        i++;
+                    }
+                    i++;
+                }
+                if (i < translatedCode.Length && translatedCode[i] == '\'')
+                {
+                    i++;
+                }
+                result.Append(translatedCode, start, i - start);
+                continue;
+            }
+
+            if (char.IsLetter(translatedCode[i]) || translatedCode[i] == '_')
+            {
+                int wordStart = i;
+                while (i < translatedCode.Length && (char.IsLetterOrDigit(translatedCode[i]) || translatedCode[i] == '_'))
+                {
+                    i++;
+                }
+
+                string word = translatedCode.Substring(wordStart, i - wordStart);
+                int keywordId = lookupTranslatedKeyword(word);
+
+                if (keywordId >= 0)
+                {
+                    string originalKeyword = CSharpKeywordMap.GetText(keywordId);
+                    if (!string.IsNullOrEmpty(originalKeyword))
+                    {
+                        result.Append(originalKeyword);
+                        continue;
+                    }
+                }
+
+                result.Append(word);
+                continue;
+            }
+
+            result.Append(translatedCode[i]);
+            i++;
         }
 
-        if (replacements.Count == 0)
-        {
-            return translatedCode;
-        }
-
-        replacements.Sort((a, b) => b.Start.CompareTo(a.Start));
-
-        string result = translatedCode;
-        foreach ((int start, int end, string originalKeyword) in replacements)
-        {
-            result = string.Concat(result.AsSpan(0, start), originalKeyword, result.AsSpan(end));
-        }
-
-        return result;
+        return result.ToString();
     }
 
     /// <summary>
