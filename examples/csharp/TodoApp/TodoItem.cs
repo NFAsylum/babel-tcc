@@ -1,14 +1,14 @@
-namespace TodoApp // tradu:AplicacaoTarefas
+namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 {
-    public class TodoItem // tradu:ItemTarefa
+    public class TodoItem // tradu[pt-br]:ItemTarefa
     {
-        public int Id; // tradu:Identificador
-        public string Title; // tradu:Titulo
-        public string Description; // tradu:Descricao
-        public bool IsCompleted; // tradu:EstaConcluido
-        public DateTime CreatedAt; // tradu:CriadoEm
+        public int Id; // tradu[pt-br]:Identificador
+        public string Title; // tradu[pt-br]:Titulo
+        public string Description; // tradu[pt-br]:Descricao
+        public bool IsCompleted; // tradu[pt-br]:EstaConcluido
+        public DateTime CreatedAt; // tradu[pt-br]:CriadoEm
 
-        public TodoItem(int id, string title, string description) // tradu:ItemTarefa,id:identificador,title:titulo,description:descricao
+        public TodoItem(int id, string title, string description) // tradu[pt-br]:ItemTarefa,id:identificador,title:titulo,description:descricao
         {
             Id = id;
             Title = title;
@@ -17,14 +17,14 @@ namespace TodoApp // tradu:AplicacaoTarefas
             CreatedAt = DateTime.Now;
         }
 
-        public void MarkAsCompleted() // tradu:MarcarComoConcluido
+        public void MarkAsCompleted() // tradu[pt-br]:MarcarComoConcluido
         {
             IsCompleted = true;
         }
 
-        public override string ToString() // tradu:ParaTexto
+        public override string ToString() // tradu[pt-br]:ParaTexto
         {
-            string status = IsCompleted ? "Done" : "Pending"; // tradu:estado,"Concluido","Pendente"
+            string status = IsCompleted ? "Done" : "Pending"; // tradu[pt-br]:estado,"Concluido","Pendente"
             return $"[{status}] {Title}: {Description}";
         }
     }

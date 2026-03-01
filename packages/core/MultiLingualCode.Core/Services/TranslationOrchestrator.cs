@@ -26,6 +26,12 @@ public class TranslationOrchestrator
     public required IdentifierMapper IdentifierMapperService { get; init; }
 
     /// <summary>
+    /// Scoped translations for parameter names, limited to specific method line ranges.
+    /// Each entry contains (Name, Translation, StartLine, EndLine).
+    /// </summary>
+    public List<(string Name, string Translation, int StartLine, int EndLine)> ScopedTranslations = new();
+
+    /// <summary>
     /// Creates a new <see cref="TranslationOrchestrator"/> with the specified dependencies.
     /// </summary>
     /// <param name="registry">The language registry for resolving adapters.</param>
@@ -118,6 +124,8 @@ public class TranslationOrchestrator
         string preSubstituted = adapter.ReverseSubstituteKeywords(
             translatedCode, Provider.ReverseTranslateKeyword);
 
+        ApplyReverseTraduAnnotations(preSubstituted, sourceLanguage);
+
         ASTNode ast = adapter.Parse(preSubstituted);
         ASTNode originalAst = ast.Clone();
 
@@ -145,11 +153,20 @@ public class TranslationOrchestrator
                 break;
 
             case IdentifierNode identifier when identifier.IsTranslatable:
-                OperationResultGeneric<string> translatedIdResult = IdentifierMapperService.GetTranslation(identifier.Name, targetLanguage);
-                if (translatedIdResult.IsSuccess)
+                string scopedForward = FindScopedTranslation(identifier.Name, identifier.StartLine);
+                if (scopedForward != null)
                 {
-                    identifier.TranslatedName = translatedIdResult.Value;
-                    identifier.Name = translatedIdResult.Value;
+                    identifier.TranslatedName = scopedForward;
+                    identifier.Name = scopedForward;
+                }
+                else
+                {
+                    OperationResultGeneric<string> translatedIdResult = IdentifierMapperService.GetTranslation(identifier.Name, targetLanguage);
+                    if (translatedIdResult.IsSuccess)
+                    {
+                        identifier.TranslatedName = translatedIdResult.Value;
+                        identifier.Name = translatedIdResult.Value;
+                    }
                 }
                 break;
 
@@ -192,11 +209,20 @@ public class TranslationOrchestrator
                 break;
 
             case IdentifierNode identifier:
-                OperationResultGeneric<string> originalIdResult = IdentifierMapperService.GetOriginal(identifier.Name, sourceLanguage);
-                if (originalIdResult.IsSuccess)
+                string scopedReverse = FindScopedTranslation(identifier.Name, identifier.StartLine);
+                if (scopedReverse != null)
                 {
-                    identifier.Name = originalIdResult.Value;
+                    identifier.Name = scopedReverse;
                     identifier.TranslatedName = "";
+                }
+                else
+                {
+                    OperationResultGeneric<string> originalIdResult = IdentifierMapperService.GetOriginal(identifier.Name, sourceLanguage);
+                    if (originalIdResult.IsSuccess)
+                    {
+                        identifier.Name = originalIdResult.Value;
+                        identifier.TranslatedName = "";
+                    }
                 }
                 break;
 
@@ -221,33 +247,107 @@ public class TranslationOrchestrator
     }
 
     /// <summary>
-    /// Extracts @tradu annotations from source code and applies them as identifier and literal translations.
+    /// Extracts tradu annotations from source code and applies them as identifier and literal translations.
+    /// Parameter mappings are scoped to their method range to avoid global name collisions.
     /// </summary>
-    /// <param name="sourceCode">The source code containing @tradu annotations.</param>
+    /// <param name="sourceCode">The source code containing tradu annotations.</param>
     /// <param name="targetLanguage">The target natural language code for the translations.</param>
     public void ApplyTraduAnnotations(string sourceCode, string targetLanguage)
     {
+        ScopedTranslations.Clear();
+
         TraduAnnotationParser parser = new TraduAnnotationParser();
         List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode);
 
         foreach (TraduAnnotation annotation in annotations)
         {
+            string lang = !string.IsNullOrEmpty(annotation.TargetLanguage)
+                ? annotation.TargetLanguage
+                : targetLanguage;
+
             if (annotation.IsLiteralAnnotation)
             {
                 IdentifierMapperService.SetLiteralTranslation(
-                    annotation.OriginalLiteral, targetLanguage, annotation.TranslatedLiteral);
+                    annotation.OriginalLiteral, lang, annotation.TranslatedLiteral);
             }
             else
             {
                 IdentifierMapperService.SetTranslation(
-                    annotation.OriginalIdentifier, targetLanguage, annotation.TranslatedIdentifier);
+                    annotation.OriginalIdentifier, lang, annotation.TranslatedIdentifier);
 
                 foreach (TraduParameterMapping paramMapping in annotation.ParameterMappings)
                 {
-                    IdentifierMapperService.SetTranslation(
-                        paramMapping.OriginalParameterName, targetLanguage, paramMapping.TranslatedParameterName);
+                    if (lang == targetLanguage && annotation.MethodStartLine >= 0)
+                    {
+                        ScopedTranslations.Add((
+                            paramMapping.OriginalParameterName,
+                            paramMapping.TranslatedParameterName,
+                            annotation.MethodStartLine,
+                            annotation.MethodEndLine));
+                    }
                 }
             }
         }
+
+        if (!string.IsNullOrEmpty(IdentifierMapperService.LoadedPath))
+        {
+            IdentifierMapperService.SaveMap();
+        }
+    }
+
+    /// <summary>
+    /// Extracts tradu annotations from translated code and applies reverse parameter mappings as scoped translations.
+    /// </summary>
+    /// <param name="code">The code after keyword substitution.</param>
+    /// <param name="sourceLanguage">The source natural language code.</param>
+    public void ApplyReverseTraduAnnotations(string code, string sourceLanguage)
+    {
+        ScopedTranslations.Clear();
+
+        TraduAnnotationParser parser = new TraduAnnotationParser();
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(code);
+
+        foreach (TraduAnnotation annotation in annotations)
+        {
+            string lang = !string.IsNullOrEmpty(annotation.TargetLanguage)
+                ? annotation.TargetLanguage
+                : sourceLanguage;
+
+            if (lang != sourceLanguage)
+            {
+                continue;
+            }
+
+            if (!annotation.IsLiteralAnnotation && annotation.ParameterMappings.Count > 0 && annotation.MethodStartLine >= 0)
+            {
+                foreach (TraduParameterMapping paramMapping in annotation.ParameterMappings)
+                {
+                    ScopedTranslations.Add((
+                        paramMapping.TranslatedParameterName,
+                        paramMapping.OriginalParameterName,
+                        annotation.MethodStartLine,
+                        annotation.MethodEndLine));
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finds a scoped translation for a given name at a specific line number.
+    /// </summary>
+    /// <param name="name">The identifier name to look up.</param>
+    /// <param name="line">The line number where the identifier appears.</param>
+    /// <returns>The scoped translation if found, or null if not in scope.</returns>
+    public string FindScopedTranslation(string name, int line)
+    {
+        foreach ((string scopedName, string translation, int startLine, int endLine) in ScopedTranslations)
+        {
+            if (scopedName == name && line >= startLine && line <= endLine)
+            {
+                return translation;
+            }
+        }
+
+        return null!;
     }
 }

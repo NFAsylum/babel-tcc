@@ -111,17 +111,17 @@ namespace HelloWorld
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string sourceCode = @"public class Calculator // tradu:Calculadora
+        string sourceCode = @"public class Calculator // tradu[pt-br]:Calculadora
 {
-    public int operationCount; // tradu:contagemOperacoes
+    public int operationCount; // tradu[pt-br]:contagemOperacoes
 
-    public int Add(int a, int b) // tradu:Somar,a:primeiroNumero,b:segundoNumero
+    public int Add(int a, int b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
     {
         operationCount++;
         return a + b;
     }
 
-    public int Subtract(int a, int b) // tradu:Subtrair,a:primeiroNumero,b:segundoNumero
+    public int Subtract(int a, int b) // tradu[pt-br]:Subtrair,a:primeiroNumero,b:segundoNumero
     {
         operationCount++;
         return a - b;
@@ -156,11 +156,11 @@ namespace HelloWorld
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string sourceCode = @"public class Reporter // tradu:Relator
+        string sourceCode = @"public class Reporter // tradu[pt-br]:Relator
 {
-    public string GetLabel() // tradu:ObterRotulo
+    public string GetLabel() // tradu[pt-br]:ObterRotulo
     {
-        string label = ""Total operations: ""; // tradu:""Total de operacoes: ""
+        string label = ""Total operations: ""; // tradu[pt-br]:""Total de operacoes: ""
         return label;
     }
 }";
@@ -235,12 +235,12 @@ namespace MyApp
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string sourceCode = @"public class Student // tradu:Aluno
+        string sourceCode = @"public class Student // tradu[pt-br]:Aluno
 {
-    public string Name; // tradu:Nome
-    public int Grade; // tradu:Nota
+    public string Name; // tradu[pt-br]:Nome
+    public int Grade; // tradu[pt-br]:Nota
 
-    public bool IsPassing() // tradu:EstaAprovado
+    public bool IsPassing() // tradu[pt-br]:EstaAprovado
     {
         return Grade >= 60;
     }

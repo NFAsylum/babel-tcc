@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import { CoreBridge } from './services/coreBridge';
 import { LanguageDetector } from './services/languageDetector';
 import { ConfigurationService } from './services/configurationService';
@@ -19,12 +21,40 @@ let statusBar: StatusBar;
 let autoTranslateManager: AutoTranslateManager;
 
 /**
+ * Removes the .multilingual cache directory from each workspace folder to prevent stale
+ * identifier mappings from persisting between sessions.
+ * @param channel - The output channel used for logging cleanup activity.
+ */
+function cleanMultilingualCache(channel: vscode.OutputChannel): void {
+  const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
+    vscode.workspace.workspaceFolders;
+  if (!workspaceFolders) {
+    return;
+  }
+
+  for (const folder of workspaceFolders) {
+    const cachePath: string = path.join(folder.uri.fsPath, '.multilingual');
+    if (fs.existsSync(cachePath)) {
+      try {
+        fs.rmSync(cachePath, { recursive: true, force: true });
+        channel.appendLine(`Cleaned .multilingual cache: ${cachePath}`);
+      } catch (err: unknown) {
+        const message: string = err instanceof Error ? err.message : String(err);
+        channel.appendLine(`Failed to clean .multilingual cache: ${message}`);
+      }
+    }
+  }
+}
+
+/**
  * Activates the Babel TCC extension, initializing all services, providers, and commands.
  * @param context - The VS Code extension context used for managing subscriptions and extension paths.
  */
 export function activate(context: vscode.ExtensionContext): void {
   outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME);
   outputChannel.appendLine('Babel TCC extension activated.');
+
+  cleanMultilingualCache(outputChannel);
 
   coreBridge = new CoreBridge(context, outputChannel);
   languageDetector = new LanguageDetector();
@@ -66,6 +96,18 @@ export function activate(context: vscode.ExtensionContext): void {
   const hoverRegistrationReadonly: vscode.Disposable = vscode.languages.registerHoverProvider(
     { scheme: READONLY_SCHEME },
     hoverProviderInstance
+  );
+
+  const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.cs');
+  const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
+    (uri: vscode.Uri): void => {
+      if (translatedContentProvider.writingPaths.has(uri.path)) {
+        return;
+      }
+      const translatedUri: vscode.Uri = vscode.Uri.parse(`${TRANSLATED_SCHEME}:${uri.path}`);
+      translatedContentProvider.invalidateCache(translatedUri);
+      outputChannel.appendLine(`Original file changed, refreshing translation: ${uri.fsPath}`);
+    }
   );
 
   outputChannel.appendLine('All services and providers initialized.');
@@ -180,6 +222,8 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(outputChannel);
+  context.subscriptions.push(fileWatcher);
+  context.subscriptions.push(fileWatcherChangeHandler);
   context.subscriptions.push(providerRegistration);
   context.subscriptions.push(readonlyProviderRegistration);
   context.subscriptions.push(completionRegistration);
