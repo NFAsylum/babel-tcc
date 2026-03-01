@@ -1,36 +1,33 @@
-# Tarefa 051 - Investigacao: Traducao reversa e linhas adicionadas manualmente
+# Tarefa 051 - Bug: Traducao reversa falha em codigo complexo
 
-## Prioridade: BAIXA (investigacao concluida, bug nao confirmado no Core)
+## Prioridade: ALTA
 
-## Descricao original
+## Descricao
 
-Ao editar um ficheiro traduzido (modo editavel do FileSystemProvider) e adicionar
-uma linha nova em portugues (ex: `publico estatico texto teste = "oi";`), a traducao
-reversa supostamente nao convertia a linha adicionada manualmente.
+Ao salvar um ficheiro traduzido (modo editavel), a traducao reversa falhava
+em converter algumas keywords traduzidas de volta para C#. O resultado era
+codigo C# invalido com keywords em portugues misturadas com codigo ingles.
 
-## Investigacao
+## Causa raiz
 
-Testes de debug com Roslyn mostraram que `DescendantTokens()` classifica correctamente
-TODAS as palavras portuguesas como `IdentifierToken` — tanto em ficheiros sem linhas
-novas quanto com linhas adicionadas — desde que o codigo tenha estrutura completa
-(using, namespace, class).
+`CSharpAdapter.ReverseSubstituteKeywords()` usava Roslyn para parsear o codigo
+traduzido e iterar `DescendantTokens()` a procura de `IdentifierToken`. Porem,
+o Roslyn nao consegue parsear codigo com keywords em portugues de forma fiavel.
+O error recovery do Roslyn absorve tokens em `SkippedTokensTrivia`, tornando-os
+invisiveis ao `DescendantTokens()`.
 
-O `ReverseSubstituteKeywords()` funciona correctamente para ambos os casos.
-Testes unitarios adicionados confirmam que a traducao reversa converte todas as
-keywords, incluindo linhas adicionadas manualmente.
+Tokens perdidos pelo Roslyn em ficheiros complexos: `classe`, `somenteleitura`,
+`se`, `booleano`, e outros dependendo da estrutura do codigo.
 
-## Causa provavel do problema original
+## Solucao
 
-O bug reportado ocorreu durante uma sessao onde tambem havia problemas com tabelas
-de traducao em falta (directoria `translations/` inexistente). E possivel que o
-comportamento observado tenha sido causado por esse problema e nao pelo Core.
-
-## Resultado
-
-- Bug no Core NAO confirmado
-- Testes unitarios adicionados para `ReverseSubstituteKeywords` cobrindo o cenario
-- Nenhuma alteracao necessaria no `CSharpAdapter.cs`
+Substituir a abordagem Roslyn por scan textual com word boundaries. O novo
+metodo percorre o codigo caracter a caracter, identifica palavras e verifica
+se sao keywords traduzidas via `lookupTranslatedKeyword`. Ignora conteudo
+dentro de strings (regulares e verbatim), char literals, comentarios de linha
+e comentarios de bloco para evitar falsos positivos.
 
 ## Arquivos alterados
 
-- `packages/core/MultiLingualCode.Core.Tests/LanguageAdapters/CSharpAdapterTests.cs` (testes adicionados)
+- `packages/core/MultiLingualCode.Core/LanguageAdapters/CSharpAdapter.cs` (ReverseSubstituteKeywords reescrito)
+- `packages/core/MultiLingualCode.Core.Tests/LanguageAdapters/CSharpAdapterTests.cs` (9 testes adicionados)
