@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace MultiLingualCode.Core.LanguageAdapters;
@@ -63,9 +64,47 @@ public class RoslynWrapper
             SyntaxKind.TypeOfKeyword or SyntaxKind.UIntKeyword or SyntaxKind.ULongKeyword or
             SyntaxKind.UncheckedKeyword or SyntaxKind.UnsafeKeyword or SyntaxKind.UShortKeyword or
             SyntaxKind.UsingKeyword or SyntaxKind.VirtualKeyword or SyntaxKind.VoidKeyword or
-            SyntaxKind.VolatileKeyword or SyntaxKind.WhileKeyword => true,
+            SyntaxKind.VolatileKeyword or SyntaxKind.WhileKeyword or
+            SyntaxKind.AsyncKeyword or SyntaxKind.AwaitKeyword or SyntaxKind.YieldKeyword or
+            SyntaxKind.WhereKeyword or SyntaxKind.GlobalKeyword or SyntaxKind.RecordKeyword or
+            SyntaxKind.PartialKeyword or SyntaxKind.RequiredKeyword or SyntaxKind.InitKeyword => true,
             _ => false
         };
+    }
+
+    /// <summary>
+    /// Determines whether an identifier token is being used as a contextual keyword.
+    /// Handles keywords that Roslyn always emits as IdentifierToken: var, dynamic, nameof.
+    /// </summary>
+    /// <param name="token">The syntax token to check.</param>
+    /// <returns>True if the token is a contextual keyword; otherwise false.</returns>
+    public static bool IsContextualKeywordToken(SyntaxToken token)
+    {
+        if (!token.IsKind(SyntaxKind.IdentifierToken))
+        {
+            return false;
+        }
+
+        string text = token.Text;
+
+        if (text == "var")
+        {
+            return token.Parent is IdentifierNameSyntax identifierName &&
+                   identifierName.Parent is VariableDeclarationSyntax;
+        }
+
+        if (text == "dynamic")
+        {
+            return token.Parent is IdentifierNameSyntax;
+        }
+
+        if (text == "nameof")
+        {
+            return token.Parent is IdentifierNameSyntax identifierName &&
+                   identifierName.Parent is InvocationExpressionSyntax;
+        }
+
+        return false;
     }
 
     /// <summary>

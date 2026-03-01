@@ -793,6 +793,191 @@ class Program
         Assert.NotNull(result);
     }
 
+    [Fact]
+    public void Parse_VarDeclaration_CreatesKeywordNode()
+    {
+        string code = "class C { void M() { var x = 5; } }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "var" && k.KeywordId == 74);
+    }
+
+    [Fact]
+    public void Parse_VarAsIdentifier_DoesNotCreateKeywordNode()
+    {
+        string code = "class C { int var = 5; }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.DoesNotContain(keywords, k => k.Text == "var");
+        Assert.Contains(identifiers, i => i.Name == "var");
+    }
+
+    [Fact]
+    public void Parse_AsyncMethod_CreatesKeywordNode()
+    {
+        string code = @"
+using System.Threading.Tasks;
+
+class C
+{
+    async Task M() { }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "async" && k.KeywordId == 78);
+    }
+
+    [Fact]
+    public void Parse_AwaitExpression_CreatesKeywordNode()
+    {
+        string code = @"
+using System.Threading.Tasks;
+
+class C
+{
+    async Task M() { await Task.Delay(1); }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "await" && k.KeywordId == 79);
+    }
+
+    [Fact]
+    public void Parse_YieldReturn_CreatesKeywordNode()
+    {
+        string code = @"
+using System.Collections.Generic;
+
+class C
+{
+    IEnumerable<int> M() { yield return 1; }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "yield" && k.KeywordId == 80);
+    }
+
+    [Fact]
+    public void Parse_RecordDeclaration_CreatesKeywordNode()
+    {
+        string code = "record Point(int X, int Y);";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "record" && k.KeywordId == 81);
+    }
+
+    [Fact]
+    public void Parse_PartialClass_CreatesKeywordNode()
+    {
+        string code = "partial class C { }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "partial" && k.KeywordId == 82);
+    }
+
+    [Fact]
+    public void Parse_WhereConstraint_CreatesKeywordNode()
+    {
+        string code = "class C<T> where T : class { }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "where" && k.KeywordId == 83);
+    }
+
+    [Fact]
+    public void Parse_DynamicType_CreatesKeywordNode()
+    {
+        string code = "class C { void M() { dynamic d = 1; } }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "dynamic" && k.KeywordId == 84);
+    }
+
+    [Fact]
+    public void Parse_NameofExpression_CreatesKeywordNode()
+    {
+        string code = "class C { string s = nameof(C); }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "nameof" && k.KeywordId == 85);
+    }
+
+    [Fact]
+    public void Parse_InitAccessor_CreatesKeywordNode()
+    {
+        string code = "class C { public int X { get; init; } }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "init" && k.KeywordId == 86);
+    }
+
+    [Fact]
+    public void Parse_RequiredProperty_CreatesKeywordNode()
+    {
+        string code = "class C { required public int X { get; set; } }";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "required" && k.KeywordId == 87);
+    }
+
+    [Fact]
+    public void Parse_GlobalUsing_CreatesKeywordNode()
+    {
+        string code = "global using System;";
+
+        ASTNode ast = _adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "global" && k.KeywordId == 88);
+    }
+
+    [Fact]
+    public void RoundTrip_ContextualKeywords_PreservesCode()
+    {
+        string code = @"using System.Threading.Tasks;
+
+class C
+{
+    async Task M()
+    {
+        var x = 5;
+        dynamic d = x;
+        string s = nameof(x);
+        await Task.Delay(1);
+    }
+}";
+
+        ASTNode ast = _adapter.Parse(code);
+        string result = _adapter.Generate(ast);
+
+        Assert.Equal(code, result);
+    }
+
     public static List<T> GetNodesOfType<T>(ASTNode root) where T : ASTNode
     {
         List<T> result = new List<T>();

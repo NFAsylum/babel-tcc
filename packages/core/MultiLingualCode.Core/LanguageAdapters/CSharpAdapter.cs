@@ -69,6 +69,23 @@ public class CSharpAdapter : ILanguageAdapter
                     });
                 }
             }
+            else if (RoslynWrapper.IsContextualKeywordToken(token))
+            {
+                int keywordId = CSharpKeywordMap.GetId(token.Text);
+                if (keywordId >= 0)
+                {
+                    compilationUnit.Children.Add(new KeywordNode
+                    {
+                        KeywordId = keywordId,
+                        Text = token.Text,
+                        StartPosition = span.Start,
+                        EndPosition = span.End,
+                        StartLine = lineSpan.StartLinePosition.Line,
+                        EndLine = lineSpan.EndLinePosition.Line,
+                        Parent = compilationUnit
+                    });
+                }
+            }
             else if (RoslynWrapper.IsIdentifierToken(token))
             {
                 compilationUnit.Children.Add(new IdentifierNode
