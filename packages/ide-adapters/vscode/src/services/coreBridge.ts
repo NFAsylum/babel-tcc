@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 import { spawn } from 'child_process';
 
 const DEFAULT_TIMEOUT_MS = 10000;
@@ -57,10 +58,6 @@ export class CoreBridge {
       'bin',
       'MultiLingualCode.Core.Host.dll'
     );
-    this.translationsPath = path.join(
-      context.extensionPath,
-      'translations'
-    );
     this.projectPath = '';
     this.outputChannel = outputChannel;
     this.timeoutMs = timeoutMs;
@@ -70,6 +67,8 @@ export class CoreBridge {
     if (workspaceFolders && workspaceFolders.length > 0) {
       this.projectPath = workspaceFolders[0].uri.fsPath;
     }
+
+    this.translationsPath = this.resolveTranslationsPath(context);
   }
 
   /**
@@ -215,6 +214,36 @@ export class CoreBridge {
         reject(new Error(`CoreBridge: failed to start Core process - ${err.message}`));
       });
     });
+  }
+
+  /**
+   * Resolves the translations path using a 3-level fallback:
+   * 1. Setting babel-tcc.translationsPath
+   * 2. Auto-detect babel-tcc-translations as sibling of workspace
+   * 3. Embedded translations inside the extension
+   */
+  public resolveTranslationsPath(context: vscode.ExtensionContext): string {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('babel-tcc');
+    const configuredPath: string = config.get<string>('translationsPath', '');
+
+    if (configuredPath && fs.existsSync(configuredPath)) {
+      this.outputChannel.appendLine(`CoreBridge: translations via setting: ${configuredPath}`);
+      return configuredPath;
+    }
+
+    if (this.projectPath) {
+      const workspaceParent: string = path.dirname(this.projectPath);
+      const siblingPath: string = path.join(workspaceParent, 'babel-tcc-translations');
+
+      if (fs.existsSync(siblingPath)) {
+        this.outputChannel.appendLine(`CoreBridge: translations auto-detectadas: ${siblingPath}`);
+        return siblingPath;
+      }
+    }
+
+    const embeddedPath: string = path.join(context.extensionPath, 'translations');
+    this.outputChannel.appendLine(`CoreBridge: translations embeddadas: ${embeddedPath}`);
+    return embeddedPath;
   }
 
   /** Disposes of the CoreBridge, logging the disposal event. */

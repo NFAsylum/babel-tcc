@@ -47,6 +47,11 @@
           "type": "string",
           "default": "pt-br",
           "description": "Target natural language for translation."
+        },
+        "babel-tcc.translationsPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the babel-tcc-translations repository. If empty, auto-detects as sibling folder of the workspace or uses embedded translations."
         }
       }
     },
