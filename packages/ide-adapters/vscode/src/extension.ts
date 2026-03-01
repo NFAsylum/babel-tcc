@@ -3,8 +3,6 @@ import { CoreBridge } from './services/coreBridge';
 import { LanguageDetector } from './services/languageDetector';
 import { ConfigurationService } from './services/configurationService';
 import { TranslatedContentProvider, TRANSLATED_SCHEME } from './providers/translatedContentProvider';
-import { EditInterceptor } from './providers/editInterceptor';
-import { SaveHandler } from './providers/saveHandler';
 import { CompletionProvider } from './providers/completionProvider';
 import { HoverProvider } from './providers/hoverProvider';
 import { StatusBar } from './ui/statusBar';
@@ -17,8 +15,6 @@ let coreBridge: CoreBridge;
 let languageDetector: LanguageDetector;
 let configService: ConfigurationService;
 let translatedContentProvider: TranslatedContentProvider;
-let editInterceptor: EditInterceptor;
-let saveHandler: SaveHandler;
 let statusBar: StatusBar;
 let autoTranslateManager: AutoTranslateManager;
 
@@ -36,18 +32,12 @@ export function activate(context: vscode.ExtensionContext): void {
   translatedContentProvider = new TranslatedContentProvider(
     coreBridge, languageDetector, configService, outputChannel
   );
-  editInterceptor = new EditInterceptor(
-    coreBridge, languageDetector, configService, translatedContentProvider, outputChannel
-  );
-  saveHandler = new SaveHandler(
-    coreBridge, languageDetector, configService, outputChannel
-  );
   statusBar = new StatusBar(configService);
   autoTranslateManager = new AutoTranslateManager(
     configService, languageDetector, translatedContentProvider, outputChannel
   );
 
-  const providerRegistration: vscode.Disposable = vscode.workspace.registerTextDocumentContentProvider(
+  const providerRegistration: vscode.Disposable = vscode.workspace.registerFileSystemProvider(
     TRANSLATED_SCHEME,
     translatedContentProvider
   );
@@ -151,8 +141,6 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(completionRegistration);
   context.subscriptions.push(hoverRegistration);
   context.subscriptions.push(configService);
-  context.subscriptions.push(editInterceptor);
-  context.subscriptions.push(saveHandler);
   context.subscriptions.push(statusBar);
   context.subscriptions.push(autoTranslateManager);
   context.subscriptions.push(toggleCommand);
