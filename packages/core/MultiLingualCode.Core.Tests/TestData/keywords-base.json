@@ -74,8 +74,20 @@
     "ushort": 71,
     "using": 72,
     "virtual": 73,
+    "var": 74,
     "void": 75,
     "volatile": 76,
-    "while": 77
+    "while": 77,
+    "async": 78,
+    "await": 79,
+    "yield": 80,
+    "record": 81,
+    "partial": 82,
+    "where": 83,
+    "dynamic": 84,
+    "nameof": 85,
+    "init": 86,
+    "required": 87,
+    "global": 88
   }
 }

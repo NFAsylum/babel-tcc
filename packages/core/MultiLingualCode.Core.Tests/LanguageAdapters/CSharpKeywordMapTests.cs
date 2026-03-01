@@ -5,15 +5,15 @@ namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 public class CSharpKeywordMapTests
 {
     [Fact]
-    public void TextToId_Contains77Keywords()
+    public void TextToId_Contains89Keywords()
     {
-        Assert.Equal(77, CSharpKeywordMap.TextToId.Count);
+        Assert.Equal(89, CSharpKeywordMap.TextToId.Count);
     }
 
     [Fact]
-    public void IdToText_Contains77Keywords()
+    public void IdToText_Contains89Keywords()
     {
-        Assert.Equal(77, CSharpKeywordMap.IdToText.Count);
+        Assert.Equal(89, CSharpKeywordMap.IdToText.Count);
     }
 
     [Fact]
@@ -89,14 +89,26 @@ public class CSharpKeywordMapTests
     [InlineData("bool", 3)]
     [InlineData("namespace", 39)]
     [InlineData("while", 77)]
+    [InlineData("var", 74)]
+    [InlineData("async", 78)]
+    [InlineData("await", 79)]
+    [InlineData("yield", 80)]
+    [InlineData("record", 81)]
+    [InlineData("partial", 82)]
+    [InlineData("where", 83)]
+    [InlineData("dynamic", 84)]
+    [InlineData("nameof", 85)]
+    [InlineData("init", 86)]
+    [InlineData("required", 87)]
+    [InlineData("global", 88)]
     public void GetId_SpecificKeywords_ReturnsExpectedId(string keyword, int expectedId)
     {
         Assert.Equal(expectedId, CSharpKeywordMap.GetId(keyword));
     }
 
     [Fact]
-    public void Id74_IsNotUsed()
+    public void Id74_IsVar()
     {
-        Assert.Equal("", CSharpKeywordMap.GetText(74));
+        Assert.Equal("var", CSharpKeywordMap.GetText(74));
     }
 }
