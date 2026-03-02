@@ -134,21 +134,26 @@ public class TranslationOrchestratorTests
     [Fact]
     public async Task TranslateToNaturalLanguage_TranslatesIdentifiers()
     {
-        ILanguageAdapter adapter = CreateMockCSharpAdapter();
-        _registry.RegisterAdapter(adapter);
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
         NaturalLanguageProvider provider = CreateProvider();
 
         string tempDir = Path.Combine(Path.GetTempPath(), $"orch_test_{Guid.NewGuid()}");
         Directory.CreateDirectory(tempDir);
         try
         {
-            _mapper.LoadMap(tempDir);
-            _mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
 
-            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = _registry, Provider = provider, IdentifierMapperService = _mapper };
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string sourceCode = @"public class Calculator // tradu[pt-br]:Calculadora
+{
+}";
 
             OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
-                "public class Calculator", ".cs", "pt-br");
+                sourceCode, ".cs", "pt-br");
 
             Assert.True(result.IsSuccess);
             Assert.Contains("Calculadora", result.Value);
@@ -469,6 +474,100 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             OperationResultGeneric<string> esResult = mapper.GetTranslation("Calculator", "es");
             Assert.True(esResult.IsSuccess);
             Assert.Equal("Calculadora", esResult.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTraduAnnotations_RemovedAnnotation_ClearsStaleMapping()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_stale_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string sourceWithTradu = @"public class Calculator // tradu[pt-br]:Calculadora
+{
+}";
+
+            OperationResultGeneric<string> firstResult = await orchestrator.TranslateToNaturalLanguageAsync(
+                sourceWithTradu, ".cs", "pt-br");
+
+            Assert.True(firstResult.IsSuccess);
+            Assert.Contains("Calculadora", firstResult.Value);
+
+            string sourceWithoutTradu = @"public class Calculator
+{
+}";
+
+            OperationResultGeneric<string> secondResult = await orchestrator.TranslateToNaturalLanguageAsync(
+                sourceWithoutTradu, ".cs", "pt-br");
+
+            Assert.True(secondResult.IsSuccess);
+            Assert.DoesNotContain("Calculadora", secondResult.Value);
+            Assert.Contains("Calculator", secondResult.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ModifyTraduInTranslatedCode_ReverseAndForward_UsesNewTradu()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_modtradu_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // 1. Forward: traduz com tradu original
+            string originalSource = @"public class Calculator // tradu[pt-br]:Calculadora
+{
+}";
+            OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+                originalSource, ".cs", "pt-br");
+            Assert.True(forwardResult.IsSuccess);
+            Assert.Contains("Calculadora", forwardResult.Value);
+
+            // 2. Utilizador modifica o tradu no código traduzido
+            string modifiedTranslated = forwardResult.Value.Replace(
+                "tradu[pt-br]:Calculadora", "tradu[pt-br]:Calc");
+
+            // 3. Reverse: converte de volta para original
+            OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+                modifiedTranslated, ".cs", "pt-br");
+            Assert.True(reverseResult.IsSuccess);
+            Assert.Contains("Calculator", reverseResult.Value);
+            Assert.Contains("tradu[pt-br]:Calc", reverseResult.Value);
+
+            // 4. Forward novamente: deve usar o novo tradu
+            OperationResultGeneric<string> secondForward = await orchestrator.TranslateToNaturalLanguageAsync(
+                reverseResult.Value, ".cs", "pt-br");
+            Assert.True(secondForward.IsSuccess);
+            Assert.Contains("Calc", secondForward.Value);
+            Assert.DoesNotContain("Calculadora", secondForward.Value);
         }
         finally
         {

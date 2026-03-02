@@ -407,6 +407,33 @@ string msg = ""Hello""; // tradu[pt-br]:""Ola""|[es]:""Hola""
     }
 
     [Fact]
+    public void ParseAnnotationText_ExplicitIdentifierMapping_ExtractsTranslation()
+    {
+        TraduAnnotation annotation = _parser.ParseAnnotationText("a:prime");
+
+        Assert.Equal("prime", annotation.TranslatedIdentifier);
+        Assert.False(annotation.IsLiteralAnnotation);
+        Assert.Empty(annotation.ParameterMappings);
+    }
+
+    [Fact]
+    public void ExtractAnnotations_FieldWithExplicitMapping_ExtractsCorrectly()
+    {
+        string sourceCode = @"
+public class Test
+{
+    public int a = 10; //tradu[pt-br]:a:prime
+}";
+
+        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode);
+
+        Assert.Single(annotations);
+        Assert.Equal("a", annotations[0].OriginalIdentifier);
+        Assert.Equal("prime", annotations[0].TranslatedIdentifier);
+        Assert.Equal("pt-br", annotations[0].TargetLanguage);
+    }
+
+    [Fact]
     public void ExtractAnnotations_SingleLanguagePrefix_ExtractsWithTargetLanguage()
     {
         string sourceCode = @"

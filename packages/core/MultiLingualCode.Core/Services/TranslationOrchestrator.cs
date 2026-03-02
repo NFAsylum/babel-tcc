@@ -255,6 +255,8 @@ public class TranslationOrchestrator
     public void ApplyTraduAnnotations(string sourceCode, string targetLanguage)
     {
         ScopedTranslations.Clear();
+        IdentifierMapperService.Data.Identifiers.Clear();
+        IdentifierMapperService.Data.Literals.Clear();
 
         TraduAnnotationParser parser = new TraduAnnotationParser();
         List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode);

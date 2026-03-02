@@ -22,6 +22,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
   public writingPaths: Set<string> = new Set<string>();
+  public refreshingPaths: Set<string> = new Set<string>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
     new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
@@ -54,8 +55,13 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   }
 
   public async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
-    const translatedContent: string = Buffer.from(content).toString('utf-8');
     const originalPath: string = uri.path;
+
+    if (this.refreshingPaths.has(originalPath)) {
+      return;
+    }
+
+    const translatedContent: string = Buffer.from(content).toString('utf-8');
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
     const sourceLanguage: string = this.configService.getLanguage();
 
@@ -72,8 +78,37 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       await vscode.workspace.fs.writeFile(originalUri, encoder.encode(originalCode));
       setTimeout((): void => { this.writingPaths.delete(originalPath); }, 500);
 
+      const targetLanguage: string = this.configService.getLanguage();
+      const updatedOriginal: string = await this.readOriginalFile(originalPath);
+      const freshTranslation: string = await this.translateContent(
+        updatedOriginal, fileExtension, targetLanguage
+      );
+
       const cacheKey: string = this.buildCacheKey(originalPath);
-      this.cache.delete(cacheKey);
+      this.cache.set(cacheKey, freshTranslation);
+
+      const self: TranslatedContentProvider = this;
+      setTimeout(async (): Promise<void> => {
+        try {
+          const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
+            (d: vscode.TextDocument): boolean => d.uri.toString() === uri.toString()
+          );
+          if (doc && doc.getText() !== freshTranslation) {
+            const edit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
+            const lastLine: vscode.TextLine = doc.lineAt(doc.lineCount - 1);
+            edit.replace(
+              uri,
+              new vscode.Range(new vscode.Position(0, 0), lastLine.range.end),
+              freshTranslation
+            );
+            self.refreshingPaths.add(originalPath);
+            await vscode.workspace.applyEdit(edit);
+            self.refreshingPaths.delete(originalPath);
+          }
+        } catch (err: unknown) {
+          self.outputChannel.appendLine('TranslatedContentProvider: failed to refresh translated view');
+        }
+      }, 100);
 
       this.outputChannel.appendLine(`TranslatedContentProvider: saved original C# to ${originalPath}`);
       vscode.window.showInformationMessage('Babel TCC: File saved successfully.');

@@ -141,6 +141,13 @@ public class TraduAnnotationParser
             return annotation;
         }
 
+        int separatorIndex = annotationText.IndexOf(':');
+        if (separatorIndex > 0 && separatorIndex < annotationText.Length - 1)
+        {
+            annotation.TranslatedIdentifier = annotationText.Substring(separatorIndex + 1);
+            return annotation;
+        }
+
         annotation.TranslatedIdentifier = annotationText;
         return annotation;
     }
