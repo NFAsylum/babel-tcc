@@ -18,6 +18,7 @@ out/
 
 # VS Code Extension
 *.vsix
+server/
 
 # IDE
 .idea/
