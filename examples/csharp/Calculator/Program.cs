@@ -1,14 +1,14 @@
-using System; // tradu:Sistema
+using System; // tradu[pt-br]:Sistema
 
-namespace CalculatorApp // tradu:AplicacaoCalculadora
+namespace CalculatorApp // tradu[pt-br]:AplicacaoCalculadora
 {
-    class Program // tradu:Programa
+    class Program // tradu[pt-br]:Programa
     {
-        static void Main(string[] args) // tradu:Principal,args:argumentos
+        static void Main(string[] args) // tradu[pt-br]:Principal,args:argumentos
         {
-            Calculator calc = new Calculator(); // tradu:calculadora
+            Calculator calc = new Calculator(); // tradu[pt-br]:calculadora
 
-            double result = calc.Add(10, 5); // tradu:resultado
+            double result = calc.Add(10, 5); // tradu[pt-br]:resultado
             Console.WriteLine($"10 + 5 = {result}");
 
             result = calc.Subtract(10, 5);
@@ -23,7 +23,7 @@ namespace CalculatorApp // tradu:AplicacaoCalculadora
             result = calc.Divide(10, 0);
             Console.WriteLine($"10 / 0 = {result}");
 
-            string summary = calc.GetSummary(); // tradu:resumo
+            string summary = calc.GetSummary(); // tradu[pt-br]:resumo
             Console.WriteLine(summary);
         }
     }

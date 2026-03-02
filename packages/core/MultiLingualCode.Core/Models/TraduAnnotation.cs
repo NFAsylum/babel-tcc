@@ -39,4 +39,19 @@ public class TraduAnnotation
     /// Gets or sets the line number in the source file where this annotation was found.
     /// </summary>
     public int SourceLine { get; set; }
+
+    /// <summary>
+    /// Gets or sets the target language for this annotation. Empty means the active target language.
+    /// </summary>
+    public string TargetLanguage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the start line of the method containing this annotation (for scoped parameter translations).
+    /// </summary>
+    public int MethodStartLine { get; set; } = -1;
+
+    /// <summary>
+    /// Gets or sets the end line of the method containing this annotation (for scoped parameter translations).
+    /// </summary>
+    public int MethodEndLine { get; set; } = -1;
 }

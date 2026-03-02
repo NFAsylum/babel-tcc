@@ -217,6 +217,29 @@ public class RoslynWrapper
     }
 
     /// <summary>
+    /// Gets the line range (start, end) of the method declaration that contains the specified line.
+    /// </summary>
+    /// <param name="root">The root syntax node to search within.</param>
+    /// <param name="line">The zero-based line number to locate within a method.</param>
+    /// <returns>A tuple with (StartLine, EndLine) of the containing method, or (-1, -1) if not found.</returns>
+    public static (int StartLine, int EndLine) GetMethodRange(SyntaxNode root, int line)
+    {
+        foreach (MethodDeclarationSyntax method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
+        {
+            FileLinePositionSpan methodSpan = method.GetLocation().GetLineSpan();
+            int methodStart = methodSpan.StartLinePosition.Line;
+            int methodEnd = methodSpan.EndLinePosition.Line;
+
+            if (line >= methodStart && line <= methodEnd)
+            {
+                return (methodStart, methodEnd);
+            }
+        }
+
+        return (-1, -1);
+    }
+
+    /// <summary>
     /// Returns all identifier tokens located on the specified source line.
     /// </summary>
     /// <param name="root">The root syntax node to search within.</param>

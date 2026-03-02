@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using MultiLingualCode.Core.Models;
@@ -5,17 +6,23 @@ using MultiLingualCode.Core.Models;
 namespace MultiLingualCode.Core.LanguageAdapters;
 
 /// <summary>
-/// Parses "tradu:" annotations from trailing comments in C# source code to extract translation hints.
+/// Parses "tradu[lang]:" annotations from trailing comments in C# source code to extract translation hints.
 /// </summary>
 public class TraduAnnotationParser
 {
     /// <summary>
-    /// The prefix that identifies a translation annotation in a comment (e.g. "// tradu:NomeMetodo").
+    /// The prefix that identifies a translation annotation in a comment (e.g. "// tradu[pt-br]:NomeMetodo").
     /// </summary>
-    public const string TraduPrefix = "tradu:";
+    public const string TraduPrefix = "tradu";
 
     /// <summary>
-    /// Extracts all "tradu:" annotations from the source code and associates them with their target tokens.
+    /// Regex to detect a language prefix in a segment (e.g. "[pt-br]:" or "[es]:").
+    /// </summary>
+    public static readonly Regex LanguagePrefixRegex = new Regex(@"^\[([a-z]{2}(-[a-z]+)?)\]:(.+)$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Extracts all "tradu[lang]:" annotations from the source code and associates them with their target tokens.
+    /// Supports multi-language format with | separator (e.g. "[pt-br]:Calculadora|[es]:Calculadora").
     /// </summary>
     /// <param name="sourceCode">The C# source code containing tradu annotations in comments.</param>
     /// <returns>A list of parsed annotations with their associated identifiers or literals.</returns>
@@ -39,32 +46,60 @@ public class TraduAnnotationParser
                 continue;
             }
 
-            string annotationText = commentText.Substring(TraduPrefix.Length);
-            TraduAnnotation annotation = ParseAnnotationText(annotationText);
-
+            string fullAnnotationText = commentText.Substring(TraduPrefix.Length);
             int tokenLine = token.GetLocation().GetLineSpan().StartLinePosition.Line;
-            annotation.SourceLine = tokenLine;
 
-            if (annotation.IsLiteralAnnotation)
-            {
-                AssociateLiteralOnLine(rootNode, tokenLine, annotation);
-            }
-            else
-            {
-                AssociateIdentifierOnLine(rootNode, tokenLine, annotation);
-            }
+            string[] segments = fullAnnotationText.Split('|');
 
-            annotations.Add(annotation);
+            foreach (string segment in segments)
+            {
+                string trimmedSegment = segment.Trim();
+                if (string.IsNullOrEmpty(trimmedSegment))
+                {
+                    continue;
+                }
+
+                Match langMatch = LanguagePrefixRegex.Match(trimmedSegment);
+                if (!langMatch.Success)
+                {
+                    continue;
+                }
+
+                string targetLanguage = langMatch.Groups[1].Value;
+                string annotationText = langMatch.Groups[3].Value;
+
+                TraduAnnotation annotation = ParseAnnotationText(annotationText);
+                annotation.SourceLine = tokenLine;
+                annotation.TargetLanguage = targetLanguage;
+
+                if (annotation.IsLiteralAnnotation)
+                {
+                    AssociateLiteralOnLine(rootNode, tokenLine, annotation);
+                }
+                else
+                {
+                    AssociateIdentifierOnLine(rootNode, tokenLine, annotation);
+
+                    if (annotation.ParameterMappings.Count > 0)
+                    {
+                        (int startLine, int endLine) = RoslynWrapper.GetMethodRange(rootNode, tokenLine);
+                        annotation.MethodStartLine = startLine;
+                        annotation.MethodEndLine = endLine;
+                    }
+                }
+
+                annotations.Add(annotation);
+            }
         }
 
         return annotations;
     }
 
     /// <summary>
-    /// Parses the text after the "tradu:" prefix into a structured annotation,
+    /// Parses the text after the "tradu[lang]:" prefix into a structured annotation,
     /// handling identifier translations, literal translations, and parameter mappings.
     /// </summary>
-    /// <param name="annotationText">The annotation text after the "tradu:" prefix.</param>
+    /// <param name="annotationText">The annotation text after the "tradu[lang]:" prefix.</param>
     /// <returns>A parsed annotation with the translated identifier, literal, or parameter mappings.</returns>
     public TraduAnnotation ParseAnnotationText(string annotationText)
     {
@@ -103,6 +138,13 @@ public class TraduAnnotationParser
                 }
             }
 
+            return annotation;
+        }
+
+        int separatorIndex = annotationText.IndexOf(':');
+        if (separatorIndex > 0 && separatorIndex < annotationText.Length - 1)
+        {
+            annotation.TranslatedIdentifier = annotationText.Substring(separatorIndex + 1);
             return annotation;
         }
 

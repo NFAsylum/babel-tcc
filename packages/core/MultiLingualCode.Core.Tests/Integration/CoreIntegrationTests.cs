@@ -72,16 +72,14 @@ namespace HelloWorld
     {
         // Round-trip with real CSharpAdapter: translated keywords become identifiers
         // in Roslyn (e.g. "usando" is not a C# keyword). Identifier round-trip works
-        // because IdentifierMapper stores bidirectional mappings.
+        // because IdentifierMapper stores bidirectional mappings via tradu annotations.
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(_tempDir);
-        mapper.SetTranslation("Program", "pt-br", "Programa");
-        mapper.SetTranslation("Main", "pt-br", "Principal");
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string sourceCode = @"class Program
+        string sourceCode = @"class Program // tradu[pt-br]:Programa
 {
-    static void Main()
+    static void Main() // tradu[pt-br]:Principal
     {
     }
 }";
@@ -111,17 +109,17 @@ namespace HelloWorld
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string sourceCode = @"public class Calculator // tradu:Calculadora
+        string sourceCode = @"public class Calculator // tradu[pt-br]:Calculadora
 {
-    public int operationCount; // tradu:contagemOperacoes
+    public int operationCount; // tradu[pt-br]:contagemOperacoes
 
-    public int Add(int a, int b) // tradu:Somar,a:primeiroNumero,b:segundoNumero
+    public int Add(int a, int b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
     {
         operationCount++;
         return a + b;
     }
 
-    public int Subtract(int a, int b) // tradu:Subtrair,a:primeiroNumero,b:segundoNumero
+    public int Subtract(int a, int b) // tradu[pt-br]:Subtrair,a:primeiroNumero,b:segundoNumero
     {
         operationCount++;
         return a - b;
@@ -156,11 +154,11 @@ namespace HelloWorld
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string sourceCode = @"public class Reporter // tradu:Relator
+        string sourceCode = @"public class Reporter // tradu[pt-br]:Relator
 {
-    public string GetLabel() // tradu:ObterRotulo
+    public string GetLabel() // tradu[pt-br]:ObterRotulo
     {
-        string label = ""Total operations: ""; // tradu:""Total de operacoes: ""
+        string label = ""Total operations: ""; // tradu[pt-br]:""Total de operacoes: ""
         return label;
     }
 }";
@@ -181,23 +179,20 @@ namespace HelloWorld
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(_tempDir);
-        mapper.SetTranslation("MathUtils", "pt-br", "UtilMatematica");
-        mapper.SetTranslation("Square", "pt-br", "Quadrado");
-        mapper.SetTranslation("Abs", "pt-br", "Absoluto");
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"using System;
 
 namespace MyApp
 {
-    public class MathUtils
+    public class MathUtils // tradu[pt-br]:UtilMatematica
     {
-        public static int Square(int n)
+        public static int Square(int n) // tradu[pt-br]:Quadrado
         {
             return n * n;
         }
 
-        public static int Abs(int n)
+        public static int Abs(int n) // tradu[pt-br]:Absoluto
         {
             if (n < 0)
             {
@@ -235,12 +230,12 @@ namespace MyApp
         mapper.LoadMap(_tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string sourceCode = @"public class Student // tradu:Aluno
+        string sourceCode = @"public class Student // tradu[pt-br]:Aluno
 {
-    public string Name; // tradu:Nome
-    public int Grade; // tradu:Nota
+    public string Name; // tradu[pt-br]:Nome
+    public int Grade; // tradu[pt-br]:Nota
 
-    public bool IsPassing() // tradu:EstaAprovado
+    public bool IsPassing() // tradu[pt-br]:EstaAprovado
     {
         return Grade >= 60;
     }
@@ -707,13 +702,11 @@ namespace HelloWorld
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(_tempDir);
-        mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
-        mapper.SetTranslation("Add", "pt-br", "Somar");
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
-        string originalCode = @"public class Calculator
+        string originalCode = @"public class Calculator // tradu[pt-br]:Calculadora
 {
-    public int Add(int a, int b)
+    public int Add(int a, int b) // tradu[pt-br]:Somar
     {
         return a + b;
     }

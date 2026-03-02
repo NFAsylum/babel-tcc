@@ -226,9 +226,9 @@ class Programa
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
         string code = @"
-class Test // tradu:Teste<script>alert('xss')</script>
+class Test // tradu[pt-br]:Teste<script>alert('xss')</script>
 {
-    int value; // tradu:valor'; DROP TABLE users; --
+    int value; // tradu[pt-br]:valor'; DROP TABLE users; --
 }";
 
         OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
