@@ -87,7 +87,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       const cacheKey: string = this.buildCacheKey(originalPath);
       this.cache.set(cacheKey, freshTranslation);
 
-      const self: TranslatedContentProvider = this;
       setTimeout(async (): Promise<void> => {
         try {
           const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
@@ -101,12 +100,12 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
               new vscode.Range(new vscode.Position(0, 0), lastLine.range.end),
               freshTranslation
             );
-            self.refreshingPaths.add(originalPath);
+            this.refreshingPaths.add(originalPath);
             await vscode.workspace.applyEdit(edit);
-            self.refreshingPaths.delete(originalPath);
+            this.refreshingPaths.delete(originalPath);
           }
         } catch (err: unknown) {
-          self.outputChannel.appendLine('TranslatedContentProvider: failed to refresh translated view');
+          this.outputChannel.appendLine('TranslatedContentProvider: failed to refresh translated view');
         }
       }, 100);
 
