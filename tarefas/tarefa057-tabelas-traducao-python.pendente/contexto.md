@@ -15,6 +15,7 @@
 - babel-tcc-translations/README.md (atualizar)
 
 ## Notas
+- **Repositorio separado**: Os arquivos desta tarefa ficam em `babel-tcc-translations/`, que e um repositorio Git independente de `babel-tcc/`. Esta tarefa requer um PR separado naquele repositorio.
 - Os IDs no keywords-base.json DEVEM ser identicos aos do PythonKeywordMap.cs. Qualquer divergencia causa falha na traducao.
 - O NaturalLanguageProvider carrega arquivos do caminho `programming-languages/{langKey}/keywords-base.json` onde langKey = adapter.LanguageName.ToLowerInvariant() = "python".
 - Para traducoes, carrega de `natural-languages/{languageCode}/python.json`.

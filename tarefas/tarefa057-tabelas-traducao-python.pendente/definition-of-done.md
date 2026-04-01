@@ -2,7 +2,9 @@
 
 - [ ] `programming-languages/python/keywords-base.json` criado com 35 keywords e IDs
 - [ ] IDs consistentes com PythonKeywordMap.cs (tarefa 054)
-- [ ] Valida contra schema/keyword-table.schema.json (ou schema atualizado para aceitar maiusculas)
+- [ ] schema/keyword-table.schema.json atualizado: pattern `^[a-z]+$` -> `^[a-zA-Z_]+$`
+- [ ] keywords-base.json valida contra schema atualizado
+- [ ] Mudanca feita em PR separado no repositorio babel-tcc-translations
 - [ ] `natural-languages/pt-br/python.json` criado com traducoes completas
 - [ ] `natural-languages/pt-br-ascii/python.json` criado com traducoes completas (sem acentos)
 - [ ] `natural-languages/en-us/python.json` criado com traducoes completas

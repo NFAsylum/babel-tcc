@@ -47,7 +47,20 @@ Implementar o adapter principal para Python, conectando o tokenizador subprocess
 - Usar `PythonTokenizerService.Tokenize()` e filtrar tokens onde `typeName="NAME"` e `isKeyword=false`
 - Retornar lista distinta
 
-### ExtractTrailingComments(string sourceCode) -> List<TrailingComment>
-- Novo metodo da interface (tarefa 055)
+### Metodos de suporte a anotacoes tradu (tarefa 055)
+Novos metodos da interface refatorada:
+
+**ExtractTrailingComments(string sourceCode) -> List<TrailingComment>**
 - Usar tokens COMMENT do subprocesso para extrair comentarios `#`
 - Remover prefixo `# ` do texto do comentario
+
+**GetIdentifierNamesOnLine(string sourceCode, int line) -> List<string>**
+- Filtrar tokens NAME (nao-keyword) na linha especificada
+
+**GetFirstStringLiteralOnLine(string sourceCode, int line) -> string**
+- Filtrar tokens STRING na linha especificada, retornar o primeiro
+
+**GetContainingMethodRange(string sourceCode, int line) -> (int StartLine, int EndLine)**
+- Detectar bloco `def` que contem a linha. Abordagem possivel:
+  - Buscar `def` acima da linha
+  - Determinar fim do metodo por mudanca de indentacao ou proximo `def`/`class` no mesmo nivel

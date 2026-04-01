@@ -8,22 +8,57 @@ Atualizar a extensao VS Code para detectar, monitorar e processar arquivos Pytho
 
 ## Escopo
 
-### 1. languageDetector.ts
+### 1. package.json — activationEvents, languages e grammars
+O `package.json` da extensao tem varios hardcodes para C# que precisam ser expandidos:
+
+**activationEvents** (linha 15-18):
+```json
+// Atual:
+"activationEvents": ["onLanguage:csharp"]
+
+// Novo:
+"activationEvents": ["onLanguage:csharp", "onLanguage:python"]
+```
+
+**languages** (linha 76-82) — registrar linguagem traduzida para Python:
+```json
+// Atual:
+"languages": [{ "id": "mlc-csharp", "aliases": ["C# Traduzido", "mlc-csharp"] }]
+
+// Novo:
+"languages": [
+  { "id": "mlc-csharp", "aliases": ["C# Traduzido", "mlc-csharp"] },
+  { "id": "mlc-python", "aliases": ["Python Traduzido", "mlc-python"] }
+]
+```
+
+**grammars** (linha 69-75) — registrar gramatica TextMate para Python traduzido:
+```json
+// Atual:
+"grammars": [{ "language": "mlc-csharp", "scopeName": "source.mlc-csharp", "path": "./syntaxes/mlc-csharp.tmLanguage.json" }]
+
+// Novo:
+"grammars": [
+  { "language": "mlc-csharp", "scopeName": "source.mlc-csharp", "path": "./syntaxes/mlc-csharp.tmLanguage.json" },
+  { "language": "mlc-python", "scopeName": "source.mlc-python", "path": "./syntaxes/mlc-python.tmLanguage.json" }
+]
+```
+
+### 2. Criar syntaxes/mlc-python.tmLanguage.json
+Criar gramatica TextMate para Python traduzido, baseada no `mlc-csharp.tmLanguage.json`.
+Deve fornecer syntax highlighting basico para arquivos Python traduzidos (keywords traduzidas, strings, comentarios `#`, numeros, etc.).
+
+### 3. languageDetector.ts
 Adicionar Python ao dicionario de extensoes suportadas:
 ```typescript
 // Atual:
-const SUPPORTED_EXTENSIONS: Record<string, string> = {
-  '.cs': 'CSharp'
-};
+const SUPPORTED_EXTENSIONS: Record<string, string> = { '.cs': 'CSharp' };
 
 // Novo:
-const SUPPORTED_EXTENSIONS: Record<string, string> = {
-  '.cs': 'CSharp',
-  '.py': 'Python'
-};
+const SUPPORTED_EXTENSIONS: Record<string, string> = { '.cs': 'CSharp', '.py': 'Python' };
 ```
 
-### 2. extension.ts (~linha 101)
+### 4. extension.ts (~linha 101)
 File watcher hardcoded para `.cs`:
 ```typescript
 // Atual:
@@ -34,12 +69,11 @@ const fileWatcher = vscode.workspace.createFileSystemWatcher('**/*.{cs,py}');
 
 // Novo (opcao B — dinamico, baseado em languageDetector):
 const extensions = languageDetector.getSupportedExtensions();
-// Criar watchers para cada extensao
 ```
 
 Decidir entre opcao A (simples) e opcao B (mais extensivel para futuras linguagens).
 
-### 3. hoverProvider.ts
+### 5. hoverProvider.ts
 Language hint hardcoded no hover tooltip:
 ```typescript
 // Atual:
@@ -52,8 +86,8 @@ markdown.appendCodeblock(`${originalKeyword}`, vscodeLangId);
 
 Mapeamento: `'CSharp'` -> `'csharp'`, `'Python'` -> `'python'`
 
-### 4. Verificar autoTranslateManager.ts
+### 6. Verificar autoTranslateManager.ts
 Pesquisa anterior encontrou referencias a `.cs` em comentarios. Verificar se ha logica hardcoded que precisa ser atualizada.
 
-### 5. Verificar coreBridge.ts
+### 7. Verificar coreBridge.ts
 Verificar se o coreBridge passa a extensao do arquivo ao invocar o Core .NET. O Core precisa da extensao para resolver o adapter correto via LanguageRegistry.

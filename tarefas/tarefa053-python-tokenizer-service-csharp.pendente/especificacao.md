@@ -12,7 +12,8 @@ Criar classe C# que gerencia o subprocesso Python e fornece tokenizacao para o P
 
 ### Classe PythonTokenizerService
 - Iniciar processo Python com `tokenizer_service.py` via `Process.Start`
-- `ProcessStartInfo`: `CreateNoWindow = true`, `UseShellExecute = false`, `RedirectStandardInput = true`, `RedirectStandardOutput = true`
+- `ProcessStartInfo`: `CreateNoWindow = true`, `UseShellExecute = false`, `RedirectStandardInput = true`, `RedirectStandardOutput = true`, `RedirectStandardError = true`
+- Capturar stderr para diagnosticar erros fatais do Python (ex: SyntaxError no proprio script, modulo nao encontrado)
 - Processo persistente (reutilizado entre chamadas)
 - Implementar `IDisposable` para encerrar o processo no cleanup
 

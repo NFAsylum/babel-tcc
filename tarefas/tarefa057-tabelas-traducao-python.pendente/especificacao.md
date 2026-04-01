@@ -21,11 +21,16 @@ Criar `programming-languages/python/keywords-base.json`:
 - Deve conter as 35 keywords do Python com os mesmos IDs definidos no `PythonKeywordMap.cs` (tarefa 054)
 - Deve validar contra `schema/keyword-table.schema.json`
 
-### Atencao: schema vs keywords com maiuscula
-O schema `keyword-table.schema.json` exige `^[a-z]+$` para nomes de keywords. Porem Python tem `False`, `None`, `True` com maiuscula. Opcoes:
-1. Atualizar o schema para aceitar `^[a-zA-Z]+$` ou `^[a-zA-Z_]+$`
-2. Armazenar em lowercase no JSON e fazer conversao no adapter
-Decidir e documentar a escolha.
+### Atualizar schema/keyword-table.schema.json
+O schema atual exige `^[a-z]+$` para nomes de keywords, mas Python tem `True`, `False`, `None` com maiuscula.
+**Decisao (ver tarefa 054 contexto.md)**: Atualizar o pattern para `^[a-zA-Z_]+$` para suportar qualquer linguagem.
+```json
+// Atual:
+"^[a-z]+$": { "type": "integer", "minimum": 0 }
+
+// Novo:
+"^[a-zA-Z_]+$": { "type": "integer", "minimum": 0 }
+```
 
 ### Traducoes para cada idioma natural (8 arquivos)
 Criar um arquivo `python.json` em cada diretorio de idioma:

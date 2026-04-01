@@ -9,4 +9,6 @@
 - [ ] Trata erros de tokenizacao sem crashar o processo
 - [ ] Trata JSON invalido no request sem crashar o processo
 - [ ] Comando `{"cmd": "quit"}` encerra o processo normalmente
+- [ ] MultiLingualCode.Core.csproj configurado para copiar tokenizer_service.py para o output directory
 - [ ] Testavel manualmente via `echo '{"source": "def foo(): pass"}' | python tokenizer_service.py`
+- [ ] Funciona em Python 3.8+ (sem depender de constantes exclusivas do 3.12)
