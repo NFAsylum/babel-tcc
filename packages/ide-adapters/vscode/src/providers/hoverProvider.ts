@@ -31,7 +31,7 @@ export class HoverProvider implements vscode.HoverProvider {
     }
 
     const word: string = document.getText(wordRange);
-    const keywordMap: Record<string, string> = this.keywordMapService.getMap();
+    const keywordMap: Record<string, string> = this.keywordMapService.getMap(document.uri.path);
     const originalKeyword: string | undefined = keywordMap[word.toLowerCase()];
 
     if (originalKeyword) {

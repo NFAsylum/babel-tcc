@@ -80,7 +80,9 @@ export function activate(context: vscode.ExtensionContext): void {
     { isReadonly: true }
   );
 
-  keywordMapService = new KeywordMapService(coreBridge.translationsPath, configService);
+  keywordMapService = new KeywordMapService(
+    coreBridge.translationsPath, configService, languageDetector, outputChannel
+  );
 
   const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService);
   const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(

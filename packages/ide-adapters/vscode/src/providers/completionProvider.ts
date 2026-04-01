@@ -32,7 +32,7 @@ export class CompletionProvider implements vscode.CompletionItemProvider {
 
     const currentWord: string = document.getText(wordRange).toLowerCase();
     const items: vscode.CompletionItem[] = [];
-    const keywordMap: Record<string, string> = this.keywordMapService.getMap();
+    const keywordMap: Record<string, string> = this.keywordMapService.getMap(document.uri.path);
 
     for (const [translated, original] of Object.entries(keywordMap)) {
       if (translated.startsWith(currentWord)) {
