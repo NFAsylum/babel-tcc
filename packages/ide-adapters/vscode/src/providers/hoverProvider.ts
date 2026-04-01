@@ -1,69 +1,15 @@
 import * as vscode from 'vscode';
 import { isTranslatedScheme } from './translatedContentProvider';
-
-const KEYWORD_REVERSE_MAP: Record<string, string> = {
-  'usando': 'using',
-  'espaconome': 'namespace',
-  'classe': 'class',
-  'estrutura': 'struct',
-  'enumeracao': 'enum',
-  'interface': 'interface',
-  'publico': 'public',
-  'protegido': 'protected',
-  'estatico': 'static',
-  'constante': 'const',
-  'somenteLeitura': 'readonly',
-  'vazio': 'void',
-  'inteiro': 'int',
-  'texto': 'string',
-  'booleano': 'bool',
-  'decimal': 'decimal',
-  'flutuante': 'float',
-  'duplo': 'double',
-  'longo': 'long',
-  'curto': 'short',
-  'byte': 'byte',
-  'caractere': 'char',
-  'objeto': 'object',
-  'se': 'if',
-  'senao': 'else',
-  'para': 'for',
-  'paracada': 'foreach',
-  'enquanto': 'while',
-  'faca': 'do',
-  'escolha': 'switch',
-  'caso': 'case',
-  'padrao': 'default',
-  'retornar': 'return',
-  'quebrar': 'break',
-  'continuar': 'continue',
-  'novo': 'new',
-  'nulo': 'null',
-  'verdadeiro': 'true',
-  'falso': 'false',
-  'este': 'this',
-  'base': 'base',
-  'lancamento': 'throw',
-  'tentar': 'try',
-  'capturar': 'catch',
-  'finalmente': 'finally',
-  'em': 'in',
-  'de': 'out',
-  'referencia': 'ref',
-  'virtual': 'virtual',
-  'sobrescrever': 'override',
-  'abstrato': 'abstract',
-  'selado': 'sealed',
-  'async': 'async',
-  'aguardar': 'await',
-  'tipode': 'typeof',
-  'tamanhode': 'sizeof',
-  'como': 'as',
-  'e': 'is'
-};
+import { KeywordMapService } from './keywordMap';
 
 /** Shows the original C# keyword when hovering over translated keywords. */
 export class HoverProvider implements vscode.HoverProvider {
+  private keywordMapService: KeywordMapService;
+
+  constructor(keywordMapService: KeywordMapService) {
+    this.keywordMapService = keywordMapService;
+  }
+
   /**
    * Provides a hover tooltip displaying the original C# keyword for a translated keyword under the cursor.
    * Only active in documents using the translated URI scheme.
@@ -85,7 +31,8 @@ export class HoverProvider implements vscode.HoverProvider {
     }
 
     const word: string = document.getText(wordRange);
-    const originalKeyword: string | undefined = KEYWORD_REVERSE_MAP[word.toLowerCase()];
+    const keywordMap: Record<string, string> = this.keywordMapService.getMap();
+    const originalKeyword: string | undefined = keywordMap[word.toLowerCase()];
 
     if (originalKeyword) {
       const markdown: vscode.MarkdownString = new vscode.MarkdownString();

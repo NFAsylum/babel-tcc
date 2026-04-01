@@ -7,6 +7,7 @@ import { ConfigurationService } from './services/configurationService';
 import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './providers/translatedContentProvider';
 import { CompletionProvider } from './providers/completionProvider';
 import { HoverProvider } from './providers/hoverProvider';
+import { KeywordMapService } from './providers/keywordMap';
 import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
 
@@ -19,6 +20,7 @@ let configService: ConfigurationService;
 let translatedContentProvider: TranslatedContentProvider;
 let statusBar: StatusBar;
 let autoTranslateManager: AutoTranslateManager;
+let keywordMapService: KeywordMapService;
 
 /**
  * Removes the .multilingual cache directory from each workspace folder to prevent stale
@@ -78,7 +80,9 @@ export function activate(context: vscode.ExtensionContext): void {
     { isReadonly: true }
   );
 
-  const completionProvider: CompletionProvider = new CompletionProvider();
+  keywordMapService = new KeywordMapService(coreBridge.translationsPath, configService);
+
+  const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService);
   const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
     { scheme: TRANSLATED_SCHEME },
     completionProvider
@@ -88,7 +92,7 @@ export function activate(context: vscode.ExtensionContext): void {
     completionProvider
   );
 
-  const hoverProviderInstance: HoverProvider = new HoverProvider();
+  const hoverProviderInstance: HoverProvider = new HoverProvider(keywordMapService);
   const hoverRegistration: vscode.Disposable = vscode.languages.registerHoverProvider(
     { scheme: TRANSLATED_SCHEME },
     hoverProviderInstance
@@ -231,6 +235,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(hoverRegistration);
   context.subscriptions.push(hoverRegistrationReadonly);
   context.subscriptions.push(configService);
+  context.subscriptions.push(keywordMapService);
   context.subscriptions.push(statusBar);
   context.subscriptions.push(autoTranslateManager);
   context.subscriptions.push(toggleCommand);
