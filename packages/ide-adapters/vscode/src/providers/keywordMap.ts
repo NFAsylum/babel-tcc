@@ -99,6 +99,8 @@ export class KeywordMapService {
       vscode.window.showWarningMessage(
         `Babel TCC: Failed to load keyword translations for ${programmingLanguage}/${language}. Completion and hover may not work.`
       );
+      this.cachedMap = map;
+      return;
     }
 
     this.cachedMap = map;
