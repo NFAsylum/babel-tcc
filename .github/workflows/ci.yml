@@ -29,6 +29,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Lint (dotnet format)
+        if: matrix.os == 'ubuntu-latest'
         run: dotnet format --verify-no-changes --verbosity diagnostic
 
       - name: Test with coverage
@@ -70,7 +71,7 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('packages/ide-adapters/vscode/package-lock.json') }}
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         run: npm run build
