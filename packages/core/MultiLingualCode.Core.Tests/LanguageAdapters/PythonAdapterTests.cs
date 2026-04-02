@@ -457,11 +457,7 @@ public class PythonAdapterTests : IDisposable
         };
 
         string reversed = Adapter.ReverseSubstituteKeywords(translated, lookup);
-        Assert.Contains("def", reversed);
-        Assert.Contains("if", reversed);
-        Assert.Contains("return", reversed);
-        Assert.Contains("True", reversed);
-        Assert.Contains("False", reversed);
+        Assert.Equal(code, reversed);
     }
 
     public static List<KeywordNode> GetKeywordNodes(ASTNode ast)
