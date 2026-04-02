@@ -86,12 +86,12 @@ Para gerar o `.vsix`: `npm run package` (requer [vsce](https://github.com/micros
 
 | Linguagem de Programacao | Status |
 |--------------------------|--------|
-| C# (77 keywords) | Suportado |
+| C# (89 keywords) | Suportado |
 | Python (35 keywords) | Suportado |
 
 ## Idiomas Disponiveis
 
-Portugues (PT-BR), Portugues ASCII, Ingles, Espanhol, Frances, Alemao, Italiano, Japones (Romaji), Chines (Pinyin), Arabe.
+Portugues (PT-BR), Portugues ASCII, Ingles, Espanhol, Frances, Alemao, Italiano, Japones (Romaji), Chines, Arabe.
 
 ## Arquitetura
 
