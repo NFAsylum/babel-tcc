@@ -72,5 +72,9 @@ public class ILanguageAdapterContractTests
         public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword) => translatedCode;
         public ValidationResult ValidateSyntax(string sourceCode) => new() { IsValid = true };
         public List<string> ExtractIdentifiers(string sourceCode) => new() { "test" };
+        public List<TrailingComment> ExtractTrailingComments(string sourceCode) => new();
+        public List<string> GetIdentifierNamesOnLine(string sourceCode, int line) => new();
+        public string GetFirstStringLiteralOnLine(string sourceCode, int line) => "";
+        public (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line) => (-1, -1);
     }
 }

@@ -352,6 +352,78 @@ public class CSharpAdapter : ILanguageAdapter
     }
 
     /// <summary>
+    /// Extracts all trailing comments from C# source code.
+    /// </summary>
+    public List<Models.TrailingComment> ExtractTrailingComments(string sourceCode)
+    {
+        List<Models.TrailingComment> comments = new();
+
+        if (string.IsNullOrEmpty(sourceCode))
+        {
+            return comments;
+        }
+
+        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
+        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+
+        foreach (SyntaxToken token in root.DescendantTokens())
+        {
+            string commentText = RoslynWrapper.GetTrailingCommentText(token);
+            if (!string.IsNullOrEmpty(commentText))
+            {
+                int line = token.GetLocation().GetLineSpan().StartLinePosition.Line;
+                comments.Add(new Models.TrailingComment { Text = commentText, Line = line });
+            }
+        }
+
+        return comments;
+    }
+
+    /// <summary>
+    /// Gets the names of all identifiers on a specific line in C# source code.
+    /// </summary>
+    public List<string> GetIdentifierNamesOnLine(string sourceCode, int line)
+    {
+        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
+        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+
+        return RoslynWrapper.GetIdentifierTokensOnLine(root, line)
+            .Select(t => t.Text)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets the text of the first string literal on a specific line in C# source code.
+    /// </summary>
+    public string GetFirstStringLiteralOnLine(string sourceCode, int line)
+    {
+        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
+        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+
+        List<SyntaxToken> tokensOnLine = RoslynWrapper.GetAllTokensOnLine(root, line);
+        foreach (SyntaxToken token in tokensOnLine)
+        {
+            if (RoslynWrapper.IsStringLiteralToken(token))
+            {
+                return token.ValueText;
+            }
+        }
+
+        return "";
+    }
+
+    /// <summary>
+    /// Gets the line range of the method containing the specified line in C# source code.
+    /// </summary>
+    public (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line)
+    {
+        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
+        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+
+        return RoslynWrapper.GetMethodRange(root, line);
+    }
+
+    /// <summary>
     /// Recursively collects text replacements from the AST for code generation.
     /// </summary>
     /// <param name="node">The current AST node to process.</param>

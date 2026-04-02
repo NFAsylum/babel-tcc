@@ -35,6 +35,10 @@ public class TranslationOrchestratorTests
         adapter.LanguageName.Returns("CSharp");
         adapter.FileExtensions.Returns(new[] { ".cs" });
         adapter.Version.Returns("1.0.0");
+        adapter.ExtractTrailingComments(Arg.Any<string>()).Returns(new List<TrailingComment>());
+        adapter.GetIdentifierNamesOnLine(Arg.Any<string>(), Arg.Any<int>()).Returns(new List<string>());
+        adapter.GetFirstStringLiteralOnLine(Arg.Any<string>(), Arg.Any<int>()).Returns("");
+        adapter.GetContainingMethodRange(Arg.Any<string>(), Arg.Any<int>()).Returns((-1, -1));
 
         // Parse: creates a flat AST with keyword and identifier nodes
         adapter.Parse(Arg.Any<string>()).Returns(callInfo =>
@@ -465,7 +469,7 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
 {
 }";
 
-            orchestrator.ApplyTraduAnnotations(sourceCode, "pt-br");
+            orchestrator.ApplyTraduAnnotations(sourceCode, "pt-br", new CSharpAdapter());
 
             OperationResultGeneric<string> ptResult = mapper.GetTranslation("Calculator", "pt-br");
             Assert.True(ptResult.IsSuccess);
