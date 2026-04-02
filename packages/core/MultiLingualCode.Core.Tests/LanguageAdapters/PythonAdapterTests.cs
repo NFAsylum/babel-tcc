@@ -411,6 +411,59 @@ public class PythonAdapterTests : IDisposable
         Assert.Equal(0, startLine);
     }
 
+    [RequiresPythonFact]
+    public void RoundTrip_SimpleCode_PreservesStructure()
+    {
+        string code = "def foo(x):\n    return x + 1";
+        ASTNode ast = Adapter.Parse(code);
+        string generated = Adapter.Generate(ast);
+        Assert.Equal(code, generated);
+    }
+
+    [RequiresPythonFact]
+    public void RoundTrip_TranslatedKeywords_CanBeReversed()
+    {
+        string code = "def foo():\n    if True:\n        return False";
+        ASTNode ast = Adapter.Parse(code);
+
+        // Forward: translate keywords
+        foreach (ASTNode child in ast.Children)
+        {
+            if (child is KeywordNode kw)
+            {
+                int id = PythonKeywordMap.GetId(kw.Text);
+                if (id == 11) kw.Text = "definir";      // def
+                if (id == 20) kw.Text = "se";            // if
+                if (id == 2) kw.Text = "verdadeiro";     // True
+                if (id == 30) kw.Text = "retornar";      // return
+                if (id == 0) kw.Text = "falso";          // False
+            }
+        }
+
+        string translated = Adapter.Generate(ast);
+        Assert.Contains("definir", translated);
+        Assert.Contains("se", translated);
+        Assert.Contains("retornar", translated);
+
+        // Reverse: substitute keywords back
+        Func<string, int> lookup = (string word) =>
+        {
+            if (word == "definir") return 11;
+            if (word == "se") return 20;
+            if (word == "verdadeiro") return 2;
+            if (word == "retornar") return 30;
+            if (word == "falso") return 0;
+            return -1;
+        };
+
+        string reversed = Adapter.ReverseSubstituteKeywords(translated, lookup);
+        Assert.Contains("def", reversed);
+        Assert.Contains("if", reversed);
+        Assert.Contains("return", reversed);
+        Assert.Contains("True", reversed);
+        Assert.Contains("False", reversed);
+    }
+
     public static List<KeywordNode> GetKeywordNodes(ASTNode ast)
     {
         List<KeywordNode> nodes = new();

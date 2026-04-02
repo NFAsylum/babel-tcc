@@ -1,7 +1,9 @@
 using MultiLingualCode.Core.LanguageAdapters;
+using MultiLingualCode.Core.LanguageAdapters.Python;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.AST;
 using MultiLingualCode.Core.Services;
+using MultiLingualCode.Core.Tests.LanguageAdapters;
 
 namespace MultiLingualCode.Core.Tests.Integration;
 
@@ -725,5 +727,83 @@ namespace HelloWorld
         Assert.Contains("Add", reverseResult.Value);
         Assert.Contains("public", reverseResult.Value);
         Assert.Contains("class", reverseResult.Value);
+    }
+
+    // ========================================================================
+    // Python integration tests
+    // ========================================================================
+
+    public TranslationOrchestrator CreatePythonOrchestrator(IdentifierMapper mapper)
+    {
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(new CSharpAdapter());
+        registry.RegisterAdapter(new PythonAdapter());
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
+        return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+    }
+
+    [RequiresPythonFact]
+    public async Task Python_SimpleFunction_TranslatesToPtBr()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreatePythonOrchestrator(mapper);
+
+        string sourceCode = "def foo():\n    if True:\n        return False";
+
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+
+        Assert.True(result.IsSuccess, result.ErrorMessage);
+        Assert.Contains("definir", result.Value);
+        Assert.Contains("se", result.Value);
+        Assert.Contains("verdadeiro", result.Value);
+        Assert.Contains("retornar", result.Value);
+        Assert.Contains("falso", result.Value);
+    }
+
+    [RequiresPythonFact]
+    public async Task Python_ForLoop_TranslatesToPtBr()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreatePythonOrchestrator(mapper);
+
+        string sourceCode = "for i in range(10):\n    pass";
+
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+
+        Assert.True(result.IsSuccess, result.ErrorMessage);
+        Assert.Contains("para", result.Value);
+        Assert.Contains("em", result.Value);
+        Assert.Contains("passar", result.Value);
+    }
+
+    [RequiresPythonFact]
+    public async Task Python_RoundTrip_KeywordsPreserved()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreatePythonOrchestrator(mapper);
+
+        string sourceCode = "def foo():\n    while True:\n        break";
+
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+        Assert.True(translationResult.IsSuccess, translationResult.ErrorMessage);
+
+        string translated = translationResult.Value;
+        Assert.Contains("definir", translated);
+        Assert.Contains("enquanto", translated);
+        Assert.Contains("parar", translated);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translated, ".py", "pt-br");
+        Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
+
+        Assert.Contains("def", reverseResult.Value);
+        Assert.Contains("while", reverseResult.Value);
+        Assert.Contains("break", reverseResult.Value);
     }
 }
