@@ -1,15 +1,12 @@
 # Babel TCC - MultiLingual Code
 
-[![Build Core](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-core.yml)
-[![Build VS Code](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/build-vscode.yml)
-[![Tests](https://github.com/NFAsylum/babel-tcc/actions/workflows/test.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/test.yml)
-
+[![CI](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml)
 
 Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
 
 ## O que faz?
 
-Desenvolvedores escrevem codigo em C# (e futuramente Python, JavaScript, etc.), e a extensao exibe as keywords e identificadores traduzidos para o idioma configurado (PT-BR, ES-ES, etc.). Ao salvar, o codigo volta automaticamente para a linguagem de programacao original.
+Desenvolvedores escrevem codigo em C# ou Python, e a extensao exibe as keywords e identificadores traduzidos para o idioma configurado (PT-BR, ES-ES, etc.). Ao salvar, o codigo volta automaticamente para a linguagem de programacao original.
 
 **Antes (C# original no disco):**
 ```csharp
@@ -43,27 +40,28 @@ espaconome OlaMundo
 }
 ```
 
-O arquivo no disco permanece **sempre em C# puro**. A traducao e apenas visual.
+O arquivo no disco permanece **sempre no codigo original**. A traducao e apenas visual.
 
 ## Features
 
-- **Traducao visual de keywords** - 77 keywords C# traduzidas (if->se, class->classe, void->vazio, etc.)
+- **Traducao visual de keywords** - Keywords C# e Python traduzidas (if->se, class->classe, def->definir, etc.)
 - **Traducao de identificadores** - Nomes de variaveis, metodos e classes via anotacao `// tradu:`
-- **Traducao reversa ao salvar** - Ao salvar, o codigo traduzido volta para C# original no disco
+- **Traducao reversa ao salvar** - Ao salvar, o codigo traduzido volta para o original no disco
 - **Autocomplete traduzido** - Sugestoes de keywords e identificadores no idioma configurado
-- **Hover com original** - Passar o mouse sobre keyword traduzida mostra a keyword C# original
+- **Hover com original** - Passar o mouse sobre keyword traduzida mostra a keyword original
 - **Status bar** - Indicador do idioma ativo com seletor rapido
 - **Syntax highlighting** - Gramatica TextMate customizada para keywords traduzidas
 - **Colaboracao multilingue** - Multiplos devs no mesmo repo, cada um ve seu idioma
 - **Zero impacto** - Compiladores, CI/CD, Git e IntelliSense funcionam normalmente
+- **Processo persistente** - Motor de traducao roda como processo longo, sem cold start por request
 
 ## Quick Start
 
-1. Instalar a extensao no VS Code (Marketplace ou .vsix local)
-2. Abrir um arquivo `.cs`
+1. Instalar a extensao no VS Code
+2. Abrir um arquivo `.cs` ou `.py`
 3. Pressionar `Ctrl+Shift+P` e executar `Babel TCC: Select Language`
 4. Escolher `pt-br`
-5. Executar `Babel TCC: Open Translated View` para ver o codigo traduzido
+5. A traducao aparece automaticamente
 
 ## Instalacao
 
@@ -71,6 +69,7 @@ O arquivo no disco permanece **sempre em C# puro**. A traducao e apenas visual.
 
 - VS Code 1.85 ou superior
 - .NET 8.0 Runtime
+- Python 3.8+ (para suporte a arquivos Python)
 
 ### A partir do codigo-fonte
 
@@ -85,32 +84,36 @@ Para gerar o `.vsix`: `npm run package` (requer [vsce](https://github.com/micros
 
 ## Linguagens Suportadas
 
-| Linguagem de Programacao | Idioma Natural | Status |
-|--------------------------|---------------|--------|
-| C# | Portugues (PT-BR) | Suportado |
-| Python | - | Futuro |
-| JavaScript | - | Futuro |
+| Linguagem de Programacao | Status |
+|--------------------------|--------|
+| C# (89 keywords) | Suportado |
+| Python (35 keywords) | Suportado |
+
+## Idiomas Disponiveis
+
+Portugues (PT-BR), Portugues ASCII, Ingles, Espanhol, Frances, Alemao, Italiano, Japones (Romaji), Chines, Arabe.
 
 ## Arquitetura
 
 ```
 VS Code Extension (TypeScript)
         |
-    CoreBridge (JSON via stdin/stdout)
+    CoreBridge (JSON Lines via stdin/stdout)
         |
 Core Engine (C# / .NET 8)
-        |
-    CSharpAdapter (Roslyn)
+    |           |
+CSharpAdapter   PythonAdapter
+  (Roslyn)     (tokenize stdlib)
         |
 Translation Tables (JSON)
 ```
 
 | Camada | Tecnologia | Funcao |
 |--------|-----------|--------|
-| Core Engine | C# / .NET 8 | Motor de traducao, parsing via Roslyn |
+| Core Engine | C# / .NET 8 | Motor de traducao, parsing via Roslyn e tokenizer Python |
 | Extension | TypeScript / VS Code API | Interface com o editor |
 | Traducoes | JSON | Tabelas de keywords e mapeamentos |
-| Comunicacao | JSON via stdin/stdout | Bridge entre TS e C# |
+| Comunicacao | JSON Lines via stdin/stdout | Bridge persistente entre TS e C# |
 
 ## Configuracao
 
@@ -159,8 +162,8 @@ publico classe Calculadora
 
 - **Core:** C# / .NET 8, Microsoft.CodeAnalysis (Roslyn)
 - **Extension:** TypeScript, VS Code Extension API
-- **Testes:** xUnit (C#), 277+ testes
-- **CI/CD:** GitHub Actions
+- **Testes:** xUnit (C#) + Vitest (TypeScript), 500+ testes
+- **CI/CD:** GitHub Actions (matrix Ubuntu + Windows)
 - **Traducoes:** JSON
 
 ## Estrutura do Projeto
@@ -170,8 +173,8 @@ babel-tcc/
   packages/
     core/
       MultiLingualCode.Core/        # Motor de traducao
-      MultiLingualCode.Core.Host/   # CLI para comunicacao TS<->C#
-      MultiLingualCode.Core.Tests/  # Testes xUnit (277+)
+      MultiLingualCode.Core.Host/   # Host persistente (stdin/stdout)
+      MultiLingualCode.Core.Tests/  # Testes xUnit
     ide-adapters/
       vscode/                       # Extensao VS Code
         src/
@@ -179,9 +182,9 @@ babel-tcc/
           services/                 # CoreBridge, Config, LanguageDetector
           providers/                # Content, Edit, Save, Completion, Hover
           ui/                       # StatusBar
+        test/                       # Testes Vitest
         syntaxes/                   # Gramaticas TextMate
-  docs/                             # Documentacao
-  examples/                         # Projetos de exemplo
+  scripts/                          # Validacao de traducoes
   tarefas/                          # Rastreamento de tarefas
 ```
 
@@ -197,6 +200,6 @@ babel-tcc/
 
 Contribuicoes sao bem-vindas! Veja [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes.
 
----
+## Licenca
 
-Projeto de TCC (Trabalho de Conclusao de Curso).
+[MIT](LICENSE)
