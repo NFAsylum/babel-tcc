@@ -86,7 +86,7 @@ public class TranslationOrchestrator
             return OperationResultGeneric<string>.Fail(loadResult.ErrorMessage);
         }
 
-        ApplyTraduAnnotations(sourceCode, targetLanguage);
+        ApplyTraduAnnotations(sourceCode, targetLanguage, adapter);
 
         ASTNode ast = adapter.Parse(sourceCode);
         ASTNode translatedAst = ast.Clone();
@@ -124,7 +124,7 @@ public class TranslationOrchestrator
         string preSubstituted = adapter.ReverseSubstituteKeywords(
             translatedCode, Provider.ReverseTranslateKeyword);
 
-        ApplyReverseTraduAnnotations(preSubstituted, sourceLanguage);
+        ApplyReverseTraduAnnotations(preSubstituted, sourceLanguage, adapter);
 
         ASTNode ast = adapter.Parse(preSubstituted);
         ASTNode originalAst = ast.Clone();
@@ -252,14 +252,15 @@ public class TranslationOrchestrator
     /// </summary>
     /// <param name="sourceCode">The source code containing tradu annotations.</param>
     /// <param name="targetLanguage">The target natural language code for the translations.</param>
-    public void ApplyTraduAnnotations(string sourceCode, string targetLanguage)
+    /// <param name="adapter">The language adapter used for comment extraction and code analysis.</param>
+    public void ApplyTraduAnnotations(string sourceCode, string targetLanguage, ILanguageAdapter adapter)
     {
         ScopedTranslations.Clear();
         IdentifierMapperService.Data.Identifiers.Clear();
         IdentifierMapperService.Data.Literals.Clear();
 
         TraduAnnotationParser parser = new TraduAnnotationParser();
-        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         foreach (TraduAnnotation annotation in annotations)
         {
@@ -302,12 +303,13 @@ public class TranslationOrchestrator
     /// </summary>
     /// <param name="code">The code after keyword substitution.</param>
     /// <param name="sourceLanguage">The source natural language code.</param>
-    public void ApplyReverseTraduAnnotations(string code, string sourceLanguage)
+    /// <param name="adapter">The language adapter used for comment extraction and code analysis.</param>
+    public void ApplyReverseTraduAnnotations(string code, string sourceLanguage, ILanguageAdapter adapter)
     {
         ScopedTranslations.Clear();
 
         TraduAnnotationParser parser = new TraduAnnotationParser();
-        List<TraduAnnotation> annotations = parser.ExtractAnnotations(code);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(code, adapter);
 
         foreach (TraduAnnotation annotation in annotations)
         {
