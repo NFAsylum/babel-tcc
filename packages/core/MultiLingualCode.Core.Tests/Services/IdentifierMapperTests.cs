@@ -5,26 +5,26 @@ namespace MultiLingualCode.Core.Tests.Services;
 
 public class IdentifierMapperTests : IDisposable
 {
-    public string tempDir;
-    public IdentifierMapper mapper = new();
+    public string TempDir;
+    public IdentifierMapper Mapper = new();
 
     public IdentifierMapperTests()
     {
-        tempDir = Path.Combine(Path.GetTempPath(), $"mapper_test_{Guid.NewGuid()}");
-        Directory.CreateDirectory(tempDir);
+        TempDir = Path.Combine(Path.GetTempPath(), $"mapper_test_{Guid.NewGuid()}");
+        Directory.CreateDirectory(TempDir);
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(tempDir))
+        if (Directory.Exists(TempDir))
         {
-            Directory.Delete(tempDir, true);
+            Directory.Delete(TempDir, true);
         }
     }
 
     private void CreateMapFile(string json)
     {
-        string dir = Path.Combine(tempDir, ".multilingual");
+        string dir = Path.Combine(TempDir, ".multilingual");
         Directory.CreateDirectory(dir);
         File.WriteAllText(Path.Combine(dir, "identifier-map.json"), json);
     }
@@ -32,11 +32,11 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void LoadMap_EmptyProject_StartsEmpty()
     {
-        OperationResult result = mapper.LoadMap(tempDir);
+        OperationResult result = Mapper.LoadMap(TempDir);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(0, mapper.IdentifierCount);
-        Assert.Equal(0, mapper.LiteralCount);
+        Assert.Equal(0, Mapper.IdentifierCount);
+        Assert.Equal(0, Mapper.LiteralCount);
     }
 
     [Fact]
@@ -54,17 +54,17 @@ public class IdentifierMapperTests : IDisposable
         }
         """);
 
-        OperationResult result = mapper.LoadMap(tempDir);
+        OperationResult result = Mapper.LoadMap(TempDir);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(2, mapper.IdentifierCount);
-        Assert.Equal(1, mapper.LiteralCount);
+        Assert.Equal(2, Mapper.IdentifierCount);
+        Assert.Equal(1, Mapper.LiteralCount);
     }
 
     [Fact]
     public void LoadMap_NullPath_ReturnsFailure()
     {
-        OperationResult result = mapper.LoadMap(null!);
+        OperationResult result = Mapper.LoadMap(null!);
 
         Assert.False(result.IsSuccess);
     }
@@ -81,10 +81,10 @@ public class IdentifierMapperTests : IDisposable
         }
         """);
 
-        OperationResult result = await mapper.LoadMapAsync(tempDir);
+        OperationResult result = await Mapper.LoadMapAsync(TempDir);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(1, mapper.IdentifierCount);
+        Assert.Equal(1, Mapper.IdentifierCount);
     }
 
     [Fact]
@@ -98,10 +98,10 @@ public class IdentifierMapperTests : IDisposable
           "literals": {}
         }
         """);
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> ptResult = mapper.GetTranslation("GetName", "pt-br");
-        OperationResultGeneric<string> esResult = mapper.GetTranslation("GetName", "es-es");
+        OperationResultGeneric<string> ptResult = Mapper.GetTranslation("GetName", "pt-br");
+        OperationResultGeneric<string> esResult = Mapper.GetTranslation("GetName", "es-es");
 
         Assert.True(ptResult.IsSuccess);
         Assert.Equal("ObterNome", ptResult.Value);
@@ -112,9 +112,9 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void GetTranslation_UnknownIdentifier_ReturnsFailure()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> result = mapper.GetTranslation("Unknown", "pt-br");
+        OperationResultGeneric<string> result = Mapper.GetTranslation("Unknown", "pt-br");
         Assert.False(result.IsSuccess);
     }
 
@@ -127,21 +127,21 @@ public class IdentifierMapperTests : IDisposable
           "literals": {}
         }
         """);
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> result = mapper.GetTranslation("GetName", "fr-fr");
+        OperationResultGeneric<string> result = Mapper.GetTranslation("GetName", "fr-fr");
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void GetTranslation_EmptyOrNull_ReturnsFailure()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> emptyIdResult = mapper.GetTranslation("", "pt-br");
-        OperationResultGeneric<string> nullIdResult = mapper.GetTranslation(null!, "pt-br");
-        OperationResultGeneric<string> emptyLangResult = mapper.GetTranslation("GetName", "");
-        OperationResultGeneric<string> nullLangResult = mapper.GetTranslation("GetName", null!);
+        OperationResultGeneric<string> emptyIdResult = Mapper.GetTranslation("", "pt-br");
+        OperationResultGeneric<string> nullIdResult = Mapper.GetTranslation(null!, "pt-br");
+        OperationResultGeneric<string> emptyLangResult = Mapper.GetTranslation("GetName", "");
+        OperationResultGeneric<string> nullLangResult = Mapper.GetTranslation("GetName", null!);
 
         Assert.False(emptyIdResult.IsSuccess);
         Assert.False(nullIdResult.IsSuccess);
@@ -161,10 +161,10 @@ public class IdentifierMapperTests : IDisposable
           "literals": {}
         }
         """);
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> getNameResult = mapper.GetOriginal("ObterNome", "pt-br");
-        OperationResultGeneric<string> setValueResult = mapper.GetOriginal("DefinirValor", "pt-br");
+        OperationResultGeneric<string> getNameResult = Mapper.GetOriginal("ObterNome", "pt-br");
+        OperationResultGeneric<string> setValueResult = Mapper.GetOriginal("DefinirValor", "pt-br");
 
         Assert.True(getNameResult.IsSuccess);
         Assert.Equal("GetName", getNameResult.Value);
@@ -175,20 +175,20 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void GetOriginal_UnknownTranslation_ReturnsFailure()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> result = mapper.GetOriginal("Desconhecido", "pt-br");
+        OperationResultGeneric<string> result = Mapper.GetOriginal("Desconhecido", "pt-br");
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void GetOriginal_EmptyOrNull_ReturnsFailure()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> emptyResult = mapper.GetOriginal("", "pt-br");
-        OperationResultGeneric<string> nullResult = mapper.GetOriginal(null!, "pt-br");
-        OperationResultGeneric<string> emptyLangResult = mapper.GetOriginal("ObterNome", "");
+        OperationResultGeneric<string> emptyResult = Mapper.GetOriginal("", "pt-br");
+        OperationResultGeneric<string> nullResult = Mapper.GetOriginal(null!, "pt-br");
+        OperationResultGeneric<string> emptyLangResult = Mapper.GetOriginal("ObterNome", "");
 
         Assert.False(emptyResult.IsSuccess);
         Assert.False(nullResult.IsSuccess);
@@ -207,10 +207,10 @@ public class IdentifierMapperTests : IDisposable
           }
         }
         """);
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> calcResult = mapper.GetLiteralTranslation("Calculator", "pt-br");
-        OperationResultGeneric<string> helloResult = mapper.GetLiteralTranslation("Hello World", "es-es");
+        OperationResultGeneric<string> calcResult = Mapper.GetLiteralTranslation("Calculator", "pt-br");
+        OperationResultGeneric<string> helloResult = Mapper.GetLiteralTranslation("Hello World", "es-es");
 
         Assert.True(calcResult.IsSuccess);
         Assert.Equal("Calculadora", calcResult.Value);
@@ -221,19 +221,19 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void GetLiteralTranslation_UnknownLiteral_ReturnsFailure()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> result = mapper.GetLiteralTranslation("Unknown", "pt-br");
+        OperationResultGeneric<string> result = Mapper.GetLiteralTranslation("Unknown", "pt-br");
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void GetLiteralTranslation_EmptyOrNull_ReturnsFailure()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        OperationResultGeneric<string> emptyResult = mapper.GetLiteralTranslation("", "pt-br");
-        OperationResultGeneric<string> nullResult = mapper.GetLiteralTranslation(null!, "pt-br");
+        OperationResultGeneric<string> emptyResult = Mapper.GetLiteralTranslation("", "pt-br");
+        OperationResultGeneric<string> nullResult = Mapper.GetLiteralTranslation(null!, "pt-br");
 
         Assert.False(emptyResult.IsSuccess);
         Assert.False(nullResult.IsSuccess);
@@ -242,43 +242,43 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void SetTranslation_AddsNewMapping()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
 
-        OperationResultGeneric<string> result = mapper.GetTranslation("GetName", "pt-br");
+        OperationResultGeneric<string> result = Mapper.GetTranslation("GetName", "pt-br");
         Assert.True(result.IsSuccess);
         Assert.Equal("ObterNome", result.Value);
-        Assert.Equal(1, mapper.IdentifierCount);
+        Assert.Equal(1, Mapper.IdentifierCount);
     }
 
     [Fact]
     public void SetTranslation_MultipleLanguages()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
-        mapper.SetTranslation("GetName", "es-es", "ObtenerNombre");
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        Mapper.SetTranslation("GetName", "es-es", "ObtenerNombre");
 
-        OperationResultGeneric<string> ptResult = mapper.GetTranslation("GetName", "pt-br");
-        OperationResultGeneric<string> esResult = mapper.GetTranslation("GetName", "es-es");
+        OperationResultGeneric<string> ptResult = Mapper.GetTranslation("GetName", "pt-br");
+        OperationResultGeneric<string> esResult = Mapper.GetTranslation("GetName", "es-es");
 
         Assert.True(ptResult.IsSuccess);
         Assert.Equal("ObterNome", ptResult.Value);
         Assert.True(esResult.IsSuccess);
         Assert.Equal("ObtenerNombre", esResult.Value);
-        Assert.Equal(1, mapper.IdentifierCount);
+        Assert.Equal(1, Mapper.IdentifierCount);
     }
 
     [Fact]
     public void SetTranslation_OverwritesExisting()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
-        mapper.SetTranslation("GetName", "pt-br", "PegarNome");
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        Mapper.SetTranslation("GetName", "pt-br", "PegarNome");
 
-        OperationResultGeneric<string> result = mapper.GetTranslation("GetName", "pt-br");
+        OperationResultGeneric<string> result = Mapper.GetTranslation("GetName", "pt-br");
         Assert.True(result.IsSuccess);
         Assert.Equal("PegarNome", result.Value);
     }
@@ -286,73 +286,73 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void SetTranslation_DoesNotThrowOnNull()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
         // SetTranslation no longer throws - it just silently handles nulls
-        mapper.SetTranslation(null!, "pt-br", "x");
-        mapper.SetTranslation("x", null!, "x");
-        mapper.SetTranslation("x", "pt-br", null!);
+        Mapper.SetTranslation(null!, "pt-br", "x");
+        Mapper.SetTranslation("x", null!, "x");
+        Mapper.SetTranslation("x", "pt-br", null!);
     }
 
     [Fact]
     public void SetLiteralTranslation_AddsNewMapping()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        mapper.SetLiteralTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SetLiteralTranslation("Calculator", "pt-br", "Calculadora");
 
-        OperationResultGeneric<string> result = mapper.GetLiteralTranslation("Calculator", "pt-br");
+        OperationResultGeneric<string> result = Mapper.GetLiteralTranslation("Calculator", "pt-br");
         Assert.True(result.IsSuccess);
         Assert.Equal("Calculadora", result.Value);
-        Assert.Equal(1, mapper.LiteralCount);
+        Assert.Equal(1, Mapper.LiteralCount);
     }
 
     [Fact]
     public void RemoveIdentifier_ExistingMapping_ReturnsTrue()
     {
-        mapper.LoadMap(tempDir);
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
 
-        Assert.True(mapper.RemoveIdentifier("GetName"));
-        OperationResultGeneric<string> result = mapper.GetTranslation("GetName", "pt-br");
+        Assert.True(Mapper.RemoveIdentifier("GetName"));
+        OperationResultGeneric<string> result = Mapper.GetTranslation("GetName", "pt-br");
         Assert.False(result.IsSuccess);
-        Assert.Equal(0, mapper.IdentifierCount);
+        Assert.Equal(0, Mapper.IdentifierCount);
     }
 
     [Fact]
     public void RemoveIdentifier_NonExistent_ReturnsFalse()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
-        Assert.False(mapper.RemoveIdentifier("NonExistent"));
+        Assert.False(Mapper.RemoveIdentifier("NonExistent"));
     }
 
     [Fact]
     public void SaveMap_CreatesFileAndDirectory()
     {
-        mapper.LoadMap(tempDir);
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
-        mapper.SetLiteralTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        Mapper.SetLiteralTranslation("Calculator", "pt-br", "Calculadora");
 
-        OperationResult saveResult = mapper.SaveMap();
+        OperationResult saveResult = Mapper.SaveMap();
 
         Assert.True(saveResult.IsSuccess);
-        string filePath = Path.Combine(tempDir, ".multilingual", "identifier-map.json");
+        string filePath = Path.Combine(TempDir, ".multilingual", "identifier-map.json");
         Assert.True(File.Exists(filePath));
     }
 
     [Fact]
     public void SaveMap_RoundTrip()
     {
-        mapper.LoadMap(tempDir);
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
-        mapper.SetTranslation("GetName", "es-es", "ObtenerNombre");
-        mapper.SetLiteralTranslation("Calculator", "pt-br", "Calculadora");
-        mapper.SaveMap();
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        Mapper.SetTranslation("GetName", "es-es", "ObtenerNombre");
+        Mapper.SetLiteralTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SaveMap();
 
         // Load in a new mapper
         IdentifierMapper mapper2 = new IdentifierMapper();
-        mapper2.LoadMap(tempDir);
+        mapper2.LoadMap(TempDir);
 
         OperationResultGeneric<string> ptResult = mapper2.GetTranslation("GetName", "pt-br");
         OperationResultGeneric<string> esResult = mapper2.GetTranslation("GetName", "es-es");
@@ -369,12 +369,12 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void SaveMap_WithExplicitPath()
     {
-        string otherDir = Path.Combine(tempDir, "other-project");
+        string otherDir = Path.Combine(TempDir, "other-project");
         Directory.CreateDirectory(otherDir);
 
-        mapper.LoadMap(tempDir);
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
-        OperationResult saveResult = mapper.SaveMap(otherDir);
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        OperationResult saveResult = Mapper.SaveMap(otherDir);
 
         Assert.True(saveResult.IsSuccess);
         string filePath = Path.Combine(otherDir, ".multilingual", "identifier-map.json");
@@ -394,31 +394,31 @@ public class IdentifierMapperTests : IDisposable
     [Fact]
     public void GetOriginal_IsCaseSensitive()
     {
-        mapper.LoadMap(tempDir);
-        mapper.SetTranslation("GetName", "pt-br", "ObterNome");
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
 
-        OperationResultGeneric<string> result = mapper.GetOriginal("obternome", "pt-br");
+        OperationResultGeneric<string> result = Mapper.GetOriginal("obternome", "pt-br");
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
     public void CalculatorExample_FullWorkflow()
     {
-        mapper.LoadMap(tempDir);
+        Mapper.LoadMap(TempDir);
 
         // Set up Calculator project mappings
-        mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
-        mapper.SetTranslation("Add", "pt-br", "Somar");
-        mapper.SetTranslation("Subtract", "pt-br", "Subtrair");
-        mapper.SetTranslation("result", "pt-br", "resultado");
-        mapper.SetLiteralTranslation("Enter a number:", "pt-br", "Digite um numero:");
+        Mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SetTranslation("Add", "pt-br", "Somar");
+        Mapper.SetTranslation("Subtract", "pt-br", "Subtrair");
+        Mapper.SetTranslation("result", "pt-br", "resultado");
+        Mapper.SetLiteralTranslation("Enter a number:", "pt-br", "Digite um numero:");
 
         // Verify forward lookups
-        OperationResultGeneric<string> calcResult = mapper.GetTranslation("Calculator", "pt-br");
-        OperationResultGeneric<string> addResult = mapper.GetTranslation("Add", "pt-br");
-        OperationResultGeneric<string> subResult = mapper.GetTranslation("Subtract", "pt-br");
-        OperationResultGeneric<string> resResult = mapper.GetTranslation("result", "pt-br");
-        OperationResultGeneric<string> litResult = mapper.GetLiteralTranslation("Enter a number:", "pt-br");
+        OperationResultGeneric<string> calcResult = Mapper.GetTranslation("Calculator", "pt-br");
+        OperationResultGeneric<string> addResult = Mapper.GetTranslation("Add", "pt-br");
+        OperationResultGeneric<string> subResult = Mapper.GetTranslation("Subtract", "pt-br");
+        OperationResultGeneric<string> resResult = Mapper.GetTranslation("result", "pt-br");
+        OperationResultGeneric<string> litResult = Mapper.GetLiteralTranslation("Enter a number:", "pt-br");
 
         Assert.True(calcResult.IsSuccess);
         Assert.Equal("Calculadora", calcResult.Value);
@@ -432,8 +432,8 @@ public class IdentifierMapperTests : IDisposable
         Assert.Equal("Digite um numero:", litResult.Value);
 
         // Verify reverse lookups
-        OperationResultGeneric<string> revCalcResult = mapper.GetOriginal("Calculadora", "pt-br");
-        OperationResultGeneric<string> revAddResult = mapper.GetOriginal("Somar", "pt-br");
+        OperationResultGeneric<string> revCalcResult = Mapper.GetOriginal("Calculadora", "pt-br");
+        OperationResultGeneric<string> revAddResult = Mapper.GetOriginal("Somar", "pt-br");
 
         Assert.True(revCalcResult.IsSuccess);
         Assert.Equal("Calculator", revCalcResult.Value);
@@ -441,10 +441,10 @@ public class IdentifierMapperTests : IDisposable
         Assert.Equal("Add", revAddResult.Value);
 
         // Save and reload
-        mapper.SaveMap();
+        Mapper.SaveMap();
 
         IdentifierMapper mapper2 = new IdentifierMapper();
-        mapper2.LoadMap(tempDir);
+        mapper2.LoadMap(TempDir);
         Assert.Equal(4, mapper2.IdentifierCount);
         Assert.Equal(1, mapper2.LiteralCount);
         OperationResultGeneric<string> reloadResult = mapper2.GetTranslation("Calculator", "pt-br");
