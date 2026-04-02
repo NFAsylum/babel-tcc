@@ -64,10 +64,10 @@ describe('extension', () => {
       expect(context.subscriptions.length).toBe(18);
     });
 
-    it('should create file watcher for .cs files', () => {
+    it('should create file watcher for .cs and .py files', () => {
       const context = makeContext();
       activate(context as any);
-      expect(workspace.createFileSystemWatcher).toHaveBeenCalledWith('**/*.cs');
+      expect(workspace.createFileSystemWatcher).toHaveBeenCalledWith('**/*.{cs,py}');
     });
   });
 

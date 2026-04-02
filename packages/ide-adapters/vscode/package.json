@@ -14,6 +14,7 @@
   ],
   "activationEvents": [
     "onLanguage:csharp",
+    "onLanguage:python",
     "onFileSystem:babel-tcc-translated",
     "onFileSystem:babel-tcc-readonly"
   ],
@@ -71,6 +72,11 @@
         "language": "mlc-csharp",
         "scopeName": "source.mlc-csharp",
         "path": "./syntaxes/mlc-csharp.tmLanguage.json"
+      },
+      {
+        "language": "mlc-python",
+        "scopeName": "source.mlc-python",
+        "path": "./syntaxes/mlc-python.tmLanguage.json"
       }
     ],
     "languages": [
@@ -79,6 +85,14 @@
         "aliases": [
           "C# Traduzido",
           "mlc-csharp"
+        ],
+        "extensions": []
+      },
+      {
+        "id": "mlc-python",
+        "aliases": [
+          "Python Traduzido",
+          "mlc-python"
         ],
         "extensions": []
       }

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Babel TCC - Python Traduzido",
+  "scopeName": "source.mlc-python",
+  "comment": "Keyword highlighting is not included because translated keywords vary by natural language and cannot be hardcoded in a static TextMate grammar. Highlighting covers comments, strings, numbers, decorators and tradu annotations.",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings-triple" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#tradu-annotations" },
+    { "include": "#decorators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.mlc-python",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings-triple": {
+      "patterns": [
+        {
+          "name": "string.quoted.triple.double.mlc-python",
+          "begin": "[fFrRbBuU]{0,2}\"\"\"",
+          "end": "\"\"\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-python",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.triple.single.mlc-python",
+          "begin": "[fFrRbBuU]{0,2}'''",
+          "end": "'''",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-python",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.mlc-python",
+          "begin": "[fFrRbBuU]{0,2}\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-python",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.mlc-python",
+          "begin": "[fFrRbBuU]{0,2}'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-python",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.mlc-python",
+          "match": "\\b(0[xX][0-9a-fA-F_]+|0[oO][0-7_]+|0[bB][01_]+|[0-9][0-9_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?[jJ]?)\\b"
+        }
+      ]
+    },
+    "tradu-annotations": {
+      "patterns": [
+        {
+          "name": "markup.italic.tradu.mlc-python",
+          "match": "#\\s*tradu:.*$"
+        }
+      ]
+    },
+    "decorators": {
+      "patterns": [
+        {
+          "name": "entity.name.function.decorator.mlc-python",
+          "match": "^\\s*@\\w+"
+        }
+      ]
+    }
+  }
+}

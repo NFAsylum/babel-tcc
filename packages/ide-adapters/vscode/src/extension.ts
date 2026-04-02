@@ -94,7 +94,7 @@ export function activate(context: vscode.ExtensionContext): void {
     completionProvider
   );
 
-  const hoverProviderInstance: HoverProvider = new HoverProvider(keywordMapService);
+  const hoverProviderInstance: HoverProvider = new HoverProvider(keywordMapService, languageDetector);
   const hoverRegistration: vscode.Disposable = vscode.languages.registerHoverProvider(
     { scheme: TRANSLATED_SCHEME },
     hoverProviderInstance
@@ -104,7 +104,7 @@ export function activate(context: vscode.ExtensionContext): void {
     hoverProviderInstance
   );
 
-  const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.cs');
+  const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.{cs,py}');
   const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
     (uri: vscode.Uri): void => {
       if (translatedContentProvider.writingPaths.has(uri.path)) {

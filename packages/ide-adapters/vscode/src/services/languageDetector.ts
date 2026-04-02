@@ -1,7 +1,8 @@
 import * as path from 'path';
 
 const SUPPORTED_EXTENSIONS: Record<string, string> = {
-  '.cs': 'CSharp'
+  '.cs': 'CSharp',
+  '.py': 'Python'
 };
 
 /** Detects programming languages by file extension. */
