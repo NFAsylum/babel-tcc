@@ -14,9 +14,12 @@
 ## Decisoes tomadas
 
 ### 1. Fila serial (NAO paralelo)
-O VS Code so traduz a tab ativa. Mesmo ao ligar traducao com multiplas tabs
-abertas, sao tipicamente 3-5 arquivos sequenciais. Cada traducao leva ~5-50ms.
-Serial: ~250ms total. Imperceptivel para o usuario.
+O AutoTranslateManager do VS Code processa a tab ativa por vez (guard via
+processingUris). Na pratica, traducoes sao sequenciais. Mesmo ao ligar
+traducao com multiplas tabs abertas, sao tipicamente 3-5 arquivos.
+A fila serial sera implementada no CoreBridge: um request por vez no
+stdin/stdout do processo persistente. Cada traducao leva poucos ms
+(sem cold start). Serial: imperceptivel para o usuario.
 
 Paralelismo adicionaria complexidade (request IDs, race conditions,
 ConcurrentDictionary) sem ganho perceptivel. Descartado.
@@ -68,9 +71,16 @@ Experiencia do usuario:
 - O usuario pode verificar o output channel se quiser entender o que aconteceu
 
 ### 6. Impacto em testes
-- Os 17 testes de coreBridge.test.ts precisam ser reescritos
+- Os 19 testes de coreBridge.test.ts precisam ser reescritos
 - Mock muda de spawn-per-request para processo persistente com stdin/stdout streams
 - Total de testes deve se manter ou aumentar
+
+### 7. Carregamento de traducoes
+O Host atual cria o TranslationOrchestrator por request (CreateOrchestrator).
+Com processo persistente, o orchestrator e criado uma vez no startup e mantido
+em memoria. O translations path e recebido via --translations arg no spawn
+inicial. Lazy loading: traducoes para um idioma/linguagem especifica sao
+carregadas no primeiro request que precisa delas.
 
 ## Notas
 - O custo fixo de RAM (~40MB) e aceitavel — hoje paga-se esse custo a cada request

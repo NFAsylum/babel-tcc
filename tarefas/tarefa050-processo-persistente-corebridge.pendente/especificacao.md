@@ -32,16 +32,16 @@ Migrar para modelo de processo persistente (long-lived process) com stdin/stdout
 - Timeout por request (nao por processo)
 - Reconexao automatica se processo morrer
 
-### Impacto em thread safety
-- Com processo persistente, multiplas requests podem chegar em paralelo
-- Necessario garantir thread safety nos servicos (tarefa 049 item 8 - ConcurrentDictionary)
-- Ou serializar requests com fila
+### Concorrencia
+- Decisao tomada: fila serial (ver contexto.md para justificativa)
+- Nao depende da tarefa 049 (thread safety)
 
 ## Arquivos afetados
 
 - `packages/core/MultiLingualCode.Core.Host/Program.cs` (rewrite do Main)
 - `packages/ide-adapters/vscode/src/services/coreBridge.ts` (rewrite do invokeCore)
+- `packages/ide-adapters/vscode/test/services/coreBridge.test.ts` (rewrite dos testes)
 
 ## Dependencias
 
-- Tarefa 049 (thread safety) se optar por paralelismo
+- Nenhuma

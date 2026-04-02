@@ -27,7 +27,7 @@
 
 ## Testes
 - [ ] Testes de coreBridge.test.ts reescritos para modelo persistente
-- [ ] npm test passa com todos os testes (sem regressao nos outros 102 testes)
+- [ ] npm test passa com todos os testes (sem regressao nos outros 100 testes)
 
 ### Cenarios reescritos (modelo persistente)
 - [ ] invokeCore sucesso: envia JSON no stdin, recebe resposta no stdout
