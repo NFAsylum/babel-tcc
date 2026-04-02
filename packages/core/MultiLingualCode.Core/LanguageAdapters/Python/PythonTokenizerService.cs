@@ -210,6 +210,9 @@ public class PythonTokenizerService : IDisposable
 
             if (!response.Ok)
             {
+                // The Python tokenizer may return partial tokens before the error.
+                // We intentionally discard them and return Fail because partial token
+                // lists could lead to incorrect translations if processed downstream.
                 string errorDetail = response.Error ?? "Unknown tokenization error";
                 return OperationResult.Fail<List<PythonToken>>(
                     $"Python tokenizer error: {errorDetail}");

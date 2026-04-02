@@ -13,6 +13,26 @@ namespace MultiLingualCode.Core.LanguageAdapters;
 /// </summary>
 public class CSharpAdapter : ILanguageAdapter
 {
+    private string? _cachedSource;
+    private SyntaxNode? _cachedRoot;
+
+    /// <summary>
+    /// Returns the Roslyn SyntaxNode root for the given source code, caching the result
+    /// to avoid re-parsing when called multiple times with the same input.
+    /// </summary>
+    private SyntaxNode GetCachedRoot(string sourceCode)
+    {
+        if (_cachedSource == sourceCode && _cachedRoot != null)
+        {
+            return _cachedRoot;
+        }
+
+        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
+        _cachedRoot = RoslynWrapper.GetRoot(tree);
+        _cachedSource = sourceCode;
+        return _cachedRoot;
+    }
+
     /// <summary>
     /// The name of the programming language handled by this adapter.
     /// </summary>
@@ -363,8 +383,7 @@ public class CSharpAdapter : ILanguageAdapter
             return comments;
         }
 
-        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
-        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+        SyntaxNode root = GetCachedRoot(sourceCode);
 
         foreach (SyntaxToken token in root.DescendantTokens())
         {
@@ -384,8 +403,7 @@ public class CSharpAdapter : ILanguageAdapter
     /// </summary>
     public List<string> GetIdentifierNamesOnLine(string sourceCode, int line)
     {
-        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
-        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+        SyntaxNode root = GetCachedRoot(sourceCode);
 
         return RoslynWrapper.GetIdentifierTokensOnLine(root, line)
             .Select(t => t.Text)
@@ -397,8 +415,7 @@ public class CSharpAdapter : ILanguageAdapter
     /// </summary>
     public string GetFirstStringLiteralOnLine(string sourceCode, int line)
     {
-        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
-        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+        SyntaxNode root = GetCachedRoot(sourceCode);
 
         List<SyntaxToken> tokensOnLine = RoslynWrapper.GetAllTokensOnLine(root, line);
         foreach (SyntaxToken token in tokensOnLine)
@@ -417,8 +434,7 @@ public class CSharpAdapter : ILanguageAdapter
     /// </summary>
     public (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line)
     {
-        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
-        SyntaxNode root = RoslynWrapper.GetRoot(tree);
+        SyntaxNode root = GetCachedRoot(sourceCode);
 
         return RoslynWrapper.GetMethodRange(root, line);
     }
