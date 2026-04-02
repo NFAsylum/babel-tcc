@@ -5,8 +5,8 @@ namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 
 public class TraduAnnotationParserTests
 {
-    public TraduAnnotationParser _parser = new TraduAnnotationParser();
-    public CSharpAdapter _adapter = new CSharpAdapter();
+    public TraduAnnotationParser parser = new TraduAnnotationParser();
+    public CSharpAdapter adapter = new CSharpAdapter();
 
     [Fact]
     public void ExtractAnnotations_SimpleAnnotation_ExtractsIdentifierMapping()
@@ -16,7 +16,7 @@ public class Calculator // tradu[pt-br]:Calculadora
 {
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         Assert.Equal("Calculator", annotations[0].OriginalIdentifier);
@@ -34,7 +34,7 @@ public int Add(int a, int b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNum
     return a + b;
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         TraduAnnotation annotation = annotations[0];
@@ -55,7 +55,7 @@ public int Add(int a, int b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNum
 string message = ""Total operations: ""; // tradu[pt-br]:""Total de operacoes: ""
 ";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         TraduAnnotation annotation = annotations[0];
@@ -74,7 +74,7 @@ public class Program
     public void Main() { }
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Empty(annotations);
     }
@@ -92,7 +92,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     public int operationCount; // tradu[pt-br]:contagemOperacoes
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Equal(3, annotations.Count);
 
@@ -136,7 +136,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     }
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Equal(6, annotations.Count);
 
@@ -165,7 +165,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     [Fact]
     public void ExtractAnnotations_EmptySource_ReturnsEmptyList()
     {
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations("", _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations("", adapter);
 
         Assert.Empty(annotations);
     }
@@ -173,7 +173,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     [Fact]
     public void ParseAnnotationText_SimpleFormat_ReturnsTranslation()
     {
-        TraduAnnotation annotation = _parser.ParseAnnotationText("Calculadora");
+        TraduAnnotation annotation = parser.ParseAnnotationText("Calculadora");
 
         Assert.Equal("Calculadora", annotation.TranslatedIdentifier);
         Assert.False(annotation.IsLiteralAnnotation);
@@ -183,7 +183,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     [Fact]
     public void ParseAnnotationText_MethodFormat_ReturnsMethodAndParams()
     {
-        TraduAnnotation annotation = _parser.ParseAnnotationText("Somar,a:primeiroNumero,b:segundoNumero");
+        TraduAnnotation annotation = parser.ParseAnnotationText("Somar,a:primeiroNumero,b:segundoNumero");
 
         Assert.Equal("Somar", annotation.TranslatedIdentifier);
         Assert.Equal(2, annotation.ParameterMappings.Count);
@@ -196,7 +196,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     [Fact]
     public void ParseAnnotationText_LiteralFormat_ReturnsLiteral()
     {
-        TraduAnnotation annotation = _parser.ParseAnnotationText("\"Total de operacoes: \"");
+        TraduAnnotation annotation = parser.ParseAnnotationText("\"Total de operacoes: \"");
 
         Assert.True(annotation.IsLiteralAnnotation);
         Assert.Equal("Total de operacoes: ", annotation.TranslatedLiteral);
@@ -205,7 +205,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     [Fact]
     public void ParseAnnotationText_EmptyText_ReturnsEmptyAnnotation()
     {
-        TraduAnnotation annotation = _parser.ParseAnnotationText("");
+        TraduAnnotation annotation = parser.ParseAnnotationText("");
 
         Assert.Equal(string.Empty, annotation.TranslatedIdentifier);
         Assert.False(annotation.IsLiteralAnnotation);
@@ -215,7 +215,7 @@ public class Calculator // tradu[pt-br]:Calculadora
     [Fact]
     public void ExtractAnnotations_WhitespaceOnly_ReturnsEmptyList()
     {
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations("   \n\t  ", _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations("   \n\t  ", adapter);
 
         Assert.Empty(annotations);
     }
@@ -229,7 +229,7 @@ class Program // This is not a tradu annotation
     int x = 5; // just a comment
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Empty(annotations);
     }
@@ -242,7 +242,7 @@ class Calculator // tradu[pt-br]:Calculadora
 {
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         Assert.Equal("Calculadora", annotations[0].TranslatedIdentifier);
@@ -258,7 +258,7 @@ class Program
     int counter = 0; // tradu[pt-br]:contador
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         Assert.Equal("counter", annotations[0].OriginalIdentifier);
@@ -269,7 +269,7 @@ class Program
     [Fact]
     public void ParseAnnotationText_SingleParam_ExtractsMethodAndOneParam()
     {
-        TraduAnnotation annotation = _parser.ParseAnnotationText("Executar,x:valor");
+        TraduAnnotation annotation = parser.ParseAnnotationText("Executar,x:valor");
 
         Assert.Equal("Executar", annotation.TranslatedIdentifier);
         Assert.Single(annotation.ParameterMappings);
@@ -288,7 +288,7 @@ class Program
     }
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         Assert.Equal("Run", annotations[0].OriginalIdentifier);
@@ -306,7 +306,7 @@ class Person
     public string Name { get; set; } // tradu[pt-br]:Nome
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         Assert.Equal("Name", annotations[0].OriginalIdentifier);
@@ -322,7 +322,7 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
 {
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Equal(2, annotations.Count);
 
@@ -347,7 +347,7 @@ public class Calc
     }
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Equal(2, annotations.Count);
 
@@ -377,7 +377,7 @@ public class Calc
     }
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         TraduAnnotation annotation = annotations[0];
@@ -392,7 +392,7 @@ public class Calc
 string msg = ""Hello""; // tradu[pt-br]:""Ola""|[es]:""Hola""
 ";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Equal(2, annotations.Count);
 
@@ -410,7 +410,7 @@ string msg = ""Hello""; // tradu[pt-br]:""Ola""|[es]:""Hola""
     [Fact]
     public void ParseAnnotationText_ExplicitIdentifierMapping_ExtractsTranslation()
     {
-        TraduAnnotation annotation = _parser.ParseAnnotationText("a:prime");
+        TraduAnnotation annotation = parser.ParseAnnotationText("a:prime");
 
         Assert.Equal("prime", annotation.TranslatedIdentifier);
         Assert.False(annotation.IsLiteralAnnotation);
@@ -426,7 +426,7 @@ public class Test
     public int a = 10; //tradu[pt-br]:a:prime
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         Assert.Equal("a", annotations[0].OriginalIdentifier);
@@ -442,7 +442,7 @@ public class Calculator // tradu[pt-br]:Calculadora
 {
 }";
 
-        List<TraduAnnotation> annotations = _parser.ExtractAnnotations(sourceCode, _adapter);
+        List<TraduAnnotation> annotations = parser.ExtractAnnotations(sourceCode, adapter);
 
         Assert.Single(annotations);
         Assert.Equal("pt-br", annotations[0].TargetLanguage);

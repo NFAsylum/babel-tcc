@@ -8,21 +8,21 @@ namespace MultiLingualCode.Core.Tests.Integration;
 
 public class SecurityTests : IDisposable
 {
-    public string _translationsPath;
-    public string _tempDir;
+    public string translationsPath;
+    public string tempDir;
 
     public SecurityTests()
     {
-        _translationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
-        _tempDir = Path.Combine(Path.GetTempPath(), $"sec_test_{Guid.NewGuid()}");
-        Directory.CreateDirectory(_tempDir);
+        translationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        tempDir = Path.Combine(Path.GetTempPath(), $"sec_test_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(_tempDir))
+        if (Directory.Exists(tempDir))
         {
-            Directory.Delete(_tempDir, true);
+            Directory.Delete(tempDir, true);
         }
     }
 
@@ -31,9 +31,9 @@ public class SecurityTests : IDisposable
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(adapter);
-        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = _translationsPath };
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = translationsPath };
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
 
@@ -155,7 +155,7 @@ class Programa
     [Fact]
     public void MalformedJson_LoadFrom_DoesNotCrash()
     {
-        string tempPath = Path.Combine(_tempDir, "malformed.json");
+        string tempPath = Path.Combine(tempDir, "malformed.json");
         File.WriteAllText(tempPath, "{{{{invalid json]]]]");
 
         OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(tempPath);
@@ -166,7 +166,7 @@ class Programa
     [Fact]
     public void DeeplyNestedJson_LoadFrom_DoesNotCrash()
     {
-        string tempPath = Path.Combine(_tempDir, "deep.json");
+        string tempPath = Path.Combine(tempDir, "deep.json");
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < 50; i++)
@@ -191,7 +191,7 @@ class Programa
     [Fact]
     public void LargeJsonFile_LoadFrom_DoesNotCrash()
     {
-        string tempPath = Path.Combine(_tempDir, "large.json");
+        string tempPath = Path.Combine(tempDir, "large.json");
         StringBuilder sb = new StringBuilder();
         sb.Append("{\"keywords\":{");
 
@@ -213,7 +213,7 @@ class Programa
     [Fact]
     public void PathTraversal_InFilePath_DoesNotEscape()
     {
-        string maliciousPath = Path.Combine(_tempDir, "..", "..", "..", "etc", "passwd");
+        string maliciousPath = Path.Combine(tempDir, "..", "..", "..", "etc", "passwd");
 
         OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(maliciousPath);
 

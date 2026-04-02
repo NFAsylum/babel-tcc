@@ -7,21 +7,21 @@ namespace MultiLingualCode.Core.Tests.Integration;
 
 public class CoreIntegrationTests : IDisposable
 {
-    public string _translationsPath;
-    public string _tempDir;
+    public string translationsPath;
+    public string tempDir;
 
     public CoreIntegrationTests()
     {
-        _translationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
-        _tempDir = Path.Combine(Path.GetTempPath(), $"core_integ_{Guid.NewGuid()}");
-        Directory.CreateDirectory(_tempDir);
+        translationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        tempDir = Path.Combine(Path.GetTempPath(), $"core_integ_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(_tempDir))
+        if (Directory.Exists(tempDir))
         {
-            Directory.Delete(_tempDir, true);
+            Directory.Delete(tempDir, true);
         }
     }
 
@@ -30,7 +30,7 @@ public class CoreIntegrationTests : IDisposable
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(adapter);
-        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = _translationsPath };
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = translationsPath };
         return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
 
@@ -38,7 +38,7 @@ public class CoreIntegrationTests : IDisposable
     public async Task HelloWorld_TranslatesToPtBr()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"using System;
@@ -74,7 +74,7 @@ namespace HelloWorld
         // in Roslyn (e.g. "usando" is not a C# keyword). Identifier round-trip works
         // because IdentifierMapper stores bidirectional mappings via tradu annotations.
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"class Program // tradu[pt-br]:Programa
@@ -106,7 +106,7 @@ namespace HelloWorld
     public async Task Calculator_WithTraduAnnotations_TranslatesIdentifiers()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"public class Calculator // tradu[pt-br]:Calculadora
@@ -151,7 +151,7 @@ namespace HelloWorld
     public async Task Calculator_WithTraduLiteral_TranslatesStringLiteral()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"public class Reporter // tradu[pt-br]:Relator
@@ -178,7 +178,7 @@ namespace HelloWorld
     public async Task ComplexClass_WithNamespace_TranslatesCorrectly()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"using System;
@@ -227,7 +227,7 @@ namespace MyApp
     public async Task MultipleAnnotations_AllApplied()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"public class Student // tradu[pt-br]:Aluno
@@ -258,7 +258,7 @@ namespace MyApp
     public async Task IfElseForWhile_AllKeywordsTranslated()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"public class Logic
@@ -302,7 +302,7 @@ namespace MyApp
     public async Task Performance_MediumFile_CompletesQuickly()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         // Generate a ~100 line class
@@ -394,7 +394,7 @@ namespace Performance.Test
     public async Task TranslateToNaturalLanguage_UnsupportedExtension_ReturnsFailure()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
@@ -407,7 +407,7 @@ namespace Performance.Test
     public async Task EmptySourceCode_TranslatesWithoutError()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
@@ -420,7 +420,7 @@ namespace Performance.Test
     public async Task RoundTrip_ForwardTranslation_ContainsTranslatedKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"class Program
@@ -455,7 +455,7 @@ namespace Performance.Test
     public async Task FileScopedNamespace_TranslatesCorrectly()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"namespace MyApp;
@@ -479,7 +479,7 @@ class Program
     public async Task EnumDeclaration_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"public enum Color
@@ -501,7 +501,7 @@ class Program
     public async Task StructDeclaration_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"public struct Point
@@ -521,7 +521,7 @@ class Program
     public async Task InterfaceDeclaration_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"public interface IShape
@@ -543,7 +543,7 @@ class Program
     public async Task TryCatch_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"class Program
@@ -576,7 +576,7 @@ class Program
     public async Task SwitchStatement_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string sourceCode = @"class Program
@@ -606,7 +606,7 @@ class Program
     public async Task ReverseTranslation_KeywordsRevertToCSharp()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string translatedCode = @"usando System;
@@ -641,7 +641,7 @@ espaconome HelloWorld
     public async Task RoundTrip_FullProgram_ProducesOriginalCode()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string originalCode = @"using System;
@@ -676,7 +676,7 @@ namespace HelloWorld
     public async Task ReverseTranslation_KeywordsInStrings_NotReplaced()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string translatedCode = @"classe Program
@@ -701,7 +701,7 @@ namespace HelloWorld
     public async Task RoundTrip_WithIdentifiers_ReversesAll()
     {
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
 
         string originalCode = @"public class Calculator // tradu[pt-br]:Calculadora

@@ -6,14 +6,14 @@ namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 
 public class CSharpAdapterTests
 {
-    public CSharpAdapter _adapter = new();
+    public CSharpAdapter adapter = new();
 
     [Fact]
     public void Properties_AreCorrect()
     {
-        Assert.Equal("CSharp", _adapter.LanguageName);
-        Assert.Equal(new[] { ".cs" }, _adapter.FileExtensions);
-        Assert.Equal("1.0.0", _adapter.Version);
+        Assert.Equal("CSharp", adapter.LanguageName);
+        Assert.Equal(new[] { ".cs" }, adapter.FileExtensions);
+        Assert.Equal("1.0.0", adapter.Version);
     }
 
     [Fact]
@@ -33,7 +33,7 @@ namespace HelloWorld
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
 
         Assert.IsType<StatementNode>(ast);
 
@@ -69,7 +69,7 @@ else
     return false;
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "if" && k.KeywordId == 30);
@@ -84,7 +84,7 @@ else
     {
         string code = "for (int i = 0; i < 10; i++) { break; continue; }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "for" && k.KeywordId == 27);
@@ -106,7 +106,7 @@ public class Calculator
     internal virtual int GetResult() { return 0; }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "public" && k.KeywordId == 49);
@@ -124,7 +124,7 @@ public class Calculator
         string code = "public class Program { }";
         //          0123456789...
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         KeywordNode publicKw = keywords.First(k => k.Text == "public");
@@ -142,7 +142,7 @@ public class Calculator
     {
         string code = "using System;\nnamespace Test\n{\n    class Foo { }\n}";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         KeywordNode usingKw = keywords.First(k => k.Text == "using");
@@ -160,7 +160,7 @@ public class Calculator
     {
         string code = @"string s = ""hello""; int n = 42; char c = 'a';";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<LiteralNode> literals = GetNodesOfType<LiteralNode>(ast);
 
         Assert.Contains(literals, l => l.Type == LiteralType.String && (string?)l.Value == "hello");
@@ -173,7 +173,7 @@ public class Calculator
     {
         string code = @"string msg = ""Hello World"";";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<LiteralNode> literals = GetNodesOfType<LiteralNode>(ast);
 
         LiteralNode stringLiteral = literals.First(l => l.Type == LiteralType.String);
@@ -185,7 +185,7 @@ public class Calculator
     {
         string code = "int x = 42;";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<LiteralNode> literals = GetNodesOfType<LiteralNode>(ast);
 
         LiteralNode numericLiteral = literals.First(l => l.Type == LiteralType.Number);
@@ -200,7 +200,7 @@ try { throw new Exception(); }
 catch (Exception ex) { }
 finally { }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "try" && k.KeywordId == 65);
@@ -215,8 +215,8 @@ finally { }";
     {
         string code = "public class Program { }";
 
-        ASTNode ast = _adapter.Parse(code);
-        string result = _adapter.Generate(ast);
+        ASTNode ast = adapter.Parse(code);
+        string result = adapter.Generate(ast);
 
         Assert.Equal(code, result);
     }
@@ -226,7 +226,7 @@ finally { }";
     {
         string code = "public class Program { }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
 
         // Translate keywords
         foreach (ASTNode child in ast.Children)
@@ -242,7 +242,7 @@ finally { }";
             }
         }
 
-        string result = _adapter.Generate(ast);
+        string result = adapter.Generate(ast);
 
         Assert.Equal("publico classe Program { }", result);
     }
@@ -252,7 +252,7 @@ finally { }";
     {
         string code = "class Calculator { }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
 
         foreach (ASTNode child in ast.Children)
         {
@@ -262,7 +262,7 @@ finally { }";
             }
         }
 
-        string result = _adapter.Generate(ast);
+        string result = adapter.Generate(ast);
 
         Assert.Equal("class Calculadora { }", result);
     }
@@ -272,7 +272,7 @@ finally { }";
     {
         string code = "public class Program\n{\n    static void Main()\n    {\n    }\n}";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
 
         foreach (ASTNode child in ast.Children)
         {
@@ -282,7 +282,7 @@ finally { }";
             }
         }
 
-        string result = _adapter.Generate(ast);
+        string result = adapter.Generate(ast);
 
         Assert.StartsWith("publico", result);
         Assert.Contains("class Program", result);
@@ -292,7 +292,7 @@ finally { }";
     [Fact]
     public void GetKeywordMap_ReturnsAllCSharpKeywords()
     {
-        Dictionary<string, int> map = _adapter.GetKeywordMap();
+        Dictionary<string, int> map = adapter.GetKeywordMap();
 
         Assert.True(map.Count >= 76);
         Assert.Equal(30, map["if"]);
@@ -307,7 +307,7 @@ finally { }";
     {
         string code = "public class Program { static void Main() { } }";
 
-        ValidationResult result = _adapter.ValidateSyntax(code);
+        ValidationResult result = adapter.ValidateSyntax(code);
 
         Assert.True(result.IsValid);
         Assert.Empty(result.Diagnostics);
@@ -318,7 +318,7 @@ finally { }";
     {
         string code = "public class { }"; // missing class name
 
-        ValidationResult result = _adapter.ValidateSyntax(code);
+        ValidationResult result = adapter.ValidateSyntax(code);
 
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Diagnostics);
@@ -334,7 +334,7 @@ class Calculator
     int result = Add(1, 2);
 }";
 
-        List<string> identifiers = _adapter.ExtractIdentifiers(code);
+        List<string> identifiers = adapter.ExtractIdentifiers(code);
 
         Assert.Contains("Calculator", identifiers);
         Assert.Contains("Add", identifiers);
@@ -348,7 +348,7 @@ class Calculator
     [Fact]
     public void ExtractIdentifiers_EmptyCode_ReturnsEmpty()
     {
-        List<string> identifiers = _adapter.ExtractIdentifiers("");
+        List<string> identifiers = adapter.ExtractIdentifiers("");
 
         Assert.Empty(identifiers);
     }
@@ -358,7 +358,7 @@ class Calculator
     {
         string code = "int myVariable = 10;";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
         Assert.All(identifiers, id => Assert.True(id.IsTranslatable));
@@ -380,7 +380,7 @@ public class Person
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
@@ -406,7 +406,7 @@ public struct Point
     public int Y;
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
@@ -427,7 +427,7 @@ public enum Color
     Blue
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
@@ -448,7 +448,7 @@ public class Repository
     public Dictionary<string, int> lookup = new Dictionary<string, int>();
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
         Assert.Contains(identifiers, i => i.Name == "Repository");
@@ -474,7 +474,7 @@ namespace MyApp.Models
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
@@ -504,7 +504,7 @@ public class DataProcessor
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
         Assert.Contains(identifiers, i => i.Name == "DataProcessor");
@@ -546,8 +546,8 @@ namespace Calculator.Core
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
-        string result = _adapter.Generate(ast);
+        ASTNode ast = adapter.Parse(code);
+        string result = adapter.Generate(ast);
 
         Assert.Equal(code, result);
     }
@@ -569,8 +569,8 @@ public enum Direction
     West
 }";
 
-        ASTNode ast = _adapter.Parse(code);
-        string result = _adapter.Generate(ast);
+        ASTNode ast = adapter.Parse(code);
+        string result = adapter.Generate(ast);
 
         Assert.Equal(code, result);
     }
@@ -586,7 +586,7 @@ public enum Direction
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
 
         foreach (ASTNode child in ast.Children)
         {
@@ -613,7 +613,7 @@ public enum Direction
             }
         }
 
-        string result = _adapter.Generate(ast);
+        string result = adapter.Generate(ast);
 
         Assert.Contains("publico", result);
         Assert.Contains("classe", result);
@@ -626,7 +626,7 @@ public enum Direction
     [Fact]
     public void Parse_EmptyString_ReturnsEmptyAst()
     {
-        ASTNode ast = _adapter.Parse("");
+        ASTNode ast = adapter.Parse("");
 
         Assert.NotNull(ast);
         Assert.Empty(GetNodesOfType<KeywordNode>(ast));
@@ -635,7 +635,7 @@ public enum Direction
     [Fact]
     public void Parse_WhitespaceOnly_ReturnsEmptyAst()
     {
-        ASTNode ast = _adapter.Parse("   \n\t  ");
+        ASTNode ast = adapter.Parse("   \n\t  ");
 
         Assert.NotNull(ast);
         Assert.Empty(GetNodesOfType<KeywordNode>(ast));
@@ -646,7 +646,7 @@ public enum Direction
     {
         string code = "namespace MyApp;\n\nclass Program { }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "namespace");
@@ -668,7 +668,7 @@ class Program
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "return");
@@ -686,7 +686,7 @@ class Program
     int? count = null;
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "class");
@@ -710,7 +710,7 @@ class Program
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "switch");
@@ -726,7 +726,7 @@ class Programa
     string nomeDoAluno = ""teste"";
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
         Assert.Contains(identifiers, i => i.Name == "Programa");
@@ -742,7 +742,7 @@ class Program
     string path = @""C:\Users\test"";
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<LiteralNode> literals = GetNodesOfType<LiteralNode>(ast);
 
         Assert.NotEmpty(literals);
@@ -751,7 +751,7 @@ class Program
     [Fact]
     public void ValidateSyntax_EmptyString_IsValid()
     {
-        ValidationResult result = _adapter.ValidateSyntax("");
+        ValidationResult result = adapter.ValidateSyntax("");
 
         Assert.True(result.IsValid);
     }
@@ -759,7 +759,7 @@ class Program
     [Fact]
     public void ValidateSyntax_SyntaxErrorCode_ReturnsErrors()
     {
-        ValidationResult result = _adapter.ValidateSyntax("class { invalid }}}");
+        ValidationResult result = adapter.ValidateSyntax("class { invalid }}}");
 
         Assert.False(result.IsValid);
         Assert.NotEmpty(result.Diagnostics);
@@ -768,7 +768,7 @@ class Program
     [Fact]
     public void ExtractIdentifiers_EmptyString_ReturnsEmpty()
     {
-        List<string> identifiers = _adapter.ExtractIdentifiers("");
+        List<string> identifiers = adapter.ExtractIdentifiers("");
 
         Assert.Empty(identifiers);
     }
@@ -776,7 +776,7 @@ class Program
     [Fact]
     public void ExtractIdentifiers_OnlyKeywords_ReturnsNoKeywords()
     {
-        List<string> identifiers = _adapter.ExtractIdentifiers("class { }");
+        List<string> identifiers = adapter.ExtractIdentifiers("class { }");
 
         Assert.DoesNotContain("class", identifiers);
     }
@@ -788,7 +788,7 @@ class Program
         ast.Children = new List<ASTNode>();
         ast.RawText = "";
 
-        string result = _adapter.Generate(ast);
+        string result = adapter.Generate(ast);
 
         Assert.NotNull(result);
     }
@@ -798,7 +798,7 @@ class Program
     {
         string code = "class C { void M() { var x = 5; } }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "var" && k.KeywordId == 74);
@@ -809,7 +809,7 @@ class Program
     {
         string code = "class C { int var = 5; }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
         List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
 
@@ -828,7 +828,7 @@ class C
     async Task M() { }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "async" && k.KeywordId == 78);
@@ -845,7 +845,7 @@ class C
     async Task M() { await Task.Delay(1); }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "await" && k.KeywordId == 79);
@@ -862,7 +862,7 @@ class C
     IEnumerable<int> M() { yield return 1; }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "yield" && k.KeywordId == 80);
@@ -873,7 +873,7 @@ class C
     {
         string code = "record Point(int X, int Y);";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "record" && k.KeywordId == 81);
@@ -884,7 +884,7 @@ class C
     {
         string code = "partial class C { }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "partial" && k.KeywordId == 82);
@@ -895,7 +895,7 @@ class C
     {
         string code = "class C<T> where T : class { }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "where" && k.KeywordId == 83);
@@ -906,7 +906,7 @@ class C
     {
         string code = "class C { void M() { dynamic d = 1; } }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "dynamic" && k.KeywordId == 84);
@@ -917,7 +917,7 @@ class C
     {
         string code = "class C { string s = nameof(C); }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "nameof" && k.KeywordId == 85);
@@ -928,7 +928,7 @@ class C
     {
         string code = "class C { public int X { get; init; } }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "init" && k.KeywordId == 86);
@@ -939,7 +939,7 @@ class C
     {
         string code = "class C { required public int X { get; set; } }";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "required" && k.KeywordId == 87);
@@ -950,7 +950,7 @@ class C
     {
         string code = "global using System;";
 
-        ASTNode ast = _adapter.Parse(code);
+        ASTNode ast = adapter.Parse(code);
         List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
 
         Assert.Contains(keywords, k => k.Text == "global" && k.KeywordId == 88);
@@ -972,8 +972,8 @@ class C
     }
 }";
 
-        ASTNode ast = _adapter.Parse(code);
-        string result = _adapter.Generate(ast);
+        ASTNode ast = adapter.Parse(code);
+        string result = adapter.Generate(ast);
 
         Assert.Equal(code, result);
     }
@@ -1026,7 +1026,7 @@ espaco_de_nomes MeuProjeto
 {
     publico classe Programa { }
 }";
-        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
         Assert.Contains("using", result);
         Assert.Contains("namespace", result);
@@ -1054,7 +1054,7 @@ espaco_de_nomes MeuProjeto
     }
 }";
 
-        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
         Assert.Contains("public", result);
         Assert.Contains("class", result);
@@ -1081,7 +1081,7 @@ espaco_de_nomes MeuProjeto
     }
 }";
 
-        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
         Assert.Contains("public", result);
         Assert.Contains("class", result);
@@ -1104,7 +1104,7 @@ espaco_de_nomes MeuProjeto
     }
 }";
 
-        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
         Assert.Contains("public", result);
         Assert.Contains("class", result);
@@ -1116,7 +1116,7 @@ espaco_de_nomes MeuProjeto
     public void ReverseSubstituteKeywords_NoTranslatedKeywords_ReturnsUnchanged()
     {
         string code = "using System;\n\nnamespace Test\n{\n    public class Program { }\n}";
-        string result = _adapter.ReverseSubstituteKeywords(code, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(code, MockLookupPtBr);
 
         Assert.Equal(code, result);
     }
@@ -1124,7 +1124,7 @@ espaco_de_nomes MeuProjeto
     [Fact]
     public void ReverseSubstituteKeywords_EmptyString_ReturnsEmpty()
     {
-        string result = _adapter.ReverseSubstituteKeywords("", MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords("", MockLookupPtBr);
         Assert.Equal("", result);
     }
 
@@ -1146,7 +1146,7 @@ espaco_de_nomes MeuProjeto
     }
 }";
 
-        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
         Assert.Contains("using", result);
         Assert.Contains("namespace", result);
@@ -1204,7 +1204,7 @@ publico estatico classe CSharpKeywordMap
     }
 }";
 
-        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
         Assert.DoesNotContain("espaconome", result);
         Assert.DoesNotContain("publico", result);
@@ -1251,7 +1251,7 @@ espaconome MeuProjeto
     }
 }";
 
-        string result = _adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
+        string result = adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
         Assert.Contains("public", result);
         Assert.Contains("string", result);

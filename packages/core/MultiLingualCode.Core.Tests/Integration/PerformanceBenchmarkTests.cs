@@ -9,27 +9,27 @@ namespace MultiLingualCode.Core.Tests.Integration;
 [Trait("Category", "Performance")]
 public class PerformanceBenchmarkTests : IDisposable
 {
-    public string _translationsPath;
-    public string _tempDir;
-    public TranslationOrchestrator _orchestrator;
+    public string translationsPath;
+    public string tempDir;
+    public TranslationOrchestrator orchestrator;
 
     public PerformanceBenchmarkTests()
     {
-        _translationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
-        _tempDir = Path.Combine(Path.GetTempPath(), $"perf_bench_{Guid.NewGuid()}");
-        Directory.CreateDirectory(_tempDir);
-        _orchestrator = CreateOrchestrator();
+        translationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        tempDir = Path.Combine(Path.GetTempPath(), $"perf_bench_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        orchestrator = CreateOrchestrator();
 
         // Warmup: first translation includes JIT compilation and table loading
         string warmupCode = GenerateCSharpCode(1);
-        _orchestrator.TranslateToNaturalLanguageAsync(warmupCode, ".cs", "pt-br").GetAwaiter().GetResult();
+        orchestrator.TranslateToNaturalLanguageAsync(warmupCode, ".cs", "pt-br").GetAwaiter().GetResult();
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(_tempDir))
+        if (Directory.Exists(tempDir))
         {
-            Directory.Delete(_tempDir, true);
+            Directory.Delete(tempDir, true);
         }
     }
 
@@ -38,9 +38,9 @@ public class PerformanceBenchmarkTests : IDisposable
         CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(adapter);
-        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = _translationsPath };
+        NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = translationsPath };
         IdentifierMapper mapper = new IdentifierMapper();
-        mapper.LoadMap(_tempDir);
+        mapper.LoadMap(tempDir);
         return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
 
@@ -87,7 +87,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(5);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResultGeneric<string> result = await _orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -101,7 +101,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(25);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResultGeneric<string> result = await _orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -115,7 +115,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(100);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResultGeneric<string> result = await _orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -129,7 +129,7 @@ public class PerformanceBenchmarkTests : IDisposable
         string code = GenerateCSharpCode(200);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResultGeneric<string> result = await _orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         stopwatch.Stop();
 
         Assert.True(result.IsSuccess);
@@ -146,7 +146,7 @@ public class PerformanceBenchmarkTests : IDisposable
 
         for (int i = 0; i < 50; i++)
         {
-            OperationResultGeneric<string> result = await _orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+            OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
             Assert.True(result.IsSuccess);
         }
 
@@ -166,11 +166,11 @@ public class PerformanceBenchmarkTests : IDisposable
     {
         string code = GenerateCSharpCode(25);
 
-        OperationResultGeneric<string> forwardResult = await _orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
         Assert.True(forwardResult.IsSuccess);
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        OperationResultGeneric<string> reverseResult = await _orchestrator.TranslateFromNaturalLanguageAsync(
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
             forwardResult.Value, ".cs", "pt-br");
         stopwatch.Stop();
 
