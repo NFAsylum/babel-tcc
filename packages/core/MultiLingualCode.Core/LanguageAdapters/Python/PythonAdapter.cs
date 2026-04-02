@@ -11,14 +11,14 @@ namespace MultiLingualCode.Core.LanguageAdapters.Python;
 /// </summary>
 public class PythonAdapter : ILanguageAdapter, IDisposable
 {
-    private readonly PythonTokenizerService _tokenizer = new();
+    public readonly PythonTokenizerService Tokenizer = new();
 
     /// <summary>
     /// Disposes the underlying Python tokenizer subprocess.
     /// </summary>
     public void Dispose()
     {
-        _tokenizer.Dispose();
+        Tokenizer.Dispose();
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
             EndLine = sourceCode.Split('\n').Length - 1
         };
 
-        OperationResultGeneric<List<PythonToken>> result = _tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
         if (!result.IsSuccess)
         {
             return root;
@@ -275,7 +275,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public ValidationResult ValidateSyntax(string sourceCode)
     {
-        OperationResultGeneric<List<PythonToken>> result = _tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
 
         if (result.IsSuccess)
         {
@@ -303,7 +303,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public List<string> ExtractIdentifiers(string sourceCode)
     {
-        OperationResultGeneric<List<PythonToken>> result = _tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
         if (!result.IsSuccess)
         {
             return new List<string>();
@@ -328,7 +328,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
             return comments;
         }
 
-        OperationResultGeneric<List<PythonToken>> result = _tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
         if (!result.IsSuccess)
         {
             return comments;
@@ -365,7 +365,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public List<string> GetIdentifierNamesOnLine(string sourceCode, int line)
     {
-        OperationResultGeneric<List<PythonToken>> result = _tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
         if (!result.IsSuccess)
         {
             return new List<string>();
@@ -383,22 +383,23 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public string GetFirstStringLiteralOnLine(string sourceCode, int line)
     {
-        OperationResultGeneric<List<PythonToken>> result = _tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
         if (!result.IsSuccess)
         {
             return "";
         }
 
         int line1 = line + 1;
-        PythonToken? token = result.Value
-            .FirstOrDefault(t => t.TypeName == "STRING" && t.StartLine == line1);
+        List<PythonToken> matches = result.Value
+            .Where(t => t.TypeName == "STRING" && t.StartLine == line1)
+            .ToList();
 
-        if (token == null)
+        if (matches.Count == 0)
         {
             return "";
         }
 
-        return ExtractStringContent(token.String);
+        return ExtractStringContent(matches[0].String);
     }
 
     /// <summary>
@@ -474,7 +475,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// Computes the character offset of the start of each line in the source code.
     /// Index 0 is unused (Python lines are 1-based). lineOffsets[1] = offset of line 1, etc.
     /// </summary>
-    private static int[] ComputeLineOffsets(string source)
+    public static int[] ComputeLineOffsets(string source)
     {
         List<int> offsets = new() { 0, 0 }; // index 0 unused, line 1 starts at offset 0
         for (int i = 0; i < source.Length; i++)
@@ -490,7 +491,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// <summary>
     /// Converts a (1-based line, 0-based col) position to an absolute character offset.
     /// </summary>
-    private static int GetAbsoluteOffset(int[] lineOffsets, int line, int col)
+    public static int GetAbsoluteOffset(int[] lineOffsets, int line, int col)
     {
         if (line >= 1 && line < lineOffsets.Length)
         {
@@ -502,7 +503,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// <summary>
     /// Extracts the content of a Python string literal, removing quotes and prefixes.
     /// </summary>
-    private static string ExtractStringContent(string raw)
+    public static string ExtractStringContent(string raw)
     {
         string s = raw;
 
@@ -542,7 +543,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// <param name="quoteEnd">Set to the position right after the opening quote(s).</param>
     /// <param name="quoteChar">Set to the quote string: "\"", "'", "\"\"\"", or "'''".</param>
     /// <returns>True if a string starts at position i.</returns>
-    private static bool IsStringStart(string code, int i, out int quoteEnd, out string quoteChar)
+    public static bool IsStringStart(string code, int i, out int quoteEnd, out string quoteChar)
     {
         quoteEnd = i;
         quoteChar = "";
