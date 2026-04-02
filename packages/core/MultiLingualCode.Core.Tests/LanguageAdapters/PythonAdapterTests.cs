@@ -8,7 +8,7 @@ public class PythonAdapterTests
 {
     public PythonAdapter Adapter = new PythonAdapter();
 
-    [Fact]
+    [RequiresPythonFact]
     public void Properties_AreCorrect()
     {
         Assert.Equal("Python", Adapter.LanguageName);
@@ -16,7 +16,7 @@ public class PythonAdapterTests
         Assert.Equal("1.0.0", Adapter.Version);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_SimpleFunction_ExtractsKeywords()
     {
         ASTNode ast = Adapter.Parse("def foo(x):\n    return x + 1");
@@ -26,7 +26,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "return");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_ClassDeclaration_ExtractsKeywords()
     {
         string code = "class MyClass:\n    def __init__(self):\n        pass";
@@ -38,7 +38,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "pass");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_IfElse_ExtractsConditionalKeywords()
     {
         string code = "if x:\n    pass\nelif y:\n    pass\nelse:\n    pass";
@@ -50,7 +50,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "else");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_ForLoop_ExtractsLoopKeywords()
     {
         string code = "for i in range(10):\n    if i == 5:\n        break\n    continue";
@@ -63,7 +63,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "continue");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_TryExcept_ExtractsExceptionKeywords()
     {
         string code = "try:\n    pass\nexcept Exception:\n    raise\nfinally:\n    pass";
@@ -76,7 +76,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "finally");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_AsyncAwait_ExtractsKeywords()
     {
         string code = "async def fetch():\n    await get()";
@@ -88,7 +88,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "await");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_Import_ExtractsKeywords()
     {
         string code = "from os import path as p";
@@ -100,7 +100,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "as");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_BooleanOperators_ExtractsKeywords()
     {
         string code = "x = True and False or not None";
@@ -115,7 +115,7 @@ public class PythonAdapterTests
         Assert.Contains(keywords, k => k.Text == "None");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_ExtractsIdentifiers()
     {
         string code = "def foo(x):\n    return x";
@@ -126,7 +126,7 @@ public class PythonAdapterTests
         Assert.Contains(identifiers, id => id.Name == "x");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_Identifiers_AreTranslatable()
     {
         string code = "x = 1";
@@ -136,7 +136,7 @@ public class PythonAdapterTests
         Assert.All(identifiers, id => Assert.True(id.IsTranslatable));
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_ExtractsStringLiterals()
     {
         string code = "x = \"hello world\"";
@@ -148,7 +148,7 @@ public class PythonAdapterTests
         Assert.True(stringLit.IsTranslatable);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_ExtractsNumberLiterals()
     {
         string code = "x = 42";
@@ -160,7 +160,7 @@ public class PythonAdapterTests
         Assert.False(numLit.IsTranslatable);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_PreservesPositions()
     {
         string code = "def foo():\n    pass";
@@ -172,7 +172,7 @@ public class PythonAdapterTests
         Assert.Equal(0, defNode.StartLine);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Parse_PreservesLineNumbers_MultiLine()
     {
         string code = "x = 1\ny = 2";
@@ -185,7 +185,7 @@ public class PythonAdapterTests
         Assert.Equal(1, y.StartLine);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Generate_WithoutChanges_PreservesOriginalCode()
     {
         string code = "def foo():\n    return 42\n";
@@ -194,7 +194,7 @@ public class PythonAdapterTests
         Assert.Equal(code, result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Generate_WithTranslatedKeywords_ReplacesInCode()
     {
         string code = "def foo():\n    pass";
@@ -218,7 +218,7 @@ public class PythonAdapterTests
         Assert.DoesNotContain("def ", result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Generate_WithTranslatedIdentifiers_ReplacesInCode()
     {
         string code = "x = 1";
@@ -237,7 +237,7 @@ public class PythonAdapterTests
         Assert.DoesNotContain("x ", result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Generate_MultiLine_PreservesIndentation()
     {
         string code = "def foo():\n    x = 1\n    return x";
@@ -250,14 +250,14 @@ public class PythonAdapterTests
         Assert.StartsWith("    ", lines[2]);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void GetKeywordMap_Returns35Keywords()
     {
         Dictionary<string, int> map = Adapter.GetKeywordMap();
         Assert.Equal(35, map.Count);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ReverseSubstituteKeywords_SkipsComments()
     {
         string code = "# comentario definir\ndefinir foo():\n    passar";
@@ -274,7 +274,7 @@ public class PythonAdapterTests
         Assert.Contains("pass", result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ReverseSubstituteKeywords_SkipsSingleQuoteStrings()
     {
         string code = "x = 'definir'";
@@ -284,7 +284,7 @@ public class PythonAdapterTests
         Assert.Contains("'definir'", result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ReverseSubstituteKeywords_SkipsDoubleQuoteStrings()
     {
         string code = "x = \"definir\"";
@@ -294,7 +294,7 @@ public class PythonAdapterTests
         Assert.Contains("\"definir\"", result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ReverseSubstituteKeywords_SkipsTripleQuoteStrings()
     {
         string code = "x = \"\"\"definir\"\"\"";
@@ -304,7 +304,7 @@ public class PythonAdapterTests
         Assert.Contains("\"\"\"definir\"\"\"", result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ReverseSubstituteKeywords_SkipsFStrings()
     {
         string code = "x = f\"definir {y}\"";
@@ -314,7 +314,7 @@ public class PythonAdapterTests
         Assert.Contains("f\"definir", result);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ValidateSyntax_ValidCode_ReturnsValid()
     {
         ValidationResult result = Adapter.ValidateSyntax("def foo():\n    pass");
@@ -322,7 +322,7 @@ public class PythonAdapterTests
         Assert.Empty(result.Diagnostics);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ValidateSyntax_InvalidCode_ReturnsDiagnostics()
     {
         ValidationResult result = Adapter.ValidateSyntax("x = \"unterminated");
@@ -330,7 +330,7 @@ public class PythonAdapterTests
         Assert.NotEmpty(result.Diagnostics);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ExtractIdentifiers_ReturnsUserDefinedNames()
     {
         List<string> ids = Adapter.ExtractIdentifiers("def foo(x):\n    if x:\n        return True");
@@ -342,7 +342,7 @@ public class PythonAdapterTests
         Assert.DoesNotContain("return", ids);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void ExtractTrailingComments_ExtractsPythonComments()
     {
         string code = "x = 1 # tradu[pt-br]:variavel\ny = 2";
@@ -352,7 +352,7 @@ public class PythonAdapterTests
         Assert.Equal(0, comments[0].Line);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void GetIdentifierNamesOnLine_ReturnsIdentifiersOnSpecifiedLine()
     {
         string code = "def foo(x, y):\n    return x + y";
@@ -362,7 +362,7 @@ public class PythonAdapterTests
         Assert.Contains("y", ids);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void GetFirstStringLiteralOnLine_ReturnsStringContent()
     {
         string code = "msg = \"hello\"";
@@ -370,7 +370,7 @@ public class PythonAdapterTests
         Assert.Equal("hello", literal);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void GetFirstStringLiteralOnLine_NoString_ReturnsEmpty()
     {
         string code = "x = 42";
@@ -378,7 +378,7 @@ public class PythonAdapterTests
         Assert.Equal("", literal);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void GetContainingMethodRange_FindsMethod()
     {
         string code = "def foo():\n    x = 1\n    return x\n\ndef bar():\n    pass";
@@ -387,7 +387,7 @@ public class PythonAdapterTests
         Assert.True(endLine >= 2);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void GetContainingMethodRange_NoMethod_ReturnsNegative()
     {
         string code = "x = 1\ny = 2";
@@ -396,7 +396,7 @@ public class PythonAdapterTests
         Assert.Equal(-1, endLine);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void GetContainingMethodRange_IncludesDecorators()
     {
         string code = "@decorator\ndef foo():\n    pass";

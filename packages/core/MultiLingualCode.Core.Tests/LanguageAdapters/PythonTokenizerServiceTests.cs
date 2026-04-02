@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 
 public class PythonTokenizerServiceTests
 {
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_SimpleCode_ReturnsTokens()
     {
         using PythonTokenizerService service = new();
@@ -14,7 +14,7 @@ public class PythonTokenizerServiceTests
         Assert.NotEmpty(result.Value);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_IdentifiesKeywords()
     {
         using PythonTokenizerService service = new();
@@ -26,7 +26,7 @@ public class PythonTokenizerServiceTests
         Assert.Contains(keywords, t => t.String == "pass");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_IdentifiesIdentifiers()
     {
         using PythonTokenizerService service = new();
@@ -38,7 +38,7 @@ public class PythonTokenizerServiceTests
         Assert.Contains(identifiers, t => t.String == "x");
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_ReturnsCorrectPositions()
     {
         using PythonTokenizerService service = new();
@@ -52,7 +52,7 @@ public class PythonTokenizerServiceTests
         Assert.Equal(3, defToken.EndCol);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_HandlesStringLiterals()
     {
         using PythonTokenizerService service = new();
@@ -63,7 +63,7 @@ public class PythonTokenizerServiceTests
         Assert.NotEmpty(strings);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_HandlesComments()
     {
         using PythonTokenizerService service = new();
@@ -74,7 +74,7 @@ public class PythonTokenizerServiceTests
         Assert.NotEmpty(comments);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_InvalidCode_ReturnsError()
     {
         using PythonTokenizerService service = new();
@@ -83,7 +83,7 @@ public class PythonTokenizerServiceTests
         Assert.Contains("error", result.ErrorMessage.ToLower());
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_MultipleRequests_ReuseProcess()
     {
         using PythonTokenizerService service = new();
@@ -95,7 +95,7 @@ public class PythonTokenizerServiceTests
         Assert.True(r3.IsSuccess);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_EmptyCode_ReturnsSuccess()
     {
         using PythonTokenizerService service = new();
@@ -103,7 +103,7 @@ public class PythonTokenizerServiceTests
         Assert.True(result.IsSuccess);
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Dispose_CanBeCalledMultipleTimes()
     {
         PythonTokenizerService service = new();
@@ -112,7 +112,7 @@ public class PythonTokenizerServiceTests
         service.Dispose();
     }
 
-    [Fact]
+    [RequiresPythonFact]
     public void Tokenize_AfterDispose_ReturnsFail()
     {
         PythonTokenizerService service = new();
