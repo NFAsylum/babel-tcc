@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  core-build-test:
+    name: Core C# (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Lint (dotnet format)
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+
+      - name: Test with coverage
+        run: >
+          dotnet test --no-build --configuration Release
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-coverage
+          path: TestResults/**/coverage.cobertura.xml
+
+  vscode-build-test:
+    name: VS Code Extension (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    defaults:
+      run:
+        working-directory: packages/ide-adapters/vscode
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: packages/ide-adapters/vscode/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('packages/ide-adapters/vscode/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-coverage
+          path: packages/ide-adapters/vscode/coverage/lcov.info
+
+  coverage-report:
+    name: Coverage Report
+    needs: [core-build-test, vscode-build-test]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download core coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: core-coverage
+          path: coverage/core
+
+      - name: Download vscode coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: vscode-coverage
+          path: coverage/vscode
+
+      - name: Report C# coverage on PR
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/core/**/coverage.cobertura.xml
+          format: markdown
+          output: both
+          badge: true
+
+      - name: Add coverage comment to PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: code-coverage-results.md
+
+  validate-translations:
+    name: Validate Translations
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run translation validation
+        run: python scripts/validate_translations.py

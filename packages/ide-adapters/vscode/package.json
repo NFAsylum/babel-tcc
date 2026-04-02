@@ -76,7 +76,10 @@
     "languages": [
       {
         "id": "mlc-csharp",
-        "aliases": ["C# Traduzido", "mlc-csharp"],
+        "aliases": [
+          "C# Traduzido",
+          "mlc-csharp"
+        ],
         "extensions": []
       }
     ]
@@ -85,7 +88,9 @@
     "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
     "lint": "eslint src --ext .ts",
-    "test": "echo \"No tests configured yet\"",
+    "test": "vitest run --reporter=verbose",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "package": "npm run build && vsce package",
     "publish-core": "dotnet publish ../../core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj -c Release -o bin",
     "prepackage": "npm run publish-core && npm run copy-translations",
@@ -96,8 +101,10 @@
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^4.1.2"
   }
 }
