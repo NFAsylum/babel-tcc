@@ -15,12 +15,16 @@ O CI precisa de testes reais para executar. Atualmente `npm test` imprime
 - Configurar test framework (Vitest ou Mocha + @vscode/test-electron)
 - Estrutura de testes espelhando o codigo (mesma convencao do Core C#):
   ```
-  src/providers/keywordMap.ts       -> test/providers/keywordMap.test.ts
-  src/providers/completionProvider  -> test/providers/completionProvider.test.ts
-  src/providers/hoverProvider       -> test/providers/hoverProvider.test.ts
-  src/services/languageDetector     -> test/services/languageDetector.test.ts
-  src/services/configurationService -> test/services/configurationService.test.ts
-  src/services/coreBridge           -> test/services/coreBridge.test.ts
+  src/providers/keywordMap.ts              -> test/providers/keywordMap.test.ts
+  src/providers/completionProvider.ts      -> test/providers/completionProvider.test.ts
+  src/providers/hoverProvider.ts           -> test/providers/hoverProvider.test.ts
+  src/providers/autoTranslateManager.ts    -> test/providers/autoTranslateManager.test.ts
+  src/providers/translatedContentProvider  -> test/providers/translatedContentProvider.test.ts
+  src/services/languageDetector.ts         -> test/services/languageDetector.test.ts
+  src/services/configurationService.ts     -> test/services/configurationService.test.ts
+  src/services/coreBridge.ts               -> test/services/coreBridge.test.ts
+  src/ui/statusBar.ts                      -> test/ui/statusBar.test.ts
+  src/extension.ts                         -> test/extension.test.ts
   ```
 - Prioridade 1 (logica pura, sem mock de vscode API):
   - KeywordMapService: carregamento, cache, invalidacao, retry apos erro
@@ -28,8 +32,13 @@ O CI precisa de testes reais para executar. Atualmente `npm test` imprime
 - Prioridade 2 (requer mock de vscode):
   - CompletionProvider, HoverProvider
   - ConfigurationService
-- Prioridade 3 (requer mock de child_process):
+  - StatusBar
+- Prioridade 3 (requer mock de vscode + child_process/filesystem):
   - CoreBridge
+  - TranslatedContentProvider
+  - AutoTranslateManager
+- Prioridade 4 (integracao — requer todos os servicos):
+  - extension.ts (activate/deactivate)
 - Garantir que `npm test` falha se nenhum teste real for encontrado
 
 ### GitHub Actions - CI (em push e PR)

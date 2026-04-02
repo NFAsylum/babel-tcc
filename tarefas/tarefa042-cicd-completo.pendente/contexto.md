@@ -17,6 +17,20 @@
 - CHANGELOG.md (referencia para release notes)
 - babel-tcc-translations/scripts/validate.py (validacao de traducoes)
 
+## CI existente (tarefa 003)
+Ja existem 3 workflows parciais em .github/workflows/ que devem ser
+expandidos ou consolidados (nao recriar do zero):
+- `test.yml`: roda em PR para main. Dois jobs:
+  - core-tests: dotnet restore/build/test (ubuntu-only, sem matrix)
+  - vscode-build: npm install/build/lint (sem `npm test` — placeholder)
+- `build-core.yml`: roda em push+PR para main, filtrado por paths packages/core/**.
+  dotnet restore/build/test em Release config (ubuntu-only)
+- `build-vscode.yml`: roda em push+PR para main, filtrado por paths packages/ide-adapters/vscode/**.
+  npm install/build/lint (sem `npm test`, com cache de node_modules)
+
+Decisao necessaria: consolidar em 1-2 workflows ou expandir os existentes.
+Nenhum workflow tem matrix strategy, cobertura, ou release pipeline.
+
 ## Estado atual dos testes
 - Core C#: 388 testes em 23 arquivos, estrutura modular espelhando o codigo
   - Lacunas menores: RoslynWrapper e JsonFileReader sem teste direto
