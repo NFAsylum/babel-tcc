@@ -1,8 +1,15 @@
 .vscode/**
 src/**
+test/**
 node_modules/**
+coverage/**
+out/**
+server/**
 .eslintrc.json
+.gitkeep
 tsconfig.json
+tsconfig.test.json
+vitest.config.ts
 **/*.ts
 **/*.map
-.gitkeep
+**/*.test.*

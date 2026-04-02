@@ -5,6 +5,29 @@
   "version": "0.1.0",
   "publisher": "NFAsylum",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NFAsylum/babel-tcc"
+  },
+  "bugs": {
+    "url": "https://github.com/NFAsylum/babel-tcc/issues"
+  },
+  "homepage": "https://github.com/NFAsylum/babel-tcc#readme",
+  "keywords": [
+    "multilingual",
+    "translation",
+    "localization",
+    "i18n",
+    "csharp",
+    "python",
+    "portuguese",
+    "education",
+    "keywords"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
