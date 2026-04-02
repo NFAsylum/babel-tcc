@@ -21,6 +21,9 @@ Desempenho atual (processo persistente, traducao completa via Roslyn):
 | 34.000   | 3.9s   | Ruim          |
 | 85.000   | 27.3s  | Inutilizavel  |
 
+Dados para >3.400 linhas obtidos em medicao local separada (mesmo metodo
+do benchmark da tarefa 050: processo persistente, 3 rodadas, Release build).
+
 O crescimento e super-linear (~quadratico) porque o Roslyn parseia a AST
 inteira e percorre todos os nos para substituir keywords.
 
@@ -59,6 +62,10 @@ linear do codigo fonte, pulando strings e comentarios. Nao precisa de AST.
   (linha, bloco), diretivas de preprocessador
 - Fora dessas regioes, substituir tokens que correspondem a keywords
 - Manter posicoes para nao deslocar indices
+
+**Base existente**: PythonAdapter.ReverseSubstituteKeywords ja implementa
+este metodo (scan linear, skip strings/comentarios). Pode servir como
+referencia para prototipagem do C#.
 
 **Avaliar**:
 - Tempo O(n) linear vs O(n log n) do Roslyn
