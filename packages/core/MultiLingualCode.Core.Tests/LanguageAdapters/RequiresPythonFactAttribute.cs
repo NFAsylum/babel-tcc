@@ -21,7 +21,10 @@ public class RequiresPythonFactAttribute : FactAttribute
 
     public static bool CheckPythonAvailable()
     {
-        string[] candidates = { "python3", "python", "py" };
+        string envPython = Environment.GetEnvironmentVariable("BABEL_TCC_PYTHON") + "";
+        string[] candidates = envPython.Length > 0
+            ? new[] { envPython, "python3", "python", "py" }
+            : new[] { "python3", "python", "py" };
 
         foreach (string candidate in candidates)
         {

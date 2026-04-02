@@ -4,9 +4,15 @@ using MultiLingualCode.Core.Models.AST;
 
 namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 
-public class PythonAdapterTests
+public class PythonAdapterTests : IDisposable
 {
+    // xUnit creates a new instance per test, so each test gets a fresh Adapter with empty cache.
     public PythonAdapter Adapter = new PythonAdapter();
+
+    public void Dispose()
+    {
+        Adapter.Dispose();
+    }
 
     [RequiresPythonFact]
     public void Properties_AreCorrect()
@@ -382,9 +388,10 @@ public class PythonAdapterTests
     public void GetContainingMethodRange_FindsMethod()
     {
         string code = "def foo():\n    x = 1\n    return x\n\ndef bar():\n    pass";
+        // Lines: 0=def foo, 1=x=1, 2=return x, 3=empty, 4=def bar, 5=pass
         (int startLine, int endLine) = Adapter.GetContainingMethodRange(code, 1);
         Assert.Equal(0, startLine);
-        Assert.True(endLine >= 2);
+        Assert.Equal(3, endLine);
     }
 
     [RequiresPythonFact]
