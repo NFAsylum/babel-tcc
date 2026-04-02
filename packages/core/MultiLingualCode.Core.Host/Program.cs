@@ -10,6 +10,7 @@ namespace MultiLingualCode.Core.Host;
 
 /// <summary>
 /// CLI host entry point that dispatches translation and validation requests to the core engine.
+/// Supports two modes: single-request (CLI args) and persistent (stdin/stdout JSON Lines).
 /// </summary>
 public class Program
 {
@@ -23,22 +24,16 @@ public class Program
     };
 
     /// <summary>
-    /// Application entry point. Parses CLI arguments and dispatches to the appropriate handler method.
+    /// Application entry point. Detects mode based on CLI arguments:
+    /// - If --method is present: single-request mode (process one request and exit)
+    /// - Otherwise: persistent mode (read JSON Lines from stdin, respond on stdout)
     /// </summary>
-    /// <param name="args">Command-line arguments: --method, --params, --translations, --project.</param>
-    /// <returns>Exit code 0 on success, 1 on failure.</returns>
     public static async Task<int> Main(string[] args)
     {
-        if (args.Length < 2)
-        {
-            WriteError("Usage: dotnet MultiLingualCode.Core.Host.dll --method <method> [--params <json>] [--translations <path>] [--project <path>]");
-            return 1;
-        }
-
-        string method = "";
-        string paramsJson = "{}";
         string translationsPath = "";
         string projectPath = "";
+        string method = "";
+        string paramsJson = "{}";
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -64,40 +59,94 @@ public class Program
             }
         }
 
-        if (string.IsNullOrEmpty(method))
-        {
-            WriteError("Method is required. Use --method <method>");
-            return 1;
-        }
-
         if (string.IsNullOrEmpty(translationsPath))
         {
             translationsPath = Path.Combine(AppContext.BaseDirectory, "translations");
         }
 
+        if (!string.IsNullOrEmpty(method))
+        {
+            return await RunSingleRequest(method, paramsJson, translationsPath, projectPath);
+        }
+
+        return await RunPersistent(translationsPath, projectPath);
+    }
+
+    /// <summary>
+    /// Single-request mode: process one request from CLI args and exit.
+    /// </summary>
+    public static async Task<int> RunSingleRequest(
+        string method, string paramsJson, string translationsPath, string projectPath)
+    {
         CoreResponse coreResponse = await ExecuteMethod(method, paramsJson, translationsPath, projectPath);
         string json = JsonSerializer.Serialize(coreResponse, JsonOptions);
+        Console.WriteLine(json);
+        return coreResponse.Success ? 0 : 1;
+    }
 
-        if (coreResponse.Success)
+    /// <summary>
+    /// Persistent mode: read JSON Lines from stdin, process each request, respond on stdout.
+    /// The orchestrator is created once and reused across all requests.
+    /// </summary>
+    public static async Task<int> RunPersistent(string translationsPath, string projectPath)
+    {
+        LanguageRegistry registry = CreateRegistry();
+        string? line;
+
+        while ((line = Console.ReadLine()) != null)
         {
-            Console.WriteLine(json);
-            return 0;
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            CoreResponse response;
+
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(line);
+                JsonElement root = doc.RootElement;
+
+                string requestMethod = root.GetProperty("method").GetString() ?? "";
+
+                if (requestMethod == "quit")
+                {
+                    break;
+                }
+
+                string requestParams = root.TryGetProperty("params", out JsonElement paramsElement)
+                    ? paramsElement.GetRawText()
+                    : "{}";
+
+                response = await ExecuteMethod(requestMethod, requestParams, translationsPath, projectPath);
+            }
+            catch (Exception ex)
+            {
+                response = new CoreResponse { Success = false, Error = $"Failed to process request: {ex.Message}" };
+            }
+
+            string responseJson = JsonSerializer.Serialize(response, JsonOptions);
+            Console.WriteLine(responseJson);
+            Console.Out.Flush();
         }
-        else
-        {
-            Console.WriteLine(json);
-            return 1;
-        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Creates a shared language registry with all supported adapters.
+    /// </summary>
+    public static LanguageRegistry CreateRegistry()
+    {
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(new CSharpAdapter());
+        registry.RegisterAdapter(new PythonAdapter());
+        return registry;
     }
 
     /// <summary>
     /// Routes a method name to its handler, deserializes parameters, and returns the response.
     /// </summary>
-    /// <param name="method">The method name to execute (e.g. "TranslateToNaturalLanguage").</param>
-    /// <param name="paramsJson">JSON string containing the request parameters.</param>
-    /// <param name="translationsPath">Path to the translations directory.</param>
-    /// <param name="projectPath">Path to the project root for identifier mapping.</param>
-    /// <returns>A response indicating success or failure with result data or error message.</returns>
     public static async Task<CoreResponse> ExecuteMethod(
         string method, string paramsJson, string translationsPath, string projectPath)
     {
@@ -148,16 +197,9 @@ public class Program
     /// <summary>
     /// Creates and configures a translation orchestrator with all language adapters, language provider, and identifier mapper.
     /// </summary>
-    /// <param name="languageCode">The natural language code (e.g. "pt-br").</param>
-    /// <param name="translationsPath">Path to the translations base directory.</param>
-    /// <param name="projectPath">Path to the project root for loading identifier maps.</param>
-    /// <returns>A fully configured translation orchestrator.</returns>
     public static TranslationOrchestrator CreateOrchestrator(string languageCode, string translationsPath, string projectPath)
     {
-        LanguageRegistry registry = new LanguageRegistry();
-        registry.RegisterAdapter(new CSharpAdapter());
-        registry.RegisterAdapter(new PythonAdapter());
-
+        LanguageRegistry registry = CreateRegistry();
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = languageCode, TranslationsBasePath = translationsPath };
 
         IdentifierMapper mapper = new IdentifierMapper();
@@ -172,9 +214,6 @@ public class Program
     /// <summary>
     /// Handles translating source code from a programming language to a natural language.
     /// </summary>
-    /// <param name="orchestrator">The configured translation orchestrator.</param>
-    /// <param name="request">The translation request containing source code and target language.</param>
-    /// <returns>A response containing the translated code or an error message.</returns>
     public static async Task<CoreResponse> HandleTranslateToNaturalLanguage(
         TranslationOrchestrator orchestrator, TranslateRequest request)
     {
@@ -192,9 +231,6 @@ public class Program
     /// <summary>
     /// Handles reverse-translating code from a natural language back to the original programming language.
     /// </summary>
-    /// <param name="orchestrator">The configured translation orchestrator.</param>
-    /// <param name="request">The reverse translation request containing translated code and source language.</param>
-    /// <returns>A response containing the restored original code or an error message.</returns>
     public static async Task<CoreResponse> HandleTranslateFromNaturalLanguage(
         TranslationOrchestrator orchestrator, ReverseTranslateRequest request)
     {
@@ -211,24 +247,15 @@ public class Program
 
     /// <summary>
     /// Handles validating source code syntax and returning diagnostics.
-    /// Uses the LanguageRegistry to resolve the correct adapter for the file extension.
     /// </summary>
-    /// <param name="request">The validation request containing the source code to check.</param>
-    /// <returns>A response containing the serialized validation result.</returns>
     public static CoreResponse HandleValidateSyntax(ValidateRequest request)
     {
-        LanguageRegistry registry = new LanguageRegistry();
-        registry.RegisterAdapter(new CSharpAdapter());
-        registry.RegisterAdapter(new PythonAdapter());
+        LanguageRegistry registry = CreateRegistry();
 
         OperationResultGeneric<ILanguageAdapter> adapterResult = registry.GetAdapter(request.FileExtension);
         if (!adapterResult.IsSuccess)
         {
-            return new CoreResponse
-            {
-                Success = false,
-                Error = adapterResult.ErrorMessage
-            };
+            return new CoreResponse { Success = false, Error = adapterResult.ErrorMessage };
         }
 
         ValidationResult validation = adapterResult.Value.ValidateSyntax(request.SourceCode);
@@ -243,8 +270,6 @@ public class Program
     /// <summary>
     /// Returns the list of supported natural languages by scanning the translations directory.
     /// </summary>
-    /// <param name="translationsPath">Path to the translations base directory.</param>
-    /// <returns>A response containing a serialized list of supported language codes.</returns>
     public static CoreResponse HandleGetSupportedLanguages(string translationsPath)
     {
         string naturalLanguagesPath = Path.Combine(translationsPath, "natural-languages");
@@ -268,7 +293,6 @@ public class Program
     /// <summary>
     /// Writes an error response as JSON to stderr.
     /// </summary>
-    /// <param name="message">The error message to include in the response.</param>
     public static void WriteError(string message)
     {
         CoreResponse errorResponse = new CoreResponse
