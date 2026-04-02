@@ -18,5 +18,5 @@
     "quotes": ["error", "single", { "avoidEscape": true }],
     "semi": ["error", "always"]
   },
-  "ignorePatterns": ["dist/", "node_modules/"]
+  "ignorePatterns": ["dist/", "node_modules/", "test/"]
 }
