@@ -61,6 +61,22 @@ Novos metodos da interface refatorada:
 - Filtrar tokens STRING na linha especificada, retornar o primeiro
 
 **GetContainingMethodRange(string sourceCode, int line) -> (int StartLine, int EndLine)**
-- Detectar bloco `def` que contem a linha. Abordagem possivel:
-  - Buscar `def` acima da linha
-  - Determinar fim do metodo por mudanca de indentacao ou proximo `def`/`class` no mesmo nivel
+Detectar o bloco `def` que contem a linha especificada. Python usa indentacao sintatica, o que torna isso mais complexo que em C# (que usa `{}`).
+
+Algoritmo recomendado usando os tokens do subprocesso:
+1. Tokenizar o source code (reutilizar resultado se ja tokenizado)
+2. Encontrar a keyword `def` mais proxima **acima** da linha, considerando:
+   - Funcoes aninhadas: se houver multiplos `def` acima, escolher o `def` cuja indentacao (coluna) seja <= a indentacao da linha alvo
+   - Decoradores: o `StartLine` do metodo deve ser a linha do primeiro `@decorator` acima do `def`, nao o `def` em si
+3. Determinar `EndLine` do metodo:
+   - A partir da linha seguinte ao `def`, percorrer as linhas do source code
+   - O metodo termina quando encontrar uma linha nao-vazia cuja indentacao seja **menor ou igual** a indentacao do `def` (retorno ao nivel do `def` ou superior)
+   - Linhas vazias e linhas so com comentario nao encerram o metodo
+   - Se chegar ao fim do arquivo, `EndLine` = ultima linha
+4. Se nenhum `def` for encontrado acima da linha, retornar `(-1, -1)` indicando que a linha nao esta dentro de um metodo
+
+Edge cases a tratar:
+- **Funcoes aninhadas** (`def` dentro de `def`): o algoritmo do passo 2 resolve ao comparar niveis de indentacao
+- **Decoradores** (`@decorator` antes do `def`): incluir no range do metodo
+- **Metodos de classe**: mesmo algoritmo — `def` dentro de `class` tem indentacao maior
+- **Expressoes multi-linha** (parenteses abertos): linhas de continuacao tem indentacao arbitraria mas nao encerram o metodo pois a proxima "real" statement restaura a indentacao

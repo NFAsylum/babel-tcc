@@ -36,8 +36,25 @@ public class PythonToken
 }
 ```
 
+### Resolucao do executavel Python
+O nome do executavel varia entre plataformas:
+- **Windows**: `python` (instalador oficial), `py` (Python Launcher for Windows)
+- **Linux/macOS**: `python3` (convencao padrao), `python` (pode ser Python 2 em sistemas antigos)
+
+Estrategia de resolucao (em ordem de prioridade):
+1. Se o usuario configurou um caminho explicito (ex: setting `babel-tcc.pythonPath` ou variavel de ambiente `BABEL_TCC_PYTHON`), usar esse
+2. Tentar `python3` (mais seguro em Linux/macOS — garante Python 3)
+3. Tentar `python` (padrao no Windows)
+4. Tentar `py -3` (Python Launcher no Windows, forca Python 3)
+5. Se nenhum funcionar: `OperationResult.Fail` com mensagem indicando como instalar/configurar Python
+
+Para cada candidato, verificar que e Python 3.8+ executando `<candidato> --version` e parseando a saida.
+
+Cachear o caminho resolvido apos a primeira resolucao bem-sucedida.
+
 ### Tratamento de erros
-- Python nao instalado: `OperationResult.Fail` com mensagem clara
+- Python nao instalado/nao encontrado: `OperationResult.Fail` com mensagem clara listando os caminhos tentados
+- Python encontrado mas versao < 3.8: `OperationResult.Fail` com mensagem indicando versao minima
 - Processo morreu inesperadamente: tentar reiniciar automaticamente (1 tentativa)
 - Timeout por request (ex: 5 segundos)
 - Resposta JSON invalida: `OperationResult.Fail`

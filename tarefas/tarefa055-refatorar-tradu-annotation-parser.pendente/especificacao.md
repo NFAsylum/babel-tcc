@@ -17,8 +17,11 @@ O `TraduAnnotationParser.ExtractAnnotations(string sourceCode)` depende de **4 m
 
 Todas essas dependencias sao especificas do Roslyn/C# e precisam ser abstraidas.
 
-### Solucao: interface de suporte a anotacoes no adapter
+### Solucao: adicionar metodos diretamente em ILanguageAdapter
 Cada `ILanguageAdapter` passa a fornecer as operacoes que o TraduAnnotationParser precisa. O parser recebe dados ja extraidos e foca apenas no formato `tradu:`.
+
+**Decisao**: Adicionar os 4 metodos diretamente em `ILanguageAdapter` (nao criar interface separada).
+Justificativa: anotacoes tradu sao funcionalidade core do sistema — toda linguagem suportada deve implementa-las. Uma interface separada adicionaria indireccao e complexidade sem ganho real, dado que o projeto tera poucos adapters.
 
 ### Mudancas na interface ILanguageAdapter
 Adicionar metodos:
@@ -32,8 +35,6 @@ string GetFirstStringLiteralOnLine(string sourceCode, int line);
 Modelo `TrailingComment`:
 - `string Text` — texto do comentario (sem o prefixo `//` ou `#`)
 - `int Line` — numero da linha (0-based)
-
-Alternativa: se adicionar 4 metodos a ILanguageAdapter for excessivo, criar uma interface separada `IAnnotationSupport` que adapters podem implementar opcionalmente. Se o adapter nao implementar, anotacoes tradu nao sao suportadas para aquela linguagem.
 
 ### Mudancas no TraduAnnotationParser
 - Refatorar `ExtractAnnotations()` para receber o adapter (ou a interface de suporte) em vez de parsear source code diretamente

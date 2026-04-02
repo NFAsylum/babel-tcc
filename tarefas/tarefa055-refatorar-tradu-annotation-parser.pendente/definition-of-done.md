@@ -1,7 +1,7 @@
 # Definition of Done - Tarefa 055
 
 - [ ] TraduAnnotationParser nao depende mais de RoslynWrapper nem de Microsoft.CodeAnalysis
-- [ ] ILanguageAdapter (ou interface separada) fornece: ExtractTrailingComments, GetIdentifierNamesOnLine, GetFirstStringLiteralOnLine, GetContainingMethodRange
+- [ ] ILanguageAdapter fornece os 4 novos metodos: ExtractTrailingComments, GetIdentifierNamesOnLine, GetFirstStringLiteralOnLine, GetContainingMethodRange
 - [ ] CSharpAdapter implementa todos os novos metodos delegando ao RoslynWrapper
 - [ ] TranslationOrchestrator passa o adapter ao TraduAnnotationParser
 - [ ] AssociateIdentifierOnLine usa adapter em vez de RoslynWrapper.GetIdentifierTokensOnLine
