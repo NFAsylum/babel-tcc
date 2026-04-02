@@ -208,14 +208,14 @@ public class PythonTokenizerService : IDisposable
                     "Python subprocess returned null JSON response.");
             }
 
-            List<PythonToken> tokens = response.Tokens ?? new List<PythonToken>();
+            List<PythonToken> tokens = response.Tokens;
 
             if (!response.Ok)
             {
                 // The Python tokenizer may return partial tokens before the error.
                 // We intentionally discard them and return Fail because partial token
                 // lists could lead to incorrect translations if processed downstream.
-                string errorDetail = response.Error ?? "Unknown tokenization error";
+                string errorDetail = response.Error;
                 return OperationResult.Fail<List<PythonToken>>(
                     $"Python tokenizer error: {errorDetail}");
             }
@@ -288,8 +288,8 @@ public class PythonTokenizerService : IDisposable
     public OperationResult ResolvePython()
     {
         // Check environment variable override first
-        string envPython = Environment.GetEnvironmentVariable("BABEL_TCC_PYTHON") ?? "";
-        if (!string.IsNullOrWhiteSpace(envPython))
+        string envPython = Environment.GetEnvironmentVariable("BABEL_TCC_PYTHON") + "";
+        if (envPython.Length > 0)
         {
             OperationResultGeneric<Version> versionResult = TryGetPythonVersion(envPython, "");
             if (versionResult.IsSuccess)
@@ -420,31 +420,8 @@ public class PythonTokenizerService : IDisposable
     /// <returns>The full path to the tokenizer service Python script.</returns>
     public static string GetScriptPath()
     {
-        string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+        string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "";
         return Path.Combine(assemblyDir, "LanguageAdapters", "Python", "tokenizer_service.py");
     }
 
-    /// <summary>
-    /// Internal model for deserializing the JSON response from the Python tokenizer subprocess.
-    /// </summary>
-    public class TokenizerResponse
-    {
-        /// <summary>
-        /// Gets or sets a value indicating whether tokenization completed without errors.
-        /// </summary>
-        [JsonPropertyName("ok")]
-        public bool Ok { get; set; }
-
-        /// <summary>
-        /// Gets or sets the error message when tokenization fails.
-        /// </summary>
-        [JsonPropertyName("error")]
-        public string Error { get; set; } = "";
-
-        /// <summary>
-        /// Gets or sets the list of tokens produced by the tokenizer.
-        /// </summary>
-        [JsonPropertyName("tokens")]
-        public List<PythonToken> Tokens { get; set; } = new();
-    }
 }

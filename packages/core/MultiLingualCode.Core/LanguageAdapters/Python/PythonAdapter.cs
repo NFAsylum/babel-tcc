@@ -12,6 +12,29 @@ namespace MultiLingualCode.Core.LanguageAdapters.Python;
 public class PythonAdapter : ILanguageAdapter, IDisposable
 {
     public readonly PythonTokenizerService Tokenizer = new();
+    public string CachedSource = "";
+    public List<PythonToken> CachedTokens = new();
+
+    /// <summary>
+    /// Tokenizes source code with caching to avoid re-tokenization when called
+    /// multiple times with the same input (e.g. during tradu annotation processing).
+    /// </summary>
+    public OperationResultGeneric<List<PythonToken>> TokenizeWithCache(string sourceCode)
+    {
+        if (CachedSource == sourceCode && CachedTokens.Count > 0)
+        {
+            return OperationResult.Ok(CachedTokens);
+        }
+
+        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
+        if (result.IsSuccess)
+        {
+            CachedSource = sourceCode;
+            CachedTokens = result.Value;
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// Disposes the underlying Python tokenizer subprocess.
@@ -51,7 +74,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
             EndLine = sourceCode.Split('\n').Length - 1
         };
 
-        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
         if (!result.IsSuccess)
         {
             return root;
@@ -173,6 +196,9 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// <summary>
     /// Converts translated keywords in Python code back to their original keyword text.
     /// Skips comments (#) and all string variants to avoid false positives.
+    /// KNOWN LIMITATION: Cannot distinguish identifiers from translated keywords when they
+    /// have the same text (e.g. variable "e" vs translated keyword "e" for "and" in pt-br).
+    /// This is a design limitation shared with CSharpAdapter.ReverseSubstituteKeywords.
     /// </summary>
     public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword)
     {
@@ -275,7 +301,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public ValidationResult ValidateSyntax(string sourceCode)
     {
-        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
 
         if (result.IsSuccess)
         {
@@ -303,7 +329,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public List<string> ExtractIdentifiers(string sourceCode)
     {
-        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
         if (!result.IsSuccess)
         {
             return new List<string>();
@@ -328,7 +354,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
             return comments;
         }
 
-        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
         if (!result.IsSuccess)
         {
             return comments;
@@ -365,7 +391,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public List<string> GetIdentifierNamesOnLine(string sourceCode, int line)
     {
-        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
         if (!result.IsSuccess)
         {
             return new List<string>();
@@ -383,7 +409,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
     /// </summary>
     public string GetFirstStringLiteralOnLine(string sourceCode, int line)
     {
-        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
         if (!result.IsSuccess)
         {
             return "";
@@ -466,6 +492,12 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
                 endLine = i - 1;
                 break;
             }
+        }
+
+        // Validate that the target line is actually inside the found method range
+        if (targetLine0 < startLine || targetLine0 > endLine)
+        {
+            return (-1, -1);
         }
 
         return (startLine, endLine);
