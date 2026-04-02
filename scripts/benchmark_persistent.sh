@@ -132,17 +132,18 @@ DLL_SPAWN="${1:-}"
 DLL_PERSISTENT="${2:-}"
 
 if [ -z "$DLL_SPAWN" ] || [ -z "$DLL_PERSISTENT" ]; then
-  echo "Compilando versoes..."
-  echo "  (Para pular compilacao, passe os DLLs como argumento)"
-
-  if [ -z "$DLL_SPAWN" ]; then
-    DLL_SPAWN="/tmp/babel-bench-spawn/MultiLingualCode.Core.Host.dll"
-    echo "  Spawn: usando $DLL_SPAWN"
-  fi
-  if [ -z "$DLL_PERSISTENT" ]; then
-    DLL_PERSISTENT="/tmp/babel-bench-persistent/MultiLingualCode.Core.Host.dll"
-    echo "  Persistente: usando $DLL_PERSISTENT"
-  fi
+  echo "ERRO: passe os DLLs compilados como argumento."
+  echo ""
+  echo "Uso:"
+  echo "  1. Compile a versao spawn (branch main):"
+  echo "     dotnet publish packages/core/MultiLingualCode.Core.Host -c Release -o /tmp/babel-bench-spawn"
+  echo ""
+  echo "  2. Compile a versao persistente (branch do PR):"
+  echo "     dotnet publish packages/core/MultiLingualCode.Core.Host -c Release -o /tmp/babel-bench-persistent"
+  echo ""
+  echo "  3. Execute:"
+  echo "     bash scripts/benchmark_persistent.sh /tmp/babel-bench-spawn/MultiLingualCode.Core.Host.dll /tmp/babel-bench-persistent/MultiLingualCode.Core.Host.dll"
+  exit 1
 fi
 
 echo ""
