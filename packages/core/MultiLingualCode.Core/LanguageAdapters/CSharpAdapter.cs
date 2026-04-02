@@ -13,6 +13,26 @@ namespace MultiLingualCode.Core.LanguageAdapters;
 /// </summary>
 public class CSharpAdapter : ILanguageAdapter
 {
+    private string? _cachedSource;
+    private SyntaxNode? _cachedRoot;
+
+    /// <summary>
+    /// Returns the Roslyn SyntaxNode root for the given source code, caching the result
+    /// to avoid re-parsing when called multiple times with the same input.
+    /// </summary>
+    private SyntaxNode GetCachedRoot(string sourceCode)
+    {
+        if (_cachedSource == sourceCode && _cachedRoot != null)
+        {
+            return _cachedRoot;
+        }
+
+        SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
+        _cachedRoot = RoslynWrapper.GetRoot(tree);
+        _cachedSource = sourceCode;
+        return _cachedRoot;
+    }
+
     /// <summary>
     /// The name of the programming language handled by this adapter.
     /// </summary>
@@ -349,6 +369,74 @@ public class CSharpAdapter : ILanguageAdapter
             .Select(t => t.Text)
             .Distinct()
             .ToList();
+    }
+
+    /// <summary>
+    /// Extracts all trailing comments from C# source code.
+    /// </summary>
+    public List<Models.TrailingComment> ExtractTrailingComments(string sourceCode)
+    {
+        List<Models.TrailingComment> comments = new();
+
+        if (string.IsNullOrEmpty(sourceCode))
+        {
+            return comments;
+        }
+
+        SyntaxNode root = GetCachedRoot(sourceCode);
+
+        foreach (SyntaxToken token in root.DescendantTokens())
+        {
+            string commentText = RoslynWrapper.GetTrailingCommentText(token);
+            if (!string.IsNullOrEmpty(commentText))
+            {
+                int line = token.GetLocation().GetLineSpan().StartLinePosition.Line;
+                comments.Add(new Models.TrailingComment { Text = commentText, Line = line });
+            }
+        }
+
+        return comments;
+    }
+
+    /// <summary>
+    /// Gets the names of all identifiers on a specific line in C# source code.
+    /// </summary>
+    public List<string> GetIdentifierNamesOnLine(string sourceCode, int line)
+    {
+        SyntaxNode root = GetCachedRoot(sourceCode);
+
+        return RoslynWrapper.GetIdentifierTokensOnLine(root, line)
+            .Select(t => t.Text)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets the text of the first string literal on a specific line in C# source code.
+    /// </summary>
+    public string GetFirstStringLiteralOnLine(string sourceCode, int line)
+    {
+        SyntaxNode root = GetCachedRoot(sourceCode);
+
+        List<SyntaxToken> tokensOnLine = RoslynWrapper.GetAllTokensOnLine(root, line);
+        foreach (SyntaxToken token in tokensOnLine)
+        {
+            if (RoslynWrapper.IsStringLiteralToken(token))
+            {
+                return token.ValueText;
+            }
+        }
+
+        return "";
+    }
+
+    /// <summary>
+    /// Gets the line range of the method containing the specified line in C# source code.
+    /// </summary>
+    public (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line)
+    {
+        SyntaxNode root = GetCachedRoot(sourceCode);
+
+        return RoslynWrapper.GetMethodRange(root, line);
     }
 
     /// <summary>

@@ -3,6 +3,10 @@ using MultiLingualCode.Core.Models.AST;
 
 namespace MultiLingualCode.Core.Interfaces;
 
+// NOTE: Methods ExtractTrailingComments, GetIdentifierNamesOnLine, GetFirstStringLiteralOnLine,
+// and GetContainingMethodRange were added to support language-agnostic tradu annotation parsing.
+// See tarefa 055 for context.
+
 /// <summary>
 /// Defines the contract for a programming language adapter (e.g., C#) that handles parsing, code generation, and keyword mapping.
 /// </summary>
@@ -52,4 +56,35 @@ public interface ILanguageAdapter
     /// Extracts all user-defined identifiers from the given source code.
     /// </summary>
     List<string> ExtractIdentifiers(string sourceCode);
+
+    /// <summary>
+    /// Extracts all trailing comments from the source code.
+    /// </summary>
+    /// <param name="sourceCode">The source code to extract comments from.</param>
+    /// <returns>A list of trailing comments with their text (without comment prefix) and line numbers.</returns>
+    List<TrailingComment> ExtractTrailingComments(string sourceCode);
+
+    /// <summary>
+    /// Gets the names of all identifiers on a specific line.
+    /// </summary>
+    /// <param name="sourceCode">The source code to analyze.</param>
+    /// <param name="line">The zero-based line number.</param>
+    /// <returns>A list of identifier names found on the line.</returns>
+    List<string> GetIdentifierNamesOnLine(string sourceCode, int line);
+
+    /// <summary>
+    /// Gets the text of the first string literal on a specific line.
+    /// </summary>
+    /// <param name="sourceCode">The source code to analyze.</param>
+    /// <param name="line">The zero-based line number.</param>
+    /// <returns>The string literal value, or an empty string if none found.</returns>
+    string GetFirstStringLiteralOnLine(string sourceCode, int line);
+
+    /// <summary>
+    /// Gets the line range of the method containing the specified line.
+    /// </summary>
+    /// <param name="sourceCode">The source code to analyze.</param>
+    /// <param name="line">The zero-based line number inside the method.</param>
+    /// <returns>A tuple of (StartLine, EndLine) for the containing method, or (-1, -1) if not inside a method.</returns>
+    (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line);
 }

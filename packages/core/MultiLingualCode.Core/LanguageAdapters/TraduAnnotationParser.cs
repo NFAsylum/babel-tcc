@@ -1,12 +1,12 @@
 using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+using MultiLingualCode.Core.Interfaces;
 using MultiLingualCode.Core.Models;
 
 namespace MultiLingualCode.Core.LanguageAdapters;
 
 /// <summary>
-/// Parses "tradu[lang]:" annotations from trailing comments in C# source code to extract translation hints.
+/// Parses "tradu[lang]:" annotations from trailing comments in source code to extract translation hints.
+/// Language-agnostic: relies on ILanguageAdapter for comment extraction and code analysis.
 /// </summary>
 public class TraduAnnotationParser
 {
@@ -24,9 +24,10 @@ public class TraduAnnotationParser
     /// Extracts all "tradu[lang]:" annotations from the source code and associates them with their target tokens.
     /// Supports multi-language format with | separator (e.g. "[pt-br]:Calculadora|[es]:Calculadora").
     /// </summary>
-    /// <param name="sourceCode">The C# source code containing tradu annotations in comments.</param>
+    /// <param name="sourceCode">The source code containing tradu annotations in comments.</param>
+    /// <param name="adapter">The language adapter used for comment extraction and code analysis.</param>
     /// <returns>A list of parsed annotations with their associated identifiers or literals.</returns>
-    public List<TraduAnnotation> ExtractAnnotations(string sourceCode)
+    public List<TraduAnnotation> ExtractAnnotations(string sourceCode, ILanguageAdapter adapter)
     {
         List<TraduAnnotation> annotations = new List<TraduAnnotation>();
 
@@ -35,19 +36,17 @@ public class TraduAnnotationParser
             return annotations;
         }
 
-        SyntaxTree syntaxTree = RoslynWrapper.ParseSourceCode(sourceCode);
-        SyntaxNode rootNode = RoslynWrapper.GetRoot(syntaxTree);
+        List<TrailingComment> comments = adapter.ExtractTrailingComments(sourceCode);
 
-        foreach (SyntaxToken token in rootNode.DescendantTokens())
+        foreach (TrailingComment comment in comments)
         {
-            string commentText = RoslynWrapper.GetTrailingCommentText(token);
-            if (!commentText.StartsWith(TraduPrefix))
+            if (!comment.Text.StartsWith(TraduPrefix))
             {
                 continue;
             }
 
-            string fullAnnotationText = commentText.Substring(TraduPrefix.Length);
-            int tokenLine = token.GetLocation().GetLineSpan().StartLinePosition.Line;
+            string fullAnnotationText = comment.Text.Substring(TraduPrefix.Length);
+            int tokenLine = comment.Line;
 
             string[] segments = fullAnnotationText.Split('|');
 
@@ -74,15 +73,23 @@ public class TraduAnnotationParser
 
                 if (annotation.IsLiteralAnnotation)
                 {
-                    AssociateLiteralOnLine(rootNode, tokenLine, annotation);
+                    string literal = adapter.GetFirstStringLiteralOnLine(sourceCode, tokenLine);
+                    if (!string.IsNullOrEmpty(literal))
+                    {
+                        annotation.OriginalLiteral = literal;
+                    }
                 }
                 else
                 {
-                    AssociateIdentifierOnLine(rootNode, tokenLine, annotation);
+                    List<string> identifiers = adapter.GetIdentifierNamesOnLine(sourceCode, tokenLine);
+                    if (identifiers.Count > 0)
+                    {
+                        annotation.OriginalIdentifier = identifiers[0];
+                    }
 
                     if (annotation.ParameterMappings.Count > 0)
                     {
-                        (int startLine, int endLine) = RoslynWrapper.GetMethodRange(rootNode, tokenLine);
+                        (int startLine, int endLine) = adapter.GetContainingMethodRange(sourceCode, tokenLine);
                         annotation.MethodStartLine = startLine;
                         annotation.MethodEndLine = endLine;
                     }
@@ -150,41 +157,5 @@ public class TraduAnnotationParser
 
         annotation.TranslatedIdentifier = annotationText;
         return annotation;
-    }
-
-    /// <summary>
-    /// Associates the annotation with the first identifier token found on the specified source line.
-    /// </summary>
-    /// <param name="rootNode">The root syntax node of the parsed source code.</param>
-    /// <param name="line">The zero-based line number where the annotation was found.</param>
-    /// <param name="annotation">The annotation to associate with an identifier.</param>
-    public static void AssociateIdentifierOnLine(SyntaxNode rootNode, int line, TraduAnnotation annotation)
-    {
-        List<SyntaxToken> identifiersOnLine = RoslynWrapper.GetIdentifierTokensOnLine(rootNode, line);
-
-        if (identifiersOnLine.Count > 0)
-        {
-            annotation.OriginalIdentifier = identifiersOnLine[0].Text;
-        }
-    }
-
-    /// <summary>
-    /// Associates the annotation with the first string literal token found on the specified source line.
-    /// </summary>
-    /// <param name="rootNode">The root syntax node of the parsed source code.</param>
-    /// <param name="line">The zero-based line number where the annotation was found.</param>
-    /// <param name="annotation">The annotation to associate with a string literal.</param>
-    public static void AssociateLiteralOnLine(SyntaxNode rootNode, int line, TraduAnnotation annotation)
-    {
-        List<SyntaxToken> tokensOnLine = RoslynWrapper.GetAllTokensOnLine(rootNode, line);
-
-        foreach (SyntaxToken token in tokensOnLine)
-        {
-            if (RoslynWrapper.IsStringLiteralToken(token))
-            {
-                annotation.OriginalLiteral = token.ValueText;
-                return;
-            }
-        }
     }
 }
