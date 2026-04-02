@@ -11,6 +11,7 @@ jobs:
     name: Core C# (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
 
@@ -49,6 +50,7 @@ jobs:
     name: VS Code Extension (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
 
@@ -93,7 +95,7 @@ jobs:
     name: Coverage Report
     needs: [core-build-test, vscode-build-test]
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: always() && github.event_name == 'pull_request'
     permissions:
       pull-requests: write
 

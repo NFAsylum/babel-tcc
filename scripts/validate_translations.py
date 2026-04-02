@@ -11,6 +11,7 @@ Checks that:
 import json
 import os
 import sys
+import argparse
 
 TRANSLATIONS_DIRS = [
     os.path.join("packages", "core", "MultiLingualCode.Core.Tests", "TestData", "translations"),
@@ -31,7 +32,7 @@ def find_translations_roots():
     return roots
 
 
-def validate_root(root):
+def validate_root(root, strict=False):
     errors = []
     prog_dir = os.path.join(root, "programming-languages")
     nat_dir = os.path.join(root, "natural-languages")
@@ -82,12 +83,15 @@ def validate_root(root):
             orphan = trans_ids - keyword_ids
 
             # Missing translations are warnings (not errors) because translations
-            # may be work-in-progress. Orphan IDs are errors because they indicate
-            # stale entries that reference non-existent keywords.
+            # may be work-in-progress. Use --strict to treat them as errors.
+            # Orphan IDs are always errors because they indicate stale entries
+            # that reference non-existent keywords.
             if missing:
-                print(
-                    f"  WARNING: {trans_path}: missing translations for IDs: {sorted(missing)}"
-                )
+                msg = f"{trans_path}: missing translations for IDs: {sorted(missing)}"
+                if strict:
+                    errors.append(msg)
+                else:
+                    print(f"  WARNING: {msg}")
             if orphan:
                 errors.append(
                     f"{trans_path}: orphan translation IDs (not in base): {sorted(orphan)}"
@@ -97,6 +101,11 @@ def validate_root(root):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Validate translation JSON files")
+    parser.add_argument("--strict", action="store_true",
+                        help="Treat missing translations as errors (exit code 1)")
+    args = parser.parse_args()
+
     roots = find_translations_roots()
     if not roots:
         print("WARNING: No translation directories found. Skipping validation.")
@@ -105,7 +114,7 @@ def main():
     all_errors = []
     for root in roots:
         print(f"Validating translations in: {root}")
-        errors = validate_root(root)
+        errors = validate_root(root, strict=args.strict)
         all_errors.extend(errors)
 
     if all_errors:
