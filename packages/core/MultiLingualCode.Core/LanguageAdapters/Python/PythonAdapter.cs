@@ -26,7 +26,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
             return OperationResult.Ok(CachedTokens);
         }
 
-        OperationResultGeneric<List<PythonToken>> result = TokenizeWithCache(sourceCode);
+        OperationResultGeneric<List<PythonToken>> result = Tokenizer.Tokenize(sourceCode);
         if (result.IsSuccess)
         {
             CachedSource = sourceCode;
