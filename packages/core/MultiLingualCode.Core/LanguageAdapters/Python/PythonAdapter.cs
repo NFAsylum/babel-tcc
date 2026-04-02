@@ -215,7 +215,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
                     }
                     else
                     {
-                        if (translatedCode[i] == quoteChar[0] )
+                        if (translatedCode[i] == quoteChar[0])
                         {
                             i++;
                             break;
