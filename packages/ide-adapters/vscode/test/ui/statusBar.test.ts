@@ -54,12 +54,14 @@ describe('StatusBar', () => {
     it('should show globe with language when enabled', () => {
       statusBar.update();
       expect(mockStatusBarItem.text).toBe('$(globe) PT-BR');
+      expect(mockStatusBarItem.tooltip).toContain('active');
     });
 
     it('should show globe OFF when disabled', () => {
       __setConfigValue('babel-tcc.enabled', false);
       statusBar.update();
       expect(mockStatusBarItem.text).toBe('$(globe) OFF');
+      expect(mockStatusBarItem.tooltip).toContain('disabled');
     });
 
     it('should uppercase the language code', () => {
@@ -78,9 +80,11 @@ describe('StatusBar', () => {
   });
 
   describe('dispose', () => {
-    it('should dispose status bar item', () => {
+    it('should dispose status bar item and config subscription', () => {
+      const configDisposeSpy = vi.spyOn(statusBar.configSubscription, 'dispose');
       statusBar.dispose();
       expect(mockStatusBarItem.dispose).toHaveBeenCalled();
+      expect(configDisposeSpy).toHaveBeenCalled();
     });
   });
 });

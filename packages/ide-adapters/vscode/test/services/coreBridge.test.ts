@@ -11,6 +11,7 @@ vi.mock('child_process', () => ({
 import { spawn } from 'child_process';
 import { CoreBridge } from '../../src/services/coreBridge';
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function createMockProcess() {
   const proc = {
     stdout: new NodeEventEmitter(),
@@ -18,7 +19,6 @@ function createMockProcess() {
     on: vi.fn(),
     kill: vi.fn(),
   };
-  // Wire 'close' and 'error' via proc.on
   proc.on.mockImplementation((event: string, cb: Function) => {
     if (event === 'close') (proc as any)._onClose = cb;
     if (event === 'error') (proc as any)._onError = cb;
@@ -27,14 +27,14 @@ function createMockProcess() {
   return proc;
 }
 
-function makeContext(extensionPath = '/ext') {
+function makeContext(extensionPath: string = '/ext'): { extensionPath: string; subscriptions: never[] } {
   return {
     extensionPath,
     subscriptions: [],
   };
 }
 
-function makeOutputChannel() {
+function makeOutputChannel(): { appendLine: ReturnType<typeof vi.fn>; show: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> } {
   return { appendLine: vi.fn(), show: vi.fn(), dispose: vi.fn() };
 }
 
@@ -135,9 +135,31 @@ describe('CoreBridge', () => {
       const promise = bridge.invokeCore('TestMethod', {});
 
       mockProcess.stdout.emit('data', Buffer.from(response));
-      (mockProcess as any)._onClose(1);
+      (mockProcess as any)._onClose(0);
 
       await expect(promise).rejects.toThrow('something failed');
+    });
+
+    it('should throw when stdout contains invalid JSON', async () => {
+      const promise = bridge.invokeCore('TestMethod', {});
+
+      mockProcess.stdout.emit('data', Buffer.from('not valid json{{{'));
+
+      // JSON.parse throws synchronously inside the close handler,
+      // which becomes an unhandled rejection
+      expect(() => (mockProcess as any)._onClose(0)).toThrow(SyntaxError);
+    });
+
+    it('should log stderr but not reject on stderr alone', async () => {
+      const response = JSON.stringify({ success: true, result: '"ok"', error: '' });
+      const promise = bridge.invokeCore('TestMethod', {});
+
+      mockProcess.stderr.emit('data', Buffer.from('warning: something'));
+      mockProcess.stdout.emit('data', Buffer.from(response));
+      (mockProcess as any)._onClose(0);
+
+      const result = await promise;
+      expect(result.success).toBe(true);
     });
 
     it('should reject on timeout and kill process', async () => {

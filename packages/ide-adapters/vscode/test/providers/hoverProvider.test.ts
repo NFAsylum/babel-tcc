@@ -59,5 +59,20 @@ describe('HoverProvider', () => {
       const hover = provider.provideHover(doc as any, new Position(0, 0));
       expect(hover).toBeUndefined();
     });
+
+    it('should match case-insensitively (uppercase input)', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'PUBLICO');
+      const hover = provider.provideHover(doc as any, new Position(0, 3));
+      expect(hover).toBeDefined();
+      expect(hover!.contents.value).toContain('public');
+    });
+
+    it('should format hover with codeblock and keyword text', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'classe');
+      const hover = provider.provideHover(doc as any, new Position(0, 3));
+      expect(hover).toBeDefined();
+      expect(hover!.contents.value).toContain('```csharp');
+      expect(hover!.contents.value).toContain('C# keyword: `class`');
+    });
   });
 });

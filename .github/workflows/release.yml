@@ -25,7 +25,7 @@ jobs:
       - name: Verify tag matches Directory.Build.props version
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          CSPROJ_VERSION=$(grep -oP '(?<=<Version>).*(?=</Version>)' Directory.Build.props)
+          CSPROJ_VERSION=$(sed -n 's/.*<Version>\(.*\)<\/Version>.*/\1/p' Directory.Build.props)
           if [ "$TAG_VERSION" != "$CSPROJ_VERSION" ]; then
             echo "::error::Tag version ($TAG_VERSION) does not match Directory.Build.props ($CSPROJ_VERSION)"
             exit 1
@@ -125,6 +125,7 @@ jobs:
         run: vsce package --out babel-tcc-${{ github.ref_name }}.vsix
 
       - name: Publish to Marketplace
+        if: secrets.VSCE_PAT != ''
         working-directory: packages/ide-adapters/vscode
         run: vsce publish
         env:

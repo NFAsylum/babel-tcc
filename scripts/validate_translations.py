@@ -81,6 +81,9 @@ def validate_root(root):
             missing = keyword_ids - trans_ids
             orphan = trans_ids - keyword_ids
 
+            # Missing translations are warnings (not errors) because translations
+            # may be work-in-progress. Orphan IDs are errors because they indicate
+            # stale entries that reference non-existent keywords.
             if missing:
                 print(
                     f"  WARNING: {trans_path}: missing translations for IDs: {sorted(missing)}"

@@ -175,7 +175,20 @@ export const workspace = {
     }),
     update: vi.fn(),
   })),
-  onDidChangeConfiguration: vi.fn((_cb: unknown) => ({ dispose: vi.fn() })),
+  onDidChangeConfiguration: vi.fn((cb: (e: unknown) => void) => {
+    workspace.__configChangeCallbacks.push(cb);
+    return {
+      dispose: vi.fn(() => {
+        const idx = workspace.__configChangeCallbacks.indexOf(cb);
+        if (idx >= 0) workspace.__configChangeCallbacks.splice(idx, 1);
+      }),
+    };
+  }),
+  __configChangeCallbacks: [] as Array<(e: unknown) => void>,
+  __fireConfigChange: (affectedSection?: string): void => {
+    const event = { affectsConfiguration: (s: string): boolean => s === (affectedSection ?? 'babel-tcc') };
+    for (const cb of workspace.__configChangeCallbacks) cb(event);
+  },
   workspaceFolders: undefined as unknown,
   registerFileSystemProvider: vi.fn(() => ({ dispose: vi.fn() })),
   openTextDocument: vi.fn(),

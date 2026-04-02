@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import * as fs from 'fs';
-import { workspace, window, __clearConfigValues, __setConfigValue } from '../__mocks__/vscode';
+import { window, __clearConfigValues, __setConfigValue, workspace } from '../__mocks__/vscode';
 
 vi.mock('fs');
 
@@ -87,14 +87,12 @@ describe('KeywordMapService', () => {
       expect(fs.readFileSync).toHaveBeenCalledTimes(2); // base + translation only once
     });
 
-    it('should reload when language changes', () => {
+    it('should reload when language changes via config event', () => {
       service.getMap('file.cs');
       const readCount = vi.mocked(fs.readFileSync).mock.calls.length;
 
-      // Simulate language change via config
       __setConfigValue('babel-tcc.language', 'es-es');
-      // Manually invalidate since our mock EventEmitter fires synchronously in real ConfigService
-      (service as any).invalidate();
+      workspace.__fireConfigChange('babel-tcc');
 
       service.getMap('file.cs');
       expect(vi.mocked(fs.readFileSync).mock.calls.length).toBeGreaterThan(readCount);

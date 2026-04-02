@@ -120,30 +120,50 @@ describe('AutoTranslateManager', () => {
       await manager.handleActiveEditorChange(editor as any);
       expect(workspace.openTextDocument).not.toHaveBeenCalled();
     });
+
+    it('should open translated view and close original for supported file', async () => {
+      const uri = Uri.file('/test/file.cs');
+      const editor = {
+        document: { uri },
+        viewColumn: ViewColumn.One,
+      };
+      window.tabGroups.all = [];
+
+      await manager.handleActiveEditorChange(editor as any);
+
+      expect(workspace.openTextDocument).toHaveBeenCalled();
+      expect(window.showTextDocument).toHaveBeenCalled();
+      expect(outputChannel.appendLine).toHaveBeenCalledWith(
+        expect.stringContaining('replaced')
+      );
+      expect(manager.processingUris.has(uri.toString())).toBe(false);
+    });
   });
 
   describe('handleConfigChange', () => {
-    it('should restore originals when disabled', async () => {
-      // Manager starts with enabled=true
+    it('should restore originals when disabled with open translated tabs', async () => {
       mockConfigService.isEnabled.mockReturnValue(false);
-      window.tabGroups.all = [];
+      const translatedUri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      const tab = { input: new TabInputText(translatedUri) };
+      window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
 
       await manager.handleConfigChange();
-      expect(outputChannel.appendLine).toHaveBeenCalledWith(
-        expect.stringContaining('replaced all translated tabs with originals')
-      );
+      expect(workspace.openTextDocument).toHaveBeenCalled();
+      expect(window.showTextDocument).toHaveBeenCalled();
+      expect(window.tabGroups.close).toHaveBeenCalledWith(tab);
     });
 
-    it('should translate tabs when enabled', async () => {
-      // Start disabled
+    it('should translate tabs when enabled with open cs tabs', async () => {
       manager.previousEnabled = false;
       mockConfigService.isEnabled.mockReturnValue(true);
-      window.tabGroups.all = [];
+      mockLanguageDetector.isSupported = vi.fn().mockReturnValue(true);
+      const fileUri = Uri.file('/test/file.cs');
+      const tab = { input: new TabInputText(fileUri) };
+      window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
 
       await manager.handleConfigChange();
-      expect(outputChannel.appendLine).toHaveBeenCalledWith(
-        expect.stringContaining('replaced all .cs tabs with translated views')
-      );
+      expect(workspace.openTextDocument).toHaveBeenCalled();
+      expect(window.tabGroups.close).toHaveBeenCalledWith(tab);
     });
 
     it('should refresh tabs when language changes', async () => {

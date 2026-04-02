@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Uri, Position, Range, CompletionItemKind } from '../__mocks__/vscode';
 import { CompletionProvider } from '../../src/providers/completionProvider';
-import { TRANSLATED_SCHEME } from '../../src/providers/translatedContentProvider';
+import { TRANSLATED_SCHEME, READONLY_SCHEME } from '../../src/providers/translatedContentProvider';
 
 describe('CompletionProvider', () => {
   let provider: CompletionProvider;
@@ -66,6 +66,20 @@ describe('CompletionProvider', () => {
       const doc = makeDocument(TRANSLATED_SCHEME, 'cla');
       const items = provider.provideCompletionItems(doc as any, new Position(0, 3));
       expect(items[0].insertText).toBe('classe');
+    });
+
+    it('should match case-insensitively (uppercase input)', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'PUB');
+      const items = provider.provideCompletionItems(doc as any, new Position(0, 3));
+      expect(items.length).toBe(1);
+      expect(items[0].label).toBe('publico');
+    });
+
+    it('should work with READONLY_SCHEME', () => {
+      const doc = makeDocument(READONLY_SCHEME, 'cla');
+      const items = provider.provideCompletionItems(doc as any, new Position(0, 3));
+      expect(items.length).toBe(1);
+      expect(items[0].label).toBe('classe');
     });
   });
 });

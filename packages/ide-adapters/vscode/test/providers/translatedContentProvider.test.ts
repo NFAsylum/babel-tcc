@@ -148,21 +148,6 @@ describe('TranslatedContentProvider', () => {
     });
   });
 
-  describe('invalidateCache', () => {
-    it('should remove cache entry and fire change event', () => {
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
-      provider.cache.set('/test/file.cs::pt-br', 'cached');
-
-      const listener = vi.fn();
-      provider.onDidChangeFile(listener);
-
-      provider.invalidateCache(uri);
-
-      expect(provider.cache.has('/test/file.cs::pt-br')).toBe(false);
-      expect(listener).toHaveBeenCalled();
-    });
-  });
-
   describe('invalidateAll', () => {
     it('should clear entire cache', () => {
       provider.cache.set('a', 'x');
@@ -177,6 +162,42 @@ describe('TranslatedContentProvider', () => {
   describe('buildCacheKey', () => {
     it('should combine path and language', () => {
       expect(provider.buildCacheKey('/test/file.cs')).toBe('/test/file.cs::pt-br');
+    });
+  });
+
+  describe('stat', () => {
+    it('should call workspace.fs.stat with original file uri', async () => {
+      vi.mocked(workspace.fs.stat).mockResolvedValue({ type: 1, ctime: 0, mtime: 0, size: 100 } as any);
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      const stat = await provider.stat(uri);
+      expect(workspace.fs.stat).toHaveBeenCalled();
+      expect(stat.size).toBe(100);
+    });
+  });
+
+  describe('watch', () => {
+    it('should return a disposable', () => {
+      const disposable = provider.watch(Uri.file('/test'), 0, []);
+      expect(disposable).toBeDefined();
+      expect(typeof disposable.dispose).toBe('function');
+    });
+  });
+
+  describe('invalidateCache', () => {
+    it('should fire change events for both schemes', () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      provider.cache.set('/test/file.cs::pt-br', 'cached');
+
+      const events: unknown[] = [];
+      provider.onDidChangeFile((e: unknown) => events.push(e));
+
+      provider.invalidateCache(uri);
+
+      expect(events.length).toBe(1);
+      const fired = events[0] as Array<{ type: number; uri: { scheme: string } }>;
+      const schemes = fired.map(e => e.uri.scheme);
+      expect(schemes).toContain(TRANSLATED_SCHEME);
+      expect(schemes).toContain(READONLY_SCHEME);
     });
   });
 
