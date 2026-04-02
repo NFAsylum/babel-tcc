@@ -802,8 +802,6 @@ namespace HelloWorld
             translated, ".py", "pt-br");
         Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
 
-        Assert.Contains("def", reverseResult.Value);
-        Assert.Contains("while", reverseResult.Value);
-        Assert.Contains("break", reverseResult.Value);
+        Assert.Equal(sourceCode, reverseResult.Value);
     }
 }
