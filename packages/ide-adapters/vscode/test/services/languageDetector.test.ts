@@ -21,8 +21,16 @@ describe('LanguageDetector', () => {
       expect(detector.detectLanguage('file.Cs')).toBe('CSharp');
     });
 
+    it('should return Python for .py files', () => {
+      expect(detector.detectLanguage('script.py')).toBe('Python');
+    });
+
+    it('should return Python for uppercase .PY extension', () => {
+      expect(detector.detectLanguage('script.PY')).toBe('Python');
+    });
+
     it('should return undefined for unsupported extension', () => {
-      expect(detector.detectLanguage('script.py')).toBeUndefined();
+      expect(detector.detectLanguage('file.rb')).toBeUndefined();
     });
 
     it('should return undefined for file without extension', () => {
@@ -66,7 +74,8 @@ describe('LanguageDetector', () => {
     it('should return all registered extensions', () => {
       const extensions = detector.getSupportedExtensions();
       expect(extensions).toContain('.cs');
-      expect(extensions.length).toBeGreaterThanOrEqual(1);
+      expect(extensions).toContain('.py');
+      expect(extensions.length).toBe(2);
     });
   });
 });

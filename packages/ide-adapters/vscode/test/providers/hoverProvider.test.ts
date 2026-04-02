@@ -12,9 +12,20 @@ describe('HoverProvider', () => {
     dispose: vi.fn(),
   };
 
-  function makeDocument(scheme: string, word: string | null) {
+  const mockLanguageDetector = {
+    detectLanguage: vi.fn((filePath: string) => {
+      if (filePath.endsWith('.py')) return 'Python';
+      return 'CSharp';
+    }),
+    isSupported: vi.fn(() => true),
+    getFileExtension: vi.fn((filePath: string) => filePath.slice(filePath.lastIndexOf('.'))),
+    getSupportedExtensions: vi.fn(() => ['.cs', '.py']),
+    supportedExtensions: { '.cs': 'CSharp', '.py': 'Python' },
+  };
+
+  function makeDocument(scheme: string, word: string | null, filePath: string = '/test/file.cs') {
     return {
-      uri: Uri.parse(`${scheme}:/test/file.cs`),
+      uri: Uri.parse(`${scheme}:${filePath}`),
       getWordRangeAtPosition: vi.fn(() =>
         word ? new Range(new Position(0, 0), new Position(0, word.length)) : undefined
       ),
@@ -24,7 +35,7 @@ describe('HoverProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new HoverProvider(mockKeywordMapService as any);
+    provider = new HoverProvider(mockKeywordMapService as any, mockLanguageDetector as any);
   });
 
   describe('provideHover', () => {
@@ -67,12 +78,20 @@ describe('HoverProvider', () => {
       expect(hover!.contents.value).toContain('public');
     });
 
-    it('should format hover with codeblock and keyword text', () => {
-      const doc = makeDocument(TRANSLATED_SCHEME, 'classe');
+    it('should format hover with codeblock and keyword text for C# files', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'classe', '/test/file.cs');
       const hover = provider.provideHover(doc as any, new Position(0, 3));
       expect(hover).toBeDefined();
       expect(hover!.contents.value).toContain('```csharp');
-      expect(hover!.contents.value).toContain('C# keyword: `class`');
+      expect(hover!.contents.value).toContain('CSharp keyword: `class`');
+    });
+
+    it('should use python language in codeblock for .py files', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'classe', '/test/file.py');
+      const hover = provider.provideHover(doc as any, new Position(0, 3));
+      expect(hover).toBeDefined();
+      expect(hover!.contents.value).toContain('```python');
+      expect(hover!.contents.value).toContain('Python keyword: `class`');
     });
   });
 });
