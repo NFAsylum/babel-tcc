@@ -7,10 +7,9 @@
 | .NET SDK | 8.0+ | https://dotnet.microsoft.com/download |
 | Node.js | 18+ | https://nodejs.org |
 | VS Code | 1.85+ | https://code.visualstudio.com |
-| Git | 2.30+ <!-- TODO: Test/verify --> | https://git-scm.com |
+| Git | 2.30+ | https://git-scm.com |
 
 ### Extensoes VS Code recomendadas
-<!-- TODO: Test/verify - criar .vscode/extensions.json para confirmar -->
 
 - **C# Dev Kit** (ms-dotnettools.csdevkit) - IntelliSense para C#
 - **ESLint** (dbaeumer.vscode-eslint) - Lint para TypeScript
