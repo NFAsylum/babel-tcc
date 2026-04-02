@@ -78,12 +78,20 @@ describe('HoverProvider', () => {
       expect(hover!.contents.value).toContain('public');
     });
 
-    it('should format hover with codeblock and keyword text', () => {
-      const doc = makeDocument(TRANSLATED_SCHEME, 'classe');
+    it('should format hover with codeblock and keyword text for C# files', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'classe', '/test/file.cs');
       const hover = provider.provideHover(doc as any, new Position(0, 3));
       expect(hover).toBeDefined();
       expect(hover!.contents.value).toContain('```csharp');
       expect(hover!.contents.value).toContain('CSharp keyword: `class`');
+    });
+
+    it('should use python language in codeblock for .py files', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'classe', '/test/file.py');
+      const hover = provider.provideHover(doc as any, new Position(0, 3));
+      expect(hover).toBeDefined();
+      expect(hover!.contents.value).toContain('```python');
+      expect(hover!.contents.value).toContain('Python keyword: `class`');
     });
   });
 });
