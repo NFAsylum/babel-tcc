@@ -3,7 +3,6 @@
 Data: 2026-04-02
 Maquina: Windows 10, x86_64, .NET 9.0.302, Release build
 Metodologia: 5 rodadas x 20 requests, medias calculadas
-Reproduzir: `bash scripts/benchmark_persistent.sh [dll_spawn] [dll_persistent]`
 
 ## Cold start (1 request, media de 5 rodadas)
 
