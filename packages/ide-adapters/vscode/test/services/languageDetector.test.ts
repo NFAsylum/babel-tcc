@@ -21,8 +21,12 @@ describe('LanguageDetector', () => {
       expect(detector.detectLanguage('file.Cs')).toBe('CSharp');
     });
 
+    it('should return Python for .py files', () => {
+      expect(detector.detectLanguage('script.py')).toBe('Python');
+    });
+
     it('should return undefined for unsupported extension', () => {
-      expect(detector.detectLanguage('script.py')).toBeUndefined();
+      expect(detector.detectLanguage('file.rb')).toBeUndefined();
     });
 
     it('should return undefined for file without extension', () => {
