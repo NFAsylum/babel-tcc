@@ -102,38 +102,38 @@ public class Program
         switch (method)
         {
             case "TranslateToNaturalLanguage":
-            {
-                OperationResultGeneric<TranslateRequest> parseResult = JsonFileReader.ReadFromString<TranslateRequest>(paramsJson, JsonOptions);
-                if (!parseResult.IsSuccess)
                 {
-                    return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    OperationResultGeneric<TranslateRequest> parseResult = JsonFileReader.ReadFromString<TranslateRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    TranslateRequest request = parseResult.Value;
+                    TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, translationsPath, projectPath);
+                    return await HandleTranslateToNaturalLanguage(orchestrator, request);
                 }
-                TranslateRequest request = parseResult.Value;
-                TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, translationsPath, projectPath);
-                return await HandleTranslateToNaturalLanguage(orchestrator, request);
-            }
 
             case "TranslateFromNaturalLanguage":
-            {
-                OperationResultGeneric<ReverseTranslateRequest> parseResult = JsonFileReader.ReadFromString<ReverseTranslateRequest>(paramsJson, JsonOptions);
-                if (!parseResult.IsSuccess)
                 {
-                    return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    OperationResultGeneric<ReverseTranslateRequest> parseResult = JsonFileReader.ReadFromString<ReverseTranslateRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    ReverseTranslateRequest request = parseResult.Value;
+                    TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, translationsPath, projectPath);
+                    return await HandleTranslateFromNaturalLanguage(orchestrator, request);
                 }
-                ReverseTranslateRequest request = parseResult.Value;
-                TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, translationsPath, projectPath);
-                return await HandleTranslateFromNaturalLanguage(orchestrator, request);
-            }
 
             case "ValidateSyntax":
-            {
-                OperationResultGeneric<ValidateRequest> parseResult = JsonFileReader.ReadFromString<ValidateRequest>(paramsJson, JsonOptions);
-                if (!parseResult.IsSuccess)
                 {
-                    return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    OperationResultGeneric<ValidateRequest> parseResult = JsonFileReader.ReadFromString<ValidateRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    return HandleValidateSyntax(parseResult.Value);
                 }
-                return HandleValidateSyntax(parseResult.Value);
-            }
 
             case "GetSupportedLanguages":
                 return HandleGetSupportedLanguages(translationsPath);

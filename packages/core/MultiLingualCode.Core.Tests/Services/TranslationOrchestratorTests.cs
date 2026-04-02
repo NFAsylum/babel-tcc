@@ -49,13 +49,23 @@ public class TranslationOrchestratorTests
 
             Dictionary<string, int> keywordMap = new Dictionary<string, int>
             {
-                ["if"] = 30, ["else"] = 18, ["class"] = 10,
-                ["void"] = 75, ["return"] = 52, ["public"] = 49,
-                ["static"] = 58, ["int"] = 33,
+                ["if"] = 30,
+                ["else"] = 18,
+                ["class"] = 10,
+                ["void"] = 75,
+                ["return"] = 52,
+                ["public"] = 49,
+                ["static"] = 58,
+                ["int"] = 33,
                 // PT-BR translated keywords (for reverse parsing)
-                ["se"] = 30, ["senao"] = 18, ["classe"] = 10,
-                ["vazio"] = 75, ["retornar"] = 52, ["publico"] = 49,
-                ["estatico"] = 58, ["inteiro"] = 33
+                ["se"] = 30,
+                ["senao"] = 18,
+                ["classe"] = 10,
+                ["vazio"] = 75,
+                ["retornar"] = 52,
+                ["publico"] = 49,
+                ["estatico"] = 58,
+                ["inteiro"] = 33
             };
 
             foreach (string token in tokens)
