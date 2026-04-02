@@ -31,14 +31,16 @@ Criar um script Python que usa o modulo `tokenize` da stdlib e roda como process
 }
 ```
 
-### Tipos de token relevantes
-- NAME (1): identifiers e keywords
-- NUMBER (2): literais numericos
-- STRING (3): literais string (todos os tipos)
-- OP (55): operadores e delimitadores
-- COMMENT (62): comentarios `#`
-- FSTRING_START (59), FSTRING_MIDDLE (60), FSTRING_END (61): f-strings decompostas (Python 3.12+ apenas)
-- INDENT (5), DEDENT (6): indentacao
+### Tipos de token relevantes (valores de referencia para Python 3.12 — usar constantes `token.*`)
+- `token.NAME`: identifiers e keywords
+- `token.NUMBER`: literais numericos
+- `token.STRING`: literais string (todos os tipos)
+- `token.OP`: operadores e delimitadores
+- `token.COMMENT`: comentarios `#`
+- `token.FSTRING_START`, `token.FSTRING_MIDDLE`, `token.FSTRING_END`: f-strings decompostas (Python 3.12+ apenas)
+- `token.INDENT`, `token.DEDENT`: indentacao
+
+**IMPORTANTE**: Os IDs numericos dos tipos variam entre versoes do Python. Sempre usar as constantes do modulo `token`, nunca os numeros diretamente.
 
 ### Compatibilidade entre versoes do Python
 - Os tipos FSTRING_START, FSTRING_MIDDLE, FSTRING_END (PEP 701) so existem no Python 3.12+.

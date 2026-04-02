@@ -32,8 +32,21 @@ O schema atual exige `^[a-z]+$` para nomes de keywords, mas Python tem `True`, `
 "^[a-zA-Z_]+$": { "type": "integer", "minimum": 0 }
 ```
 
-### Traducoes para cada idioma natural (8 arquivos)
-Criar um arquivo `python.json` em cada diretorio de idioma:
+### Atualizar scripts/validate.py
+O script de validacao tem um regex hardcoded que tambem precisa ser atualizado:
+```python
+# Atual (linha 20):
+KEYWORD_PATTERN = re.compile(r"^[a-z]+$")
+
+# Novo:
+KEYWORD_PATTERN = re.compile(r"^[a-zA-Z_]+$")
+```
+A mensagem de erro na linha 85 tambem deve ser atualizada para refletir o novo pattern.
+
+### Traducoes para cada idioma natural
+Criar um arquivo `python.json` em cada diretorio de idioma existente. Verificar todos os diretorios presentes em `natural-languages/` no momento da implementacao, pois novos idiomas podem ter sido adicionados (ex: zh-cn, ar-sa via PR #5).
+
+Idiomas conhecidos ate o momento:
 - `natural-languages/pt-br/python.json`
 - `natural-languages/pt-br-ascii/python.json`
 - `natural-languages/en-us/python.json`
@@ -42,6 +55,8 @@ Criar um arquivo `python.json` em cada diretorio de idioma:
 - `natural-languages/de-de/python.json`
 - `natural-languages/it-it/python.json`
 - `natural-languages/ja-jp-romaji/python.json`
+- `natural-languages/zh-cn/python.json` (se existir no momento)
+- `natural-languages/ar-sa/python.json` (se existir no momento)
 
 Formato:
 ```json

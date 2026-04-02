@@ -86,8 +86,11 @@ markdown.appendCodeblock(`${originalKeyword}`, vscodeLangId);
 
 Mapeamento: `'CSharp'` -> `'csharp'`, `'Python'` -> `'python'`
 
-### 6. Verificar autoTranslateManager.ts
+### 6. KeywordMapService (providers/keywordMap.ts) — nenhuma mudanca necessaria
+O `KeywordMapService` (introduzido no PR #47, ja mergeado) carrega traducoes **dinamicamente** usando `LanguageDetector.detectLanguage(filePath)` para resolver a linguagem de programacao. Apos atualizar o `LanguageDetector` (item 3 acima), o completion e hover ja funcionam para Python automaticamente — nao precisa de mudancas adicionais nos providers.
+
+### 7. Verificar autoTranslateManager.ts
 Pesquisa anterior encontrou referencias a `.cs` em comentarios. Verificar se ha logica hardcoded que precisa ser atualizada.
 
-### 7. Verificar coreBridge.ts
+### 8. Verificar coreBridge.ts
 Verificar se o coreBridge passa a extensao do arquivo ao invocar o Core .NET. O Core precisa da extensao para resolver o adapter correto via LanguageRegistry.
