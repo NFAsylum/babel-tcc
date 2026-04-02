@@ -90,9 +90,9 @@ public static class PythonKeywordMap
     /// <returns>The keyword text, or an empty string if the ID is not recognized.</returns>
     public static string GetText(int id)
     {
-        if (IdToText.TryGetValue(id, out string? text))
+        if (IdToText.ContainsKey(id))
         {
-            return text;
+            return IdToText[id];
         }
 
         return "";

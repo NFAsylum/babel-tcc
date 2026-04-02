@@ -13,24 +13,24 @@ namespace MultiLingualCode.Core.LanguageAdapters;
 /// </summary>
 public class CSharpAdapter : ILanguageAdapter
 {
-    private string? _cachedSource;
-    private SyntaxNode? _cachedRoot;
+    public string CachedSource = "";
+    public SyntaxNode CachedRoot = null!;
 
     /// <summary>
     /// Returns the Roslyn SyntaxNode root for the given source code, caching the result
     /// to avoid re-parsing when called multiple times with the same input.
     /// </summary>
-    private SyntaxNode GetCachedRoot(string sourceCode)
+    public SyntaxNode GetCachedRoot(string sourceCode)
     {
-        if (_cachedSource == sourceCode && _cachedRoot != null)
+        if (CachedSource == sourceCode && CachedRoot != null)
         {
-            return _cachedRoot;
+            return CachedRoot;
         }
 
         SyntaxTree tree = RoslynWrapper.ParseSourceCode(sourceCode);
-        _cachedRoot = RoslynWrapper.GetRoot(tree);
-        _cachedSource = sourceCode;
-        return _cachedRoot;
+        CachedRoot = RoslynWrapper.GetRoot(tree);
+        CachedSource = sourceCode;
+        return CachedRoot;
     }
 
     /// <summary>

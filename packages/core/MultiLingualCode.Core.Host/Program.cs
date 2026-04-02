@@ -1,5 +1,7 @@
 using System.Text.Json;
+using MultiLingualCode.Core.Interfaces;
 using MultiLingualCode.Core.LanguageAdapters;
+using MultiLingualCode.Core.LanguageAdapters.Python;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Services;
 using MultiLingualCode.Core.Utilities;
@@ -144,7 +146,7 @@ public class Program
     }
 
     /// <summary>
-    /// Creates and configures a translation orchestrator with the C# adapter, language provider, and identifier mapper.
+    /// Creates and configures a translation orchestrator with all language adapters, language provider, and identifier mapper.
     /// </summary>
     /// <param name="languageCode">The natural language code (e.g. "pt-br").</param>
     /// <param name="translationsPath">Path to the translations base directory.</param>
@@ -152,9 +154,9 @@ public class Program
     /// <returns>A fully configured translation orchestrator.</returns>
     public static TranslationOrchestrator CreateOrchestrator(string languageCode, string translationsPath, string projectPath)
     {
-        CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
-        registry.RegisterAdapter(adapter);
+        registry.RegisterAdapter(new CSharpAdapter());
+        registry.RegisterAdapter(new PythonAdapter());
 
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = languageCode, TranslationsBasePath = translationsPath };
 
@@ -208,14 +210,28 @@ public class Program
     }
 
     /// <summary>
-    /// Handles validating C# source code syntax and returning diagnostics.
+    /// Handles validating source code syntax and returning diagnostics.
+    /// Uses the LanguageRegistry to resolve the correct adapter for the file extension.
     /// </summary>
     /// <param name="request">The validation request containing the source code to check.</param>
     /// <returns>A response containing the serialized validation result.</returns>
     public static CoreResponse HandleValidateSyntax(ValidateRequest request)
     {
-        CSharpAdapter adapter = new CSharpAdapter();
-        ValidationResult validation = adapter.ValidateSyntax(request.SourceCode);
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(new CSharpAdapter());
+        registry.RegisterAdapter(new PythonAdapter());
+
+        OperationResultGeneric<ILanguageAdapter> adapterResult = registry.GetAdapter(request.FileExtension);
+        if (!adapterResult.IsSuccess)
+        {
+            return new CoreResponse
+            {
+                Success = false,
+                Error = adapterResult.ErrorMessage
+            };
+        }
+
+        ValidationResult validation = adapterResult.Value.ValidateSyntax(request.SourceCode);
 
         return new CoreResponse
         {

@@ -12,19 +12,20 @@ namespace MultiLingualCode.Core.LanguageAdapters.Python;
 /// </summary>
 public class PythonTokenizerService : IDisposable
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    public static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
-    private static readonly Version MinimumPythonVersion = new(3, 8);
+    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+    public static readonly Version MinimumPythonVersion = new(3, 8);
 
-    private readonly object _lock = new();
-    private Process? _process;
-    private string? _resolvedPythonPath;
-    private string? _resolvedPythonArgs;
-    private bool _disposed;
+    public readonly object Lock = new();
+    public Process Process = null!;
+    public string ResolvedPythonPath = "";
+    public string ResolvedPythonArgs = "";
+    public bool PythonResolved = false;
+    public bool Disposed = false;
 
     /// <summary>
     /// Tokenizes Python source code by sending it to the persistent Python subprocess.
@@ -33,9 +34,9 @@ public class PythonTokenizerService : IDisposable
     /// <returns>An operation result containing the list of tokens, or an error message on failure.</returns>
     public OperationResultGeneric<List<PythonToken>> Tokenize(string sourceCode)
     {
-        lock (_lock)
+        lock (Lock)
         {
-            if (_disposed)
+            if (Disposed)
             {
                 return OperationResult.Fail<List<PythonToken>>("PythonTokenizerService has been disposed.");
             }
@@ -70,14 +71,14 @@ public class PythonTokenizerService : IDisposable
     /// </summary>
     public void Dispose()
     {
-        lock (_lock)
+        lock (Lock)
         {
-            if (_disposed)
+            if (Disposed)
             {
                 return;
             }
 
-            _disposed = true;
+            Disposed = true;
             StopProcess();
         }
     }
@@ -86,9 +87,9 @@ public class PythonTokenizerService : IDisposable
     /// Ensures the Python subprocess is running, starting it if necessary.
     /// </summary>
     /// <returns>A success result if the process is running; otherwise a failure with an error message.</returns>
-    private OperationResult EnsureProcessRunning()
+    public OperationResult EnsureProcessRunning()
     {
-        if (_process != null && !_process.HasExited)
+        if (Process != null && !Process.HasExited)
         {
             return OperationResult.Ok();
         }
@@ -100,11 +101,11 @@ public class PythonTokenizerService : IDisposable
     /// Starts (or restarts) the Python subprocess.
     /// </summary>
     /// <returns>A success result if the process started; otherwise a failure with an error message.</returns>
-    private OperationResult StartProcess()
+    public OperationResult StartProcess()
     {
         StopProcess();
 
-        if (_resolvedPythonPath == null)
+        if (!PythonResolved)
         {
             OperationResult resolveResult = ResolvePython();
             if (!resolveResult.IsSuccess)
@@ -124,7 +125,7 @@ public class PythonTokenizerService : IDisposable
         {
             ProcessStartInfo startInfo = new()
             {
-                FileName = _resolvedPythonPath!,
+                FileName = ResolvedPythonPath,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardInput = true,
@@ -132,22 +133,23 @@ public class PythonTokenizerService : IDisposable
                 RedirectStandardError = true
             };
 
-            if (!string.IsNullOrEmpty(_resolvedPythonArgs))
+            if (!string.IsNullOrEmpty(ResolvedPythonArgs))
             {
-                startInfo.Arguments = $"{_resolvedPythonArgs} \"{scriptPath}\"";
+                startInfo.Arguments = $"{ResolvedPythonArgs} \"{scriptPath}\"";
             }
             else
             {
                 startInfo.Arguments = $"\"{scriptPath}\"";
             }
 
-            _process = Process.Start(startInfo);
+            Process started = Process.Start(startInfo)!;
 
-            if (_process == null || _process.HasExited)
+            if (started == null || started.HasExited)
             {
                 return OperationResult.Fail("Failed to start Python subprocess.");
             }
 
+            Process = started;
             return OperationResult.Ok();
         }
         catch (Exception ex)
@@ -161,9 +163,9 @@ public class PythonTokenizerService : IDisposable
     /// </summary>
     /// <param name="sourceCode">The Python source code to tokenize.</param>
     /// <returns>The parsed token list, or an error.</returns>
-    private OperationResultGeneric<List<PythonToken>> SendTokenizeRequest(string sourceCode)
+    public OperationResultGeneric<List<PythonToken>> SendTokenizeRequest(string sourceCode)
     {
-        if (_process == null || _process.HasExited)
+        if (Process == null || Process.HasExited)
         {
             return OperationResult.Fail<List<PythonToken>>("Python subprocess is not running.");
         }
@@ -171,10 +173,10 @@ public class PythonTokenizerService : IDisposable
         try
         {
             string request = JsonSerializer.Serialize(new { source = sourceCode });
-            _process.StandardInput.WriteLine(request);
-            _process.StandardInput.Flush();
+            Process.StandardInput.WriteLine(request);
+            Process.StandardInput.Flush();
 
-            Task<string?> readTask = _process.StandardOutput.ReadLineAsync();
+            Task<string> readTask = Process.StandardOutput.ReadLineAsync()!;
             if (!readTask.Wait(RequestTimeout))
             {
                 StopProcess();
@@ -182,17 +184,17 @@ public class PythonTokenizerService : IDisposable
                     $"Python subprocess timed out after {RequestTimeout.TotalSeconds} seconds.");
             }
 
-            string? responseLine = readTask.Result;
+            string responseLine = readTask.Result;
             if (responseLine == null)
             {
                 return OperationResult.Fail<List<PythonToken>>(
                     "Python subprocess closed its output stream unexpectedly.");
             }
 
-            TokenizerResponse? response;
+            TokenizerResponse response;
             try
             {
-                response = JsonSerializer.Deserialize<TokenizerResponse>(responseLine, JsonOptions);
+                response = JsonSerializer.Deserialize<TokenizerResponse>(responseLine, JsonOptions)!;
             }
             catch (JsonException ex)
             {
@@ -206,14 +208,14 @@ public class PythonTokenizerService : IDisposable
                     "Python subprocess returned null JSON response.");
             }
 
-            List<PythonToken> tokens = response.Tokens ?? new List<PythonToken>();
+            List<PythonToken> tokens = response.Tokens;
 
             if (!response.Ok)
             {
                 // The Python tokenizer may return partial tokens before the error.
                 // We intentionally discard them and return Fail because partial token
                 // lists could lead to incorrect translations if processed downstream.
-                string errorDetail = response.Error ?? "Unknown tokenization error";
+                string errorDetail = response.Error;
                 return OperationResult.Fail<List<PythonToken>>(
                     $"Python tokenizer error: {errorDetail}");
             }
@@ -231,39 +233,39 @@ public class PythonTokenizerService : IDisposable
     /// Checks whether the Python subprocess has exited.
     /// </summary>
     /// <returns>True if the process is null or has exited; otherwise false.</returns>
-    private bool IsProcessDead()
+    public bool IsProcessDead()
     {
-        return _process == null || _process.HasExited;
+        return Process == null || Process.HasExited;
     }
 
     /// <summary>
     /// Stops the current Python subprocess, sending the quit command first.
     /// </summary>
-    private void StopProcess()
+    public void StopProcess()
     {
-        if (_process == null)
+        if (Process == null)
         {
             return;
         }
 
         try
         {
-            if (!_process.HasExited)
+            if (!Process.HasExited)
             {
                 try
                 {
-                    _process.StandardInput.WriteLine("{\"cmd\":\"quit\"}");
-                    _process.StandardInput.Flush();
-                    _process.WaitForExit(2000);
+                    Process.StandardInput.WriteLine("{\"cmd\":\"quit\"}");
+                    Process.StandardInput.Flush();
+                    Process.WaitForExit(2000);
                 }
                 catch
                 {
                     // Ignore errors when sending quit; we will kill the process anyway.
                 }
 
-                if (!_process.HasExited)
+                if (!Process.HasExited)
                 {
-                    _process.Kill();
+                    Process.Kill();
                 }
             }
         }
@@ -273,8 +275,8 @@ public class PythonTokenizerService : IDisposable
         }
         finally
         {
-            _process.Dispose();
-            _process = null;
+            Process.Dispose();
+            Process = null!;
         }
     }
 
@@ -283,19 +285,20 @@ public class PythonTokenizerService : IDisposable
     /// Verifies that the found Python is version 3.8 or higher.
     /// </summary>
     /// <returns>A success result if Python was found; otherwise a failure listing tried candidates.</returns>
-    private OperationResult ResolvePython()
+    public OperationResult ResolvePython()
     {
         // Check environment variable override first
-        string? envPython = Environment.GetEnvironmentVariable("BABEL_TCC_PYTHON");
-        if (!string.IsNullOrWhiteSpace(envPython))
+        string envPython = Environment.GetEnvironmentVariable("BABEL_TCC_PYTHON") + "";
+        if (envPython.Length > 0)
         {
-            OperationResultGeneric<Version> versionResult = TryGetPythonVersion(envPython, null);
+            OperationResultGeneric<Version> versionResult = TryGetPythonVersion(envPython, "");
             if (versionResult.IsSuccess)
             {
                 if (versionResult.Value >= MinimumPythonVersion)
                 {
-                    _resolvedPythonPath = envPython;
-                    _resolvedPythonArgs = null;
+                    ResolvedPythonPath = envPython;
+                    ResolvedPythonArgs = "";
+                    PythonResolved = true;
                     return OperationResult.Ok();
                 }
 
@@ -306,18 +309,18 @@ public class PythonTokenizerService : IDisposable
         }
 
         // Standard candidates in order of priority
-        (string Executable, string? Args)[] candidates =
+        (string Executable, string Args)[] candidates =
         {
-            ("python3", null),
-            ("python", null),
+            ("python3", ""),
+            ("python", ""),
             ("py", "-3")
         };
 
         List<string> triedPaths = new();
 
-        foreach ((string executable, string? args) in candidates)
+        foreach ((string executable, string args) in candidates)
         {
-            string candidateDescription = args != null ? $"{executable} {args}" : executable;
+            string candidateDescription = !string.IsNullOrEmpty(args) ? $"{executable} {args}" : executable;
             triedPaths.Add(candidateDescription);
 
             OperationResultGeneric<Version> versionResult = TryGetPythonVersion(executable, args);
@@ -331,8 +334,9 @@ public class PythonTokenizerService : IDisposable
                 continue;
             }
 
-            _resolvedPythonPath = executable;
-            _resolvedPythonArgs = args;
+            ResolvedPythonPath = executable;
+            ResolvedPythonArgs = args;
+            PythonResolved = true;
             return OperationResult.Ok();
         }
 
@@ -349,11 +353,11 @@ public class PythonTokenizerService : IDisposable
     /// <param name="executable">The executable name or path.</param>
     /// <param name="extraArgs">Extra arguments to pass before <c>--version</c> (e.g. "-3" for py launcher).</param>
     /// <returns>The parsed Python version, or a failure if the executable could not be run or is not Python 3.</returns>
-    private static OperationResultGeneric<Version> TryGetPythonVersion(string executable, string? extraArgs)
+    public static OperationResultGeneric<Version> TryGetPythonVersion(string executable, string extraArgs)
     {
         try
         {
-            string arguments = extraArgs != null ? $"{extraArgs} --version" : "--version";
+            string arguments = !string.IsNullOrEmpty(extraArgs) ? $"{extraArgs} --version" : "--version";
 
             ProcessStartInfo startInfo = new()
             {
@@ -365,7 +369,7 @@ public class PythonTokenizerService : IDisposable
                 RedirectStandardError = true
             };
 
-            using Process? process = Process.Start(startInfo);
+            using Process process = Process.Start(startInfo)!;
             if (process == null)
             {
                 return OperationResult.Fail<Version>("Failed to start process.");
@@ -395,7 +399,7 @@ public class PythonTokenizerService : IDisposable
                 versionString = versionString.Substring(0, suffixIndex);
             }
 
-            if (Version.TryParse(versionString, out Version? version))
+            if (Version.TryParse(versionString, out Version version))
             {
                 return OperationResult.Ok(version);
             }
@@ -414,33 +418,10 @@ public class PythonTokenizerService : IDisposable
     /// Resolves the path to <c>tokenizer_service.py</c> relative to the executing assembly location.
     /// </summary>
     /// <returns>The full path to the tokenizer service Python script.</returns>
-    private static string GetScriptPath()
+    public static string GetScriptPath()
     {
-        string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+        string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "";
         return Path.Combine(assemblyDir, "LanguageAdapters", "Python", "tokenizer_service.py");
     }
 
-    /// <summary>
-    /// Internal model for deserializing the JSON response from the Python tokenizer subprocess.
-    /// </summary>
-    private class TokenizerResponse
-    {
-        /// <summary>
-        /// Gets or sets a value indicating whether tokenization completed without errors.
-        /// </summary>
-        [JsonPropertyName("ok")]
-        public bool Ok { get; set; }
-
-        /// <summary>
-        /// Gets or sets the error message when tokenization fails.
-        /// </summary>
-        [JsonPropertyName("error")]
-        public string? Error { get; set; }
-
-        /// <summary>
-        /// Gets or sets the list of tokens produced by the tokenizer.
-        /// </summary>
-        [JsonPropertyName("tokens")]
-        public List<PythonToken>? Tokens { get; set; }
-    }
 }
