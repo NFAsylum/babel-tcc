@@ -211,7 +211,7 @@ export class CoreBridge {
     return new Promise<CoreResponse>((resolve, reject): void => {
       this.requestQueue = this.requestQueue.then((): Promise<void> => {
         return this.sendRequest(method, params).then(resolve, reject).then((): void => {});
-      });
+      }).catch((): void => {});
     });
   }
 

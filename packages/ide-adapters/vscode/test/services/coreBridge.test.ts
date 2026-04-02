@@ -243,26 +243,28 @@ describe('CoreBridge', () => {
     });
 
     it('should reject on timeout without killing process', async () => {
-      // Don't set any response — let it timeout
-      // stdin.write does nothing (no response scheduled)
       mockProcess.stdin.write.mockReturnValue(true);
       const promise = bridge.invokeCore('SlowMethod', {});
 
+      const expectation = expect(promise).rejects.toThrow('timeout');
       await vi.advanceTimersByTimeAsync(6000);
+      await expectation;
 
-      await expect(promise).rejects.toThrow('timeout');
       expect(mockProcess.kill).not.toHaveBeenCalled();
     });
 
     it('should kill process after 2 consecutive timeouts', async () => {
       mockProcess.stdin.write.mockReturnValue(true);
+
       const p1 = bridge.invokeCore('Slow1', {});
+      const e1 = expect(p1).rejects.toThrow('timeout');
       await vi.advanceTimersByTimeAsync(6000);
-      await expect(p1).rejects.toThrow('timeout');
+      await e1;
 
       const p2 = bridge.invokeCore('Slow2', {});
+      const e2 = expect(p2).rejects.toThrow('timeout');
       await vi.advanceTimersByTimeAsync(6000);
-      await expect(p2).rejects.toThrow('timeout');
+      await e2;
 
       expect(mockProcess.kill).toHaveBeenCalled();
     });

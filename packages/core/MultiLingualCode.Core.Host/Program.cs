@@ -90,7 +90,7 @@ public class Program
     /// </summary>
     public static async Task<int> RunPersistent(string translationsPath, string projectPath)
     {
-        LanguageRegistry registry = CreateRegistry();
+        Dictionary<string, TranslationOrchestrator> orchestratorCache = new();
         string? line;
 
         while ((line = Console.ReadLine()) != null)
@@ -118,7 +118,8 @@ public class Program
                     ? paramsElement.GetRawText()
                     : "{}";
 
-                response = await ExecuteMethod(requestMethod, requestParams, translationsPath, projectPath);
+                response = await ExecuteMethodPersistent(
+                    requestMethod, requestParams, translationsPath, projectPath, orchestratorCache);
             }
             catch (Exception ex)
             {
@@ -131,6 +132,76 @@ public class Program
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Routes a method in persistent mode, reusing cached orchestrators by language code.
+    /// </summary>
+    public static async Task<CoreResponse> ExecuteMethodPersistent(
+        string method, string paramsJson, string translationsPath, string projectPath,
+        Dictionary<string, TranslationOrchestrator> orchestratorCache)
+    {
+        switch (method)
+        {
+            case "TranslateToNaturalLanguage":
+                {
+                    OperationResultGeneric<TranslateRequest> parseResult = JsonFileReader.ReadFromString<TranslateRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    TranslateRequest request = parseResult.Value;
+                    TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
+                        orchestratorCache, request.TargetLanguage, translationsPath, projectPath);
+                    return await HandleTranslateToNaturalLanguage(orchestrator, request);
+                }
+
+            case "TranslateFromNaturalLanguage":
+                {
+                    OperationResultGeneric<ReverseTranslateRequest> parseResult = JsonFileReader.ReadFromString<ReverseTranslateRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    ReverseTranslateRequest request = parseResult.Value;
+                    TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
+                        orchestratorCache, request.SourceLanguage, translationsPath, projectPath);
+                    return await HandleTranslateFromNaturalLanguage(orchestrator, request);
+                }
+
+            case "ValidateSyntax":
+                {
+                    OperationResultGeneric<ValidateRequest> parseResult = JsonFileReader.ReadFromString<ValidateRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    return HandleValidateSyntax(parseResult.Value);
+                }
+
+            case "GetSupportedLanguages":
+                return HandleGetSupportedLanguages(translationsPath);
+
+            default:
+                return new CoreResponse { Success = false, Error = $"Unknown method: {method}" };
+        }
+    }
+
+    /// <summary>
+    /// Returns a cached orchestrator for the given language, or creates and caches a new one.
+    /// </summary>
+    public static TranslationOrchestrator GetOrCreateOrchestrator(
+        Dictionary<string, TranslationOrchestrator> cache, string languageCode,
+        string translationsPath, string projectPath)
+    {
+        if (cache.TryGetValue(languageCode, out TranslationOrchestrator? cached))
+        {
+            return cached;
+        }
+
+        TranslationOrchestrator orchestrator = CreateOrchestrator(languageCode, translationsPath, projectPath);
+        cache[languageCode] = orchestrator;
+        return orchestrator;
     }
 
     /// <summary>
