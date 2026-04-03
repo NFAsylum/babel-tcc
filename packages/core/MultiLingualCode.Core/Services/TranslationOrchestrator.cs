@@ -291,11 +291,6 @@ public class TranslationOrchestrator
                 }
             }
         }
-
-        if (!string.IsNullOrEmpty(IdentifierMapperService.LoadedPath))
-        {
-            IdentifierMapperService.SaveMap();
-        }
     }
 
     /// <summary>

@@ -101,15 +101,18 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
               freshTranslation
             );
             this.refreshingPaths.add(originalPath);
-            await vscode.workspace.applyEdit(edit);
-            this.refreshingPaths.delete(originalPath);
+            try {
+              await vscode.workspace.applyEdit(edit);
+            } finally {
+              this.refreshingPaths.delete(originalPath);
+            }
           }
         } catch (err: unknown) {
           this.outputChannel.appendLine('TranslatedContentProvider: failed to refresh translated view');
         }
       }, 100);
 
-      this.outputChannel.appendLine(`TranslatedContentProvider: saved original C# to ${originalPath}`);
+      this.outputChannel.appendLine(`TranslatedContentProvider: saved original code to ${originalPath}`);
       vscode.window.showInformationMessage('Babel TCC: File saved successfully.');
     } catch (error: unknown) {
       const message: string = error instanceof Error ? error.message : String(error);
