@@ -111,7 +111,7 @@ export function activate(context: vscode.ExtensionContext): void {
     coreBridge.translationsPath, configService, languageDetector, outputChannel
   );
 
-  const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService);
+  const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService, languageDetector);
   const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
     { scheme: TRANSLATED_SCHEME },
     completionProvider
