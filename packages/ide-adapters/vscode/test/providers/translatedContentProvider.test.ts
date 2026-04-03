@@ -146,6 +146,19 @@ describe('TranslatedContentProvider', () => {
       await provider.writeFile(uri, new TextEncoder().encode('test'));
       expect(window.showErrorMessage).toHaveBeenCalled();
     });
+
+    it('should not leave path in refreshingPaths after writeFile completes', async () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      const content = new TextEncoder().encode('publico classe Foo {}');
+
+      workspace.textDocuments = [];
+      await provider.writeFile(uri, content);
+
+      // After writeFile returns, refreshingPaths should not contain the path
+      // (the setTimeout callback may not have run yet, but the writeFile itself
+      // should not leave stale entries)
+      expect(provider.refreshingPaths.has('/test/file.cs')).toBe(false);
+    });
   });
 
   describe('invalidateAll', () => {
