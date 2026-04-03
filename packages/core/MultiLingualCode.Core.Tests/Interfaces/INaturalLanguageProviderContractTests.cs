@@ -8,21 +8,21 @@ public class INaturalLanguageProviderContractTests
     public MockNaturalLanguageProvider ProviderInstance = new();
 
     [Fact]
-    public void Properties_AreAccessible()
+    public void Properties_WhenAccessed_ReturnExpectedValues()
     {
         Assert.Equal("pt-br", ProviderInstance.LanguageCode);
         Assert.Equal("Portugues Brasileiro", ProviderInstance.LanguageName);
     }
 
     [Fact]
-    public async Task LoadTranslationTableAsync_ReturnsSuccess()
+    public async Task LoadTranslationTableAsync_WithValidLanguage_ReturnsSuccess()
     {
         OperationResult result = await ProviderInstance.LoadTranslationTableAsync("CSharp");
         Assert.True(result.IsSuccess);
     }
 
     [Fact]
-    public void TranslateKeyword_ReturnsTranslation()
+    public void TranslateKeyword_WithKnownId_ReturnsTranslation()
     {
         OperationResultGeneric<string> result = ProviderInstance.TranslateKeyword(30);
         Assert.True(result.IsSuccess);
@@ -30,28 +30,28 @@ public class INaturalLanguageProviderContractTests
     }
 
     [Fact]
-    public void TranslateKeyword_ReturnsFailForUnknown()
+    public void TranslateKeyword_WithUnknownId_ReturnsFailure()
     {
         OperationResultGeneric<string> result = ProviderInstance.TranslateKeyword(999);
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void ReverseTranslateKeyword_ReturnsId()
+    public void ReverseTranslateKeyword_WithKnownTranslation_ReturnsId()
     {
         int result = ProviderInstance.ReverseTranslateKeyword("se");
         Assert.Equal(30, result);
     }
 
     [Fact]
-    public void ReverseTranslateKeyword_ReturnsNegativeForUnknown()
+    public void ReverseTranslateKeyword_WithUnknownTranslation_ReturnsMinusOne()
     {
         int result = ProviderInstance.ReverseTranslateKeyword("desconhecido");
         Assert.Equal(-1, result);
     }
 
     [Fact]
-    public void TranslateIdentifier_ReturnsTranslation()
+    public void TranslateIdentifier_WithKnownIdentifier_ReturnsTranslation()
     {
         IdentifierContext context = new IdentifierContext
         {

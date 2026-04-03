@@ -402,7 +402,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void CalculatorExample_FullWorkflow()
+    public void CalculatorExample_WithFullWorkflow_TranslatesAndReversesAllMappings()
     {
         Mapper.LoadMap(TempDir);
 

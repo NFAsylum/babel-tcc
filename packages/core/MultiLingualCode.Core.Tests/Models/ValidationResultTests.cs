@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models;
 public class ValidationResultTests
 {
     [Fact]
-    public void NewValidationResult_DiagnosticsIsEmpty()
+    public void Constructor_WhenCreated_DiagnosticsIsEmpty()
     {
         ValidationResult result = new ValidationResult();
 
@@ -14,7 +14,7 @@ public class ValidationResultTests
     }
 
     [Fact]
-    public void IsValid_DefaultIsFalse()
+    public void IsValid_WhenNewInstance_DefaultsToFalse()
     {
         ValidationResult result = new ValidationResult();
 
@@ -22,7 +22,7 @@ public class ValidationResultTests
     }
 
     [Fact]
-    public void AddDiagnostic_IncreasesCount()
+    public void Diagnostics_AfterAddingOne_IncreasesCount()
     {
         ValidationResult result = new ValidationResult();
         result.Diagnostics.Add(new Diagnostic
@@ -37,7 +37,7 @@ public class ValidationResultTests
     }
 
     [Fact]
-    public void Diagnostic_PropertiesSetCorrectly()
+    public void Diagnostic_WithAllProperties_SetsValuesCorrectly()
     {
         Diagnostic diag = new Diagnostic
         {
@@ -54,7 +54,7 @@ public class ValidationResultTests
     }
 
     [Fact]
-    public void DiagnosticSeverity_HasThreeValues()
+    public void DiagnosticSeverity_WhenEnumerated_HasThreeValues()
     {
         Array values = Enum.GetValues(typeof(DiagnosticSeverity));
         Assert.Equal(3, values.Length);

@@ -37,7 +37,7 @@ public class CoreIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task HelloWorld_TranslatesToPtBr()
+    public async Task TranslateToNaturalLanguage_WithHelloWorld_TranslatesKeywordsToPtBr()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -226,7 +226,7 @@ namespace MyApp
     }
 
     [Fact]
-    public async Task MultipleAnnotations_AllApplied()
+    public async Task TranslateToNaturalLanguage_WithMultipleAnnotations_AppliesAllTranslations()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -406,7 +406,7 @@ namespace Performance.Test
     }
 
     [Fact]
-    public async Task EmptySourceCode_TranslatesWithoutError()
+    public async Task TranslateToNaturalLanguage_WithEmptySource_CompletesWithoutError()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);

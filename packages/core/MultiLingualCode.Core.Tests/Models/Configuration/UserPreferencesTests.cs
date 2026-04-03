@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models.Configuration;
 public class UserPreferencesTests
 {
     [Fact]
-    public void DefaultValues_AreCorrect()
+    public void Constructor_WithNoArgs_SetsDefaultValues()
     {
         UserPreferences prefs = new UserPreferences();
 
@@ -69,7 +69,7 @@ public class UserPreferencesTests
     }
 
     [Fact]
-    public void SaveTo_CreatesDirectoryIfNeeded()
+    public void SaveTo_WithNonExistentDirectory_CreatesDirectoryAndFile()
     {
         string tempDir = Path.Combine(Path.GetTempPath(), $"prefs_test_{Guid.NewGuid()}");
         string tempFile = Path.Combine(tempDir, "settings.json");

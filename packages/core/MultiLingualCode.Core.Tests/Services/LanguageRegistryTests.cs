@@ -20,7 +20,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void RegisterAdapter_MakesExtensionsAvailable()
+    public void RegisterAdapter_WithValidAdapter_MakesExtensionSupported()
     {
         ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
 
@@ -31,7 +31,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void RegisterAdapter_MultipleExtensions()
+    public void RegisterAdapter_WithMultipleExtensions_SupportsAll()
     {
         ILanguageAdapter adapter = CreateMockAdapter("TypeScript", ".ts", ".tsx");
 
@@ -73,7 +73,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void RegisterAdapter_ReplacesExistingAdapter()
+    public void RegisterAdapter_WithSameExtension_ReplacesExistingAdapter()
     {
         ILanguageAdapter first = CreateMockAdapter("First", ".cs");
         ILanguageAdapter second = CreateMockAdapter("Second", ".cs");
@@ -87,7 +87,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void GetAdapter_ReturnsCorrectAdapter()
+    public void GetAdapter_WithRegisteredExtension_ReturnsCorrectAdapter()
     {
         ILanguageAdapter csAdapter = CreateMockAdapter("CSharp", ".cs");
         ILanguageAdapter pyAdapter = CreateMockAdapter("Python", ".py");
@@ -129,7 +129,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void GetAdapter_CaseInsensitive()
+    public void GetAdapter_WithDifferentCasing_ReturnsMatchingAdapter()
     {
         ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
         Registry.RegisterAdapter(adapter);
@@ -144,7 +144,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void GetSupportedExtensions_ReturnsAllRegistered()
+    public void GetSupportedExtensions_WithMultipleAdapters_ReturnsAllRegistered()
     {
         ILanguageAdapter csAdapter = CreateMockAdapter("CSharp", ".cs");
         ILanguageAdapter pyAdapter = CreateMockAdapter("Python", ".py");
@@ -159,14 +159,14 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void GetSupportedExtensions_ReturnsEmptyWhenNoneRegistered()
+    public void GetSupportedExtensions_WithNoAdapters_ReturnsEmpty()
     {
         string[] extensions = Registry.GetSupportedExtensions();
         Assert.Empty(extensions);
     }
 
     [Fact]
-    public void GetSupportedExtensions_ReturnsSorted()
+    public void GetSupportedExtensions_WithMultipleAdapters_ReturnsSorted()
     {
         Registry.RegisterAdapter(CreateMockAdapter("Python", ".py"));
         Registry.RegisterAdapter(CreateMockAdapter("CSharp", ".cs"));
@@ -177,7 +177,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void IsSupported_ReturnsTrueForRegistered()
+    public void IsSupported_WithRegisteredExtension_ReturnsTrue()
     {
         Registry.RegisterAdapter(CreateMockAdapter("CSharp", ".cs"));
 
@@ -185,19 +185,19 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void IsSupported_ReturnsFalseForUnregistered()
+    public void IsSupported_WithUnregisteredExtension_ReturnsFalse()
     {
         Assert.False(Registry.IsSupported(".cs"));
     }
 
     [Fact]
-    public void IsSupported_ReturnsFalseForEmptyString()
+    public void IsSupported_WithEmptyString_ReturnsFalse()
     {
         Assert.False(Registry.IsSupported(""));
     }
 
     [Fact]
-    public void IsSupported_CaseInsensitive()
+    public void IsSupported_WithDifferentCasing_ReturnsTrue()
     {
         Registry.RegisterAdapter(CreateMockAdapter("CSharp", ".cs"));
 
@@ -206,7 +206,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void RegisterAdapter_NormalizesExtensionWithoutDot()
+    public void RegisterAdapter_WithExtensionMissingDot_NormalizesAndRegisters()
     {
         ILanguageAdapter adapter = CreateMockAdapter("CSharp", "cs");
 
@@ -219,7 +219,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void GetAdapter_NormalizesExtensionWithoutDot()
+    public void GetAdapter_WithExtensionMissingDot_NormalizesAndFinds()
     {
         Registry.RegisterAdapter(CreateMockAdapter("CSharp", ".cs"));
 
@@ -228,7 +228,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void MultipleAdapters_IndependentRegistrations()
+    public void RegisterAdapter_WithMultipleAdapters_MaintainsIndependentRegistrations()
     {
         ILanguageAdapter csAdapter = CreateMockAdapter("CSharp", ".cs");
         ILanguageAdapter pyAdapter = CreateMockAdapter("Python", ".py");
@@ -255,7 +255,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void CreateRegistry_RegistersBothCSharpAndPython()
+    public void CreateRegistry_WhenCalled_RegistersBothCSharpAndPython()
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
@@ -264,7 +264,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void CreateRegistry_CSharpAdapterResolvesCorrectly()
+    public void CreateRegistry_WithCSharpExtension_ResolvesToCSharpAdapter()
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
@@ -274,7 +274,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void CreateRegistry_PythonAdapterResolvesCorrectly()
+    public void CreateRegistry_WithPythonExtension_ResolvesToPythonAdapter()
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
@@ -284,7 +284,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void CreateRegistry_UnsupportedExtensionFails()
+    public void CreateRegistry_WithUnsupportedExtension_ReturnsFailure()
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
@@ -293,7 +293,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void CreateRegistry_SupportedExtensionsMatchExpectedList()
+    public void CreateRegistry_WhenCalled_SupportedExtensionsMatchExpectedList()
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
@@ -336,7 +336,7 @@ public class LanguageRegistryTests
     /// (or vice-versa), this test fails.
     /// </summary>
     [Fact]
-    public void CoreExtensions_MatchExpectedVSCodeExtensions()
+    public void CreateRegistry_WhenComparedToVSCode_MatchesExpectedExtensions()
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
         string[] coreExtensions = registry.GetSupportedExtensions();

@@ -17,7 +17,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public void Constructor_SetsLanguageCode()
+    public void Constructor_WithLanguageCode_SetsProperty()
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
@@ -217,7 +217,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public void IsLoaded_ReturnsFalseBeforeLoad()
+    public void IsLoaded_BeforeLoadingTable_ReturnsFalse()
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 

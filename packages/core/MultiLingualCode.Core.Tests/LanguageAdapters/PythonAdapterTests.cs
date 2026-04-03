@@ -15,7 +15,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void Properties_AreCorrect()
+    public void Properties_WhenAccessed_ReturnExpectedValues()
     {
         Assert.Equal("Python", Adapter.LanguageName);
         Assert.Equal(new[] { ".py" }, Adapter.FileExtensions);
@@ -257,7 +257,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void GetKeywordMap_Returns35Keywords()
+    public void GetKeywordMap_WhenCalled_Returns35Keywords()
     {
         Dictionary<string, int> map = Adapter.GetKeywordMap();
         Assert.Equal(35, map.Count);

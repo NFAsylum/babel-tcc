@@ -5,13 +5,13 @@ namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 public class CSharpKeywordMapTests
 {
     [Fact]
-    public void TextToId_Contains89Keywords()
+    public void TextToId_WhenAccessed_Contains89Keywords()
     {
         Assert.Equal(89, CSharpKeywordMap.TextToId.Count);
     }
 
     [Fact]
-    public void IdToText_Contains89Keywords()
+    public void IdToText_WhenAccessed_Contains89Keywords()
     {
         Assert.Equal(89, CSharpKeywordMap.IdToText.Count);
     }
@@ -26,7 +26,7 @@ public class CSharpKeywordMapTests
     }
 
     [Fact]
-    public void GetId_CaseInsensitive()
+    public void GetId_WithDifferentCasing_ReturnsSameId()
     {
         Assert.Equal(10, CSharpKeywordMap.GetId("CLASS"));
         Assert.Equal(10, CSharpKeywordMap.GetId("Class"));
@@ -60,7 +60,7 @@ public class CSharpKeywordMapTests
     }
 
     [Fact]
-    public void GetMap_ReturnsCopy()
+    public void GetMap_WhenMutated_DoesNotAffectOriginal()
     {
         Dictionary<string, int> map = CSharpKeywordMap.GetMap();
 
@@ -78,7 +78,7 @@ public class CSharpKeywordMapTests
     }
 
     [Fact]
-    public void AllIds_AreUnique()
+    public void IdToText_AllIds_AreUnique()
     {
         HashSet<int> ids = new HashSet<int>(CSharpKeywordMap.IdToText.Keys);
         Assert.Equal(CSharpKeywordMap.IdToText.Count, ids.Count);
@@ -107,7 +107,7 @@ public class CSharpKeywordMapTests
     }
 
     [Fact]
-    public void Id74_IsVar()
+    public void GetText_WithId74_ReturnsVar()
     {
         Assert.Equal("var", CSharpKeywordMap.GetText(74));
     }

@@ -38,7 +38,7 @@ public class SecurityTests : IDisposable
     }
 
     [Fact]
-    public async Task MaliciousCode_DoesNotCrash()
+    public async Task TranslateToNaturalLanguage_WithMaliciousCode_CompletesWithoutCrash()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -59,7 +59,7 @@ class Evil
     }
 
     [Fact]
-    public async Task ControlCharacters_DoNotCrash()
+    public async Task TranslateToNaturalLanguage_WithControlCharacters_CompletesWithoutCrash()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -153,7 +153,7 @@ class Programa
     }
 
     [Fact]
-    public void MalformedJson_LoadFrom_DoesNotCrash()
+    public void LoadFrom_WithMalformedJson_ReturnsFailureWithoutCrash()
     {
         string tempPath = Path.Combine(TempDir, "malformed.json");
         File.WriteAllText(tempPath, "{{{{invalid json]]]]");
@@ -164,7 +164,7 @@ class Programa
     }
 
     [Fact]
-    public void DeeplyNestedJson_LoadFrom_DoesNotCrash()
+    public void LoadFrom_WithDeeplyNestedJson_CompletesWithoutCrash()
     {
         string tempPath = Path.Combine(TempDir, "deep.json");
         StringBuilder sb = new StringBuilder();
@@ -189,7 +189,7 @@ class Programa
     }
 
     [Fact]
-    public void LargeJsonFile_LoadFrom_DoesNotCrash()
+    public void LoadFrom_WithLargeJsonFile_LoadsSuccessfully()
     {
         string tempPath = Path.Combine(TempDir, "large.json");
         StringBuilder sb = new StringBuilder();

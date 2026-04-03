@@ -9,7 +9,7 @@ public class CSharpAdapterTests
     public CSharpAdapter Adapter = new();
 
     [Fact]
-    public void Properties_AreCorrect()
+    public void Properties_WhenAccessed_ReturnExpectedValues()
     {
         Assert.Equal("CSharp", Adapter.LanguageName);
         Assert.Equal(new[] { ".cs" }, Adapter.FileExtensions);
