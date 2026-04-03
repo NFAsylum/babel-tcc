@@ -49,8 +49,8 @@ As traducoes sao armazenadas em ficheiros JSON com a seguinte estrutura:
 ## Adicionar novo idioma
 
 1. No repositorio `babel-tcc-translations`, criar directorio `natural-languages/<codigo-idioma>/`
-2. Copiar o template: `natural-languages/template.json`
-3. Preencher as traducoes
+2. Copiar um arquivo existente da mesma linguagem de programacao como base (ex: `pt-br/python.json`)
+3. Atualizar `languageCode`, `languageName` e todas as traducoes
 4. Testar com o Core
 
 Exemplo para Espanhol (ES-ES):

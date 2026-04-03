@@ -13,13 +13,13 @@ programming-languages/
 
 natural-languages/
 ├── pt-br/
-│   └── csharp.json              # Traducoes PT-BR para C#
-├── template.json                # Template para novos idiomas
+│   ├── csharp.json              # Traducoes PT-BR para C#
+│   └── python.json              # Traducoes PT-BR para Python
 └── [seu-idioma]/
-    └── csharp.json
+    └── [linguagem].json
 ```
 
-Nota: o repositorio de traducoes e separado (`babel-tcc-translations`). Futuras linguagens de programacao (Python, JavaScript) e idiomas naturais (ES-ES, FR-FR) serao adicionados conforme necessidade.
+Nota: o repositorio de traducoes e separado (`babel-tcc-translations`). Atualmente suporta C# e Python em 10 idiomas naturais. Novas linguagens e idiomas podem ser adicionados seguindo o padrao existente.
 
 ## Como Funciona
 
@@ -76,7 +76,7 @@ Exemplos de codigos:
 
 ### 3. Criar arquivo de traducao
 
-Copiar o template (`natural-languages/template.json` no repositorio `babel-tcc-translations`) e preencher:
+Copiar um arquivo existente da mesma linguagem como base (ex: `pt-br/python.json`) e atualizar:
 
 ```json
 {
