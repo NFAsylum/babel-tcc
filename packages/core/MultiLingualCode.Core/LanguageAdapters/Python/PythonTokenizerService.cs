@@ -399,7 +399,9 @@ public class PythonTokenizerService : IDisposable
                 versionString = versionString.Substring(0, suffixIndex);
             }
 
+#pragma warning disable CS8600 // Version.TryParse out parameter is non-null when returning true
             if (Version.TryParse(versionString, out Version version))
+#pragma warning restore CS8600
             {
                 return OperationResult.Ok(version);
             }

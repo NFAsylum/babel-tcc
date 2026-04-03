@@ -179,6 +179,9 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     } catch (error: unknown) {
       const message: string = error instanceof Error ? error.message : String(error);
       this.outputChannel.appendLine(`TranslatedContentProvider: translation failed - ${message}`);
+      vscode.window.showWarningMessage(
+        'Babel TCC: Translation failed. Showing original code. Check Output panel for details.'
+      );
       return sourceCode;
     }
   }

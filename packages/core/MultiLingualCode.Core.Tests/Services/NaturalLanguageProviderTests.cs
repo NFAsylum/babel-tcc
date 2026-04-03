@@ -6,10 +6,10 @@ namespace MultiLingualCode.Core.Tests.Services;
 
 public class NaturalLanguageProviderTests
 {
-    private static string TranslationsPath =>
+    public static string TranslationsPath =>
         Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
 
-    private static async Task<NaturalLanguageProvider> CreateLoadedProvider()
+    public static async Task<NaturalLanguageProvider> CreateLoadedProvider()
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
         await provider.LoadTranslationTableAsync("csharp");
