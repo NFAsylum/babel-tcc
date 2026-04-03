@@ -13,13 +13,17 @@
 |---------|------|--------|-----------|
 | `babel-tcc.enabled` | boolean | `true` | Ativar/desativar traducao |
 | `babel-tcc.language` | string | `"pt-br"` | Idioma alvo para traducao |
+| `babel-tcc.translationsPath` | string | `""` | Caminho absoluto para o repositorio babel-tcc-translations. Se vazio, auto-detecta como pasta irmã do workspace ou usa traduções embarcadas. |
+| `babel-tcc.readonly` | boolean | `false` | Abrir views traduzidas em modo readonly (impede edições acidentais no arquivo original) |
 
 ### Exemplo settings.json
 
 ```json
 {
   "babel-tcc.enabled": true,
-  "babel-tcc.language": "pt-br"
+  "babel-tcc.language": "pt-br",
+  "babel-tcc.translationsPath": "",
+  "babel-tcc.readonly": false
 }
 ```
 

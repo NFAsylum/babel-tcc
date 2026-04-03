@@ -19,10 +19,13 @@
 |  +-- StatusBar                           |
 |  +-- Commands (toggle, selectLanguage)   |
 |  +-- TranslatedContentProvider           |
-|  +-- EditInterceptor                     |
-|  +-- SaveHandler                         |
+|  +-- AutoTranslateManager               |
 |  +-- CompletionProvider                  |
 |  +-- HoverProvider                       |
+|  +-- KeywordMapService                   |
+|  +-- LanguageDetector                    |
+|  +-- ConfigurationService                |
+|  +-- CoreBridge                          |
 +------------------+-----------------------+
                    |
             CoreBridge (JSON via stdin/stdout)
@@ -44,13 +47,22 @@
 |  CSharpAdapter (Roslyn)                  |
 |  +-- RoslynWrapper                       |
 |  +-- CSharpKeywordMap                    |
+|                                          |
+|  PythonAdapter (subprocesso CPython)     |
+|  +-- PythonTokenizerService              |
+|  +-- PythonKeywordMap                    |
+|  +-- tokenizer_service.py               |
 +------------------+-----------------------+
                    |
 +------------------+-----------------------+
 |          Data Layer                      |
 |                                          |
-|  keywords-base.json                      |
-|  pt-br/csharp.json                       |
+|  programming-languages/                  |
+|    csharp/keywords-base.json             |
+|    python/keywords-base.json             |
+|  natural-languages/                      |
+|    pt-br/csharp.json, python.json        |
+|    (10 idiomas x 2 linguagens)           |
 |  identifier-map.json                     |
 +------------------------------------------+
 ```
@@ -60,10 +72,10 @@
 | Camada | Responsabilidade | Tecnologia |
 |--------|-----------------|------------|
 | Presentation | UI, commands, status bar | TypeScript / VS Code API |
-| Providers | Content, edit, save, completion, hover | TypeScript |
+| Providers | Content, auto-translate, completion, hover, keyword map | TypeScript |
 | CoreBridge | Comunicacao TS <-> C# | JSON via stdin/stdout |
 | Orchestration | Coordenar traducao | C# |
-| Adapters | Parsear/gerar codigo | C# / Roslyn |
+| Adapters | Parsear/gerar codigo | C# / Roslyn (C#), subprocesso CPython (Python) |
 | Data | Tabelas de traducao | JSON |
 
 ## Fluxo de traducao
@@ -74,22 +86,22 @@ sequenceDiagram
     participant E as Extension
     participant CB as CoreBridge
     participant O as Orchestrator
-    participant A as CSharpAdapter
+    participant A as Adapter (C#/Python)
     participant P as Provider
 
-    U->>E: Open .cs file
-    E->>E: Detect C# language
-    U->>E: Open Translated View
-    E->>CB: translateToNaturalLanguage(source, .cs, pt-br)
+    U->>E: Open .cs or .py file
+    E->>E: Detect language (LanguageDetector)
+    U->>E: Traduzir Codigo (Editavel/Readonly)
+    E->>CB: translateToNaturalLanguage(source, ext, pt-br)
     CB->>O: TranslateToNaturalLanguageAsync
-    O->>O: ApplyTraduAnnotations
+    O->>O: ApplyTraduAnnotations (via adapter)
     O->>A: Parse(sourceCode)
     A-->>O: ASTNode tree
     O->>O: Clone AST
     O->>O: TranslateAstForward (keywords + identifiers)
     O->>A: Generate(translatedAst)
     A-->>O: translated source
-    O-->>CB: OperationResult<string>
+    O-->>CB: OperationResultGeneric<string>
     CB-->>E: JSON response
     E-->>U: Show translated code
 ```
@@ -100,21 +112,22 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant E as Extension
-    participant SH as SaveHandler
+    participant TCP as TranslatedContentProvider
     participant CB as CoreBridge
     participant O as Orchestrator
 
     U->>E: Save translated document
-    E->>SH: onWillSaveTextDocument
-    SH->>CB: translateFromNaturalLanguage(translated, .cs, pt-br)
+    E->>TCP: writeFile (translated content)
+    TCP->>CB: translateFromNaturalLanguage(translated, ext, pt-br)
     CB->>O: TranslateFromNaturalLanguageAsync
+    O->>O: ReverseSubstituteKeywords
     O->>O: Parse translated code
     O->>O: TranslateAstReverse (keywords + identifiers)
     O->>O: Generate original code
-    O-->>CB: OperationResult<string>
-    CB-->>SH: original C# code
-    SH->>SH: Write to disk
-    SH-->>U: "File saved successfully"
+    O-->>CB: OperationResultGeneric<string>
+    CB-->>TCP: original code
+    TCP->>TCP: Write to disk
+    TCP-->>U: "File saved successfully"
 ```
 
 ## Decisoes de design
@@ -124,6 +137,8 @@ sequenceDiagram
 3. **IDs numericos para keywords** (DT-005): Desacopla linguagem de programacao da traducao
 4. **Anotacoes tradu** (DT-006): Traducao de identificadores definida pelo desenvolvedor
 5. **Roslyn para C#** (DT-001): Parser oficial da Microsoft
-6. **OperationResult pattern**: Sem exceptions, tratamento explicito de erros
+6. **Subprocesso CPython para Python**: Tokenizador nativo garante 100% compatibilidade
+7. **OperationResult pattern**: Sem exceptions, tratamento explicito de erros
+8. **TraduAnnotationParser agnostico**: Desacoplado do Roslyn, funciona com qualquer adapter
 
 Ver detalhes completos em [Decisoes Tecnicas](../decisoes-tecnicas.md).

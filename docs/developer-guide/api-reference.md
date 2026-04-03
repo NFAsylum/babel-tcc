@@ -23,10 +23,19 @@ public interface ILanguageAdapter
     ASTNode Parse(string sourceCode);
     string Generate(ASTNode ast);
     Dictionary<string, int> GetKeywordMap();
+    string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword);
     ValidationResult ValidateSyntax(string sourceCode);
     List<string> ExtractIdentifiers(string sourceCode);
+
+    // Metodos de suporte a anotacoes tradu (adicionados na tarefa 055)
+    List<TrailingComment> ExtractTrailingComments(string sourceCode);
+    List<string> GetIdentifierNamesOnLine(string sourceCode, int line);
+    string GetFirstStringLiteralOnLine(string sourceCode, int line);
+    (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line);
 }
 ```
+
+Implementacoes disponiveis: `CSharpAdapter` (Roslyn) e `PythonAdapter` (subprocesso CPython).
 
 ### INaturalLanguageProvider
 
@@ -38,10 +47,28 @@ public interface INaturalLanguageProvider
     string LanguageCode { get; }
     string LanguageName { get; }
 
-    Task LoadTranslationTableAsync(string programmingLanguage);
-    OperationResult<string> TranslateKeyword(int keywordId);
+    Task<OperationResult> LoadTranslationTableAsync(string programmingLanguage);
+    OperationResultGeneric<string> TranslateKeyword(int keywordId);
     int ReverseTranslateKeyword(string translatedKeyword);
-    OperationResult<string> TranslateIdentifier(string identifier, IdentifierContext context);
+    OperationResultGeneric<string> GetOriginalKeyword(int keywordId);
+    OperationResultGeneric<string> TranslateIdentifier(string identifier, IdentifierContext context);
+}
+```
+
+### IIDEAdapter
+
+Interface para integracao com IDEs (contrato interno).
+
+```csharp
+public interface IIDEAdapter
+{
+    string IDEName { get; }
+
+    Task ShowTranslatedContentAsync(string filePath, string translatedContent);
+    Task<EditEvent> CaptureEditEventAsync();
+    Task SaveOriginalContentAsync(string filePath, string originalContent);
+    Task<List<CompletionItem>> ProvideAutocompleteAsync(string partialText, int position);
+    Task ShowDiagnosticsAsync(List<Diagnostic> diagnostics);
 }
 ```
 
@@ -70,8 +97,8 @@ public abstract class ASTNode
 ```csharp
 public class KeywordNode : ASTNode
 {
-    public int KeywordId;
-    public string OriginalKeyword;
+    public int KeywordId { get; set; }
+    public string Text { get; set; }
 }
 ```
 
@@ -80,9 +107,9 @@ public class KeywordNode : ASTNode
 ```csharp
 public class IdentifierNode : ASTNode
 {
-    public string Name;
-    public string TranslatedName;
-    public bool IsTranslatable;
+    public string Name { get; set; }
+    public string TranslatedName { get; set; }
+    public bool IsTranslatable { get; set; }
 }
 ```
 
@@ -91,9 +118,9 @@ public class IdentifierNode : ASTNode
 ```csharp
 public class LiteralNode : ASTNode
 {
-    public object Value;
-    public LiteralType Type;
-    public bool IsTranslatable;
+    public object Value { get; set; }
+    public LiteralType Type { get; set; }
+    public bool IsTranslatable { get; set; }
 }
 ```
 
@@ -126,13 +153,23 @@ Coordena o fluxo completo de traducao.
 ```csharp
 public class TranslationOrchestrator
 {
-    // Traduzir codigo para idioma natural
-    public async Task<OperationResult<string>> TranslateToNaturalLanguageAsync(
-        string sourceCode, string fileExtension, string targetLanguage);
+    public required LanguageRegistry Registry { get; init; }
+    public required INaturalLanguageProvider Provider { get; init; }
+    public required IdentifierMapper IdentifierMapperService { get; init; }
 
-    // Traduzir de idioma natural para linguagem de programacao
-    public async Task<OperationResult<string>> TranslateFromNaturalLanguageAsync(
+    public static OperationResultGeneric<TranslationOrchestrator> Create(
+        LanguageRegistry registry, INaturalLanguageProvider provider, IdentifierMapper mapper);
+
+    public async Task<OperationResultGeneric<string>> TranslateToNaturalLanguageAsync(
+        string sourceCode, string fileExtension, string targetLanguage);
+    public async Task<OperationResultGeneric<string>> TranslateFromNaturalLanguageAsync(
         string translatedCode, string fileExtension, string sourceLanguage);
+
+    public void TranslateAstForward(ASTNode node, string targetLanguage);
+    public void TranslateAstReverse(ASTNode node, string sourceLanguage);
+    public void ApplyTraduAnnotations(string sourceCode, string targetLanguage, ILanguageAdapter adapter);
+    public void ApplyReverseTraduAnnotations(string code, string sourceLanguage, ILanguageAdapter adapter);
+    public string FindScopedTranslation(string name, int line);
 }
 ```
 
@@ -143,10 +180,16 @@ Gerencia mapeamentos bidirecionais de identificadores.
 ```csharp
 public class IdentifierMapper
 {
+    public IdentifierMapData Data;
+    public string LoadedPath;
+
     public OperationResult LoadMap(string projectPath);
+    public OperationResult SaveMap();
     public void SetTranslation(string identifier, string language, string translation);
-    public OperationResult<string> GetTranslation(string identifier, string language);
-    public OperationResult<string> GetOriginal(string translated, string language);
+    public void SetLiteralTranslation(string literal, string language, string translation);
+    public OperationResultGeneric<string> GetTranslation(string identifier, string language);
+    public OperationResultGeneric<string> GetOriginal(string translated, string language);
+    public OperationResultGeneric<string> GetLiteralTranslation(string literal, string language);
 }
 ```
 
@@ -158,7 +201,9 @@ Regista e obtem adaptadores de linguagens.
 public class LanguageRegistry
 {
     public OperationResult RegisterAdapter(ILanguageAdapter adapter);
-    public OperationResult<ILanguageAdapter> GetAdapter(string fileExtension);
+    public OperationResultGeneric<ILanguageAdapter> GetAdapter(string fileExtension);
+    public string[] GetSupportedExtensions();
+    public bool IsSupported(string fileExtension);
 }
 ```
 
@@ -179,10 +224,10 @@ graph TD
 
 ### OperationResult Pattern
 
-Todas as operacoes usam `OperationResult<T>` em vez de exceptions:
+Todas as operacoes usam `OperationResultGeneric<T>` em vez de exceptions:
 
 ```csharp
-OperationResult<string> result = orchestrator.TranslateToNaturalLanguageAsync(...);
+OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(...);
 if (result.IsSuccess)
 {
     string translated = result.Value;
