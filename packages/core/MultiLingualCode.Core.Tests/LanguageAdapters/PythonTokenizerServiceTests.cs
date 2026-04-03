@@ -214,4 +214,28 @@ public class PythonTokenizerServiceTests
 
         service.Dispose();
     }
+
+    [RequiresPythonFact]
+    public void NoDispose_ProcessRemainsAlive_LeakDetectable()
+    {
+        PythonTokenizerService service = new();
+        OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
+        Assert.True(result.IsSuccess);
+
+        int pid = service.Process.Id;
+
+        // Intentionally NOT calling Dispose — process should still be alive
+        try
+        {
+            System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(pid);
+            Assert.False(proc.HasExited, "Process should still be alive without Dispose");
+        }
+        catch (ArgumentException)
+        {
+            Assert.Fail("Process should still be alive without Dispose, but it was already gone");
+        }
+
+        // Manual cleanup to not leak in test
+        service.Dispose();
+    }
 }
