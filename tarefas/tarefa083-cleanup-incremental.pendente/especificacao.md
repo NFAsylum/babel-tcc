@@ -41,7 +41,7 @@ Fix: padronizar documentacao para mostrar formato com seletor.
 ### LOW-007: Problemas diversos
 - adding-new-ide.md: falta documentar modo persistente do protocolo
 - eslintrc.json: test/ excluido do lint
-- validate-translations.yml: sem actions/setup-python
+- (removido: validate-translations em ci.yml ja usa setup-python@v5)
 - keywordMap.test.ts:67: teste passa por parse error, nao por "unsupported language"
 - translatedContentProvider.ts:112: log hardcoded "saved original C#" para Python
 - coreBridge.ts:118: stdout! sem null check (stderr tem check)
