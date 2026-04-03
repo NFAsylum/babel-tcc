@@ -2,12 +2,9 @@ import * as vscode from 'vscode';
 import { isTranslatedScheme } from './translatedContentProvider';
 import { KeywordMapService } from './keywordMap';
 import { LanguageDetector } from '../services/languageDetector';
+import { buildVSCodeLanguageMap } from '../config/languages';
 
-/** Maps internal programming language names to VS Code language IDs for syntax highlighting. */
-const VSCODE_LANGUAGE_MAP: Record<string, string> = {
-  'CSharp': 'csharp',
-  'Python': 'python'
-};
+const VSCODE_LANGUAGE_MAP: Record<string, string> = buildVSCodeLanguageMap();
 
 /** Shows the original keyword when hovering over translated keywords. */
 export class HoverProvider implements vscode.HoverProvider {

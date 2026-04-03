@@ -1,9 +1,5 @@
 import * as path from 'path';
-
-const SUPPORTED_EXTENSIONS: Record<string, string> = {
-  '.cs': 'CSharp',
-  '.py': 'Python'
-};
+import { buildExtensionMap } from '../config/languages';
 
 /** Detects programming languages by file extension. */
 export class LanguageDetector {
@@ -11,7 +7,7 @@ export class LanguageDetector {
   public supportedExtensions: Record<string, string>;
 
   constructor() {
-    this.supportedExtensions = { ...SUPPORTED_EXTENSIONS };
+    this.supportedExtensions = buildExtensionMap();
   }
 
   /**
@@ -46,7 +42,7 @@ export class LanguageDetector {
 
   /**
    * Returns all file extensions currently supported for translation.
-   * @returns An array of extension strings (e.g., [".cs"]).
+   * @returns An array of extension strings (e.g., [".cs", ".py"]).
    */
   public getSupportedExtensions(): string[] {
     return Object.keys(this.supportedExtensions);
