@@ -3,22 +3,19 @@
 ## Prioridade: MEDIUM
 
 ## Problema
-Cada adapter novo precisa ser registrado manualmente em `CreateOrchestrator()` e `HandleValidateSyntax()` no Program.cs. Esquecer qualquer um causa falha silenciosa. Nao ha teste que verifica que todas as linguagens esperadas estao registradas.
+Cada adapter novo precisa ser registrado em `CreateRegistry()` no Program.cs. Nao ha teste que verifica que todas as linguagens esperadas estao registradas. Se alguem adicionar um adapter mas esquecer de registra-lo, a falha e silenciosa.
 
-Alem disso, `HandleValidateSyntax()` cria um registry local separado do `CreateOrchestrator()` — se um for atualizado e o outro nao, validacao funciona para uma linguagem mas traducao nao (ou vice-versa).
+Nota: `CreateOrchestrator()` e `HandleValidateSyntax()` ja compartilham `CreateRegistry()` — a duplicacao de registro foi resolvida anteriormente. O foco desta tarefa e **testes de consistencia**, nao refactoring.
+
+Problema adicional: `HandleValidateSyntax()` instancia `new PythonAdapter()` (com subprocesso) a cada chamada. Isso e ineficiente e cria processos orfaos — ver tarefa 076 para testes de lifecycle.
 
 ## Escopo
 
 ### 1. Testes de registro
-- Teste que verifica que CreateOrchestrator registra todos os adapters esperados (C# e Python)
-- Teste que verifica que HandleValidateSyntax aceita todas as extensoes suportadas
-- Teste que verifica que ambos os metodos suportam as mesmas extensoes
+- Teste que verifica que CreateRegistry() registra .cs e .py
+- Teste que verifica que HandleValidateSyntax aceita .cs e .py
+- Teste que verifica que ambos suportam as mesmas extensoes
 
-### 2. Eliminar duplicacao de registro
-Avaliar se o registry pode ser criado uma unica vez e compartilhado:
-- Extrair metodo `CreateRegistry()` usado por ambos `CreateOrchestrator()` e `HandleValidateSyntax()`
-- Ou criar constante com lista de adapters a registrar
-
-### 3. Teste de consistencia Core vs VS Code
-- Verificar que extensoes registradas no C# (LanguageRegistry) correspondem as do TypeScript (SUPPORTED_EXTENSIONS)
-- Pode ser um teste de integracao que le ambos ou uma convencao documentada
+### 2. Teste de consistencia Core vs VS Code
+- Verificar que extensoes registradas no C# (LanguageRegistry via CreateRegistry) correspondem as do TypeScript (SUPPORTED_EXTENSIONS no languageDetector)
+- Pode ser um teste que le ambas as fontes ou uma convencao documentada

@@ -22,8 +22,16 @@ O `PythonAdapter.Parse()` deve preservar o texto original do literal (incluindo 
 - Guardar o raw token text no LiteralNode (ex: `'hello'` ou `f"world"` completo)
 - Ou adicionar campo de metadata no LiteralNode para o tipo de aspas
 
+Atencao: `ExtractStringContent()` remove prefixos (f, r, b, u) alem das aspas. O `CollectReplacements` reconstroi sem prefixo. Isto significa que `f"hello {name}"` vira `"hello {name}"` — **perda de semantica**, nao apenas estetica. O prefixo f indica que `{name}` e uma expressao interpolada, sem ele e uma string literal com chaves.
+
 ### 3. Manter compatibilidade com CSharpAdapter
 O CSharpAdapter deve continuar funcionando como antes. A logica de `"\"" + literal.Value + "\""` pode permanecer no CSharpAdapter ou num override do helper.
 
+### 4. Impacto no modelo AST
+Se LiteralNode for alterado (ex: novo campo RawText ou QuoteType), todas as linguagens sao afetadas. Avaliar se a mudanca deve ser no LiteralNode compartilhado ou em logica especifica do adapter no Generate().
+
 ## Impacto
-Bug silencioso: aspas simples do Python viram duplas no round-trip.
+Bugs silenciosos no round-trip Python:
+- Aspas simples viram duplas (`'hello'` -> `"hello"`)
+- Prefixos de string perdidos (`f"hello {name}"` -> `"hello {name}"`)
+- Raw strings perdem prefixo (`r"\path"` -> `"\path"` — muda semantica de escape)
