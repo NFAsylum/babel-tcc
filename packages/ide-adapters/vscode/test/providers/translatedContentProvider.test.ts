@@ -146,6 +146,37 @@ describe('TranslatedContentProvider', () => {
       await provider.writeFile(uri, new TextEncoder().encode('test'));
       expect(window.showErrorMessage).toHaveBeenCalled();
     });
+
+    it('should clean refreshingPaths even when applyEdit fails', async () => {
+      vi.useFakeTimers();
+      try {
+        const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+        const content = new TextEncoder().encode('publico classe Foo {}');
+
+        // Setup: mock document that triggers the refresh path
+        const mockDoc = {
+          uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`),
+          getText: vi.fn((): string => 'old content'),
+          lineAt: vi.fn((): { range: { end: { line: 0, character: 0 } } } =>
+            ({ range: { end: { line: 0, character: 0 } } })),
+          lineCount: 1,
+        };
+        workspace.textDocuments = [mockDoc];
+
+        // Make applyEdit reject
+        workspace.applyEdit = vi.fn().mockRejectedValue(new Error('applyEdit failed'));
+
+        await provider.writeFile(uri, content);
+
+        // Advance past the setTimeout(100ms)
+        await vi.advanceTimersByTimeAsync(200);
+
+        // refreshingPaths should be clean even though applyEdit failed
+        expect(provider.refreshingPaths.has('/test/file.cs')).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   describe('invalidateAll', () => {

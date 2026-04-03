@@ -11,6 +11,7 @@ import { HoverProvider } from './providers/hoverProvider';
 import { KeywordMapService } from './providers/keywordMap';
 import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
+import { buildFileWatcherPattern } from './config/languages';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -130,7 +131,7 @@ export function activate(context: vscode.ExtensionContext): void {
     hoverProviderInstance
   );
 
-  const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.{cs,py}');
+  const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(buildFileWatcherPattern());
   const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
     (uri: vscode.Uri): void => {
       if (translatedContentProvider.writingPaths.has(uri.path)) {

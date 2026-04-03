@@ -120,4 +120,122 @@ public class PythonTokenizerServiceTests
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
         Assert.False(result.IsSuccess);
     }
+
+    [RequiresPythonFact]
+    public void Dispose_StopsProcess()
+    {
+        PythonTokenizerService service = new();
+        OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
+        Assert.True(result.IsSuccess);
+
+        int pid = service.Process.Id;
+
+        service.Dispose();
+
+        try
+        {
+            System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(pid);
+            Assert.True(proc.HasExited);
+        }
+        catch (ArgumentException)
+        {
+            // Process no longer exists — OK, means it was stopped
+        }
+    }
+
+    [RequiresPythonFact]
+    public void SequentialCreateDispose_DoesNotAccumulateProcesses()
+    {
+        List<int> processIds = new();
+
+        for (int i = 0; i < 3; i++)
+        {
+            PythonTokenizerService service = new();
+            OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
+            Assert.True(result.IsSuccess);
+            processIds.Add(service.Process.Id);
+            service.Dispose();
+        }
+
+        foreach (int pid in processIds)
+        {
+            try
+            {
+                System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(pid);
+                Assert.True(proc.HasExited);
+            }
+            catch (ArgumentException)
+            {
+                // Process no longer exists — OK
+            }
+        }
+    }
+
+    [RequiresPythonFact]
+    public void ProcessCrash_NextTokenize_RestartsProcess()
+    {
+        using PythonTokenizerService service = new();
+        OperationResultGeneric<List<PythonToken>> result1 = service.Tokenize("x = 1");
+        Assert.True(result1.IsSuccess);
+
+        int originalPid = service.Process.Id;
+
+        service.Process.Kill();
+        service.Process.WaitForExit(2000);
+
+        OperationResultGeneric<List<PythonToken>> result2 = service.Tokenize("y = 2");
+        Assert.True(result2.IsSuccess);
+        Assert.NotEqual(originalPid, service.Process.Id);
+    }
+
+    [RequiresPythonFact]
+    public void ProcessCrash_NoOrphanProcess()
+    {
+        PythonTokenizerService service = new();
+        OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
+        Assert.True(result.IsSuccess);
+
+        int originalPid = service.Process.Id;
+
+        service.Process.Kill();
+        service.Process.WaitForExit(2000);
+
+        service.Tokenize("y = 2");
+
+        try
+        {
+            System.Diagnostics.Process oldProc = System.Diagnostics.Process.GetProcessById(originalPid);
+            Assert.True(oldProc.HasExited);
+        }
+        catch (ArgumentException)
+        {
+            // Process no longer exists — OK
+        }
+
+        service.Dispose();
+    }
+
+    [RequiresPythonFact]
+    public void NoDispose_ProcessRemainsAlive_LeakDetectable()
+    {
+        PythonTokenizerService service = new();
+        OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
+        Assert.True(result.IsSuccess);
+
+        int pid = service.Process.Id;
+
+        // Intentionally NOT calling Dispose — process should still be alive
+        try
+        {
+            System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(pid);
+            Assert.False(proc.HasExited, "Process should still be alive without Dispose");
+        }
+        catch (ArgumentException)
+        {
+            Assert.Fail("Process should still be alive without Dispose, but it was already gone");
+        }
+
+        // Manual cleanup to not leak in test
+        service.Dispose();
+    }
 }

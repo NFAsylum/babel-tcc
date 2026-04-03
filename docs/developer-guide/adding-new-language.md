@@ -134,6 +134,26 @@ natural-languages/
 }
 ```
 
+## 4b. Configurar scripts de subprocesso no .csproj
+
+Se o adapter usar um script externo (como `tokenizer_service.py` do Python),
+o script precisa ser copiado para o output directory durante o build.
+
+Adicionar ao `MultiLingualCode.Core.csproj`:
+
+```xml
+<ItemGroup>
+  <None Include="LanguageAdapters\NovaLinguagem\script_name.py">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+```
+
+**Importante**: Sem essa configuracao, o adapter funciona nos testes unitarios
+(que instanciam diretamente) mas falha em runtime no VS Code com "script not found".
+O teste `AllNonCSharpSourceFiles_CopiedToOutput` em `BuildDeployTests.cs` detecta
+essa omissao automaticamente.
+
 ## 5. Criar testes
 
 Criar ficheiro `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.cs` com testes para:
@@ -142,6 +162,27 @@ Criar ficheiro `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.
 - `Parse_ClassDeclaration_ExtractsAll`
 - `Generate_TranslatedAst_ProducesCorrectOutput`
 - `RoundTrip_SimpleCode_PreservesStructure`
+
+## 6. Configurar extensao VS Code
+
+Adicionar a nova linguagem ao registro central em `packages/ide-adapters/vscode/src/config/languages.ts`:
+
+```typescript
+export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
+  { name: 'CSharp', extensions: ['.cs'], vscodeLangId: 'csharp' },
+  { name: 'Python', extensions: ['.py'], vscodeLangId: 'python' },
+  { name: 'NovaLinguagem', extensions: ['.ext'], vscodeLangId: 'novalinguagem' },
+];
+```
+
+Atualizar manualmente o `package.json` (lido estaticamente pelo VS Code):
+- `activationEvents`: adicionar `onLanguage:novalinguagem`
+- `languages`: adicionar `{ "id": "mlc-novalinguagem" }`
+- `grammars`: adicionar entrada para `mlc-novalinguagem`
+
+Criar `syntaxes/mlc-novalinguagem.tmLanguage.json` para syntax highlighting.
+
+O teste de consistencia em `test/config/languages.test.ts` verifica automaticamente que o registro TypeScript esta alinhado com o package.json.
 
 ## Implementacoes existentes
 

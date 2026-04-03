@@ -540,6 +540,48 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
     }
 
     [Fact]
+    public async Task ApplyTraduAnnotations_DoesNotPersistToDisk()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_nopersist_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            // Pre-populate identifier-map with existing mapping
+            mapper.SetTranslation("ExistingClass", "pt-br", "ClasseExistente");
+            mapper.SaveMap();
+
+            string mapFilePath = Path.Combine(tempDir, ".multilingual", "identifier-map.json");
+            string contentBefore = File.ReadAllText(mapFilePath);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string sourceCode = @"public class NewClass // tradu[pt-br]:NovaClasse
+{
+}";
+
+            OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+                sourceCode, ".cs", "pt-br");
+            Assert.True(result.IsSuccess);
+
+            // Verify file on disk was NOT modified by translation
+            string contentAfter = File.ReadAllText(mapFilePath);
+            Assert.Equal(contentBefore, contentAfter);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
     public async Task ModifyTraduInTranslatedCode_ReverseAndForward_UsesNewTradu()
     {
         CSharpAdapter realAdapter = new CSharpAdapter();
@@ -664,6 +706,149 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             // We verify the field declaration line still has "a" by checking mapper has no global mapping for "a"
             OperationResultGeneric<string> globalMapping = mapper.GetTranslation("a", "pt-br");
             Assert.False(globalMapping.IsSuccess);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    // === Testes multi-linguagem: verificam perda de dados via ApplyTraduAnnotations ===
+
+    [Fact]
+    public void ApplyTraduAnnotations_SequentialFiles_ClearsMemoryBetweenCalls()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_multi_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+            NaturalLanguageProvider provider = CreateProvider();
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator
+            {
+                Registry = Registry,
+                Provider = provider,
+                IdentifierMapperService = mapper
+            };
+
+            string csCode = @"public class Calculator // tradu[pt-br]:Calculadora
+{
+    public int Add(int a, int b) // tradu[pt-br]:Somar
+    {
+        return a + b;
+    }
+}";
+
+            // First file: C# with tradu annotations
+            orchestrator.ApplyTraduAnnotations(csCode, "pt-br", new CSharpAdapter());
+            Assert.True(mapper.GetTranslation("Calculator", "pt-br").IsSuccess);
+            Assert.True(mapper.GetTranslation("Add", "pt-br").IsSuccess);
+
+            // Second file: different annotations (simulates translating another file)
+            string csCode2 = @"public class Student // tradu[pt-br]:Aluno
+{
+}";
+            orchestrator.ApplyTraduAnnotations(csCode2, "pt-br", new CSharpAdapter());
+
+            // After second call: Clear() destroyed Calculator and Add from memory
+            Assert.False(mapper.GetTranslation("Calculator", "pt-br").IsSuccess,
+                "Calculator mapping should be cleared after second ApplyTraduAnnotations call");
+            Assert.False(mapper.GetTranslation("Add", "pt-br").IsSuccess,
+                "Add mapping should be cleared after second ApplyTraduAnnotations call");
+            Assert.True(mapper.GetTranslation("Student", "pt-br").IsSuccess);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ApplyTraduAnnotations_SequentialFiles_DestroysPersistedData()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_persist_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+            NaturalLanguageProvider provider = CreateProvider();
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator
+            {
+                Registry = Registry,
+                Provider = provider,
+                IdentifierMapperService = mapper
+            };
+
+            string csCode = @"public class Calculator // tradu[pt-br]:Calculadora
+{
+}";
+            // Translate first file — saves to disk
+            orchestrator.ApplyTraduAnnotations(csCode, "pt-br", new CSharpAdapter());
+            mapper.SaveMap();
+
+            // Verify data is on disk
+            IdentifierMapper verify1 = new IdentifierMapper();
+            verify1.LoadMap(tempDir);
+            Assert.True(verify1.GetTranslation("Calculator", "pt-br").IsSuccess,
+                "Calculator should be persisted after first save");
+
+            // Translate second file — Clear() + rebuild + SaveMap
+            string csCode2 = @"public class Student // tradu[pt-br]:Aluno
+{
+}";
+            orchestrator.ApplyTraduAnnotations(csCode2, "pt-br", new CSharpAdapter());
+            mapper.SaveMap();
+
+            // Verify data on disk: Calculator was DESTROYED
+            IdentifierMapper verify2 = new IdentifierMapper();
+            verify2.LoadMap(tempDir);
+            Assert.False(verify2.GetTranslation("Calculator", "pt-br").IsSuccess,
+                "Calculator mapping was permanently destroyed from disk by second ApplyTraduAnnotations + SaveMap");
+            Assert.True(verify2.GetTranslation("Student", "pt-br").IsSuccess);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ApplyTraduAnnotations_RoundTripMultiFile_SecondFileBreaksFirst()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_rt_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+            NaturalLanguageProvider provider = CreateProvider();
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator
+            {
+                Registry = Registry,
+                Provider = provider,
+                IdentifierMapperService = mapper
+            };
+
+            // Translate .cs file
+            string csCode = @"public class Calculator // tradu[pt-br]:Calculadora
+{
+}";
+            orchestrator.ApplyTraduAnnotations(csCode, "pt-br", new CSharpAdapter());
+
+            // Verify forward translation works
+            Assert.Equal("Calculadora", mapper.GetTranslation("Calculator", "pt-br").Value);
+
+            // Translate second .cs file
+            string csCode2 = @"public class Student // tradu[pt-br]:Aluno
+{
+}";
+            orchestrator.ApplyTraduAnnotations(csCode2, "pt-br", new CSharpAdapter());
+
+            // Reverse translation of first file: Calculator mapping is GONE
+            Assert.False(mapper.GetOriginal("Calculadora", "pt-br").IsSuccess,
+                "Reverse lookup for Calculadora fails because Clear() destroyed the mapping");
         }
         finally
         {
