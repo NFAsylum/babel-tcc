@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Extension",
+            "type": "extensionHost",
+            "request": "launch",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/ide-adapters/vscode"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/ide-adapters/vscode/dist/**/*.js"
+            ],
+            "preLaunchTask": "build-all"
+        }
+    ]
+}
