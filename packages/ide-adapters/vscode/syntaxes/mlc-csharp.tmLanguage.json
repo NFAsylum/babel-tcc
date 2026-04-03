@@ -76,7 +76,7 @@
       "patterns": [
         {
           "name": "keyword.control.mlc-csharp",
-          "match": "\\b(se|senao|para|paracada|enquanto|faca|escolha|caso|padrao|retornar|quebrar|continuar|lancamento|tentar|capturar|finalmente|em|goto)\\b"
+          "match": "\\b(se|senao|para|paracada|enquanto|faca|escolha|caso|padrao|retornar|parar|continuar|lancar|tentar|capturar|finalmente|em|vapara)\\b"
         }
       ]
     },
@@ -92,7 +92,7 @@
       "patterns": [
         {
           "name": "keyword.other.modifier.mlc-csharp",
-          "match": "\\b(publico|protegido|privado|interno|estatico|constante|somenteLeitura|virtual|sobrescrever|abstrato|selado|async|parcial|externo|volatil|inseguro|fixo)\\b"
+          "match": "\\b(publico|protegido|privado|interno|estatico|constante|somenteleitura|virtual|sobrescrever|abstrato|selado|assincrono|parcial|externo|volatil|inseguro|fixo)\\b"
         }
       ]
     },
@@ -108,7 +108,7 @@
       "patterns": [
         {
           "name": "keyword.other.mlc-csharp",
-          "match": "\\b(usando|espaconome|classe|estrutura|enumeracao|interface|novo|este|base|tipode|tamanhode|como|e|de|referencia|aguardar|delegado|evento|operador|implicito|explicito|verificado|naoverificado|bloqueado)\\b"
+          "match": "\\b(usando|espaconome|classe|estrutura|enumeracao|interface|novo|este|base|tipode|tamanhode|como|igual|referencia|aguardar|delegado|evento|operador|implicito|explicito|verificado|naoverificado|trancar|saida|parametros)\\b"
         }
       ]
     },
@@ -116,7 +116,7 @@
       "patterns": [
         {
           "name": "markup.italic.tradu.mlc-csharp",
-          "match": "//\\s*tradu:.*$"
+          "match": "//\\s*tradu(\\[.*?\\])?:.*$"
         }
       ]
     }
