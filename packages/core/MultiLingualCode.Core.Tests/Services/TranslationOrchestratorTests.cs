@@ -276,7 +276,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task RoundTrip_TranslateAndReverse()
+    public async Task RoundTrip_ForwardAndReverse_PreservesKeywords()
     {
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         Registry.RegisterAdapter(adapter);
@@ -300,7 +300,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task TranslateToNaturalLanguage_PreservesUntranslatableIdentifiers()
+    public async Task TranslateToNaturalLanguage_LowercaseIdentifier_PreservesUntranslatable()
     {
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         Registry.RegisterAdapter(adapter);
@@ -540,7 +540,7 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
     }
 
     [Fact]
-    public async Task ApplyTraduAnnotations_DoesNotPersistToDisk()
+    public async Task ApplyTraduAnnotations_AfterTranslation_DoesNotPersistToDisk()
     {
         CSharpAdapter realAdapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();

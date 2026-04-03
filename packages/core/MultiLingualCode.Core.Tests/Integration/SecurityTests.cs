@@ -72,7 +72,7 @@ class Evil
     }
 
     [Fact]
-    public async Task ExtremelyLongIdentifier_DoesNotCrash()
+    public async Task ExtremelyLongIdentifier_WhenTranslated_DoesNotCrash()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -86,7 +86,7 @@ class Evil
     }
 
     [Fact]
-    public async Task DeeplyNestedCode_DoesNotStackOverflow()
+    public async Task DeeplyNestedCode_WhenTranslated_DoesNotStackOverflow()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -114,7 +114,7 @@ class Evil
     }
 
     [Fact]
-    public async Task EmptyFile_HandledGracefully()
+    public async Task EmptyFile_WhenTranslated_HandledGracefully()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -125,7 +125,7 @@ class Evil
     }
 
     [Fact]
-    public async Task WhitespaceOnlyFile_HandledGracefully()
+    public async Task WhitespaceOnlyFile_WhenTranslated_HandledGracefully()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -136,7 +136,7 @@ class Evil
     }
 
     [Fact]
-    public async Task UnicodeSourceCode_HandledCorrectly()
+    public async Task UnicodeSourceCode_WhenTranslated_HandledCorrectly()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -221,7 +221,7 @@ class Programa
     }
 
     [Fact]
-    public async Task InjectionInTraduComment_DoesNotExecute()
+    public async Task InjectionInTraduComment_WhenTranslated_DoesNotExecute()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -238,7 +238,7 @@ class Test // tradu[pt-br]:Teste<script>alert('xss')</script>
     }
 
     [Fact]
-    public async Task TranslatedOutput_DoesNotIntroduceExecutableCode()
+    public async Task TranslatedOutput_WhenTranslated_DoesNotIntroduceExecutableCode()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 

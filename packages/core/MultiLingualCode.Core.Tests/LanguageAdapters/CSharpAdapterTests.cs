@@ -119,7 +119,7 @@ public class Calculator
     }
 
     [Fact]
-    public void Parse_PreservesPositions()
+    public void Parse_SimpleDeclaration_PreservesPositions()
     {
         string code = "public class Program { }";
         //          0123456789...
@@ -138,7 +138,7 @@ public class Calculator
     }
 
     [Fact]
-    public void Parse_PreservesLineNumbers()
+    public void Parse_MultiLineCode_PreservesLineNumbers()
     {
         string code = "using System;\nnamespace Test\n{\n    class Foo { }\n}";
 
@@ -156,7 +156,7 @@ public class Calculator
     }
 
     [Fact]
-    public void Parse_ExtractsLiterals()
+    public void Parse_MixedLiterals_ExtractsAllTypes()
     {
         string code = @"string s = ""hello""; int n = 42; char c = 'a';";
 
@@ -290,7 +290,7 @@ finally { }";
     }
 
     [Fact]
-    public void GetKeywordMap_ReturnsAllCSharpKeywords()
+    public void GetKeywordMap_WhenCalled_ReturnsAllCSharpKeywords()
     {
         Dictionary<string, int> map = Adapter.GetKeywordMap();
 
@@ -325,7 +325,7 @@ finally { }";
     }
 
     [Fact]
-    public void ExtractIdentifiers_ReturnsUniqueIdentifiers()
+    public void ExtractIdentifiers_ClassWithMethods_ReturnsUniqueNames()
     {
         string code = @"
 class Calculator
@@ -1069,7 +1069,7 @@ espaco_de_nomes MeuProjeto
     }
 
     [Fact]
-    public void ReverseSubstituteKeywords_PreservesStringLiterals()
+    public void ReverseSubstituteKeywords_WithStringLiterals_PreservesContent()
     {
         string translatedCode = @"usando Sistema;
 
@@ -1090,7 +1090,7 @@ espaco_de_nomes MeuProjeto
     }
 
     [Fact]
-    public void ReverseSubstituteKeywords_PreservesComments()
+    public void ReverseSubstituteKeywords_WithComments_PreservesContent()
     {
         string translatedCode = @"usando Sistema;
 

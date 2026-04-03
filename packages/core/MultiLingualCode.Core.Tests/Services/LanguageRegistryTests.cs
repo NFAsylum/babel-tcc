@@ -105,7 +105,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void GetAdapter_ReturnsFailureForUnknownExtension()
+    public void GetAdapter_UnknownExtension_ReturnsFailure()
     {
         ILanguageAdapter adapter = CreateMockAdapter("CSharp", ".cs");
         Registry.RegisterAdapter(adapter);
@@ -115,14 +115,14 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void GetAdapter_ReturnsFailureForEmptyString()
+    public void GetAdapter_EmptyString_ReturnsFailure()
     {
         OperationResultGeneric<ILanguageAdapter> result = Registry.GetAdapter("");
         Assert.False(result.IsSuccess);
     }
 
     [Fact]
-    public void GetAdapter_ReturnsFailureForNullString()
+    public void GetAdapter_NullString_ReturnsFailure()
     {
         OperationResultGeneric<ILanguageAdapter> result = Registry.GetAdapter(null!);
         Assert.False(result.IsSuccess);

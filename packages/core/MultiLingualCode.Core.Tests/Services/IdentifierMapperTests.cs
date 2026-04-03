@@ -240,7 +240,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SetTranslation_AddsNewMapping()
+    public void SetTranslation_NewIdentifier_AddsMapping()
     {
         Mapper.LoadMap(TempDir);
 
@@ -253,7 +253,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SetTranslation_MultipleLanguages()
+    public void SetTranslation_TwoLanguages_StoresBoth()
     {
         Mapper.LoadMap(TempDir);
 
@@ -271,7 +271,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SetTranslation_OverwritesExisting()
+    public void SetTranslation_SameIdentifierTwice_OverwritesExisting()
     {
         Mapper.LoadMap(TempDir);
 
@@ -284,7 +284,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SetTranslation_DoesNotThrowOnNull()
+    public void SetTranslation_NullArguments_DoesNotThrow()
     {
         Mapper.LoadMap(TempDir);
 
@@ -295,7 +295,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SetLiteralTranslation_AddsNewMapping()
+    public void SetLiteralTranslation_NewLiteral_AddsMapping()
     {
         Mapper.LoadMap(TempDir);
 
@@ -328,7 +328,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SaveMap_CreatesFileAndDirectory()
+    public void SaveMap_WithMappings_CreatesFileAndDirectory()
     {
         Mapper.LoadMap(TempDir);
         Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
@@ -342,7 +342,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SaveMap_RoundTrip()
+    public void SaveMap_SaveAndReload_PreservesAllData()
     {
         Mapper.LoadMap(TempDir);
         Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
@@ -367,7 +367,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void SaveMap_WithExplicitPath()
+    public void SaveMap_ExplicitPath_CreatesFileAtLocation()
     {
         string otherDir = Path.Combine(TempDir, "other-project");
         Directory.CreateDirectory(otherDir);
@@ -392,7 +392,7 @@ public class IdentifierMapperTests : IDisposable
     }
 
     [Fact]
-    public void GetOriginal_IsCaseSensitive()
+    public void GetOriginal_WrongCasing_ReturnsFailure()
     {
         Mapper.LoadMap(TempDir);
         Mapper.SetTranslation("GetName", "pt-br", "ObterNome");
