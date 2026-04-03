@@ -804,4 +804,64 @@ namespace HelloWorld
 
         Assert.Equal(sourceCode, reverseResult.Value);
     }
+
+    [RequiresPythonFact]
+    public async Task Python_RoundTrip_SingleQuoteString_PreservesQuotes()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreatePythonOrchestrator(mapper);
+
+        string sourceCode = "x = 'hello world'";
+
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+        Assert.True(translationResult.IsSuccess, translationResult.ErrorMessage);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translationResult.Value, ".py", "pt-br");
+        Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
+
+        Assert.Equal(sourceCode, reverseResult.Value);
+    }
+
+    [Fact]
+    public async Task CSharp_RoundTrip_StringLiteral_PreservesQuotes()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = "string x = \"hello\";";
+
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+        Assert.True(translationResult.IsSuccess, translationResult.ErrorMessage);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translationResult.Value, ".cs", "pt-br");
+        Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
+
+        Assert.Equal(sourceCode, reverseResult.Value);
+    }
+
+    [RequiresPythonFact]
+    public async Task Python_RoundTrip_FString_PreservesPrefix()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreatePythonOrchestrator(mapper);
+
+        string sourceCode = "x = f\"hello {name}\"";
+
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+        Assert.True(translationResult.IsSuccess, translationResult.ErrorMessage);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translationResult.Value, ".py", "pt-br");
+        Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
+
+        Assert.Equal(sourceCode, reverseResult.Value);
+    }
 }

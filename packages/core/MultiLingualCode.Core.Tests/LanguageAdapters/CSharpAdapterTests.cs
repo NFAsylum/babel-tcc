@@ -1279,4 +1279,40 @@ espaconome MeuProjeto
             CollectNodes(child, result);
         }
     }
+
+    [Fact]
+    public void RoundTrip_DoubleQuoteString_PreservesQuotes()
+    {
+        string code = "string x = \"hello\";";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [Fact]
+    public void RoundTrip_VerbatimString_PreservesQuotes()
+    {
+        string code = "string x = @\"hello\\world\";";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [Fact]
+    public void RoundTrip_InterpolatedString_PreservesQuotes()
+    {
+        string code = "string x = $\"hello {name}\";";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [Fact]
+    public void RoundTrip_SimpleCode_PreservesStructure()
+    {
+        string code = "public class Foo { public int Bar() { return 42; } }";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
 }

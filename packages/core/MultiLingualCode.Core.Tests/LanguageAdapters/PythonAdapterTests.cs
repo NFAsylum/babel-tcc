@@ -460,6 +460,60 @@ public class PythonAdapterTests : IDisposable
         Assert.Equal(code, reversed);
     }
 
+    [RequiresPythonFact]
+    public void RoundTrip_SingleQuoteString_PreservesQuotes()
+    {
+        string code = "x = 'hello world'";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [RequiresPythonFact]
+    public void RoundTrip_DoubleQuoteString_PreservesQuotes()
+    {
+        string code = "x = \"hello world\"";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [RequiresPythonFact]
+    public void RoundTrip_TripleQuoteString_PreservesQuotes()
+    {
+        string code = "x = '''multiline\nstring'''";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [RequiresPythonFact]
+    public void RoundTrip_FString_PreservesPrefixAndQuotes()
+    {
+        string code = "x = f\"hello {name}\"";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [RequiresPythonFact]
+    public void RoundTrip_RawString_PreservesPrefixAndQuotes()
+    {
+        string code = "x = r\"raw\\path\"";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [RequiresPythonFact]
+    public void RoundTrip_ByteString_PreservesPrefixAndQuotes()
+    {
+        string code = "x = b\"bytes\"";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
     public static List<KeywordNode> GetKeywordNodes(ASTNode ast)
     {
         List<KeywordNode> nodes = new();
