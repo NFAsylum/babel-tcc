@@ -19,7 +19,7 @@ natural-languages/
     └── [linguagem].json
 ```
 
-Nota: o repositorio de traducoes e separado (`babel-tcc-translations`). Futuras linguagens de programacao (Python, JavaScript) e idiomas naturais (ES-ES, FR-FR) serao adicionados conforme necessidade.
+Nota: o repositorio de traducoes e separado (`babel-tcc-translations`). Atualmente suporta C# e Python em 10 idiomas naturais. Novas linguagens e idiomas podem ser adicionados seguindo o padrao existente.
 
 ## Como Funciona
 
