@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models.AST;
 public class IdentifierNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         IdentifierNode node = new IdentifierNode
         {
@@ -28,7 +28,7 @@ public class IdentifierNodeTests
     }
 
     [Fact]
-    public void Clone_IsDeepCopy()
+    public void Clone_WhenModifyingClone_DoesNotAffectOriginal()
     {
         IdentifierNode node = new IdentifierNode { Name = "original", IsTranslatable = false };
         IdentifierNode clone = (IdentifierNode)node.Clone();
@@ -38,7 +38,7 @@ public class IdentifierNodeTests
     }
 
     [Fact]
-    public void DefaultValues_AreCorrect()
+    public void DefaultValues_NewInstance_AreCorrect()
     {
         IdentifierNode node = new IdentifierNode();
 

@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models.AST;
 public class KeywordNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         KeywordNode node = new KeywordNode
         {
@@ -28,7 +28,7 @@ public class KeywordNodeTests
     }
 
     [Fact]
-    public void Clone_IsDeepCopy()
+    public void Clone_WhenModifyingClone_DoesNotAffectOriginal()
     {
         KeywordNode node = new KeywordNode { KeywordId = 30, Text = "if" };
         KeywordNode clone = (KeywordNode)node.Clone();
@@ -38,7 +38,7 @@ public class KeywordNodeTests
     }
 
     [Fact]
-    public void Clone_DeepClonesChildren()
+    public void Clone_WithChildren_DeepClonesChildren()
     {
         KeywordNode parent = new KeywordNode { KeywordId = 30, Text = "if" };
         IdentifierNode child = new IdentifierNode { Name = "x" };

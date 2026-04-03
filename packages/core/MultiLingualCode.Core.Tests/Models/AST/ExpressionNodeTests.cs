@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models.AST;
 public class ExpressionNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         ExpressionNode node = new ExpressionNode
         {
@@ -20,7 +20,7 @@ public class ExpressionNodeTests
     }
 
     [Fact]
-    public void Clone_IsDeepCopy()
+    public void Clone_WhenModifyingClone_DoesNotAffectOriginal()
     {
         ExpressionNode node = new ExpressionNode { ExpressionKind = "MethodCall", RawText = "Foo()" };
         ExpressionNode clone = (ExpressionNode)node.Clone();

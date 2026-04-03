@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models.AST;
 public class LiteralNodeTests
 {
     [Fact]
-    public void Clone_CopiesStringLiteral()
+    public void Clone_WithStringValue_CopiesStringLiteral()
     {
         LiteralNode node = new LiteralNode
         {
@@ -22,7 +22,7 @@ public class LiteralNodeTests
     }
 
     [Fact]
-    public void Clone_CopiesNumberLiteral()
+    public void Clone_WithNumberValue_CopiesNumberLiteral()
     {
         LiteralNode node = new LiteralNode { Value = 42, Type = LiteralType.Number };
         LiteralNode clone = (LiteralNode)node.Clone();
@@ -32,7 +32,7 @@ public class LiteralNodeTests
     }
 
     [Fact]
-    public void Clone_CopiesBooleanLiteral()
+    public void Clone_WithBooleanValue_CopiesBooleanLiteral()
     {
         LiteralNode node = new LiteralNode { Value = true, Type = LiteralType.Boolean };
         LiteralNode clone = (LiteralNode)node.Clone();
@@ -42,7 +42,7 @@ public class LiteralNodeTests
     }
 
     [Fact]
-    public void Clone_CopiesNullLiteral()
+    public void Clone_WithNullValue_CopiesNullLiteral()
     {
         LiteralNode node = new LiteralNode { Value = "", Type = LiteralType.Null };
         LiteralNode clone = (LiteralNode)node.Clone();

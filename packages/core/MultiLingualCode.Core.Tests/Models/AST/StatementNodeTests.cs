@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models.AST;
 public class StatementNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         StatementNode node = new StatementNode
         {
@@ -20,7 +20,7 @@ public class StatementNodeTests
     }
 
     [Fact]
-    public void Clone_DeepClonesNestedHierarchy()
+    public void Clone_WithNestedHierarchy_DeepClonesAllLevels()
     {
         StatementNode ifStmt = new StatementNode { StatementKind = "IfStatement" };
         KeywordNode keyword = new KeywordNode { KeywordId = 30, Text = "if" };
