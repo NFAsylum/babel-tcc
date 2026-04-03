@@ -306,7 +306,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void HandleValidateSyntax_AcceptsCSharp()
+    public void HandleValidateSyntax_WithCSharpCode_ReturnsSuccess()
     {
         Host.CoreResponse result = Host.Program.HandleValidateSyntax(
             new Host.ValidateRequest { SourceCode = "class Foo {}", FileExtension = ".cs" });
@@ -314,7 +314,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void HandleValidateSyntax_AcceptsPython()
+    public void HandleValidateSyntax_WithPythonCode_ReturnsSuccess()
     {
         Host.CoreResponse result = Host.Program.HandleValidateSyntax(
             new Host.ValidateRequest { SourceCode = "x = 1", FileExtension = ".py" });
@@ -322,7 +322,7 @@ public class LanguageRegistryTests
     }
 
     [Fact]
-    public void HandleValidateSyntax_RejectsUnsupported()
+    public void HandleValidateSyntax_WithUnsupportedExtension_ReturnsFailure()
     {
         Host.CoreResponse result = Host.Program.HandleValidateSyntax(
             new Host.ValidateRequest { SourceCode = "var x = 1;", FileExtension = ".js" });
