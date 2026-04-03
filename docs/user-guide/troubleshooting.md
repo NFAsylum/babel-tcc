@@ -15,7 +15,7 @@
 **Sintomas:** Nenhuma opcao "Babel TCC" no Command Palette, sem icone na barra de status.
 
 **Solucoes:**
-1. Verificar que o ficheiro aberto tem extensao `.cs`
+1. Verificar que o ficheiro aberto tem extensao `.cs` ou `.py`
 2. Verificar que a extensao esta instalada: Extensions > procurar "Babel TCC"
 3. Verificar o Output Channel: `View > Output` > selecionar "Babel TCC"
 4. Reiniciar VS Code
@@ -53,7 +53,7 @@
 **Sintomas:** Mensagem de erro ao salvar documento traduzido.
 
 **Solucoes:**
-1. O SaveHandler protege o ficheiro original - se a traducao reversa falhar, o ficheiro nao e sobrescrito
+1. O TranslatedContentProvider protege o ficheiro original - se a traducao reversa falhar, o ficheiro nao e sobrescrito
 2. Verificar o Output Channel para detalhes do erro
 3. Verificar que o Core esta acessivel
 
