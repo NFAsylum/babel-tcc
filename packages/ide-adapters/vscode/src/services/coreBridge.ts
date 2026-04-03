@@ -265,13 +265,13 @@ export class CoreBridge {
       const siblingPath: string = path.join(workspaceParent, 'babel-tcc-translations');
 
       if (fs.existsSync(siblingPath)) {
-        this.outputChannel.appendLine(`CoreBridge: translations auto-detectadas: ${siblingPath}`);
+        this.outputChannel.appendLine(`CoreBridge: translations auto-detected: ${siblingPath}`);
         return siblingPath;
       }
     }
 
     const embeddedPath: string = path.join(context.extensionPath, 'translations');
-    this.outputChannel.appendLine(`CoreBridge: translations embeddadas: ${embeddedPath}`);
+    this.outputChannel.appendLine(`CoreBridge: using embedded translations: ${embeddedPath}`);
     return embeddedPath;
   }
 
