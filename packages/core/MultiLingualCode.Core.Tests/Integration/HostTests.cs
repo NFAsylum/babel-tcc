@@ -387,4 +387,67 @@ public class HostTests : IDisposable
         Assert.Contains("test error message", output);
         Assert.Contains("false", output);
     }
+
+    // === Main (smoke tests) ===
+
+    [Fact]
+    public async Task Main_WithMethodArg_ReturnsZero()
+    {
+        StringWriter output = new StringWriter();
+        Console.SetOut(output);
+
+        int exitCode = await Host.Program.Main(new[]
+        {
+            "--method", "GetSupportedLanguages",
+            "--translations", TranslationsPath
+        });
+
+        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("pt-br", output.ToString());
+    }
+
+    [Fact]
+    public async Task Main_WithInvalidMethod_ReturnsOne()
+    {
+        StringWriter output = new StringWriter();
+        Console.SetOut(output);
+
+        int exitCode = await Host.Program.Main(new[]
+        {
+            "--method", "NonExistent",
+            "--translations", TranslationsPath
+        });
+
+        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+        Assert.Equal(1, exitCode);
+    }
+
+    [Fact]
+    public async Task Main_WithTranslateMethod_TranslatesCode()
+    {
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            sourceCode = "public class Foo {}",
+            fileExtension = ".cs",
+            targetLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        StringWriter output = new StringWriter();
+        Console.SetOut(output);
+
+        int exitCode = await Host.Program.Main(new[]
+        {
+            "--method", "TranslateToNaturalLanguage",
+            "--params", paramsJson,
+            "--translations", TranslationsPath
+        });
+
+        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("classe", output.ToString());
+    }
 }
