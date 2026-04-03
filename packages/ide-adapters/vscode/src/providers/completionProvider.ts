@@ -1,17 +1,20 @@
 import * as vscode from 'vscode';
 import { isTranslatedScheme } from './translatedContentProvider';
 import { KeywordMapService } from './keywordMap';
+import { LanguageDetector } from '../services/languageDetector';
 
 /** Provides autocomplete suggestions for translated keywords in translated documents. */
 export class CompletionProvider implements vscode.CompletionItemProvider {
   private keywordMapService: KeywordMapService;
+  private languageDetector: LanguageDetector;
 
-  constructor(keywordMapService: KeywordMapService) {
+  constructor(keywordMapService: KeywordMapService, languageDetector: LanguageDetector) {
     this.keywordMapService = keywordMapService;
+    this.languageDetector = languageDetector;
   }
 
   /**
-   * Returns completion items for translated C# keywords matching the current word prefix.
+   * Returns completion items for translated keywords matching the current word prefix.
    * Only active in documents using the translated URI scheme.
    * @param document - The text document in which completion was triggered.
    * @param position - The cursor position where completion was triggered.
@@ -40,7 +43,8 @@ export class CompletionProvider implements vscode.CompletionItemProvider {
           translated,
           vscode.CompletionItemKind.Keyword
         );
-        item.detail = `C# keyword: ${original}`;
+        const detectedLanguage: string = this.languageDetector.detectLanguage(document.uri.path) || 'keyword';
+        item.detail = `${detectedLanguage} keyword: ${original}`;
         item.insertText = translated;
         items.push(item);
       }

@@ -65,7 +65,7 @@ npm test
 - Nao usar `var` - tipos explicitos sempre
 - Nao usar `private` ou `internal` - tudo `public`
 - Nao usar `throw` - usar `OperationResult` para erros
-- Nao usar nullable (`?`, `??`)
+- Evitar nullable (`?`, `??`) — permitido em boundaries com APIs .NET que retornam null (ex: `Environment.GetEnvironmentVariable`, `Path.GetDirectoryName`, `Version.TryParse`)
 - Uma classe por ficheiro
 - Nomes de testes: `MetodoTestado_Cenario_ResultadoEsperado`
 
