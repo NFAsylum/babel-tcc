@@ -12,6 +12,7 @@ describe('CompletionProvider', () => {
     dispose: vi.fn(),
   };
 
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   function makeDocument(scheme: string, word: string | null) {
     return {
       uri: Uri.parse(`${scheme}:/test/file.cs`),
