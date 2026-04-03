@@ -3,6 +3,7 @@ using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.AST;
 using MultiLingualCode.Core.Services;
 using NSubstitute;
+using Host = MultiLingualCode.Core.Host;
 
 namespace MultiLingualCode.Core.Tests.Services;
 
@@ -251,5 +252,56 @@ public class LanguageRegistryTests
         Assert.Same(tsAdapter, tsResult.Value);
         Assert.Same(tsAdapter, tsxResult.Value);
         Assert.Equal(4, Registry.GetSupportedExtensions().Length);
+    }
+
+    [Fact]
+    public void CreateRegistry_RegistersBothCSharpAndPython()
+    {
+        LanguageRegistry registry = Host.Program.CreateRegistry();
+
+        Assert.True(registry.IsSupported(".cs"));
+        Assert.True(registry.IsSupported(".py"));
+    }
+
+    [Fact]
+    public void CreateRegistry_CSharpAdapterResolvesCorrectly()
+    {
+        LanguageRegistry registry = Host.Program.CreateRegistry();
+
+        OperationResultGeneric<ILanguageAdapter> result = registry.GetAdapter(".cs");
+        Assert.True(result.IsSuccess);
+        Assert.Equal("CSharp", result.Value.LanguageName);
+    }
+
+    [Fact]
+    public void CreateRegistry_PythonAdapterResolvesCorrectly()
+    {
+        LanguageRegistry registry = Host.Program.CreateRegistry();
+
+        OperationResultGeneric<ILanguageAdapter> result = registry.GetAdapter(".py");
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Python", result.Value.LanguageName);
+    }
+
+    [Fact]
+    public void CreateRegistry_UnsupportedExtensionFails()
+    {
+        LanguageRegistry registry = Host.Program.CreateRegistry();
+
+        OperationResultGeneric<ILanguageAdapter> result = registry.GetAdapter(".js");
+        Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public void CreateRegistry_SupportedExtensionsMatchExpectedList()
+    {
+        LanguageRegistry registry = Host.Program.CreateRegistry();
+
+        string[] expected = new[] { ".cs", ".py" };
+        string[] actual = registry.GetSupportedExtensions();
+
+        Array.Sort(expected);
+        Array.Sort(actual);
+        Assert.Equal(expected, actual);
     }
 }
