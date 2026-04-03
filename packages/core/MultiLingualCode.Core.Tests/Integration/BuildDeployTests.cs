@@ -45,4 +45,40 @@ public class BuildDeployTests
                 $"Script not found in output: {script}. Add CopyToOutputDirectory in .csproj.");
         }
     }
+
+    /// <summary>
+    /// Dynamically verifies that every non-.cs file in the LanguageAdapters source
+    /// directory has been copied to the output directory. Catches cases where someone
+    /// adds a new script but forgets to configure CopyToOutputDirectory in .csproj.
+    /// </summary>
+    [Fact]
+    public void AllNonCSharpSourceFiles_CopiedToOutput()
+    {
+        string outputDir = AppContext.BaseDirectory;
+        string sourceAdaptersDir = Path.GetFullPath(
+            Path.Combine(outputDir, "..", "..", "..", "..", "..",
+                "MultiLingualCode.Core", "LanguageAdapters"));
+
+        if (!Directory.Exists(sourceAdaptersDir))
+        {
+            // Running outside of repo context (e.g. CI with published output).
+            // Fall back to verifying known scripts exist.
+            Assert.True(File.Exists(PythonTokenizerService.GetScriptPath()),
+                "tokenizer_service.py not found in output.");
+            return;
+        }
+
+        string[] sourceScripts = Directory.GetFiles(sourceAdaptersDir, "*.*", SearchOption.AllDirectories)
+            .Where(f => !f.EndsWith(".cs") && !Path.GetFileName(f).StartsWith("."))
+            .ToArray();
+
+        foreach (string sourceScript in sourceScripts)
+        {
+            string relativePath = Path.GetRelativePath(sourceAdaptersDir, sourceScript);
+            string outputPath = Path.Combine(outputDir, "LanguageAdapters", relativePath);
+            Assert.True(File.Exists(outputPath),
+                $"Source script {relativePath} exists in LanguageAdapters/ but was not copied to output. "
+                + "Add <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory> in .csproj.");
+        }
+    }
 }
