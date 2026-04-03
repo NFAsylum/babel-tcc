@@ -22,7 +22,7 @@ public class IdentifierMapperTests : IDisposable
         }
     }
 
-    private void CreateMapFile(string json)
+    public void CreateMapFile(string json)
     {
         string dir = Path.Combine(TempDir, ".multilingual");
         Directory.CreateDirectory(dir);
