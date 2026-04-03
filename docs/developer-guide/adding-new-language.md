@@ -143,6 +143,27 @@ Criar ficheiro `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.
 - `Generate_TranslatedAst_ProducesCorrectOutput`
 - `RoundTrip_SimpleCode_PreservesStructure`
 
+## 6. Configurar extensao VS Code
+
+Adicionar a nova linguagem ao registro central em `packages/ide-adapters/vscode/src/config/languages.ts`:
+
+```typescript
+export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
+  { name: 'CSharp', extensions: ['.cs'], vscodeLangId: 'csharp' },
+  { name: 'Python', extensions: ['.py'], vscodeLangId: 'python' },
+  { name: 'NovaLinguagem', extensions: ['.ext'], vscodeLangId: 'novalinguagem' },
+];
+```
+
+Atualizar manualmente o `package.json` (lido estaticamente pelo VS Code):
+- `activationEvents`: adicionar `onLanguage:novalinguagem`
+- `languages`: adicionar `{ "id": "mlc-novalinguagem" }`
+- `grammars`: adicionar entrada para `mlc-novalinguagem`
+
+Criar `syntaxes/mlc-novalinguagem.tmLanguage.json` para syntax highlighting.
+
+O teste de consistencia em `test/config/languages.test.ts` verifica automaticamente que o registro TypeScript esta alinhado com o package.json.
+
 ## Implementacoes existentes
 
 - **CSharpAdapter** (`LanguageAdapters/CSharpAdapter.cs`): Usa Roslyn para parsing. Referencia para linguagens com parser .NET nativo.
