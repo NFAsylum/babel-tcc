@@ -41,3 +41,5 @@ Thumbs.db
 # Test results
 TestResults/
 coverage/
+.claude/worktrees/
+packages/ide-adapters/vscode/translations/
