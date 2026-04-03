@@ -84,7 +84,7 @@
       "patterns": [
         {
           "name": "markup.italic.tradu.mlc-python",
-          "match": "#\\s*tradu:.*$"
+          "match": "#\\s*tradu(\\[.*?\\])?:.*$"
         }
       ]
     },
