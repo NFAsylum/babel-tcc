@@ -540,6 +540,48 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
     }
 
     [Fact]
+    public async Task ApplyTraduAnnotations_DoesNotPersistToDisk()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_nopersist_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            // Pre-populate identifier-map with existing mapping
+            mapper.SetTranslation("ExistingClass", "pt-br", "ClasseExistente");
+            mapper.SaveMap();
+
+            string mapFilePath = Path.Combine(tempDir, ".multilingual", "identifier-map.json");
+            string contentBefore = File.ReadAllText(mapFilePath);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string sourceCode = @"public class NewClass // tradu[pt-br]:NovaClasse
+{
+}";
+
+            OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+                sourceCode, ".cs", "pt-br");
+            Assert.True(result.IsSuccess);
+
+            // Verify file on disk was NOT modified by translation
+            string contentAfter = File.ReadAllText(mapFilePath);
+            Assert.Equal(contentBefore, contentAfter);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
     public async Task ModifyTraduInTranslatedCode_ReverseAndForward_UsesNewTradu()
     {
         CSharpAdapter realAdapter = new CSharpAdapter();
