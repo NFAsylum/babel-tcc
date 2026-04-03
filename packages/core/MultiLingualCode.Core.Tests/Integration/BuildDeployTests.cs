@@ -56,7 +56,7 @@ public class BuildDeployTests
     {
         string outputDir = AppContext.BaseDirectory;
         string sourceAdaptersDir = Path.GetFullPath(
-            Path.Combine(outputDir, "..", "..", "..", "..", "..",
+            Path.Combine(outputDir, "..", "..", "..", "..",
                 "MultiLingualCode.Core", "LanguageAdapters"));
 
         if (!Directory.Exists(sourceAdaptersDir))
