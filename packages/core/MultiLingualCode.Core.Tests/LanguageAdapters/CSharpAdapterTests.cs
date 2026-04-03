@@ -163,9 +163,9 @@ public class Calculator
         ASTNode ast = Adapter.Parse(code);
         List<LiteralNode> literals = GetNodesOfType<LiteralNode>(ast);
 
-        Assert.Contains(literals, l => l.Type == LiteralType.String && (string?)l.Value == "hello");
+        Assert.Contains(literals, l => l.Type == LiteralType.String && l.Value as string == "hello");
         Assert.Contains(literals, l => l.Type == LiteralType.Number && Convert.ToInt32(l.Value) == 42);
-        Assert.Contains(literals, l => l.Type == LiteralType.Char && (char?)l.Value == 'a');
+        Assert.Contains(literals, l => l.Type == LiteralType.Char && l.Value is char c && c == 'a');
     }
 
     [Fact]
