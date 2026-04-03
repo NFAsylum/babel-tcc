@@ -9,6 +9,10 @@ obj/
 *.nupkg
 *.snupkg
 
+# Python
+__pycache__/
+*.pyc
+
 # TypeScript / Node.js
 node_modules/
 dist/

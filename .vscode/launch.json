@@ -6,6 +6,7 @@
             "type": "extensionHost",
             "request": "launch",
             "args": [
+                "${workspaceFolder}/examples",
                 "--extensionDevelopmentPath=${workspaceFolder}/packages/ide-adapters/vscode"
             ],
             "outFiles": [
