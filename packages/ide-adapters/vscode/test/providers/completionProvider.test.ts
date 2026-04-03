@@ -12,9 +12,20 @@ describe('CompletionProvider', () => {
     dispose: vi.fn(),
   };
 
-  function makeDocument(scheme: string, word: string | null) {
+  const mockLanguageDetector = {
+    detectLanguage: vi.fn((filePath: string) => {
+      if (filePath.endsWith('.py')) return 'Python';
+      return 'CSharp';
+    }),
+    isSupported: vi.fn(() => true),
+    getFileExtension: vi.fn((filePath: string) => filePath.slice(filePath.lastIndexOf('.'))),
+    getSupportedExtensions: vi.fn(() => ['.cs', '.py']),
+    supportedExtensions: { '.cs': 'CSharp', '.py': 'Python' },
+  };
+
+  function makeDocument(scheme: string, word: string | null, filePath: string = '/test/file.cs') {
     return {
-      uri: Uri.parse(`${scheme}:/test/file.cs`),
+      uri: Uri.parse(`${scheme}:${filePath}`),
       getWordRangeAtPosition: vi.fn(() =>
         word ? new Range(new Position(0, 0), new Position(0, word.length)) : undefined
       ),
@@ -24,7 +35,7 @@ describe('CompletionProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new CompletionProvider(mockKeywordMapService as any);
+    provider = new CompletionProvider(mockKeywordMapService as any, mockLanguageDetector as any);
   });
 
   describe('provideCompletionItems', () => {
@@ -34,7 +45,14 @@ describe('CompletionProvider', () => {
       expect(items.length).toBe(1);
       expect(items[0].label).toBe('publico');
       expect(items[0].kind).toBe(CompletionItemKind.Keyword);
-      expect(items[0].detail).toBe('C# keyword: public');
+      expect(items[0].detail).toBe('CSharp keyword: public');
+    });
+
+    it('should show Python keyword for .py files', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'pub', '/test/file.py');
+      const items = provider.provideCompletionItems(doc as any, new Position(0, 3));
+      expect(items.length).toBe(1);
+      expect(items[0].detail).toBe('Python keyword: public');
     });
 
     it('should return empty array for file scheme', () => {
