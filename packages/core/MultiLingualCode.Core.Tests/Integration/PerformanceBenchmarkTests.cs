@@ -138,7 +138,7 @@ public class PerformanceBenchmarkTests : IDisposable
     }
 
     [Fact]
-    public async Task MultipleTranslations_NoMemoryLeak()
+    public async Task MultipleTranslations_FiftyIterations_NoMemoryLeak()
     {
         string code = GenerateCSharpCode(10);
 
@@ -162,7 +162,7 @@ public class PerformanceBenchmarkTests : IDisposable
     }
 
     [Fact]
-    public async Task ReverseTranslation_SamePerformanceAsForward()
+    public async Task ReverseTranslation_MediumFile_SamePerformanceAsForward()
     {
         string code = GenerateCSharpCode(25);
 

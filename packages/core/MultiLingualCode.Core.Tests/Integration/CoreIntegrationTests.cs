@@ -37,7 +37,7 @@ public class CoreIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task HelloWorld_TranslatesToPtBr()
+    public async Task TranslateToNaturalLanguage_WithHelloWorld_TranslatesKeywordsToPtBr()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -226,7 +226,7 @@ namespace MyApp
     }
 
     [Fact]
-    public async Task MultipleAnnotations_AllApplied()
+    public async Task TranslateToNaturalLanguage_WithMultipleAnnotations_AppliesAllTranslations()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -257,7 +257,7 @@ namespace MyApp
     }
 
     [Fact]
-    public async Task IfElseForWhile_AllKeywordsTranslated()
+    public async Task IfElseForWhile_ControlFlowCode_AllKeywordsTranslated()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -406,7 +406,7 @@ namespace Performance.Test
     }
 
     [Fact]
-    public async Task EmptySourceCode_TranslatesWithoutError()
+    public async Task TranslateToNaturalLanguage_WithEmptySource_CompletesWithoutError()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -454,7 +454,7 @@ namespace Performance.Test
     }
 
     [Fact]
-    public async Task FileScopedNamespace_TranslatesCorrectly()
+    public async Task FileScopedNamespace_WhenTranslated_TranslatesCorrectly()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -478,7 +478,7 @@ class Program
     }
 
     [Fact]
-    public async Task EnumDeclaration_TranslatesKeywords()
+    public async Task EnumDeclaration_WhenTranslated_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -500,7 +500,7 @@ class Program
     }
 
     [Fact]
-    public async Task StructDeclaration_TranslatesKeywords()
+    public async Task StructDeclaration_WhenTranslated_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -520,7 +520,7 @@ class Program
     }
 
     [Fact]
-    public async Task InterfaceDeclaration_TranslatesKeywords()
+    public async Task InterfaceDeclaration_WhenTranslated_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -542,7 +542,7 @@ class Program
     }
 
     [Fact]
-    public async Task TryCatch_TranslatesKeywords()
+    public async Task TryCatch_WhenTranslated_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -575,7 +575,7 @@ class Program
     }
 
     [Fact]
-    public async Task SwitchStatement_TranslatesKeywords()
+    public async Task SwitchStatement_WhenTranslated_TranslatesKeywords()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);
@@ -605,7 +605,7 @@ class Program
     }
 
     [Fact]
-    public async Task ReverseTranslation_KeywordsRevertToCSharp()
+    public async Task ReverseTranslation_TranslatedCode_KeywordsRevertToCSharp()
     {
         IdentifierMapper mapper = new IdentifierMapper();
         mapper.LoadMap(TempDir);

@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models.AST;
 public class KeywordNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         KeywordNode node = new KeywordNode
         {
@@ -28,7 +28,7 @@ public class KeywordNodeTests
     }
 
     [Fact]
-    public void Clone_IsDeepCopy()
+    public void Clone_WhenModifyingClone_DoesNotAffectOriginal()
     {
         KeywordNode node = new KeywordNode { KeywordId = 30, Text = "if" };
         KeywordNode clone = (KeywordNode)node.Clone();
@@ -38,7 +38,7 @@ public class KeywordNodeTests
     }
 
     [Fact]
-    public void Clone_DeepClonesChildren()
+    public void Clone_WithChildren_DeepClonesChildNodes()
     {
         KeywordNode parent = new KeywordNode { KeywordId = 30, Text = "if" };
         IdentifierNode child = new IdentifierNode { Name = "x" };
@@ -58,7 +58,7 @@ public class KeywordNodeTests
 public class IdentifierNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         IdentifierNode node = new IdentifierNode
         {
@@ -81,7 +81,7 @@ public class IdentifierNodeTests
     }
 
     [Fact]
-    public void Clone_IsDeepCopy()
+    public void Clone_WhenModifyingClone_DoesNotAffectOriginal()
     {
         IdentifierNode node = new IdentifierNode { Name = "original", IsTranslatable = false };
         IdentifierNode clone = (IdentifierNode)node.Clone();
@@ -91,7 +91,7 @@ public class IdentifierNodeTests
     }
 
     [Fact]
-    public void DefaultValues_AreCorrect()
+    public void Constructor_WithNoArgs_SetsDefaultValues()
     {
         IdentifierNode node = new IdentifierNode();
 
@@ -104,7 +104,7 @@ public class IdentifierNodeTests
 public class LiteralNodeTests
 {
     [Fact]
-    public void Clone_CopiesStringLiteral()
+    public void Clone_WithStringLiteral_CopiesValueAndType()
     {
         LiteralNode node = new LiteralNode
         {
@@ -121,7 +121,7 @@ public class LiteralNodeTests
     }
 
     [Fact]
-    public void Clone_CopiesNumberLiteral()
+    public void Clone_WithNumberLiteral_CopiesValueAndType()
     {
         LiteralNode node = new LiteralNode { Value = 42, Type = LiteralType.Number };
         LiteralNode clone = (LiteralNode)node.Clone();
@@ -131,7 +131,7 @@ public class LiteralNodeTests
     }
 
     [Fact]
-    public void Clone_CopiesBooleanLiteral()
+    public void Clone_WithBooleanLiteral_CopiesValueAndType()
     {
         LiteralNode node = new LiteralNode { Value = true, Type = LiteralType.Boolean };
         LiteralNode clone = (LiteralNode)node.Clone();
@@ -141,7 +141,7 @@ public class LiteralNodeTests
     }
 
     [Fact]
-    public void Clone_CopiesNullLiteral()
+    public void Clone_WithNullLiteral_CopiesValueAndType()
     {
         LiteralNode node = new LiteralNode { Value = "", Type = LiteralType.Null };
         LiteralNode clone = (LiteralNode)node.Clone();
@@ -154,7 +154,7 @@ public class LiteralNodeTests
 public class ExpressionNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         ExpressionNode node = new ExpressionNode
         {
@@ -169,7 +169,7 @@ public class ExpressionNodeTests
     }
 
     [Fact]
-    public void Clone_IsDeepCopy()
+    public void Clone_WhenModifyingClone_DoesNotAffectOriginal()
     {
         ExpressionNode node = new ExpressionNode { ExpressionKind = "MethodCall", RawText = "Foo()" };
         ExpressionNode clone = (ExpressionNode)node.Clone();
@@ -182,7 +182,7 @@ public class ExpressionNodeTests
 public class StatementNodeTests
 {
     [Fact]
-    public void Clone_CopiesAllProperties()
+    public void Clone_WhenCalled_CopiesAllProperties()
     {
         StatementNode node = new StatementNode
         {
@@ -197,7 +197,7 @@ public class StatementNodeTests
     }
 
     [Fact]
-    public void Clone_DeepClonesNestedHierarchy()
+    public void Clone_WithNestedHierarchy_DeepClonesAllLevels()
     {
         StatementNode ifStmt = new StatementNode { StatementKind = "IfStatement" };
         KeywordNode keyword = new KeywordNode { KeywordId = 30, Text = "if" };

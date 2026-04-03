@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Integration;
 public class BuildDeployTests
 {
     [Fact]
-    public void TokenizerScript_ExistsInOutputDirectory()
+    public void TokenizerScript_AfterBuild_ExistsInOutputDirectory()
     {
         string scriptPath = PythonTokenizerService.GetScriptPath();
         Assert.True(File.Exists(scriptPath),
@@ -13,7 +13,7 @@ public class BuildDeployTests
     }
 
     [Fact]
-    public void TokenizerScript_IsNotEmpty()
+    public void TokenizerScript_AfterBuild_IsNotEmpty()
     {
         string scriptPath = PythonTokenizerService.GetScriptPath();
         FileInfo info = new FileInfo(scriptPath);
@@ -21,7 +21,7 @@ public class BuildDeployTests
     }
 
     [Fact]
-    public void TokenizerScript_ContainsExpectedEntryPoint()
+    public void TokenizerScript_WhenRead_ContainsExpectedEntryPoint()
     {
         string scriptPath = PythonTokenizerService.GetScriptPath();
         string content = File.ReadAllText(scriptPath);
@@ -30,7 +30,7 @@ public class BuildDeployTests
     }
 
     [Fact]
-    public void AllScriptFiles_ExistInOutputDirectory()
+    public void Build_AllScriptFiles_ExistInOutputDirectory()
     {
         string outputDir = AppContext.BaseDirectory;
         string[] expectedScripts = new[]
@@ -52,7 +52,7 @@ public class BuildDeployTests
     /// adds a new script but forgets to configure CopyToOutputDirectory in .csproj.
     /// </summary>
     [Fact]
-    public void AllNonCSharpSourceFiles_CopiedToOutput()
+    public void Build_AllNonCSharpSourceFiles_CopiedToOutputDirectory()
     {
         string outputDir = AppContext.BaseDirectory;
         string sourceAdaptersDir = Path.GetFullPath(

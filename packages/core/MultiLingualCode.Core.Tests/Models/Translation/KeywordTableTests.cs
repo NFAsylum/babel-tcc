@@ -48,7 +48,7 @@ public class KeywordTableTests
     }
 
     [Fact]
-    public void GetKeywordId_CaseInsensitive()
+    public void GetKeywordId_WithDifferentCasing_ReturnsSameId()
     {
         OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(result.IsSuccess);
@@ -114,7 +114,7 @@ public class KeywordTableTests
     }
 
     [Fact]
-    public void Count_ReturnsCorrectNumber()
+    public void Count_AfterLoadingBaseKeywords_ReturnsExpectedTotal()
     {
         OperationResultGeneric<KeywordTable> result = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(result.IsSuccess);
@@ -125,7 +125,7 @@ public class KeywordTableTests
     }
 
     [Fact]
-    public void BidirectionalLookup_IsConsistent()
+    public void GetKeyword_AfterGetKeywordId_ReturnsSameKeyword()
     {
         OperationResultGeneric<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(loadResult.IsSuccess);
@@ -205,7 +205,7 @@ public class KeywordTableTests
     }
 
     [Fact]
-    public void AllKeywordIds_AreNonNegative()
+    public void KeywordToId_ForAllEntries_ContainsNonNegativeIds()
     {
         OperationResultGeneric<KeywordTable> loadResult = KeywordTable.LoadFrom(GetTestDataPath("keywords-base.json"));
         Assert.True(loadResult.IsSuccess);
