@@ -1289,10 +1289,23 @@ espaconome MeuProjeto
         Assert.Equal(code, result);
     }
 
-    // Note: verbatim strings (@"...") lose their @ prefix in round-trip because
-    // CSharpAdapter.CollectReplacements hardcodes double quotes. Known limitation
-    // documented in tarefa 071. CSharpAdapter should migrate to AdapterHelpers
-    // like PythonAdapter did.
+    [Fact(Skip = "Known limitation: CSharpAdapter.CollectReplacements hardcodes double quotes, losing @ prefix. CSharpAdapter should migrate to AdapterHelpers like PythonAdapter.")]
+    public void RoundTrip_VerbatimString_PreservesQuotes()
+    {
+        string code = "string x = @\"hello\\world\";";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
+
+    [Fact(Skip = "Known limitation: CSharpAdapter.CollectReplacements hardcodes double quotes, losing $ prefix. CSharpAdapter should migrate to AdapterHelpers like PythonAdapter.")]
+    public void RoundTrip_InterpolatedString_PreservesQuotes()
+    {
+        string code = "string x = $\"hello {name}\";";
+        ASTNode ast = Adapter.Parse(code);
+        string result = Adapter.Generate(ast);
+        Assert.Equal(code, result);
+    }
 
     [Fact]
     public void RoundTrip_SimpleCode_PreservesStructure()

@@ -844,4 +844,24 @@ namespace HelloWorld
 
         Assert.Equal(sourceCode, reverseResult.Value);
     }
+
+    [RequiresPythonFact]
+    public async Task Python_RoundTrip_FString_PreservesPrefix()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreatePythonOrchestrator(mapper);
+
+        string sourceCode = "x = f\"hello {name}\"";
+
+        OperationResultGeneric<string> translationResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+        Assert.True(translationResult.IsSuccess, translationResult.ErrorMessage);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            translationResult.Value, ".py", "pt-br");
+        Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
+
+        Assert.Equal(sourceCode, reverseResult.Value);
+    }
 }
