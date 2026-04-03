@@ -155,8 +155,8 @@ public class IdentifierMapper
 {
     public OperationResult LoadMap(string projectPath);
     public void SetTranslation(string identifier, string language, string translation);
-    public OperationResult<string> GetTranslation(string identifier, string language);
-    public OperationResult<string> GetOriginal(string translated, string language);
+    public OperationResultGeneric<string> GetTranslation(string identifier, string language);
+    public OperationResultGeneric<string> GetOriginal(string translated, string language);
 }
 ```
 
@@ -168,7 +168,7 @@ Regista e obtem adaptadores de linguagens.
 public class LanguageRegistry
 {
     public OperationResult RegisterAdapter(ILanguageAdapter adapter);
-    public OperationResult<ILanguageAdapter> GetAdapter(string fileExtension);
+    public OperationResultGeneric<ILanguageAdapter> GetAdapter(string fileExtension);
 }
 ```
 
@@ -189,10 +189,10 @@ graph TD
 
 ### OperationResult Pattern
 
-Todas as operacoes usam `OperationResult<T>` em vez de exceptions:
+Todas as operacoes usam `OperationResultGeneric<T>` em vez de exceptions:
 
 ```csharp
-OperationResult<string> result = orchestrator.TranslateToNaturalLanguageAsync(...);
+OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(...);
 if (result.IsSuccess)
 {
     string translated = result.Value;
