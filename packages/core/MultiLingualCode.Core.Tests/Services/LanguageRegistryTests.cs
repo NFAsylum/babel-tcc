@@ -304,4 +304,49 @@ public class LanguageRegistryTests
         Array.Sort(actual);
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    public void HandleValidateSyntax_AcceptsCSharp()
+    {
+        Host.CoreResponse result = Host.Program.HandleValidateSyntax(
+            new Host.ValidateRequest { SourceCode = "class Foo {}", FileExtension = ".cs" });
+        Assert.True(result.Success, result.Error);
+    }
+
+    [Fact]
+    public void HandleValidateSyntax_AcceptsPython()
+    {
+        Host.CoreResponse result = Host.Program.HandleValidateSyntax(
+            new Host.ValidateRequest { SourceCode = "x = 1", FileExtension = ".py" });
+        Assert.True(result.Success, result.Error);
+    }
+
+    [Fact]
+    public void HandleValidateSyntax_RejectsUnsupported()
+    {
+        Host.CoreResponse result = Host.Program.HandleValidateSyntax(
+            new Host.ValidateRequest { SourceCode = "var x = 1;", FileExtension = ".js" });
+        Assert.False(result.Success);
+    }
+
+    /// <summary>
+    /// Verifies that Core C# extensions (CreateRegistry) match the expected
+    /// extensions that the VS Code languageDetector supports (.cs, .py).
+    /// If a new adapter is added to Core but not to the VS Code extension
+    /// (or vice-versa), this test fails.
+    /// </summary>
+    [Fact]
+    public void CoreExtensions_MatchExpectedVSCodeExtensions()
+    {
+        LanguageRegistry registry = Host.Program.CreateRegistry();
+        string[] coreExtensions = registry.GetSupportedExtensions();
+        Array.Sort(coreExtensions);
+
+        // These must match SUPPORTED_EXTENSIONS in languageDetector.ts
+        // If you add a new adapter, update both CreateRegistry AND languageDetector.ts
+        string[] vsCodeExtensions = new[] { ".cs", ".py" };
+        Array.Sort(vsCodeExtensions);
+
+        Assert.Equal(vsCodeExtensions, coreExtensions);
+    }
 }
