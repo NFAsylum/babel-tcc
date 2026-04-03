@@ -112,7 +112,7 @@ public class HostTests : IDisposable
         Host.CoreResponse result = await Host.Program.HandleTranslateToNaturalLanguage(orchestrator, request);
 
         Assert.True(result.Success, result.Error);
-        Assert.DoesNotContain("if", result.Result.Split(' ')[0] == "if" ? "if_found" : "");
+        Assert.Contains("se", result.Result);
     }
 
     [Fact]
@@ -239,5 +239,152 @@ public class HostTests : IDisposable
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
 
         Assert.Equal(1, exitCode);
+    }
+
+    // === ExecuteMethodPersistent ===
+
+    [Fact]
+    public async Task ExecuteMethodPersistent_TranslateToNaturalLanguage_ReturnsTranslatedCode()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            sourceCode = "public class Foo {}",
+            fileExtension = ".cs",
+            targetLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
+            "TranslateToNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
+
+        Assert.True(result.Success, result.Error);
+        Assert.Contains("classe", result.Result);
+    }
+
+    [Fact]
+    public async Task ExecuteMethodPersistent_TranslateFromNaturalLanguage_ReturnsOriginalCode()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            translatedCode = "publico classe Foo {}",
+            fileExtension = ".cs",
+            sourceLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
+            "TranslateFromNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
+
+        Assert.True(result.Success, result.Error);
+        Assert.Contains("class", result.Result);
+    }
+
+    [Fact]
+    public async Task ExecuteMethodPersistent_ValidateSyntax_ReturnsValidResult()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            sourceCode = "public class Foo {}",
+            fileExtension = ".cs"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
+            "ValidateSyntax", paramsJson, TranslationsPath, TempDir, cache);
+
+        Assert.True(result.Success, result.Error);
+        Assert.Contains("isValid", result.Result);
+    }
+
+    [Fact]
+    public async Task ExecuteMethodPersistent_GetSupportedLanguages_ReturnsLanguageList()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+
+        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
+            "GetSupportedLanguages", "{}", TranslationsPath, TempDir, cache);
+
+        Assert.True(result.Success, result.Error);
+        Assert.Contains("pt-br", result.Result);
+    }
+
+    [Fact]
+    public async Task ExecuteMethodPersistent_UnknownMethod_ReturnsError()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+
+        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
+            "BadMethod", "{}", TranslationsPath, TempDir, cache);
+
+        Assert.False(result.Success);
+        Assert.Contains("Unknown method", result.Error);
+    }
+
+    [Fact]
+    public async Task ExecuteMethodPersistent_InvalidJson_ReturnsError()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+
+        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
+            "TranslateToNaturalLanguage", "not json{{{", TranslationsPath, TempDir, cache);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task ExecuteMethodPersistent_ReusesCachedOrchestrator()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            sourceCode = "public class Foo {}",
+            fileExtension = ".cs",
+            targetLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        await Host.Program.ExecuteMethodPersistent(
+            "TranslateToNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
+        await Host.Program.ExecuteMethodPersistent(
+            "TranslateToNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
+
+        Assert.Single(cache);
+    }
+
+    // === CreateOrchestrator ===
+
+    [Fact]
+    public void CreateOrchestrator_WithValidParams_ReturnsOrchestrator()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+
+        Assert.NotNull(orchestrator);
+        Assert.NotNull(orchestrator.Registry);
+        Assert.NotNull(orchestrator.Provider);
+        Assert.NotNull(orchestrator.IdentifierMapperService);
+    }
+
+    [Fact]
+    public void CreateOrchestrator_WithEmptyProjectPath_DoesNotThrow()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, "");
+
+        Assert.NotNull(orchestrator);
+    }
+
+    // === WriteError ===
+
+    [Fact]
+    public void WriteError_WritesToStdErr()
+    {
+        StringWriter errOutput = new StringWriter();
+        Console.SetError(errOutput);
+
+        Host.Program.WriteError("test error message");
+
+        Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+
+        string output = errOutput.ToString();
+        Assert.Contains("test error message", output);
+        Assert.Contains("false", output);
     }
 }
