@@ -92,7 +92,7 @@ As keywords C# estao organizadas por categoria:
 ## Validacao
 
 Verificar que:
-- Todas as 77 keywords C# tem traducao
+- Todas as 89 keywords C# tem traducao
 - IDs numericos correspondem ao keywords-base.json
 - JSON e valido (sem erros de parsing)
 - Nenhuma traducao esta vazia

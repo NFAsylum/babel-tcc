@@ -30,7 +30,8 @@ Obrigado pelo interesse em contribuir! Este documento explica como participar no
 ### Pre-requisitos
 
 - .NET 8 SDK
-- Node.js 18+
+- Node.js 20+
+- Python 3.8+ (para suporte a Python)
 - VS Code (para testar a extensao)
 
 ### Build
@@ -83,13 +84,15 @@ npm test
 babel-tcc/
   packages/
     core/                          # Motor de traducao (C#/.NET 8)
-      MultiLingualCode.Core/       # Biblioteca principal
-      MultiLingualCode.Core.Host/  # CLI para comunicacao com IDE
-      MultiLingualCode.Core.Tests/ # Testes unitarios
+      MultiLingualCode.Core/       # Biblioteca principal (C# + Python)
+      MultiLingualCode.Core.Host/  # CLI persistente (stdin/stdout JSON)
+      MultiLingualCode.Core.Tests/ # Testes unitarios e integracao
     ide-adapters/
-      vscode/                      # Extensao VS Code
-  examples/                        # Exemplos de uso
-  docs/                           # Documentacao
+      vscode/                      # Extensao VS Code (TypeScript)
+  scripts/                         # Scripts de validacao e build
+  tarefas/                         # Gestao de tarefas (.pendente/.finalizada)
+  examples/                        # Exemplos de uso (C# e Python)
+  docs/                            # Documentacao tecnica e do usuario
 ```
 
 ## Adicionar novas funcionalidades
