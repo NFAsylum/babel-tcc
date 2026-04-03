@@ -1,10 +1,10 @@
-class Task:
-    def __init__(self, title, priority):
+class Task: # tradu:Tarefa
+    def __init__(self, title, priority): # tradu:titulo,priority:prioridade
         self.title = title
         self.priority = priority
-        self.completed = False
+        self.completed = False # tradu:completada
 
-    def complete(self):
+    def complete(self): # tradu:completar
         self.completed = True
 
     def __str__(self):
@@ -12,46 +12,46 @@ class Task:
         return f"[{status}] {self.title} (priority: {self.priority})"
 
 
-class TaskManager:
+class TaskManager: # tradu:GerenciadorTarefas
     def __init__(self):
-        self.tasks = []
+        self.tasks = [] # tradu:tarefas
 
-    def add_task(self, title, priority=1):
+    def add_task(self, title, priority=1): # tradu:adicionar_tarefa,title:titulo,priority:prioridade
         if not title:
             raise ValueError("Title cannot be empty")
         task = Task(title, priority)
         self.tasks.append(task)
         return task
 
-    def remove_task(self, title):
+    def remove_task(self, title): # tradu:remover_tarefa,title:titulo
         for i in range(len(self.tasks)):
             if self.tasks[i].title == title:
                 del self.tasks[i]
                 return True
         return False
 
-    def get_pending(self):
+    def get_pending(self): # tradu:obter_pendentes
         result = []
         for task in self.tasks:
             if not task.completed:
                 result.append(task)
         return result
 
-    def get_by_priority(self, min_priority):
+    def get_by_priority(self, min_priority): # tradu:obter_por_prioridade,min_priority:prioridade_minima
         result = []
         for task in self.tasks:
             if task.priority >= min_priority:
                 result.append(task)
         return sorted(result, key=lambda t: t.priority, reverse=True)
 
-    def complete_task(self, title):
+    def complete_task(self, title): # tradu:completar_tarefa,title:titulo
         for task in self.tasks:
             if task.title == title:
                 task.complete()
                 return True
         return False
 
-    def print_summary(self):
+    def print_summary(self): # tradu:imprimir_resumo
         total = len(self.tasks)
         completed = 0
         for task in self.tasks:

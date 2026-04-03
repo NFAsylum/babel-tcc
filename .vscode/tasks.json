@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "publish-core",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "publish",
+                "packages/core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj",
+                "-c", "Release",
+                "-o", "packages/ide-adapters/vscode/bin"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "copy-translations",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "copy-translations"],
+            "options": {
+                "cwd": "${workspaceFolder}/packages/ide-adapters/vscode"
+            }
+        },
+        {
+            "label": "build-extension",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "build"],
+            "options": {
+                "cwd": "${workspaceFolder}/packages/ide-adapters/vscode"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "build-all",
+            "dependsOn": [
+                "publish-core",
+                "copy-translations",
+                "build-extension"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ]
+}
