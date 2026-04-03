@@ -1289,7 +1289,7 @@ espaconome MeuProjeto
         Assert.Equal(code, result);
     }
 
-    [Fact(Skip = "Known limitation: CSharpAdapter.CollectReplacements hardcodes double quotes, losing @ prefix. CSharpAdapter should migrate to AdapterHelpers like PythonAdapter.")]
+    [Fact]
     public void RoundTrip_VerbatimString_PreservesQuotes()
     {
         string code = "string x = @\"hello\\world\";";
@@ -1298,7 +1298,7 @@ espaconome MeuProjeto
         Assert.Equal(code, result);
     }
 
-    [Fact(Skip = "Known limitation: CSharpAdapter.CollectReplacements hardcodes double quotes, losing $ prefix. CSharpAdapter should migrate to AdapterHelpers like PythonAdapter.")]
+    [Fact]
     public void RoundTrip_InterpolatedString_PreservesQuotes()
     {
         string code = "string x = $\"hello {name}\";";

@@ -156,7 +156,7 @@ public class CSharpAdapter : ILanguageAdapter
 
         List<(int Start, int End, string NewText)> replacements = new List<(int, int, string)>();
 
-        CollectReplacements(ast, replacements);
+        AdapterHelpers.CollectReplacements(ast, replacements, originalSource, WrapCSharpLiteral);
 
         if (replacements.Count == 0)
         {
@@ -440,7 +440,67 @@ public class CSharpAdapter : ILanguageAdapter
     }
 
     /// <summary>
+    /// Wraps a C# string literal value with the original quotes and prefixes.
+    /// Preserves @"verbatim", $"interpolated", and regular "string" quotes.
+    /// </summary>
+    public static string WrapCSharpLiteral(Models.AST.LiteralNode literal, string originalText)
+    {
+        string currentValue = $"{literal.Value}";
+
+        // Extract the content between quotes from the original text
+        string extractedOriginal = ExtractCSharpStringContent(originalText);
+
+        if (currentValue == extractedOriginal)
+        {
+            return originalText;
+        }
+
+        // Value was modified (translated). Reconstruct with original prefix and quotes.
+        if (originalText.StartsWith("@\""))
+        {
+            return "@\"" + currentValue + "\"";
+        }
+        if (originalText.StartsWith("$\""))
+        {
+            return "$\"" + currentValue + "\"";
+        }
+        if (originalText.StartsWith("$@\"") || originalText.StartsWith("@$\""))
+        {
+            string prefix = originalText.Substring(0, 2);
+            return prefix + "\"" + currentValue + "\"";
+        }
+
+        return "\"" + currentValue + "\"";
+    }
+
+    /// <summary>
+    /// Extracts the content of a C# string literal, removing quotes and prefixes.
+    /// </summary>
+    public static string ExtractCSharpStringContent(string raw)
+    {
+        string s = raw;
+
+        // Remove prefixes: @, $, $@, @$
+        if (s.StartsWith("$@") || s.StartsWith("@$"))
+        {
+            s = s.Substring(2);
+        }
+        else if (s.StartsWith("@") || s.StartsWith("$"))
+        {
+            s = s.Substring(1);
+        }
+
+        if (s.StartsWith("\"") && s.EndsWith("\"") && s.Length >= 2)
+        {
+            return s.Substring(1, s.Length - 2);
+        }
+
+        return s;
+    }
+
+    /// <summary>
     /// Recursively collects text replacements from the AST for code generation.
+    /// Kept for backward compatibility but Generate() now uses AdapterHelpers.
     /// </summary>
     /// <param name="node">The current AST node to process.</param>
     /// <param name="replacements">The list to accumulate replacement tuples (start, end, new text) into.</param>
