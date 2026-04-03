@@ -50,7 +50,7 @@ public class NovaLinguagemAdapter : ILanguageAdapter
 
 ## 2. Criar o KeywordMap
 
-Criar ficheiro `LanguageAdapters/PythonKeywordMap.cs` com mapeamento keyword -> ID numerico:
+Criar ficheiro `LanguageAdapters/Python/PythonKeywordMap.cs` com mapeamento keyword -> ID numerico:
 
 ```csharp
 public class PythonKeywordMap

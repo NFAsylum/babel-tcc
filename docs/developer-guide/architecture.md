@@ -23,6 +23,9 @@
 |  +-- CompletionProvider                  |
 |  +-- HoverProvider                       |
 |  +-- KeywordMapService                   |
+|  +-- LanguageDetector                    |
+|  +-- ConfigurationService                |
+|  +-- CoreBridge                          |
 +------------------+-----------------------+
                    |
             CoreBridge (JSON via stdin/stdout)

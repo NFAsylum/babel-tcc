@@ -55,6 +55,23 @@ public interface INaturalLanguageProvider
 }
 ```
 
+### IIDEAdapter
+
+Interface para integracao com IDEs (contrato interno).
+
+```csharp
+public interface IIDEAdapter
+{
+    string IDEName { get; }
+
+    Task ShowTranslatedContentAsync(string filePath, string translatedContent);
+    Task<EditEvent> CaptureEditEventAsync();
+    Task SaveOriginalContentAsync(string filePath, string originalContent);
+    Task<List<CompletionItem>> ProvideAutocompleteAsync(string partialText, int position);
+    Task ShowDiagnosticsAsync(List<Diagnostic> diagnostics);
+}
+```
+
 ## Modelos AST
 
 ### ASTNode (base)
@@ -80,8 +97,8 @@ public abstract class ASTNode
 ```csharp
 public class KeywordNode : ASTNode
 {
-    public int KeywordId;
-    public string Text;
+    public int KeywordId { get; set; }
+    public string Text { get; set; }
 }
 ```
 
@@ -90,9 +107,9 @@ public class KeywordNode : ASTNode
 ```csharp
 public class IdentifierNode : ASTNode
 {
-    public string Name;
-    public string TranslatedName;
-    public bool IsTranslatable;
+    public string Name { get; set; }
+    public string TranslatedName { get; set; }
+    public bool IsTranslatable { get; set; }
 }
 ```
 
@@ -101,9 +118,9 @@ public class IdentifierNode : ASTNode
 ```csharp
 public class LiteralNode : ASTNode
 {
-    public object Value;
-    public LiteralType Type;
-    public bool IsTranslatable;
+    public object Value { get; set; }
+    public LiteralType Type { get; set; }
+    public bool IsTranslatable { get; set; }
 }
 ```
 
@@ -136,13 +153,23 @@ Coordena o fluxo completo de traducao.
 ```csharp
 public class TranslationOrchestrator
 {
-    // Traduzir codigo para idioma natural
+    public required LanguageRegistry Registry { get; init; }
+    public required INaturalLanguageProvider Provider { get; init; }
+    public required IdentifierMapper IdentifierMapperService { get; init; }
+
+    public static OperationResultGeneric<TranslationOrchestrator> Create(
+        LanguageRegistry registry, INaturalLanguageProvider provider, IdentifierMapper mapper);
+
     public async Task<OperationResultGeneric<string>> TranslateToNaturalLanguageAsync(
         string sourceCode, string fileExtension, string targetLanguage);
-
-    // Traduzir de idioma natural para linguagem de programacao
     public async Task<OperationResultGeneric<string>> TranslateFromNaturalLanguageAsync(
         string translatedCode, string fileExtension, string sourceLanguage);
+
+    public void TranslateAstForward(ASTNode node, string targetLanguage);
+    public void TranslateAstReverse(ASTNode node, string sourceLanguage);
+    public void ApplyTraduAnnotations(string sourceCode, string targetLanguage, ILanguageAdapter adapter);
+    public void ApplyReverseTraduAnnotations(string code, string sourceLanguage, ILanguageAdapter adapter);
+    public string FindScopedTranslation(string name, int line);
 }
 ```
 
@@ -153,10 +180,16 @@ Gerencia mapeamentos bidirecionais de identificadores.
 ```csharp
 public class IdentifierMapper
 {
+    public IdentifierMapData Data;
+    public string LoadedPath;
+
     public OperationResult LoadMap(string projectPath);
+    public OperationResult SaveMap();
     public void SetTranslation(string identifier, string language, string translation);
+    public void SetLiteralTranslation(string literal, string language, string translation);
     public OperationResultGeneric<string> GetTranslation(string identifier, string language);
     public OperationResultGeneric<string> GetOriginal(string translated, string language);
+    public OperationResultGeneric<string> GetLiteralTranslation(string literal, string language);
 }
 ```
 
@@ -169,6 +202,8 @@ public class LanguageRegistry
 {
     public OperationResult RegisterAdapter(ILanguageAdapter adapter);
     public OperationResultGeneric<ILanguageAdapter> GetAdapter(string fileExtension);
+    public string[] GetSupportedExtensions();
+    public bool IsSupported(string fileExtension);
 }
 ```
 
