@@ -147,17 +147,35 @@ describe('TranslatedContentProvider', () => {
       expect(window.showErrorMessage).toHaveBeenCalled();
     });
 
-    it('should not leave path in refreshingPaths after writeFile completes', async () => {
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
-      const content = new TextEncoder().encode('publico classe Foo {}');
+    it('should clean refreshingPaths even when applyEdit fails', async () => {
+      vi.useFakeTimers();
+      try {
+        const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+        const content = new TextEncoder().encode('publico classe Foo {}');
 
-      workspace.textDocuments = [];
-      await provider.writeFile(uri, content);
+        // Setup: mock document that triggers the refresh path
+        const mockDoc = {
+          uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`),
+          getText: vi.fn((): string => 'old content'),
+          lineAt: vi.fn((): { range: { end: { line: 0, character: 0 } } } =>
+            ({ range: { end: { line: 0, character: 0 } } })),
+          lineCount: 1,
+        };
+        workspace.textDocuments = [mockDoc];
 
-      // After writeFile returns, refreshingPaths should not contain the path
-      // (the setTimeout callback may not have run yet, but the writeFile itself
-      // should not leave stale entries)
-      expect(provider.refreshingPaths.has('/test/file.cs')).toBe(false);
+        // Make applyEdit reject
+        workspace.applyEdit = vi.fn().mockRejectedValue(new Error('applyEdit failed'));
+
+        await provider.writeFile(uri, content);
+
+        // Advance past the setTimeout(100ms)
+        await vi.advanceTimersByTimeAsync(200);
+
+        // refreshingPaths should be clean even though applyEdit failed
+        expect(provider.refreshingPaths.has('/test/file.cs')).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
