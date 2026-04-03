@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { execFile } from 'child_process';
 import { CoreBridge } from './services/coreBridge';
 import { LanguageDetector } from './services/languageDetector';
 import { ConfigurationService } from './services/configurationService';
@@ -49,6 +50,30 @@ function cleanMultilingualCache(channel: vscode.OutputChannel): void {
 }
 
 /**
+ * Checks if the .NET SDK is installed and accessible in the PATH.
+ * Shows an error message with installation link if not found.
+ * @param channel - The output channel for logging.
+ */
+function checkDotnetInstalled(channel: vscode.OutputChannel): void {
+  execFile('dotnet', ['--version'], (error: Error | null, stdout: string): void => {
+    if (error) {
+      channel.appendLine('Babel TCC: .NET SDK not found in PATH.');
+      vscode.window.showErrorMessage(
+        'Babel TCC: .NET 8 SDK is required but was not found. ' +
+        '[Install .NET](https://dotnet.microsoft.com/download/dotnet/8.0)',
+        'Open Download Page'
+      ).then((selection: string | undefined): void => {
+        if (selection === 'Open Download Page') {
+          vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/download/dotnet/8.0'));
+        }
+      });
+      return;
+    }
+    channel.appendLine(`Babel TCC: .NET SDK found: ${stdout.trim()}`);
+  });
+}
+
+/**
  * Activates the Babel TCC extension, initializing all services, providers, and commands.
  * @param context - The VS Code extension context used for managing subscriptions and extension paths.
  */
@@ -57,6 +82,7 @@ export function activate(context: vscode.ExtensionContext): void {
   outputChannel.appendLine('Babel TCC extension activated.');
 
   cleanMultilingualCache(outputChannel);
+  checkDotnetInstalled(outputChannel);
 
   coreBridge = new CoreBridge(context, outputChannel);
   languageDetector = new LanguageDetector();

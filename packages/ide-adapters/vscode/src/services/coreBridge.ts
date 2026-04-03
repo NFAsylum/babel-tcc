@@ -140,7 +140,7 @@ export class CoreBridge {
 
     if (this.crashCount >= MAX_CRASHES) {
       vscode.window.showWarningMessage(
-        'Babel TCC: o motor de traducao esta instavel. Verifique o painel Output para detalhes.'
+        'Babel TCC: The translation engine is unstable. Check the Output panel for details.'
       );
       throw new Error('CoreBridge: process crashed too many times, refusing to restart');
     }
