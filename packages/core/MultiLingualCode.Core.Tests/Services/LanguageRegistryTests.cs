@@ -10,7 +10,7 @@ public class LanguageRegistryTests
 {
     public LanguageRegistry Registry = new();
 
-    private static ILanguageAdapter CreateMockAdapter(string name, params string[] extensions)
+    public static ILanguageAdapter CreateMockAdapter(string name, params string[] extensions)
     {
         ILanguageAdapter adapter = Substitute.For<ILanguageAdapter>();
         adapter.LanguageName.Returns(name);
