@@ -451,4 +451,90 @@ public class IdentifierMapperTests : IDisposable
         Assert.True(reloadResult.IsSuccess);
         Assert.Equal("Calculadora", reloadResult.Value);
     }
+
+    [Fact]
+    public void MultiLanguage_SetTranslationsFromDifferentFiles_AccumulatesInMemory()
+    {
+        Mapper.LoadMap(TempDir);
+
+        Mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SetTranslation("Add", "pt-br", "Somar");
+        Mapper.SetTranslation("task_manager", "pt-br", "gerenciador_tarefas");
+        Mapper.SetTranslation("add_task", "pt-br", "adicionar_tarefa");
+
+        Assert.Equal(4, Mapper.IdentifierCount);
+        Assert.True(Mapper.GetTranslation("Calculator", "pt-br").IsSuccess);
+        Assert.True(Mapper.GetTranslation("task_manager", "pt-br").IsSuccess);
+    }
+
+    [Fact]
+    public void MultiLanguage_SaveAndReload_PreservesAllIdentifiers()
+    {
+        Mapper.LoadMap(TempDir);
+
+        Mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SetTranslation("task_manager", "pt-br", "gerenciador_tarefas");
+        Mapper.SaveMap();
+
+        IdentifierMapper mapper2 = new();
+        mapper2.LoadMap(TempDir);
+
+        Assert.Equal(2, mapper2.IdentifierCount);
+        Assert.Equal("Calculadora", mapper2.GetTranslation("Calculator", "pt-br").Value);
+        Assert.Equal("gerenciador_tarefas", mapper2.GetTranslation("task_manager", "pt-br").Value);
+    }
+
+    [Fact]
+    public void MultiLanguage_SequentialSaves_PreservePreviousData()
+    {
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SetTranslation("Add", "pt-br", "Somar");
+        Mapper.SaveMap();
+
+        IdentifierMapper mapper2 = new();
+        mapper2.LoadMap(TempDir);
+        mapper2.SetTranslation("task_manager", "pt-br", "gerenciador_tarefas");
+        mapper2.SaveMap();
+
+        IdentifierMapper mapper3 = new();
+        mapper3.LoadMap(TempDir);
+
+        Assert.Equal(3, mapper3.IdentifierCount);
+        Assert.Equal("Calculadora", mapper3.GetTranslation("Calculator", "pt-br").Value);
+        Assert.Equal("Somar", mapper3.GetTranslation("Add", "pt-br").Value);
+        Assert.Equal("gerenciador_tarefas", mapper3.GetTranslation("task_manager", "pt-br").Value);
+    }
+
+    [Fact]
+    public void MultiLanguage_RoundTrip_TranslateAndReverse()
+    {
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SetTranslation("task_manager", "pt-br", "gerenciador_tarefas");
+        Mapper.SaveMap();
+
+        IdentifierMapper mapper2 = new();
+        mapper2.LoadMap(TempDir);
+
+        Assert.Equal("Calculator", mapper2.GetOriginal("Calculadora", "pt-br").Value);
+        Assert.Equal("task_manager", mapper2.GetOriginal("gerenciador_tarefas", "pt-br").Value);
+    }
+
+    [Fact]
+    public void MultiLanguage_SameIdentifierDifferentLanguages_CoexistCorrectly()
+    {
+        Mapper.LoadMap(TempDir);
+        Mapper.SetTranslation("Calculator", "pt-br", "Calculadora");
+        Mapper.SetTranslation("Calculator", "es-es", "Calculadora_ES");
+        Mapper.SetTranslation("task_manager", "pt-br", "gerenciador_tarefas");
+        Mapper.SaveMap();
+
+        IdentifierMapper mapper2 = new();
+        mapper2.LoadMap(TempDir);
+
+        Assert.Equal("Calculadora", mapper2.GetTranslation("Calculator", "pt-br").Value);
+        Assert.Equal("Calculadora_ES", mapper2.GetTranslation("Calculator", "es-es").Value);
+        Assert.Equal("gerenciador_tarefas", mapper2.GetTranslation("task_manager", "pt-br").Value);
+    }
 }

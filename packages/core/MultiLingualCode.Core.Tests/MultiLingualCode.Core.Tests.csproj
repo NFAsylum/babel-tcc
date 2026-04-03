@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MultiLingualCode.Core\MultiLingualCode.Core.csproj" />
+    <ProjectReference Include="..\MultiLingualCode.Core.Host\MultiLingualCode.Core.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>
