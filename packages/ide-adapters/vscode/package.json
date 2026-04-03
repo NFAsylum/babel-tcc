@@ -131,7 +131,7 @@
     "package": "npm run build && vsce package",
     "publish-core": "dotnet publish ../../core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj -c Release -o bin",
     "prepackage": "npm run publish-core && npm run copy-translations",
-    "copy-translations": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});fs.readdirSync(s).forEach(f=>{const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)})};const full=p.resolve('../../../../babel-tcc-translations');const test='../../core/MultiLingualCode.Core.Tests/TestData/translations';const src=fs.existsSync(full)?full:test;console.log('Copying translations from: '+src);cp(src,'translations')\""
+    "copy-translations": "node ../../../scripts/copy-translations.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
