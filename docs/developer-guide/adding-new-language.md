@@ -22,36 +22,29 @@ Para adicionar suporte a uma nova linguagem de programacao, e necessario:
 
 ## 1. Criar o Adapter
 
-Criar ficheiro `LanguageAdapters/PythonAdapter.cs` implementando `ILanguageAdapter`:
+Criar ficheiro implementando `ILanguageAdapter`. Ver `PythonAdapter.cs` como exemplo real de implementacao completa, ou `CSharpAdapter.cs` como referencia Roslyn.
+
+A interface requer os seguintes metodos:
 
 ```csharp
-public class PythonAdapter : ILanguageAdapter
+public class NovaLinguagemAdapter : ILanguageAdapter
 {
-    public string LanguageName => "Python";
-    public string[] FileExtensions => [".py"];
+    public string LanguageName => "NovaLinguagem";
+    public string[] FileExtensions => [".ext"];
     public string Version => "1.0.0";
 
-    public ASTNode Parse(string sourceCode)
-    {
-        // Parsear codigo e criar AST com KeywordNode, IdentifierNode, LiteralNode
-    }
+    public ASTNode Parse(string sourceCode) { /* Parsear codigo em AST */ }
+    public string Generate(ASTNode ast) { /* Reconstruir codigo */ }
+    public Dictionary<string, int> GetKeywordMap() { /* Mapa keyword -> ID */ }
+    public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookup) { /* Reverter keywords traduzidas */ }
+    public ValidationResult ValidateSyntax(string sourceCode) { /* Validar sintaxe */ }
+    public List<string> ExtractIdentifiers(string sourceCode) { /* Extrair identificadores */ }
 
-    public string Generate(ASTNode ast)
-    {
-        // Reconstruir codigo a partir da AST modificada
-    }
-
-    public Dictionary<string, int> GetKeywordMap() => PythonKeywordMap.Map;
-
-    public ValidationResult ValidateSyntax(string sourceCode)
-    {
-        // Validar sintaxe
-    }
-
-    public List<string> ExtractIdentifiers(string sourceCode)
-    {
-        // Extrair identificadores
-    }
+    // Metodos de suporte a anotacoes tradu
+    public List<TrailingComment> ExtractTrailingComments(string sourceCode) { /* Extrair comentarios */ }
+    public List<string> GetIdentifierNamesOnLine(string sourceCode, int line) { /* Identifiers na linha */ }
+    public string GetFirstStringLiteralOnLine(string sourceCode, int line) { /* String literal na linha */ }
+    public (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line) { /* Escopo do metodo */ }
 }
 ```
 
@@ -150,11 +143,14 @@ Criar ficheiro `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.
 - `Generate_TranslatedAst_ProducesCorrectOutput`
 - `RoundTrip_SimpleCode_PreservesStructure`
 
-## Exemplo completo: PythonAdapter
+## Implementacoes existentes
 
-Ver `CSharpAdapter.cs` como referencia completa de implementacao. O padrao e:
+- **CSharpAdapter** (`LanguageAdapters/CSharpAdapter.cs`): Usa Roslyn para parsing. Referencia para linguagens com parser .NET nativo.
+- **PythonAdapter** (`LanguageAdapters/Python/PythonAdapter.cs`): Usa subprocesso CPython (`tokenizer_service.py`) via JSON Lines. Referencia para linguagens sem parser .NET.
 
-1. Parsear o codigo em tokens
+O padrao geral e:
+
+1. Parsear o codigo em tokens (via parser nativo ou subprocesso)
 2. Classificar cada token como keyword, identifier ou literal
 3. Criar nos AST com posicoes (start/end) para reconstrucao
 4. `Generate()` aplica substituicoes na ordem reversa das posicoes

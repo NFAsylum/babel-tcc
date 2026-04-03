@@ -105,13 +105,14 @@ Registro das decisoes tecnicas tomadas no projeto e suas justificativas.
 
 ---
 
-## DT-007: MVP focado em C# + PT-BR
+## DT-007: MVP focado em C# + PT-BR (expandido para Python + 10 idiomas)
 
-**Decisao:** MVP suporta apenas C# como linguagem de programacao e PT-BR como idioma alvo.
+**Decisao original:** MVP suporta apenas C# como linguagem de programacao e PT-BR como idioma alvo.
 
-**Justificativa:**
+**Justificativa original:**
 - Reduz escopo para entrega viavel no prazo do TCC
 - C# tem o melhor parser (Roslyn)
 - PT-BR e o idioma da equipe
 - Arquitetura permite adicionar outros facilmente depois
-- Python e JS sao marcados como opcionais/futuros
+
+**Atualizacao (2026-04):** Python adicionado como segunda linguagem (tarefas 052-060) usando tokenizador nativo via subprocesso. Traduções expandidas para 10 idiomas naturais (pt-br, pt-br-ascii, en-us, es-es, fr-fr, de-de, it-it, ja-jp-romaji, zh-cn, ar-sa).

@@ -2,23 +2,23 @@
 
 ## Indice
 
-- [Abrir um projeto C#](#abrir-um-projeto-c)
+- [Abrir um projeto](#abrir-um-projeto)
 - [Ativar a traducao](#ativar-a-traducao)
 - [Entender a interface](#entender-a-interface)
 - [Workflow basico](#workflow-basico)
 - [Usando anotacoes tradu](#usando-anotacoes-tradu)
 
-## Abrir um projeto C#
+## Abrir um projeto
 
 1. Abrir VS Code
-2. Abrir uma pasta que contenha ficheiros `.cs` (`File > Open Folder`)
-3. A extensao Babel TCC ativa automaticamente ao detectar ficheiros C#
+2. Abrir uma pasta que contenha ficheiros `.cs` ou `.py` (`File > Open Folder`)
+3. A extensao Babel TCC ativa automaticamente ao detectar ficheiros C# ou Python
 
 ## Ativar a traducao
 
-1. Abrir um ficheiro `.cs`
+1. Abrir um ficheiro `.cs` ou `.py`
 2. Pressionar `Ctrl+Shift+P` para abrir o Command Palette
-3. Executar `Babel TCC: Open Translated View`
+3. Executar `Babel TCC: Traduzir Codigo (Editavel)` ou `Babel TCC: Traduzir Codigo (Readonly)`
 4. O codigo traduzido aparece num painel lateral
 
 Alternativamente:
@@ -41,7 +41,7 @@ Ao digitar no painel traduzido, sugestoes de keywords traduzidas aparecem automa
 
 ## Workflow basico
 
-1. **Ler:** Abrir ficheiro `.cs` e usar `Open Translated View` para ver em PT-BR
+1. **Ler:** Abrir ficheiro `.cs` ou `.py` e usar `Traduzir Codigo` para ver em PT-BR
 2. **Editar:** Editar no painel traduzido usando keywords PT-BR
 3. **Salvar:** Ao salvar, o codigo e automaticamente traduzido de volta para C# e gravado no disco
 4. **Compilar:** O ficheiro no disco e C# valido - compilar normalmente

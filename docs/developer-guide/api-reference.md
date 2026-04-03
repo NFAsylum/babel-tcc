@@ -23,10 +23,19 @@ public interface ILanguageAdapter
     ASTNode Parse(string sourceCode);
     string Generate(ASTNode ast);
     Dictionary<string, int> GetKeywordMap();
+    string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookupTranslatedKeyword);
     ValidationResult ValidateSyntax(string sourceCode);
     List<string> ExtractIdentifiers(string sourceCode);
+
+    // Metodos de suporte a anotacoes tradu (adicionados na tarefa 055)
+    List<TrailingComment> ExtractTrailingComments(string sourceCode);
+    List<string> GetIdentifierNamesOnLine(string sourceCode, int line);
+    string GetFirstStringLiteralOnLine(string sourceCode, int line);
+    (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line);
 }
 ```
+
+Implementacoes disponiveis: `CSharpAdapter` (Roslyn) e `PythonAdapter` (subprocesso CPython).
 
 ### INaturalLanguageProvider
 
@@ -38,10 +47,11 @@ public interface INaturalLanguageProvider
     string LanguageCode { get; }
     string LanguageName { get; }
 
-    Task LoadTranslationTableAsync(string programmingLanguage);
-    OperationResult<string> TranslateKeyword(int keywordId);
+    Task<OperationResult> LoadTranslationTableAsync(string programmingLanguage);
+    OperationResultGeneric<string> TranslateKeyword(int keywordId);
     int ReverseTranslateKeyword(string translatedKeyword);
-    OperationResult<string> TranslateIdentifier(string identifier, IdentifierContext context);
+    OperationResultGeneric<string> GetOriginalKeyword(int keywordId);
+    OperationResultGeneric<string> TranslateIdentifier(string identifier, IdentifierContext context);
 }
 ```
 
@@ -71,7 +81,7 @@ public abstract class ASTNode
 public class KeywordNode : ASTNode
 {
     public int KeywordId;
-    public string OriginalKeyword;
+    public string Text;
 }
 ```
 
@@ -127,11 +137,11 @@ Coordena o fluxo completo de traducao.
 public class TranslationOrchestrator
 {
     // Traduzir codigo para idioma natural
-    public async Task<OperationResult<string>> TranslateToNaturalLanguageAsync(
+    public async Task<OperationResultGeneric<string>> TranslateToNaturalLanguageAsync(
         string sourceCode, string fileExtension, string targetLanguage);
 
     // Traduzir de idioma natural para linguagem de programacao
-    public async Task<OperationResult<string>> TranslateFromNaturalLanguageAsync(
+    public async Task<OperationResultGeneric<string>> TranslateFromNaturalLanguageAsync(
         string translatedCode, string fileExtension, string sourceLanguage);
 }
 ```
