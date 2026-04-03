@@ -1,47 +1,51 @@
-# Tarefa 085 - ReverseSubstituteKeywords com mapeamento posicional
+# Tarefa 085 - Eliminar ambiguidade no reverse translation de keywords
 
 ## Prioridade: HIGH
 
 ## Problema
 O ReverseSubstituteKeywords atual usa scanner char-by-char que nao distingue identificadores de keywords traduzidas quando tem o mesmo texto. Isso causa corrupcao no round-trip (ex: variavel "e" vira "and" em pt-br). O problema foi mitigado com traducoes mais longas (logicoe, logicoou, igual), mas a fragilidade permanece para qualquer traducao futura que coincida com um nome de variavel.
 
-## Solucao: mapeamento posicional
+O problema afeta dois cenarios:
+1. **Round-trip**: forward translate -> usuario edita -> reverse translate
+2. **Escrita nativa**: usuario escreve codigo traduzido do zero (sem forward previo)
 
-### Fluxo forward (ja existente, adaptar)
-1. `TranslateAstForward` traduz KeywordNodes no AST clonado
-2. `Generate` aplica substituicoes no source code (sort descendente por posicao)
+## Abordagens avaliadas
 
-### Novo: gravar posicoes de keywords traduzidas
-Durante o `Generate`, ao aplicar cada replacement de KeywordNode, gravar a posicao resultante (start, end) no codigo traduzido. Retornar esse set de ranges junto com o codigo traduzido.
+### A) Mapeamento posicional (proposta original)
+Generate grava posicoes de keywords traduzidas no output. Reverse substitui apenas nessas posicoes.
 
-Opcoes de implementacao:
-a) `Generate` retorna tupla `(string code, List<(int Start, int End)> keywordRanges)` — quebra interface
-b) Gravar ranges num campo do adapter ou do orchestrator apos Generate
-c) Criar modelo `TranslationResult { Code, KeywordRanges }` retornado pelo orchestrator
+**Limitacao critica**: so funciona para round-trip (cenario 1). Na escrita nativa (cenario 2), nao existe Generate previo e portanto nao existem ranges. O fallback seria o scanner bugado — o caminho mais comum ficaria sem protecao.
 
-Recomendacao: opcao (c) — encapsula resultado sem quebrar interfaces existentes.
+Riscos adicionais:
+- Ranges dessincronizam se usuario edita o codigo traduzido (insere/remove caracteres)
+- Dois code paths (ranges vs fallback) duplicam logica e testes
 
-### Novo: reverse usa ranges em vez de scanner
-`ReverseSubstituteKeywords` recebe os ranges de keywords. Para cada range no codigo traduzido:
-1. Extrair o texto no range
-2. Fazer lookup na tabela de traducao reversa
-3. Se encontrou, substituir pelo keyword original
+### B) Diff-based no Core (sugerida pelo QA)
+O sistema ja tem o ficheiro original e o traduzido. Quando o usuario edita o traduzido, o Core compara antes/depois e aplica apenas as diferencas no original. Keywords nunca precisam de reverse — ja estao no original.
 
-Textos fora dos ranges nao sao tocados — identificadores ficam intactos independente do texto.
+**Vantagem**: resolve ambos os cenarios com um unico code path.
+**Complexidade**: diffing de codigo com keywords de tamanho diferente requer matching cuidadoso. Edicoes no meio de keywords traduzidas (ex: usuario apaga metade de "enquanto") precisam de tratamento especial.
 
-### Calculo de posicoes no Generate
-O `Generate` aplica replacements em ordem reversa (posicao descendente). Ao aplicar cada replacement de KeywordNode:
-- O start da posicao no output e conhecido (e o mesmo start do replacement, pois replacements anteriores nao afetam posicoes anteriores quando aplicados em ordem reversa)
-- O end e start + length do texto traduzido
+### C) Tokenizar o codigo traduzido (alternativa)
+Usar o tokenizador da linguagem (Roslyn para C#, subprocess para Python) no codigo traduzido. Keywords traduzidas sao tokens NAME (nao keywords reais), mas identifiers tambem sao NAME. A distincao e feita comparando cada token NAME contra a tabela de traducao reversa — se match, e keyword traduzida.
 
-### Impacto na performance
-Positivo — elimina o scanner char-by-char que percorre todos os caracteres. O novo approach percorre apenas os N keywords (~20-50 por arquivo tipico). Memoria adicional e uma lista de tuplas de inteiros.
+**Vantagem**: funciona para ambos os cenarios. Nao precisa de Generate previo.
+**Limitacao**: mesma ambiguidade do scanner char-by-char (variavel "e" ainda matcha keyword "e"). Porem, o tokenizador resolve strings/comments automaticamente (o scanner precisa de skip manual).
 
-## Escopo
-- Criar modelo TranslationResult (ou similar) com code + keywordRanges
-- Modificar Generate nos adapters para produzir ranges de keywords
-- Modificar ReverseSubstituteKeywords para usar ranges
-- Modificar TranslationOrchestrator para passar ranges entre forward e reverse
-- Remover scanner char-by-char dos adapters (ou manter como fallback)
-- Atualizar testes existentes de ReverseSubstituteKeywords
-- Adicionar teste: variavel "e" nao e corrompida no round-trip (sem depender da traducao ser "logicoe")
+### D) Hibrida: mapeamento posicional + tokenizacao como fallback inteligente
+- Round-trip: usar ranges do Generate (cenario 1, mais seguro)
+- Escrita nativa: tokenizar o codigo traduzido e aplicar heuristicas (cenario 2)
+  - Palavras que sao keywords traduzidas E estao em posicao sintatica de keyword (inicio de statement, apos dois-pontos, etc.) sao revertidas
+  - Palavras que sao keywords traduzidas mas estao em posicao de identifier (apos `.`, como argumento de funcao, em assignment) nao sao revertidas
+- Fallback final: scanner char-by-char (mantido para compatibilidade)
+
+## Decisao
+A decidir durante implementacao. A abordagem D e a mais robusta mas mais complexa. A abordagem A resolve o caso mais comum (round-trip) de forma simples. Documentar qual abordagem foi escolhida e os tradeoffs.
+
+## Escopo minimo
+Independente da abordagem escolhida:
+- Resolver cenario 1 (round-trip) de forma robusta
+- Documentar limitacao do cenario 2 (escrita nativa) se nao resolvido
+- Teste: variavel "e" nao e corrompida no round-trip com traducao "e" para "and"
+- Teste: variavel "si" nao e corrompida com traducao "si" para "if" em es-es
+- Zero regressoes nos testes existentes
