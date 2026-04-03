@@ -167,7 +167,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
         }
 
         List<(int Start, int End, string NewText)> replacements = new();
-        CSharpAdapter.CollectReplacements(ast, replacements);
+        AdapterHelpers.CollectReplacements(ast, replacements, originalSource, WrapPythonLiteral);
 
         if (replacements.Count == 0)
         {
@@ -501,6 +501,45 @@ public class PythonAdapter : ILanguageAdapter, IDisposable
         }
 
         return (startLine, endLine);
+    }
+
+    /// <summary>
+    /// Wraps a Python string literal value with the original quotes and prefixes.
+    /// If the value was not modified, returns the original source text unchanged.
+    /// If modified (translated), replaces the content between the original quotes.
+    /// </summary>
+    public static string WrapPythonLiteral(LiteralNode literal, string originalText)
+    {
+        string currentValue = $"{literal.Value}";
+        string extractedOriginal = ExtractStringContent(originalText);
+
+        if (currentValue == extractedOriginal)
+        {
+            return originalText;
+        }
+
+        // Value was modified (translated). Reconstruct with original quotes/prefixes.
+        string prefix = "";
+        string rest = originalText;
+        while (rest.Length > 0 && "fFrRbBuU".Contains(rest[0]))
+        {
+            prefix += rest[0];
+            rest = rest.Substring(1);
+        }
+
+        if (rest.StartsWith("\"\"\"") || rest.StartsWith("'''"))
+        {
+            string quote = rest.Substring(0, 3);
+            return prefix + quote + currentValue + quote;
+        }
+
+        if (rest.Length > 0 && (rest[0] == '"' || rest[0] == '\''))
+        {
+            string quote = rest[0].ToString();
+            return prefix + quote + currentValue + quote;
+        }
+
+        return "\"" + currentValue + "\"";
     }
 
     /// <summary>
