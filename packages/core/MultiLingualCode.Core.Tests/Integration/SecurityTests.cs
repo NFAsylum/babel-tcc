@@ -38,7 +38,7 @@ public class SecurityTests : IDisposable
     }
 
     [Fact]
-    public async Task MaliciousCode_DoesNotCrash()
+    public async Task TranslateToNaturalLanguage_WithMaliciousCode_CompletesWithoutCrash()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -59,7 +59,7 @@ class Evil
     }
 
     [Fact]
-    public async Task ControlCharacters_DoNotCrash()
+    public async Task TranslateToNaturalLanguage_WithControlCharacters_CompletesWithoutCrash()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -72,7 +72,7 @@ class Evil
     }
 
     [Fact]
-    public async Task ExtremelyLongIdentifier_DoesNotCrash()
+    public async Task ExtremelyLongIdentifier_WhenTranslated_DoesNotCrash()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -86,7 +86,7 @@ class Evil
     }
 
     [Fact]
-    public async Task DeeplyNestedCode_DoesNotStackOverflow()
+    public async Task DeeplyNestedCode_WhenTranslated_DoesNotStackOverflow()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -114,7 +114,7 @@ class Evil
     }
 
     [Fact]
-    public async Task EmptyFile_HandledGracefully()
+    public async Task EmptyFile_WhenTranslated_HandledGracefully()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -125,7 +125,7 @@ class Evil
     }
 
     [Fact]
-    public async Task WhitespaceOnlyFile_HandledGracefully()
+    public async Task WhitespaceOnlyFile_WhenTranslated_HandledGracefully()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -136,7 +136,7 @@ class Evil
     }
 
     [Fact]
-    public async Task UnicodeSourceCode_HandledCorrectly()
+    public async Task UnicodeSourceCode_WhenTranslated_HandledCorrectly()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -153,7 +153,7 @@ class Programa
     }
 
     [Fact]
-    public void MalformedJson_LoadFrom_DoesNotCrash()
+    public void LoadFrom_WithMalformedJson_ReturnsFailureWithoutCrash()
     {
         string tempPath = Path.Combine(TempDir, "malformed.json");
         File.WriteAllText(tempPath, "{{{{invalid json]]]]");
@@ -164,7 +164,7 @@ class Programa
     }
 
     [Fact]
-    public void DeeplyNestedJson_LoadFrom_DoesNotCrash()
+    public void LoadFrom_WithDeeplyNestedJson_CompletesWithoutCrash()
     {
         string tempPath = Path.Combine(TempDir, "deep.json");
         StringBuilder sb = new StringBuilder();
@@ -189,7 +189,7 @@ class Programa
     }
 
     [Fact]
-    public void LargeJsonFile_LoadFrom_DoesNotCrash()
+    public void LoadFrom_WithLargeJsonFile_LoadsSuccessfully()
     {
         string tempPath = Path.Combine(TempDir, "large.json");
         StringBuilder sb = new StringBuilder();
@@ -221,7 +221,7 @@ class Programa
     }
 
     [Fact]
-    public async Task InjectionInTraduComment_DoesNotExecute()
+    public async Task InjectionInTraduComment_WhenTranslated_DoesNotExecute()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 
@@ -238,7 +238,7 @@ class Test // tradu[pt-br]:Teste<script>alert('xss')</script>
     }
 
     [Fact]
-    public async Task TranslatedOutput_DoesNotIntroduceExecutableCode()
+    public async Task TranslatedOutput_WhenTranslated_DoesNotIntroduceExecutableCode()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator();
 

@@ -121,7 +121,7 @@ public class IdentifierMapTests
     }
 
     [Fact]
-    public void BidirectionalLookup_IsConsistent()
+    public void GetTranslated_AfterGetOriginal_RoundTripsConsistently()
     {
         OperationResultGeneric<IdentifierMap> loadResult = IdentifierMap.LoadFrom(GetTestDataPath("identifier-map.json"));
         Assert.True(loadResult.IsSuccess);
@@ -137,7 +137,7 @@ public class IdentifierMapTests
     }
 
     [Fact]
-    public void Set_AddsNewMapping()
+    public void Set_WithNewPair_AddsForwardAndReverseMappings()
     {
         IdentifierMap map = new IdentifierMap();
 
@@ -155,7 +155,7 @@ public class IdentifierMapTests
     }
 
     [Fact]
-    public void Set_UpdatesExistingMapping()
+    public void Set_WithExistingKey_UpdatesMappingAndRemovesOldReverse()
     {
         IdentifierMap map = new IdentifierMap();
 
@@ -215,7 +215,7 @@ public class IdentifierMapTests
     }
 
     [Fact]
-    public void IsCaseSensitive_ForIdentifiers()
+    public void GetTranslated_WithWrongCasing_ReturnsFailure()
     {
         IdentifierMap map = new IdentifierMap();
         map.Set("GetName", "ObterNome");

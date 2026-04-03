@@ -5,13 +5,13 @@ namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 public class PythonKeywordMapTests
 {
     [Fact]
-    public void TextToId_Contains35Keywords()
+    public void TextToId_WhenAccessed_Contains35Keywords()
     {
         Assert.Equal(35, PythonKeywordMap.TextToId.Count);
     }
 
     [Fact]
-    public void IdToText_Contains35Keywords()
+    public void IdToText_WhenAccessed_Contains35Keywords()
     {
         Assert.Equal(35, PythonKeywordMap.IdToText.Count);
     }
@@ -93,7 +93,7 @@ public class PythonKeywordMapTests
     }
 
     [Fact]
-    public void BidirectionalMapping_IsConsistent()
+    public void GetText_AfterGetId_RoundTripsConsistently()
     {
         foreach (KeyValuePair<string, int> kvp in PythonKeywordMap.TextToId)
         {
@@ -103,7 +103,7 @@ public class PythonKeywordMapTests
     }
 
     [Fact]
-    public void ContainsAllPython3HardKeywords()
+    public void GetMap_WhenComparedToPython3Spec_ContainsAllHardKeywords()
     {
         string[] expected = {
             "False", "None", "True", "and", "as", "assert", "async", "await",
@@ -121,7 +121,7 @@ public class PythonKeywordMapTests
     }
 
     [Fact]
-    public void IdsAreContiguous_0To34()
+    public void GetText_WithIds0To34_ReturnsNonEmptyForAll()
     {
         for (int i = 0; i <= 34; i++)
         {

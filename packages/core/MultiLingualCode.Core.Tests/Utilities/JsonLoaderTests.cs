@@ -31,7 +31,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_DeserializesValidJson()
+    public void Load_WithValidJson_DeserializesCorrectly()
     {
         string path = CreateTempJson("test.json", """{"name":"test","value":42}""");
 
@@ -43,7 +43,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_CachesResult()
+    public void Load_WhenCalledTwice_ReturnsCachedInstance()
     {
         string path = CreateTempJson("cached.json", """{"name":"cached","value":1}""");
 
@@ -54,7 +54,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_ReturnsFailureOnFileNotFound()
+    public void Load_WithNonExistentFile_ReturnsFailure()
     {
         OperationResultGeneric<TestData> result = Loader.Load<TestData>("/nonexistent/path.json");
 
@@ -62,7 +62,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_ReturnsFailureOnInvalidJson()
+    public void Load_WithInvalidJson_ReturnsFailure()
     {
         string path = CreateTempJson("invalid.json", "not valid json{{{");
 
@@ -72,7 +72,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadAsync_DeserializesValidJson()
+    public async Task LoadAsync_WithValidJson_DeserializesCorrectly()
     {
         string path = CreateTempJson("async.json", """{"name":"async","value":99}""");
 
@@ -84,7 +84,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadAsync_CachesResult()
+    public async Task LoadAsync_WhenCalledTwice_ReturnsCachedInstance()
     {
         string path = CreateTempJson("async-cached.json", """{"name":"c","value":0}""");
 
@@ -95,7 +95,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Invalidate_RemovesFromCache()
+    public void Invalidate_AfterFileChange_ReloadsNewContent()
     {
         string path = CreateTempJson("invalidate.json", """{"name":"v1","value":1}""");
 
@@ -111,7 +111,7 @@ public class JsonLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ClearCache_RemovesAllEntries()
+    public void ClearCache_WithMultipleCachedFiles_RemovesAllEntries()
     {
         string path1 = CreateTempJson("a.json", """{"name":"a","value":1}""");
         string path2 = CreateTempJson("b.json", """{"name":"b","value":2}""");

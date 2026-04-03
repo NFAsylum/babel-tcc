@@ -129,7 +129,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task TranslateToNaturalLanguage_TranslatesKeywords()
+    public async Task TranslateToNaturalLanguage_WithCSharpCode_TranslatesKeywordsToPtBr()
     {
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         Registry.RegisterAdapter(adapter);
@@ -146,7 +146,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task TranslateToNaturalLanguage_TranslatesIdentifiers()
+    public async Task TranslateToNaturalLanguage_WithTraduAnnotations_TranslatesIdentifiers()
     {
         CSharpAdapter realAdapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
@@ -181,7 +181,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task TranslateFromNaturalLanguage_ReversesKeywords()
+    public async Task TranslateFromNaturalLanguage_WithTranslatedCode_ReversesKeywords()
     {
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         Registry.RegisterAdapter(adapter);
@@ -198,7 +198,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task TranslateFromNaturalLanguage_ReversesIdentifiers()
+    public async Task TranslateFromNaturalLanguage_WithMappedIdentifiers_ReversesIdentifiers()
     {
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         Registry.RegisterAdapter(adapter);
@@ -252,7 +252,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public void Constructor_AcceptsValidArguments()
+    public void Constructor_WithValidArguments_CreatesInstance()
     {
         NaturalLanguageProvider provider = CreateProvider();
 
@@ -276,7 +276,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task RoundTrip_TranslateAndReverse()
+    public async Task RoundTrip_ForwardAndReverse_PreservesKeywords()
     {
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         Registry.RegisterAdapter(adapter);
@@ -300,7 +300,7 @@ public class TranslationOrchestratorTests
     }
 
     [Fact]
-    public async Task TranslateToNaturalLanguage_PreservesUntranslatableIdentifiers()
+    public async Task TranslateToNaturalLanguage_LowercaseIdentifier_PreservesUntranslatable()
     {
         ILanguageAdapter adapter = CreateMockCSharpAdapter();
         Registry.RegisterAdapter(adapter);
@@ -540,7 +540,7 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
     }
 
     [Fact]
-    public async Task ApplyTraduAnnotations_DoesNotPersistToDisk()
+    public async Task ApplyTraduAnnotations_AfterTranslation_DoesNotPersistToDisk()
     {
         CSharpAdapter realAdapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();

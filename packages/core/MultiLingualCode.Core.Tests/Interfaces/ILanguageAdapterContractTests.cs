@@ -9,7 +9,7 @@ public class ILanguageAdapterContractTests
     public MockLanguageAdapter Adapter = new();
 
     [Fact]
-    public void Properties_AreAccessible()
+    public void Properties_WhenAccessed_ReturnExpectedValues()
     {
         Assert.Equal("MockLang", Adapter.LanguageName);
         Assert.Single(Adapter.FileExtensions);
@@ -18,14 +18,14 @@ public class ILanguageAdapterContractTests
     }
 
     [Fact]
-    public void Parse_ReturnsASTNode()
+    public void Parse_WithSourceCode_ReturnsNonNullASTNode()
     {
         ASTNode result = Adapter.Parse("test code");
         Assert.NotNull(result);
     }
 
     [Fact]
-    public void Generate_ReturnsString()
+    public void Generate_WithASTNode_ReturnsNonNullString()
     {
         MockASTNode node = new MockASTNode();
         string result = Adapter.Generate(node);
@@ -33,7 +33,7 @@ public class ILanguageAdapterContractTests
     }
 
     [Fact]
-    public void GetKeywordMap_ReturnsDictionary()
+    public void GetKeywordMap_WhenCalled_ReturnsNonEmptyDictionary()
     {
         Dictionary<string, int> map = Adapter.GetKeywordMap();
         Assert.NotNull(map);
@@ -41,7 +41,7 @@ public class ILanguageAdapterContractTests
     }
 
     [Fact]
-    public void ValidateSyntax_ReturnsValidationResult()
+    public void ValidateSyntax_WithValidCode_ReturnsValidResult()
     {
         ValidationResult result = Adapter.ValidateSyntax("test");
         Assert.NotNull(result);
@@ -49,7 +49,7 @@ public class ILanguageAdapterContractTests
     }
 
     [Fact]
-    public void ExtractIdentifiers_ReturnsList()
+    public void ExtractIdentifiers_WithSourceCode_ReturnsNonNullList()
     {
         List<string> result = Adapter.ExtractIdentifiers("test");
         Assert.NotNull(result);

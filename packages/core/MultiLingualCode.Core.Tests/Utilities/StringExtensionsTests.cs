@@ -12,7 +12,7 @@ public class StringExtensionsTests
     [InlineData("HTMLParser", "htmlParser")]
     [InlineData("getID", "getId")]
     [InlineData("", "")]
-    public void ToCamelCase_ConvertsCorrectly(string input, string expected)
+    public void ToCamelCase_WithVariousInputs_ConvertsCorrectly(string input, string expected)
     {
         Assert.Equal(expected, input.ToCamelCase());
     }
@@ -25,7 +25,7 @@ public class StringExtensionsTests
     [InlineData("x", "X")]
     [InlineData("HTMLParser", "HtmlParser")]
     [InlineData("", "")]
-    public void ToPascalCase_ConvertsCorrectly(string input, string expected)
+    public void ToPascalCase_WithVariousInputs_ConvertsCorrectly(string input, string expected)
     {
         Assert.Equal(expected, input.ToPascalCase());
     }
@@ -38,20 +38,20 @@ public class StringExtensionsTests
     [InlineData("simpleword", new[] { "simpleword" })]
     [InlineData("ABC", new[] { "ABC" })]
     [InlineData("", new string[0])]
-    public void SplitIntoWords_SplitsCorrectly(string input, string[] expected)
+    public void SplitIntoWords_WithVariousFormats_SplitsCorrectly(string input, string[] expected)
     {
         Assert.Equal(expected, input.SplitIntoWords());
     }
 
     [Fact]
-    public void ToCamelCase_NullReturnsNull()
+    public void ToCamelCase_WithNullInput_ReturnsNull()
     {
         string value = null!;
         Assert.Null(value!.ToCamelCase());
     }
 
     [Fact]
-    public void ToPascalCase_NullReturnsNull()
+    public void ToPascalCase_WithNullInput_ReturnsNull()
     {
         string value = null!;
         Assert.Null(value!.ToPascalCase());

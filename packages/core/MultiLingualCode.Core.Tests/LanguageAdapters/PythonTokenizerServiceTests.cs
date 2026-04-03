@@ -15,7 +15,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void Tokenize_IdentifiesKeywords()
+    public void Tokenize_WithCodeContainingKeywords_IdentifiesKeywordTokens()
     {
         using PythonTokenizerService service = new();
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("def foo(): pass");
@@ -27,7 +27,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void Tokenize_IdentifiesIdentifiers()
+    public void Tokenize_WithCodeContainingIdentifiers_IdentifiesNameTokens()
     {
         using PythonTokenizerService service = new();
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("def foo(x): return x");
@@ -39,7 +39,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void Tokenize_ReturnsCorrectPositions()
+    public void Tokenize_WithSimpleCode_ReturnsCorrectTokenPositions()
     {
         using PythonTokenizerService service = new();
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("def foo():");
@@ -53,7 +53,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void Tokenize_HandlesStringLiterals()
+    public void Tokenize_WithStringLiteral_ReturnsStringToken()
     {
         using PythonTokenizerService service = new();
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = \"hello\"");
@@ -64,7 +64,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void Tokenize_HandlesComments()
+    public void Tokenize_WithComment_ReturnsCommentToken()
     {
         using PythonTokenizerService service = new();
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1 # comment");
@@ -104,7 +104,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void Dispose_CanBeCalledMultipleTimes()
+    public void Dispose_WhenCalledMultipleTimes_DoesNotThrow()
     {
         PythonTokenizerService service = new();
         service.Tokenize("x = 1");
@@ -122,7 +122,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void Dispose_StopsProcess()
+    public void Dispose_WhenCalled_StopsPythonProcess()
     {
         PythonTokenizerService service = new();
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
@@ -144,7 +144,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void SequentialCreateDispose_DoesNotAccumulateProcesses()
+    public void Dispose_AfterSequentialCreateCycles_DoesNotAccumulateProcesses()
     {
         List<int> processIds = new();
 
@@ -189,7 +189,7 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
-    public void ProcessCrash_NoOrphanProcess()
+    public void Tokenize_AfterProcessCrash_DoesNotLeaveOrphanProcess()
     {
         PythonTokenizerService service = new();
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");

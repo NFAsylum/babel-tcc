@@ -17,7 +17,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public void Constructor_SetsLanguageCode()
+    public void Constructor_WithLanguageCode_SetsProperty()
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
@@ -41,7 +41,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public async Task LoadTranslationTableAsync_LoadsSuccessfully()
+    public async Task LoadTranslationTableAsync_ValidLanguage_LoadsSuccessfully()
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
@@ -50,7 +50,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public async Task LoadTranslationTableAsync_CachesTable()
+    public async Task LoadTranslationTableAsync_CalledTwice_ReturnsCachedTable()
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
@@ -203,7 +203,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public async Task LoadIdentifierMapAsync_LoadsFromFile()
+    public async Task LoadIdentifierMapAsync_ValidFile_LoadsFromFile()
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
@@ -217,7 +217,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public void IsLoaded_ReturnsFalseBeforeLoad()
+    public void IsLoaded_BeforeLoadingTable_ReturnsFalse()
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
@@ -225,7 +225,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public async Task IsLoaded_ReturnsTrueAfterLoad()
+    public async Task IsLoaded_AfterLoadingCSharp_ReturnsTrueForCSharp()
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
@@ -234,7 +234,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public async Task ActiveKeywordTable_IsAvailableAfterLoad()
+    public async Task ActiveKeywordTable_AfterLoad_IsAvailable()
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
@@ -244,7 +244,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public void ActiveKeywordTable_HasActiveTableIsFalseBeforeLoad()
+    public void ActiveKeywordTable_BeforeLoad_HasActiveTableIsFalse()
     {
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
 
@@ -252,7 +252,7 @@ public class NaturalLanguageProviderTests
     }
 
     [Fact]
-    public async Task RoundTrip_TranslateAndReverse()
+    public async Task RoundTrip_TranslateAndReverse_ReturnsOriginalId()
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 

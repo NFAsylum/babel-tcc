@@ -21,7 +21,7 @@ public class FileSystemHelperTests : IDisposable
     }
 
     [Fact]
-    public void ResolvePath_AbsolutePathReturnedAsIs()
+    public void ResolvePath_WithAbsolutePath_ReturnsSamePath()
     {
         string absolute = Path.Combine(TempDir, "file.txt");
         string result = FileSystemHelper.ResolvePath(absolute);
@@ -29,7 +29,7 @@ public class FileSystemHelperTests : IDisposable
     }
 
     [Fact]
-    public void ResolvePath_RelativePathResolvedAgainstBase()
+    public void ResolvePath_WithRelativePath_ResolvesAgainstBaseDirectory()
     {
         string result = FileSystemHelper.ResolvePath("sub/file.txt", TempDir);
         string expected = Path.GetFullPath(Path.Combine(TempDir, "sub/file.txt"));
@@ -37,7 +37,7 @@ public class FileSystemHelperTests : IDisposable
     }
 
     [Fact]
-    public void GetExtension_ReturnsLowercase()
+    public void GetExtension_WithMixedCasePaths_ReturnsLowercaseExtension()
     {
         Assert.Equal(".cs", FileSystemHelper.GetExtension("File.CS"));
         Assert.Equal(".py", FileSystemHelper.GetExtension("script.Py"));
@@ -45,13 +45,13 @@ public class FileSystemHelperTests : IDisposable
     }
 
     [Fact]
-    public void GetExtension_ReturnsEmptyForNoExtension()
+    public void GetExtension_WithNoExtension_ReturnsEmptyString()
     {
         Assert.Equal("", FileSystemHelper.GetExtension("Makefile"));
     }
 
     [Fact]
-    public void HasExtension_MatchesCaseInsensitive()
+    public void HasExtension_WithDifferentCases_MatchesCaseInsensitive()
     {
         Assert.True(FileSystemHelper.HasExtension("file.CS", ".cs"));
         Assert.True(FileSystemHelper.HasExtension("file.py", ".PY"));
@@ -59,7 +59,7 @@ public class FileSystemHelperTests : IDisposable
     }
 
     [Fact]
-    public void HasExtension_MatchesMultipleExtensions()
+    public void HasExtension_WithMultipleExtensions_MatchesAnyOfThem()
     {
         Assert.True(FileSystemHelper.HasExtension("file.cs", ".cs", ".py", ".ts"));
         Assert.True(FileSystemHelper.HasExtension("file.py", ".cs", ".py", ".ts"));
@@ -67,7 +67,7 @@ public class FileSystemHelperTests : IDisposable
     }
 
     [Fact]
-    public void FindProjectRoot_FindsMarkerDirectory()
+    public void FindProjectRoot_WithMarkerInParent_ReturnsProjectDirectory()
     {
         string projectDir = Path.Combine(TempDir, "myproject");
         string subDir = Path.Combine(projectDir, "src", "deep");
@@ -80,14 +80,14 @@ public class FileSystemHelperTests : IDisposable
     }
 
     [Fact]
-    public void FindProjectRoot_ReturnsEmptyIfNotFound()
+    public void FindProjectRoot_WithNoMarker_ReturnsEmptyString()
     {
         string result = FileSystemHelper.FindProjectRoot(TempDir, ".nonexistent-marker");
         Assert.Equal("", result);
     }
 
     [Fact]
-    public void FindProjectRoot_WorksFromFilePath()
+    public void FindProjectRoot_WithFilePath_ResolvesToProjectDirectory()
     {
         string projectDir = Path.Combine(TempDir, "proj2");
         string srcDir = Path.Combine(projectDir, "src");

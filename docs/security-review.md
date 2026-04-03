@@ -2,7 +2,7 @@
 
 ## Resumo
 
-Revisao de seguranca do projeto babel-tcc v1.0.
+Revisao de seguranca do projeto babel-tcc v0.1.0.
 
 ## Areas Verificadas
 

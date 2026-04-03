@@ -5,7 +5,7 @@ namespace MultiLingualCode.Core.Tests.Models;
 public class OperationResultTests
 {
     [Fact]
-    public void Ok_ReturnsSuccess()
+    public void Ok_WhenCalled_ReturnsSuccessWithEmptyError()
     {
         OperationResult result = OperationResult.Ok();
 
@@ -14,7 +14,7 @@ public class OperationResultTests
     }
 
     [Fact]
-    public void Fail_ReturnsFailure()
+    public void Fail_WithMessage_ReturnsFailureWithErrorMessage()
     {
         OperationResult result = OperationResult.Fail("something went wrong");
 
@@ -32,7 +32,7 @@ public class OperationResultTests
     }
 
     [Fact]
-    public void GenericOk_ReturnsValueAndSuccess()
+    public void GenericOk_WithStringValue_ReturnsValueAndSuccess()
     {
         OperationResultGeneric<string> result = OperationResultGeneric<string>.Ok("hello");
 
@@ -51,7 +51,7 @@ public class OperationResultTests
     }
 
     [Fact]
-    public void GenericFail_ReturnsFailureWithDefaultValue()
+    public void GenericFail_WithErrorMessage_ReturnsFailureWithDefaultValue()
     {
         OperationResultGeneric<string> result = OperationResultGeneric<string>.Fail("error");
 
@@ -69,7 +69,7 @@ public class OperationResultTests
     }
 
     [Fact]
-    public void StaticOkGeneric_CreatesTypedResult()
+    public void StaticOkGeneric_WithStringValue_CreatesTypedSuccessResult()
     {
         OperationResultGeneric<string> result = OperationResult.Ok<string>("test");
 
@@ -78,7 +78,7 @@ public class OperationResultTests
     }
 
     [Fact]
-    public void StaticFailGeneric_CreatesTypedResult()
+    public void StaticFailGeneric_WithErrorMessage_CreatesTypedFailureResult()
     {
         OperationResultGeneric<string> result = OperationResult.Fail<string>("error");
 
@@ -95,7 +95,7 @@ public class OperationResultTests
     }
 
     [Fact]
-    public void GenericResult_IsAlsoBaseResult()
+    public void GenericResult_WhenCastToBase_PreservesSuccessStatus()
     {
         OperationResultGeneric<string> typed = OperationResultGeneric<string>.Ok("value");
         OperationResult baseResult = typed;

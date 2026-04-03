@@ -15,7 +15,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void Properties_AreCorrect()
+    public void Properties_WhenAccessed_ReturnExpectedValues()
     {
         Assert.Equal("Python", Adapter.LanguageName);
         Assert.Equal(new[] { ".py" }, Adapter.FileExtensions);
@@ -122,7 +122,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void Parse_ExtractsIdentifiers()
+    public void Parse_FunctionWithParam_ExtractsIdentifiers()
     {
         string code = "def foo(x):\n    return x";
         ASTNode ast = Adapter.Parse(code);
@@ -143,7 +143,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void Parse_ExtractsStringLiterals()
+    public void Parse_StringAssignment_ExtractsStringLiteral()
     {
         string code = "x = \"hello world\"";
         ASTNode ast = Adapter.Parse(code);
@@ -155,7 +155,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void Parse_ExtractsNumberLiterals()
+    public void Parse_IntegerAssignment_ExtractsNumberLiteral()
     {
         string code = "x = 42";
         ASTNode ast = Adapter.Parse(code);
@@ -167,7 +167,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void Parse_PreservesPositions()
+    public void Parse_DefStatement_PreservesPositions()
     {
         string code = "def foo():\n    pass";
         ASTNode ast = Adapter.Parse(code);
@@ -257,14 +257,14 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void GetKeywordMap_Returns35Keywords()
+    public void GetKeywordMap_WhenCalled_Returns35Keywords()
     {
         Dictionary<string, int> map = Adapter.GetKeywordMap();
         Assert.Equal(35, map.Count);
     }
 
     [RequiresPythonFact]
-    public void ReverseSubstituteKeywords_SkipsComments()
+    public void ReverseSubstituteKeywords_WithCommentLine_SkipsComments()
     {
         string code = "# comentario definir\ndefinir foo():\n    passar";
         Func<string, int> lookup = (string word) =>
@@ -281,7 +281,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void ReverseSubstituteKeywords_SkipsSingleQuoteStrings()
+    public void ReverseSubstituteKeywords_WithSingleQuoteString_PreservesContent()
     {
         string code = "x = 'definir'";
         Func<string, int> lookup = (string word) => word == "definir" ? 11 : -1;
@@ -291,7 +291,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void ReverseSubstituteKeywords_SkipsDoubleQuoteStrings()
+    public void ReverseSubstituteKeywords_WithDoubleQuoteString_PreservesContent()
     {
         string code = "x = \"definir\"";
         Func<string, int> lookup = (string word) => word == "definir" ? 11 : -1;
@@ -301,7 +301,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void ReverseSubstituteKeywords_SkipsTripleQuoteStrings()
+    public void ReverseSubstituteKeywords_WithTripleQuoteString_PreservesContent()
     {
         string code = "x = \"\"\"definir\"\"\"";
         Func<string, int> lookup = (string word) => word == "definir" ? 11 : -1;
@@ -311,7 +311,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void ReverseSubstituteKeywords_SkipsFStrings()
+    public void ReverseSubstituteKeywords_WithFString_PreservesContent()
     {
         string code = "x = f\"definir {y}\"";
         Func<string, int> lookup = (string word) => word == "definir" ? 11 : -1;
@@ -337,7 +337,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void ExtractIdentifiers_ReturnsUserDefinedNames()
+    public void ExtractIdentifiers_FunctionWithKeywords_ReturnsOnlyUserDefinedNames()
     {
         List<string> ids = Adapter.ExtractIdentifiers("def foo(x):\n    if x:\n        return True");
         Assert.Contains("foo", ids);
@@ -349,7 +349,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void ExtractTrailingComments_ExtractsPythonComments()
+    public void ExtractTrailingComments_LineWithTraduAnnotation_ExtractsComment()
     {
         string code = "x = 1 # tradu[pt-br]:variavel\ny = 2";
         List<TrailingComment> comments = Adapter.ExtractTrailingComments(code);
@@ -359,7 +359,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void GetIdentifierNamesOnLine_ReturnsIdentifiersOnSpecifiedLine()
+    public void GetIdentifierNamesOnLine_FunctionDefinition_ReturnsAllIdentifiers()
     {
         string code = "def foo(x, y):\n    return x + y";
         List<string> ids = Adapter.GetIdentifierNamesOnLine(code, 0);
@@ -369,7 +369,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void GetFirstStringLiteralOnLine_ReturnsStringContent()
+    public void GetFirstStringLiteralOnLine_WithStringLiteral_ReturnsContent()
     {
         string code = "msg = \"hello\"";
         string literal = Adapter.GetFirstStringLiteralOnLine(code, 0);
@@ -385,7 +385,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void GetContainingMethodRange_FindsMethod()
+    public void GetContainingMethodRange_LineInsideMethod_ReturnsMethodRange()
     {
         string code = "def foo():\n    x = 1\n    return x\n\ndef bar():\n    pass";
         // Lines: 0=def foo, 1=x=1, 2=return x, 3=empty, 4=def bar, 5=pass
@@ -404,7 +404,7 @@ public class PythonAdapterTests : IDisposable
     }
 
     [RequiresPythonFact]
-    public void GetContainingMethodRange_IncludesDecorators()
+    public void GetContainingMethodRange_DecoratedFunction_IncludesDecorators()
     {
         string code = "@decorator\ndef foo():\n    pass";
         (int startLine, int endLine) = Adapter.GetContainingMethodRange(code, 2);

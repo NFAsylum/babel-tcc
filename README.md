@@ -190,8 +190,8 @@ babel-tcc/
 
 ## Documentacao
 
-- [Arquitetura](docs/arquitetura.md) - Visao geral da arquitetura e fluxos
-- [Padroes de Codigo](docs/padroes-codigo.md) - Convencoes de nomenclatura e estilo
+- [Arquitetura](docs/developer-guide/architecture.md) - Visao geral da arquitetura e fluxos
+- [Convencoes de Codigo](CONTRIBUTING.md#convencoes-de-codigo) - Nomenclatura e estilo
 - [Decisoes Tecnicas](docs/decisoes-tecnicas.md) - Registro de decisoes e justificativas
 - [Guia do Usuario](docs/user-guide/) - Instalacao, uso e configuracao
 - [Guia do Desenvolvedor](docs/developer-guide/) - Como estender o projeto

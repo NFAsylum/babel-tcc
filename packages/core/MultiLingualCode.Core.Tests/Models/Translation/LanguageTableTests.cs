@@ -92,7 +92,7 @@ public class LanguageTableTests
     }
 
     [Fact]
-    public void GetKeywordId_CaseInsensitive()
+    public void GetKeywordId_WithDifferentCasing_ReturnsSameId()
     {
         OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
@@ -124,7 +124,7 @@ public class LanguageTableTests
     }
 
     [Fact]
-    public void BidirectionalLookup_IsConsistent()
+    public void GetTranslation_AfterGetKeywordId_RoundTripsConsistently()
     {
         OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(GetTestDataPath("pt-br-csharp.json"));
         Assert.True(loadResult.IsSuccess);
@@ -139,7 +139,7 @@ public class LanguageTableTests
     }
 
     [Fact]
-    public void EmptyTranslations_AreSkipped()
+    public void RawTranslations_WithEmptyValues_SkipsEmptyEntries()
     {
         // The template has empty translations - they should not be loaded
         LanguageTable table = new LanguageTable();

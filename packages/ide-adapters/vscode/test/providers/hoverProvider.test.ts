@@ -23,6 +23,7 @@ describe('HoverProvider', () => {
     supportedExtensions: { '.cs': 'CSharp', '.py': 'Python' },
   };
 
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   function makeDocument(scheme: string, word: string | null, filePath: string = '/test/file.cs') {
     return {
       uri: Uri.parse(`${scheme}:${filePath}`),
