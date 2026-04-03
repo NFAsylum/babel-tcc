@@ -685,7 +685,9 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             NaturalLanguageProvider provider = CreateProvider();
             TranslationOrchestrator orchestrator = new TranslationOrchestrator
             {
-                Registry = Registry, Provider = provider, IdentifierMapperService = mapper
+                Registry = Registry,
+                Provider = provider,
+                IdentifierMapperService = mapper
             };
 
             string csCode = @"public class Calculator // tradu[pt-br]:Calculadora
@@ -732,7 +734,9 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             NaturalLanguageProvider provider = CreateProvider();
             TranslationOrchestrator orchestrator = new TranslationOrchestrator
             {
-                Registry = Registry, Provider = provider, IdentifierMapperService = mapper
+                Registry = Registry,
+                Provider = provider,
+                IdentifierMapperService = mapper
             };
 
             string csCode = @"public class Calculator // tradu[pt-br]:Calculadora
@@ -780,7 +784,9 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             NaturalLanguageProvider provider = CreateProvider();
             TranslationOrchestrator orchestrator = new TranslationOrchestrator
             {
-                Registry = Registry, Provider = provider, IdentifierMapperService = mapper
+                Registry = Registry,
+                Provider = provider,
+                IdentifierMapperService = mapper
             };
 
             // Translate .cs file
