@@ -46,14 +46,14 @@ public class StringExtensionsTests
     [Fact]
     public void ToCamelCase_NullReturnsNull()
     {
-        string? value = null;
+        string value = null!;
         Assert.Null(value!.ToCamelCase());
     }
 
     [Fact]
     public void ToPascalCase_NullReturnsNull()
     {
-        string? value = null;
+        string value = null!;
         Assert.Null(value!.ToPascalCase());
     }
 }

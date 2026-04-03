@@ -18,7 +18,7 @@ public class TranslationOrchestratorTests
         TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
     }
 
-    private NaturalLanguageProvider CreateProvider()
+    public NaturalLanguageProvider CreateProvider()
     {
         return new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
     }
@@ -29,7 +29,7 @@ public class TranslationOrchestratorTests
     /// Identifiers starting with uppercase are marked as translatable.
     /// Generate reconstructs text from the AST nodes.
     /// </summary>
-    private static ILanguageAdapter CreateMockCSharpAdapter()
+    public static ILanguageAdapter CreateMockCSharpAdapter()
     {
         ILanguageAdapter adapter = Substitute.For<ILanguageAdapter>();
         adapter.LanguageName.Returns("CSharp");
@@ -110,7 +110,7 @@ public class TranslationOrchestratorTests
         return adapter;
     }
 
-    private static void CollectParts(ASTNode node, List<string> parts)
+    public static void CollectParts(ASTNode node, List<string> parts)
     {
         switch (node)
         {
