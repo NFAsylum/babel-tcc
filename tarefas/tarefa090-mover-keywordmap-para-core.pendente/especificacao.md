@@ -26,9 +26,14 @@ Expor o mapa de keywords traduzidas via o Host (CoreBridge) como um novo metodo:
 3. **CompletionProvider e HoverProvider**: sem mudancas (continuam usando KeywordMapService)
 4. **Remover**: leitura de JSON e parse de traducoes do KeywordMapService
 
+## Transicao sincrono -> assincrono
+`KeywordMapService.getMap()` e chamado sincronamente por CompletionProvider e HoverProvider. `CoreBridge.invokeCore()` e assincrono (retorna Promise).
+
+Abordagem escolhida: **pre-popular cache no activate()** (opcao a). O `activate()` e async e roda antes da primeira interacao do usuario. Apos o cache popular, `getMap()` continua sincrono lendo do cache local. Gap na primeira ativacao (cache vazio) e negligivel — providers retornam vazio ate o cache estar pronto.
+
 ## Escopo
 - Adicionar metodo `GetKeywordMap` ao Host Program.cs
 - Adicionar metodo `getKeywordMap` ao CoreBridge
-- Simplificar KeywordMapService para usar CoreBridge
+- Simplificar KeywordMapService para usar CoreBridge com cache pre-populado no activate()
 - Remover leitura direta de ficheiros de traducao da extensao
 - Avaliar se languageDetector pode usar info do Core (GetSupportedExtensions)
