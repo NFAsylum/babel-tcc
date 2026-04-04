@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches-ignore:
+      - '**'
 
 jobs:
   validate:
@@ -128,7 +130,7 @@ jobs:
 
       - name: Package extension
         working-directory: packages/ide-adapters/vscode
-        run: vsce package --out babel-tcc-${{ github.ref_name }}.vsix
+        run: vsce package --out multilingual-code-${{ github.ref_name }}.vsix
 
       - name: Publish to Marketplace
         if: secrets.VSCE_PAT != ''
@@ -140,7 +142,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: packages/ide-adapters/vscode/babel-tcc-${{ github.ref_name }}.vsix
+          files: packages/ide-adapters/vscode/multilingual-code-${{ github.ref_name }}.vsix
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
