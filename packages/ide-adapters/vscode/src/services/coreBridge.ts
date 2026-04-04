@@ -235,6 +235,20 @@ export class CoreBridge {
     return response.result;
   }
 
+  public async applyTranslatedEdits(
+    originalCode: string,
+    previousTranslatedCode: string,
+    editedTranslatedCode: string,
+    fileExtension: string,
+    sourceLanguage: string
+  ): Promise<string> {
+    const params: Record<string, string> = {
+      originalCode, previousTranslatedCode, editedTranslatedCode, fileExtension, sourceLanguage
+    };
+    const response: CoreResponse = await this.invokeCore('ApplyTranslatedEdits', params);
+    return response.result;
+  }
+
   public async validateSyntax(
     sourceCode: string,
     fileExtension: string
