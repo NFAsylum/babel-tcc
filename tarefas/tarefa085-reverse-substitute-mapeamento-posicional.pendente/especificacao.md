@@ -3,49 +3,55 @@
 ## Prioridade: HIGH
 
 ## Problema
-O ReverseSubstituteKeywords atual usa scanner char-by-char que nao distingue identificadores de keywords traduzidas quando tem o mesmo texto. Isso causa corrupcao no round-trip (ex: variavel "e" vira "and" em pt-br). O problema foi mitigado com traducoes mais longas (logicoe, logicoou, igual), mas a fragilidade permanece para qualquer traducao futura que coincida com um nome de variavel.
+O ReverseSubstituteKeywords atual usa scanner char-by-char que nao distingue identificadores de keywords traduzidas quando tem o mesmo texto. Isso causa corrupcao no round-trip (ex: variavel "e" vira "and" em pt-br).
 
 O problema afeta dois cenarios:
 1. **Round-trip**: forward translate -> usuario edita -> reverse translate
-2. **Escrita nativa**: usuario escreve codigo traduzido do zero (sem forward previo)
+2. **Escrita nativa**: usuario escreve codigo traduzido do zero
 
-## Abordagens avaliadas
+## Abordagem escolhida: diff de 3 vias no Core
 
-### A) Mapeamento posicional (proposta original)
-Generate grava posicoes de keywords traduzidas no output. Reverse substitui apenas nessas posicoes.
+O sistema tem 3 versoes do codigo disponíveis:
+1. **Original** (disco): codigo na linguagem de programacao real
+2. **Traduzido** (cache do forward): codigo com keywords traduzidas
+3. **Traduzido editado** (usuario salvou): codigo com edicoes do usuario
 
-**Limitacao critica**: so funciona para round-trip (cenario 1). Na escrita nativa (cenario 2), nao existe Generate previo e portanto nao existem ranges. O fallback seria o scanner bugado — o caminho mais comum ficaria sem protecao.
+### Fluxo
+1. Diff linha-a-linha entre traduzido (2) e traduzido editado (3)
+2. Linhas iguais -> copiar do original (1) sem nenhuma reverse translation
+3. Linhas modificadas -> reverse translate token-a-token e substituir no original
+4. Linhas adicionadas -> reverse translate e inserir no original na mesma posicao
+5. Linhas removidas -> remover do original
 
-Riscos adicionais:
-- Ranges dessincronizam se usuario edita o codigo traduzido (insere/remove caracteres)
-- Dois code paths (ranges vs fallback) duplicam logica e testes
+### Porque resolve a ambiguidade
+Tokens que existiam no traduzido original e nao mudaram vem diretamente do original — nenhum reverse necessario. A variavel "e" no original e "e" no traduzido; como nao mudou, o original e copiado intacto.
 
-### B) Diff-based no Core (sugerida pelo QA)
-O sistema ja tem o ficheiro original e o traduzido. Quando o usuario edita o traduzido, o Core compara antes/depois e aplica apenas as diferencas no original. Keywords nunca precisam de reverse — ja estao no original.
+Tokens novos inseridos pelo usuario sao sempre codigo traduzido (o usuario escreve no idioma traduzido). O reverse translation aplica normalmente.
 
-**Vantagem**: resolve ambos os cenarios com um unico code path.
-**Complexidade**: diffing de codigo com keywords de tamanho diferente requer matching cuidadoso. Edicoes no meio de keywords traduzidas (ex: usuario apaga metade de "enquanto") precisam de tratamento especial.
+### Reverse de tokens individuais
+Keywords sao separadas por whitespace e delimitadores. Para reverse de uma linha modificada:
+1. Tokenizar por whitespace/delimitadores
+2. Cada token: lookup na tabela de traducao reversa
+3. Se match: substituir pela keyword original
+4. Se nao match: manter (e um identifier ou literal)
 
-### C) Tokenizar o codigo traduzido (alternativa)
-Usar o tokenizador da linguagem (Roslyn para C#, subprocess para Python) no codigo traduzido. Keywords traduzidas sao tokens NAME (nao keywords reais), mas identifiers tambem sao NAME. A distincao e feita comparando cada token NAME contra a tabela de traducao reversa — se match, e keyword traduzida.
+### Escrita nativa (arquivo novo)
+O original começa vazio. O traduzido anterior tambem e vazio. Toda linha e "adicionada" no diff. Reverse translate aplica em todas. Funciona sem caso especial.
 
-**Vantagem**: funciona para ambos os cenarios. Nao precisa de Generate previo.
-**Limitacao**: mesma ambiguidade do scanner char-by-char (variavel "e" ainda matcha keyword "e"). Porem, o tokenizador resolve strings/comments automaticamente (o scanner precisa de skip manual).
+### Onde implementar
+No Core (TranslationOrchestrator ou novo servico), nao na extensao. Qualquer IDE futura usa a mesma logica.
 
-### D) Hibrida: mapeamento posicional + tokenizacao como fallback inteligente
-- Round-trip: usar ranges do Generate (cenario 1, mais seguro)
-- Escrita nativa: tokenizar o codigo traduzido e aplicar heuristicas (cenario 2)
-  - Palavras que sao keywords traduzidas E estao em posicao sintatica de keyword (inicio de statement, apos dois-pontos, etc.) sao revertidas
-  - Palavras que sao keywords traduzidas mas estao em posicao de identifier (apos `.`, como argumento de funcao, em assignment) nao sao revertidas
-- Fallback final: scanner char-by-char (mantido para compatibilidade)
+O Host recebe: codigo original + traduzido anterior + traduzido editado -> retorna original atualizado.
 
-## Decisao
-A decidir durante implementacao. A abordagem D e a mais robusta mas mais complexa. A abordagem A resolve o caso mais comum (round-trip) de forma simples. Documentar qual abordagem foi escolhida e os tradeoffs.
+### Impacto na interface
+- TranslateFromNaturalLanguageAsync precisa de 2 parametros adicionais: original e traduzido anterior
+- Ou: novo metodo `ApplyTranslatedEdits(original, previousTranslated, editedTranslated)`
+- ReverseSubstituteKeywords char-by-char mantido como fallback para chamadas diretas sem contexto de diff
 
-## Escopo minimo
-Independente da abordagem escolhida:
-- Resolver cenario 1 (round-trip) de forma robusta
-- Documentar limitacao do cenario 2 (escrita nativa) se nao resolvido
-- Teste: variavel "e" nao e corrompida no round-trip com traducao "e" para "and"
-- Teste: variavel "si" nao e corrompida com traducao "si" para "if" em es-es
-- Zero regressoes nos testes existentes
+## Escopo
+- Criar servico/metodo de diff de 3 vias no Core
+- Integrar no TranslationOrchestrator
+- Expor via Host (novo metodo ou parametros adicionais)
+- Atualizar CoreBridge na extensao para enviar os 3 codigos
+- Testes unitarios do diff (linhas iguais, modificadas, adicionadas, removidas)
+- Teste de integracao: variavel "e" sobrevive round-trip com traducao "e" para "and"

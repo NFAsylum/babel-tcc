@@ -1,10 +1,14 @@
 # Definition of Done - Tarefa 085
 
-- [ ] Round-trip (cenario 1) nao corrompe identificadores que coincidem com keywords traduzidas
+- [ ] Diff de 3 vias implementado no Core (nao na extensao)
+- [ ] Round-trip nao corrompe identificadores que coincidem com keywords traduzidas
+- [ ] Escrita nativa (arquivo novo) funciona via diff contra vazio
 - [ ] Teste: variavel "e" sobrevive round-trip com traducao "e" para "and"
 - [ ] Teste: variavel "si" sobrevive round-trip com traducao "si" para "if" em es-es
-- [ ] Abordagem escolhida documentada com justificativa e tradeoffs
-- [ ] Limitacao de escrita nativa (cenario 2) documentada se nao resolvida
+- [ ] Teste: linhas iguais copiadas do original sem reverse
+- [ ] Teste: linhas adicionadas recebem reverse translate
+- [ ] Teste: linhas removidas sao removidas do original
 - [ ] CSharpAdapter e PythonAdapter ambos suportam o novo fluxo
-- [ ] Todos os testes existentes de ReverseSubstituteKeywords continuam passando
+- [ ] ReverseSubstituteKeywords mantido como fallback
+- [ ] Todos os testes existentes continuam passando
 - [ ] Zero regressoes nos testes C# e TS
