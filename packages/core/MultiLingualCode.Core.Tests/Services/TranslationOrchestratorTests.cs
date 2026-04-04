@@ -855,4 +855,212 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             Directory.Delete(tempDir, true);
         }
     }
+
+    // ========================================================================
+    // ApplyTranslatedEditsAsync (diff-based reverse, tarefa 085)
+    // ========================================================================
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_UnchangedLines_CopiedFromOriginal()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n    public int x;\n}";
+            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
+            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // no changes
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(original, result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_ModifiedLine_ReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n}";
+            string translated = "publico classe Foo\n{\n}";
+            string edited = "publico classe Bar\n{\n}"; // changed Foo to Bar
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Contains("public class Bar", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_AddedLine_ReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n}";
+            string translated = "publico classe Foo\n{\n}";
+            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // added line
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Contains("public int x;", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_RemovedLine_RemovedFromOriginal()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n    public int x;\n}";
+            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
+            string edited = "publico classe Foo\n{\n}"; // removed line
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.DoesNotContain("int x", result.Value);
+            Assert.Contains("class Foo", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_VariableE_NotCorruptedToAnd()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // "e" is a common variable in C# (catch Exception e)
+            // The translation of "is" (ID 36) is "igual" in pt-br-ascii,
+            // but if it were "e", the old scanner would corrupt variable "e" to "is"
+            string original = "try { } catch (Exception e) { }";
+            string translated = "tentar { } capturar (Exception e) { }";
+            string edited = "tentar { } capturar (Exception e) { }"; // no changes
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // Variable "e" should NOT be corrupted
+            Assert.Contains("Exception e", result.Value);
+            Assert.DoesNotContain("Exception is", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_NewFile_AllLinesReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = ""; // new file
+            string translated = ""; // no previous translation
+            string edited = "publico classe Foo\n{\n}"; // user wrote from scratch
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Contains("public class Foo", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
 }

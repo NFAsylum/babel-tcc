@@ -349,4 +349,137 @@ public class TranslationOrchestrator
 
         return null!;
     }
+
+    /// <summary>
+    /// Applies edits from translated code back to the original code using a 3-way diff.
+    /// Lines unchanged between previousTranslated and editedTranslated are copied from the original.
+    /// Lines that changed are reverse-translated token-by-token.
+    /// This avoids the ambiguity of ReverseSubstituteKeywords where identifiers can collide
+    /// with translated keywords (e.g., variable "e" vs translated keyword "e" for "and").
+    /// </summary>
+    /// <param name="originalCode">The original source code on disk.</param>
+    /// <param name="previousTranslatedCode">The translated code before user edits (from forward translation cache).</param>
+    /// <param name="editedTranslatedCode">The translated code after user edits (what the user saved).</param>
+    /// <param name="fileExtension">The file extension identifying the programming language.</param>
+    /// <param name="sourceLanguage">The natural language code the code was translated to.</param>
+    /// <returns>The original code with user edits applied.</returns>
+    public async Task<OperationResultGeneric<string>> ApplyTranslatedEditsAsync(
+        string originalCode, string previousTranslatedCode, string editedTranslatedCode,
+        string fileExtension, string sourceLanguage)
+    {
+        OperationResultGeneric<ILanguageAdapter> adapterResult = Registry.GetAdapter(fileExtension);
+        if (!adapterResult.IsSuccess)
+        {
+            return OperationResultGeneric<string>.Fail(adapterResult.ErrorMessage);
+        }
+
+        ILanguageAdapter adapter = adapterResult.Value;
+
+        OperationResult loadResult = await Provider.LoadTranslationTableAsync(adapter.LanguageName);
+        if (!loadResult.IsSuccess)
+        {
+            return OperationResultGeneric<string>.Fail(loadResult.ErrorMessage);
+        }
+
+        string[] originalLines = originalCode.Split('\n');
+        string[] previousLines = previousTranslatedCode.Split('\n');
+        string[] editedLines = editedTranslatedCode.Split('\n');
+
+        List<string> resultLines = new();
+
+        int maxPrevious = previousLines.Length;
+        int maxEdited = editedLines.Length;
+        int maxOriginal = originalLines.Length;
+
+        // Simple line-by-line diff: compare previous translated vs edited translated
+        // For lines within the range of both previous and edited:
+        //   - If equal: copy from original (no reverse needed)
+        //   - If different: reverse translate the edited line
+        // For extra lines in edited (additions): reverse translate
+        // For missing lines in edited (deletions): skip from original
+
+        int commonLength = Math.Min(maxPrevious, maxEdited);
+
+        for (int i = 0; i < commonLength; i++)
+        {
+            if (previousLines[i] == editedLines[i])
+            {
+                // Line unchanged — copy from original
+                if (i < maxOriginal)
+                {
+                    resultLines.Add(originalLines[i]);
+                }
+                else
+                {
+                    resultLines.Add(ReverseTranslateLine(editedLines[i], adapter));
+                }
+            }
+            else
+            {
+                // Line modified — reverse translate the edited version
+                resultLines.Add(ReverseTranslateLine(editedLines[i], adapter));
+            }
+        }
+
+        // Handle extra lines in edited (user added new lines)
+        for (int i = commonLength; i < maxEdited; i++)
+        {
+            resultLines.Add(ReverseTranslateLine(editedLines[i], adapter));
+        }
+
+        // Lines in previous but not in edited are deletions — we skip them
+        // (they are not added to resultLines)
+
+        string result = string.Join("\n", resultLines);
+        return OperationResultGeneric<string>.Ok(result);
+    }
+
+    /// <summary>
+    /// Reverse translates a single line by tokenizing on whitespace/delimiters
+    /// and replacing translated keywords with their originals.
+    /// </summary>
+    public string ReverseTranslateLine(string translatedLine, ILanguageAdapter adapter)
+    {
+        if (string.IsNullOrEmpty(translatedLine))
+        {
+            return translatedLine;
+        }
+
+        System.Text.StringBuilder result = new(translatedLine.Length);
+        int i = 0;
+
+        while (i < translatedLine.Length)
+        {
+            if (char.IsLetter(translatedLine[i]) || translatedLine[i] == '_')
+            {
+                int wordStart = i;
+                while (i < translatedLine.Length && (char.IsLetterOrDigit(translatedLine[i]) || translatedLine[i] == '_'))
+                {
+                    i++;
+                }
+
+                string word = translatedLine.Substring(wordStart, i - wordStart);
+                int keywordId = Provider.ReverseTranslateKeyword(word);
+
+                if (keywordId >= 0)
+                {
+                    OperationResultGeneric<string> originalResult = Provider.GetOriginalKeyword(keywordId);
+                    if (originalResult.IsSuccess)
+                    {
+                        result.Append(originalResult.Value);
+                        continue;
+                    }
+                }
+
+                result.Append(word);
+            }
+            else
+            {
+                result.Append(translatedLine[i]);
+                i++;
+            }
+        }
+
+        return result.ToString();
+    }
 }
