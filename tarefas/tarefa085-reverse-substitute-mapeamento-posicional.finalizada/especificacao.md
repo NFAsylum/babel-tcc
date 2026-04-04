@@ -55,3 +55,6 @@ O Host recebe: codigo original + traduzido anterior + traduzido editado -> retor
 - Atualizar CoreBridge na extensao para enviar os 3 codigos
 - Testes unitarios do diff (linhas iguais, modificadas, adicionadas, removidas)
 - Teste de integracao: variavel "e" sobrevive round-trip com traducao "e" para "and"
+
+## Limitacao conhecida: escrita nativa sem forward previo
+Quando o cache de traducao anterior esta vazio (primeiro save sem ter aberto o arquivo antes, ou escrita nativa pura), o previousTranslatedCode e "". O diff trata todas as linhas como Insert e aplica reverse translate em tudo — sem protecao de diff. Variaveis que coincidem com keywords traduzidas podem ser corrompidas neste cenario. As mitigacoes existentes (traducoes longas como logicoe/logicoou/igual) continuam protegendo na maioria dos casos.

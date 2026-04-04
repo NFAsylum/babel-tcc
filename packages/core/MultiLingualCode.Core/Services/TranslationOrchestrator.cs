@@ -521,29 +521,44 @@ public class TranslationOrchestrator
         List<string> previousTokens = TokenizeLine(previousTranslatedLine);
         List<string> editedTokens = TokenizeLine(editedTranslatedLine);
 
+        // Use LCS diff on tokens (same algorithm as lines) to handle insertions/deletions
+        List<DiffOp> tokenOps = ComputeDiff(previousTokens.ToArray(), editedTokens.ToArray());
+
         System.Text.StringBuilder result = new();
+        int originalIdx = 0;
 
-        for (int i = 0; i < editedTokens.Count; i++)
+        foreach (DiffOp op in tokenOps)
         {
-            string editedToken = editedTokens[i];
+            switch (op.Type)
+            {
+                case DiffOpType.Equal:
+                    // Token unchanged — copy from original
+                    if (originalIdx < originalTokens.Count)
+                    {
+                        result.Append(originalTokens[originalIdx]);
+                    }
+                    else
+                    {
+                        result.Append(op.EditedLine);
+                    }
+                    originalIdx++;
+                    break;
 
-            // If this token existed in previous at the same position and didn't change,
-            // copy from original (preserves identifiers that match keywords)
-            if (i < previousTokens.Count && previousTokens[i] == editedToken)
-            {
-                if (i < originalTokens.Count)
-                {
-                    result.Append(originalTokens[i]);
-                }
-                else
-                {
-                    result.Append(editedToken);
-                }
-            }
-            else
-            {
-                // Token changed or is new — reverse translate if it's a word
-                result.Append(ReverseTranslateToken(editedToken));
+                case DiffOpType.Modified:
+                    // Token changed — reverse translate the edited version
+                    result.Append(ReverseTranslateToken(op.EditedLine));
+                    originalIdx++;
+                    break;
+
+                case DiffOpType.Insert:
+                    // New token — reverse translate
+                    result.Append(ReverseTranslateToken(op.EditedLine));
+                    break;
+
+                case DiffOpType.Delete:
+                    // Token removed — skip from original
+                    originalIdx++;
+                    break;
             }
         }
 
