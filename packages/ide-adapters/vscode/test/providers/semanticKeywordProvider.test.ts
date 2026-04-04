@@ -80,24 +80,25 @@ describe('SemanticKeywordProvider', () => {
     });
 
     it('should not highlight keywords inside double-quoted strings', () => {
-      const doc = makeDocument(TRANSLATED_SCHEME, 'classe Foo = "publico classe";');
+      const doc = makeDocument(TRANSLATED_SCHEME, 'texto msg = "publico classe nao destacar";');
       const result = provider.provideDocumentSemanticTokens(doc as any);
-      // "classe" before string is highlighted, "publico" and "classe" inside string are NOT
-      // Mock builder has 1 token (only the first "classe"), not 3
-      expect(result.data.length).toBeGreaterThan(0);
+      // "publico" and "classe" inside string should NOT be highlighted
+      // No keywords outside the string in this line
+      expect(result.data.length).toBe(0);
     });
 
     it('should not highlight keywords inside line comments', () => {
-      const doc = makeDocument(TRANSLATED_SCHEME, 'classe Foo {} // publico classe aqui');
+      const doc = makeDocument(TRANSLATED_SCHEME, 'publico classe Foo {} // publico classe aqui');
       const result = provider.provideDocumentSemanticTokens(doc as any);
-      // Only "classe" before the comment should be highlighted
+      // "publico" and "classe" before comment are highlighted
+      // "publico" and "classe" inside comment are NOT
       expect(result.data.length).toBeGreaterThan(0);
     });
 
     it('should not highlight keywords inside single-quoted strings', () => {
-      const doc = makeDocument(TRANSLATED_SCHEME, "caractere c = 'publico';");
+      const doc = makeDocument(TRANSLATED_SCHEME, "texto msg = 'se retornar';");
       const result = provider.provideDocumentSemanticTokens(doc as any);
-      // "publico" is inside single quotes — should not be highlighted
+      // "se" and "retornar" are inside single quotes — should not be highlighted
       expect(result.data.length).toBe(0);
     });
   });
