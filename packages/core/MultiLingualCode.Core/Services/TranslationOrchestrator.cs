@@ -385,54 +385,125 @@ public class TranslationOrchestrator
         string[] previousLines = previousTranslatedCode.Split('\n');
         string[] editedLines = editedTranslatedCode.Split('\n');
 
+        // LCS-based diff: find common lines between previous and edited,
+        // preserving order. This handles insertions and deletions in the middle
+        // without desaligning subsequent lines.
+        List<DiffOp> operations = ComputeDiff(previousLines, editedLines);
         List<string> resultLines = new();
 
-        int maxPrevious = previousLines.Length;
-        int maxEdited = editedLines.Length;
-        int maxOriginal = originalLines.Length;
+        int originalIdx = 0;
 
-        // Simple line-by-line diff: compare previous translated vs edited translated
-        // For lines within the range of both previous and edited:
-        //   - If equal: copy from original (no reverse needed)
-        //   - If different: reverse translate the edited line
-        // For extra lines in edited (additions): reverse translate
-        // For missing lines in edited (deletions): skip from original
-
-        int commonLength = Math.Min(maxPrevious, maxEdited);
-
-        for (int i = 0; i < commonLength; i++)
+        foreach (DiffOp op in operations)
         {
-            if (previousLines[i] == editedLines[i])
+            switch (op.Type)
             {
-                // Line unchanged — copy from original
-                if (i < maxOriginal)
-                {
-                    resultLines.Add(originalLines[i]);
-                }
-                else
-                {
-                    resultLines.Add(ReverseTranslateLine(editedLines[i], adapter));
-                }
-            }
-            else
-            {
-                // Line modified — token-level diff against previous, copy unchanged tokens from original
-                string origLine = i < maxOriginal ? originalLines[i] : "";
-                resultLines.Add(ReverseTranslateLineWithDiff(origLine, previousLines[i], editedLines[i]));
+                case DiffOpType.Equal:
+                    // Line unchanged — copy from original
+                    if (originalIdx < originalLines.Length)
+                    {
+                        resultLines.Add(originalLines[originalIdx]);
+                    }
+                    else
+                    {
+                        resultLines.Add(ReverseTranslateLine(op.EditedLine, adapter));
+                    }
+                    originalIdx++;
+                    break;
+
+                case DiffOpType.Modified:
+                    // Line modified — token-level diff
+                    string origLine = originalIdx < originalLines.Length ? originalLines[originalIdx] : "";
+                    resultLines.Add(ReverseTranslateLineWithDiff(origLine, op.PreviousLine, op.EditedLine));
+                    originalIdx++;
+                    break;
+
+                case DiffOpType.Insert:
+                    // New line added by user — reverse translate
+                    resultLines.Add(ReverseTranslateLine(op.EditedLine, adapter));
+                    break;
+
+                case DiffOpType.Delete:
+                    // Line removed by user — skip from original
+                    originalIdx++;
+                    break;
             }
         }
-
-        // Handle extra lines in edited (user added new lines)
-        for (int i = commonLength; i < maxEdited; i++)
-        {
-            resultLines.Add(ReverseTranslateLine(editedLines[i], adapter));
-        }
-
-        // Lines in previous but not in edited are deletions — we skip them
-        // (they are not added to resultLines)
 
         string result = string.Join("\n", resultLines);
         return OperationResultGeneric<string>.Ok(result);
+    }
+
+    /// <summary>
+    /// Computes a diff between previous and edited line arrays using LCS (Longest Common Subsequence).
+    /// Returns a list of operations: Equal, Modified, Insert, Delete.
+    /// </summary>
+    public static List<DiffOp> ComputeDiff(string[] previous, string[] edited)
+    {
+        int n = previous.Length;
+        int m = edited.Length;
+
+        // Build LCS table
+        int[,] lcs = new int[n + 1, m + 1];
+        for (int i = 1; i <= n; i++)
+        {
+            for (int j = 1; j <= m; j++)
+            {
+                if (previous[i - 1] == edited[j - 1])
+                {
+                    lcs[i, j] = lcs[i - 1, j - 1] + 1;
+                }
+                else
+                {
+                    lcs[i, j] = Math.Max(lcs[i - 1, j], lcs[i, j - 1]);
+                }
+            }
+        }
+
+        // Backtrack to produce diff operations
+        List<DiffOp> ops = new();
+        int pi = n;
+        int ei = m;
+
+        while (pi > 0 || ei > 0)
+        {
+            if (pi > 0 && ei > 0 && previous[pi - 1] == edited[ei - 1])
+            {
+                ops.Add(new DiffOp { Type = DiffOpType.Equal, PreviousLine = previous[pi - 1], EditedLine = edited[ei - 1] });
+                pi--;
+                ei--;
+            }
+            else if (ei > 0 && (pi == 0 || lcs[pi, ei - 1] >= lcs[pi - 1, ei]))
+            {
+                ops.Add(new DiffOp { Type = DiffOpType.Insert, EditedLine = edited[ei - 1] });
+                ei--;
+            }
+            else
+            {
+                ops.Add(new DiffOp { Type = DiffOpType.Delete, PreviousLine = previous[pi - 1] });
+                pi--;
+            }
+        }
+
+        ops.Reverse();
+
+        // Post-process: detect Modified lines (adjacent Delete + Insert that could be a modification)
+        List<DiffOp> result = new();
+        int idx = 0;
+        while (idx < ops.Count)
+        {
+            if (idx + 1 < ops.Count && ops[idx].Type == DiffOpType.Delete && ops[idx + 1].Type == DiffOpType.Insert)
+            {
+                result.Add(new DiffOp { Type = DiffOpType.Modified, PreviousLine = ops[idx].PreviousLine, EditedLine = ops[idx + 1].EditedLine });
+                idx += 2;
+            }
+            else
+            {
+                result.Add(ops[idx]);
+                idx++;
+            }
+        }
+
+        return result;
     }
 
     /// <summary>

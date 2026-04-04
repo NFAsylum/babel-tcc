@@ -1207,4 +1207,121 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
         string joined = string.Join("", tokens);
         Assert.Equal("x = $@\"hello {classe}\"", joined);
     }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_InsertInMiddle_DoesNotDesalign()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // 3 lines, user inserts a new line in the middle
+            string original = "public class Foo\n{\n}";
+            string translated = "publico classe Foo\n{\n}";
+            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // inserted line 3
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // Original lines should be preserved (not reverse translated)
+            Assert.Contains("public class Foo", result.Value);
+            // Inserted line should be reverse translated
+            Assert.Contains("public int x;", result.Value);
+            // Closing brace from original preserved
+            Assert.EndsWith("}", result.Value.Trim());
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_DeleteInMiddle_DoesNotDesalign()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // 4 lines, user deletes line 3
+            string original = "public class Foo\n{\n    public int x;\n}";
+            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
+            string edited = "publico classe Foo\n{\n}"; // deleted line 3
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // Remaining lines preserved from original
+            Assert.Contains("public class Foo", result.Value);
+            // Deleted line should not be in result
+            Assert.DoesNotContain("int x", result.Value);
+            // Closing brace preserved
+            Assert.EndsWith("}", result.Value.Trim());
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ComputeDiff_InsertInMiddle_ProducesCorrectOps()
+    {
+        string[] previous = { "A", "B", "C" };
+        string[] edited = { "A", "X", "B", "C" };
+
+        List<DiffOp> ops = TranslationOrchestrator.ComputeDiff(previous, edited);
+
+        Assert.Equal(DiffOpType.Equal, ops[0].Type);
+        Assert.Equal("A", ops[0].EditedLine);
+
+        Assert.Equal(DiffOpType.Insert, ops[1].Type);
+        Assert.Equal("X", ops[1].EditedLine);
+
+        Assert.Equal(DiffOpType.Equal, ops[2].Type);
+        Assert.Equal("B", ops[2].EditedLine);
+
+        Assert.Equal(DiffOpType.Equal, ops[3].Type);
+        Assert.Equal("C", ops[3].EditedLine);
+    }
+
+    [Fact]
+    public void ComputeDiff_DeleteInMiddle_ProducesCorrectOps()
+    {
+        string[] previous = { "A", "B", "C" };
+        string[] edited = { "A", "C" };
+
+        List<DiffOp> ops = TranslationOrchestrator.ComputeDiff(previous, edited);
+
+        Assert.Equal(DiffOpType.Equal, ops[0].Type);
+        Assert.Equal("A", ops[0].EditedLine);
+
+        Assert.Equal(DiffOpType.Delete, ops[1].Type);
+        Assert.Equal("B", ops[1].PreviousLine);
+
+        Assert.Equal(DiffOpType.Equal, ops[2].Type);
+        Assert.Equal("C", ops[2].EditedLine);
+    }
 }
