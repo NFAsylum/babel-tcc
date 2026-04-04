@@ -11,6 +11,7 @@ import { HoverProvider } from './providers/hoverProvider';
 import { KeywordMapService } from './providers/keywordMap';
 import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
+import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/semanticKeywordProvider';
 import { buildFileWatcherPattern } from './config/languages';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
@@ -129,6 +130,18 @@ export function activate(context: vscode.ExtensionContext): void {
   const hoverRegistrationReadonly: vscode.Disposable = vscode.languages.registerHoverProvider(
     { scheme: READONLY_SCHEME },
     hoverProviderInstance
+  );
+
+  const semanticKeywordProvider: SemanticKeywordProvider = new SemanticKeywordProvider(keywordMapService);
+  const semanticRegistration: vscode.Disposable = vscode.languages.registerDocumentSemanticTokensProvider(
+    { scheme: TRANSLATED_SCHEME },
+    semanticKeywordProvider,
+    SEMANTIC_TOKENS_LEGEND
+  );
+  const semanticRegistrationReadonly: vscode.Disposable = vscode.languages.registerDocumentSemanticTokensProvider(
+    { scheme: READONLY_SCHEME },
+    semanticKeywordProvider,
+    SEMANTIC_TOKENS_LEGEND
   );
 
   const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(buildFileWatcherPattern());
@@ -263,6 +276,8 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(completionRegistrationReadonly);
   context.subscriptions.push(hoverRegistration);
   context.subscriptions.push(hoverRegistrationReadonly);
+  context.subscriptions.push(semanticRegistration);
+  context.subscriptions.push(semanticRegistrationReadonly);
   context.subscriptions.push(configService);
   context.subscriptions.push(keywordMapService);
   context.subscriptions.push(statusBar);
