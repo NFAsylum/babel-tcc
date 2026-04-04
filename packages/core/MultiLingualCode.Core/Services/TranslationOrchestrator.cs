@@ -416,8 +416,9 @@ public class TranslationOrchestrator
             }
             else
             {
-                // Line modified — reverse translate the edited version
-                resultLines.Add(ReverseTranslateLine(editedLines[i], adapter));
+                // Line modified — token-level diff against previous, copy unchanged tokens from original
+                string origLine = i < maxOriginal ? originalLines[i] : "";
+                resultLines.Add(ReverseTranslateLineWithDiff(origLine, previousLines[i], editedLines[i]));
             }
         }
 
@@ -435,8 +436,52 @@ public class TranslationOrchestrator
     }
 
     /// <summary>
-    /// Reverse translates a single line by tokenizing on whitespace/delimiters
-    /// and replacing translated keywords with their originals.
+    /// Reverse translates a modified line using token-level diff against the previous translated line.
+    /// Tokens unchanged between previous and edited are copied from the original line.
+    /// Tokens that changed are reverse translated. Tokens inside strings and comments are never reverse translated.
+    /// </summary>
+    /// <param name="originalLine">The original source line (from disk).</param>
+    /// <param name="previousTranslatedLine">The translated line before user edits.</param>
+    /// <param name="editedTranslatedLine">The translated line after user edits.</param>
+    /// <returns>The original line with user edits applied.</returns>
+    public string ReverseTranslateLineWithDiff(string originalLine, string previousTranslatedLine, string editedTranslatedLine)
+    {
+        List<string> originalTokens = TokenizeLine(originalLine);
+        List<string> previousTokens = TokenizeLine(previousTranslatedLine);
+        List<string> editedTokens = TokenizeLine(editedTranslatedLine);
+
+        System.Text.StringBuilder result = new();
+
+        for (int i = 0; i < editedTokens.Count; i++)
+        {
+            string editedToken = editedTokens[i];
+
+            // If this token existed in previous at the same position and didn't change,
+            // copy from original (preserves identifiers that match keywords)
+            if (i < previousTokens.Count && previousTokens[i] == editedToken)
+            {
+                if (i < originalTokens.Count)
+                {
+                    result.Append(originalTokens[i]);
+                }
+                else
+                {
+                    result.Append(editedToken);
+                }
+            }
+            else
+            {
+                // Token changed or is new — reverse translate if it's a word
+                result.Append(ReverseTranslateToken(editedToken));
+            }
+        }
+
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Reverse translates a single line without diff context (for new lines with no previous version).
+    /// Strings and comments are preserved without reverse translation.
     /// </summary>
     public string ReverseTranslateLine(string translatedLine, ILanguageAdapter adapter)
     {
@@ -445,41 +490,253 @@ public class TranslationOrchestrator
             return translatedLine;
         }
 
-        System.Text.StringBuilder result = new(translatedLine.Length);
+        List<string> tokens = TokenizeLine(translatedLine);
+        System.Text.StringBuilder result = new();
+
+        foreach (string token in tokens)
+        {
+            result.Append(ReverseTranslateToken(token));
+        }
+
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Reverse translates a single token. Only word tokens (identifiers/keywords) are looked up.
+    /// String contents, comments, operators, and whitespace are returned unchanged.
+    /// </summary>
+    public string ReverseTranslateToken(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return token;
+        }
+
+        // Only reverse translate word tokens (letters/digits/underscore)
+        if (!char.IsLetter(token[0]) && token[0] != '_')
+        {
+            return token;
+        }
+
+        int keywordId = Provider.ReverseTranslateKeyword(token);
+        if (keywordId >= 0)
+        {
+            OperationResultGeneric<string> originalResult = Provider.GetOriginalKeyword(keywordId);
+            if (originalResult.IsSuccess)
+            {
+                return originalResult.Value;
+            }
+        }
+
+        return token;
+    }
+
+    /// <summary>
+    /// Tokenizes a line into a list of tokens preserving all characters.
+    /// Each token is either a word (letters/digits/underscore), a string literal (including quotes),
+    /// a comment (# or // to end of line), or a sequence of non-word characters (whitespace, operators).
+    /// Concatenating all tokens reproduces the original line exactly.
+    /// </summary>
+    public static List<string> TokenizeLine(string line)
+    {
+        List<string> tokens = new();
         int i = 0;
 
-        while (i < translatedLine.Length)
+        while (i < line.Length)
         {
-            if (char.IsLetter(translatedLine[i]) || translatedLine[i] == '_')
+            // Comment: # (Python) or // (C#) to end of line
+            if (line[i] == '#' || (i + 1 < line.Length && line[i] == '/' && line[i + 1] == '/'))
             {
-                int wordStart = i;
-                while (i < translatedLine.Length && (char.IsLetterOrDigit(translatedLine[i]) || translatedLine[i] == '_'))
+                tokens.Add(line.Substring(i));
+                break;
+            }
+
+            // String literal: capture everything from opening quote to closing quote
+            if (line[i] == '"' || line[i] == '\'')
+            {
+                int start = i;
+                char quote = line[i];
+                i++;
+
+                // Check for triple quote
+                bool isTriple = i + 1 < line.Length && line[i] == quote && line[i + 1] == quote;
+                if (isTriple)
+                {
+                    i += 2; // skip past the other two quotes
+                    string tripleQuote = new string(quote, 3);
+                    int endIdx = line.IndexOf(tripleQuote, i);
+                    if (endIdx >= 0)
+                    {
+                        i = endIdx + 3;
+                    }
+                    else
+                    {
+                        i = line.Length; // unterminated triple quote, consume rest of line
+                    }
+                }
+                else
+                {
+                    while (i < line.Length)
+                    {
+                        if (line[i] == '\\' && i + 1 < line.Length)
+                        {
+                            i += 2; // skip escape
+                        }
+                        else if (line[i] == quote)
+                        {
+                            i++;
+                            break;
+                        }
+                        else
+                        {
+                            i++;
+                        }
+                    }
+                }
+
+                tokens.Add(line.Substring(start, i - start));
+                continue;
+            }
+
+            // String prefix (f, r, b, u, etc.) followed by quote
+            if ("fFrRbBuU".Contains(line[i]) && i + 1 < line.Length && (line[i + 1] == '"' || line[i + 1] == '\''))
+            {
+                int start = i;
+                i++; // skip prefix
+                // Handle possible double prefix (rb, fr, etc.)
+                if (i < line.Length && "fFrRbBuU".Contains(line[i]) && i + 1 < line.Length && (line[i + 1] == '"' || line[i + 1] == '\''))
                 {
                     i++;
                 }
 
-                string word = translatedLine.Substring(wordStart, i - wordStart);
-                int keywordId = Provider.ReverseTranslateKeyword(word);
+                char quote = line[i];
+                i++;
 
-                if (keywordId >= 0)
+                bool isTriple = i + 1 < line.Length && line[i] == quote && line[i + 1] == quote;
+                if (isTriple)
                 {
-                    OperationResultGeneric<string> originalResult = Provider.GetOriginalKeyword(keywordId);
-                    if (originalResult.IsSuccess)
+                    i += 2;
+                    string tripleQuote = new string(quote, 3);
+                    int endIdx = line.IndexOf(tripleQuote, i);
+                    if (endIdx >= 0)
                     {
-                        result.Append(originalResult.Value);
-                        continue;
+                        i = endIdx + 3;
+                    }
+                    else
+                    {
+                        i = line.Length;
+                    }
+                }
+                else
+                {
+                    while (i < line.Length)
+                    {
+                        if (line[i] == '\\' && i + 1 < line.Length)
+                        {
+                            i += 2;
+                        }
+                        else if (line[i] == quote)
+                        {
+                            i++;
+                            break;
+                        }
+                        else
+                        {
+                            i++;
+                        }
                     }
                 }
 
-                result.Append(word);
+                tokens.Add(line.Substring(start, i - start));
+                continue;
             }
-            else
+
+            // C# verbatim string @"..."
+            if (line[i] == '@' && i + 1 < line.Length && line[i + 1] == '"')
             {
-                result.Append(translatedLine[i]);
-                i++;
+                int start = i;
+                i += 2;
+                while (i < line.Length)
+                {
+                    if (line[i] == '"')
+                    {
+                        if (i + 1 < line.Length && line[i + 1] == '"')
+                        {
+                            i += 2; // escaped quote in verbatim
+                        }
+                        else
+                        {
+                            i++;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+                tokens.Add(line.Substring(start, i - start));
+                continue;
+            }
+
+            // C# interpolated string $"..."
+            if (line[i] == '$' && i + 1 < line.Length && line[i + 1] == '"')
+            {
+                int start = i;
+                i += 2;
+                while (i < line.Length)
+                {
+                    if (line[i] == '\\' && i + 1 < line.Length)
+                    {
+                        i += 2;
+                    }
+                    else if (line[i] == '"')
+                    {
+                        i++;
+                        break;
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+                tokens.Add(line.Substring(start, i - start));
+                continue;
+            }
+
+            // Word token (identifier or keyword)
+            if (char.IsLetter(line[i]) || line[i] == '_')
+            {
+                int start = i;
+                while (i < line.Length && (char.IsLetterOrDigit(line[i]) || line[i] == '_'))
+                {
+                    i++;
+                }
+                tokens.Add(line.Substring(start, i - start));
+                continue;
+            }
+
+            // Non-word characters (whitespace, operators, delimiters)
+            {
+                int start = i;
+                while (i < line.Length && !char.IsLetter(line[i]) && line[i] != '_'
+                    && line[i] != '"' && line[i] != '\'' && line[i] != '#'
+                    && !(line[i] == '/' && i + 1 < line.Length && line[i + 1] == '/')
+                    && !(line[i] == '@' && i + 1 < line.Length && line[i + 1] == '"')
+                    && !(line[i] == '$' && i + 1 < line.Length && line[i + 1] == '"')
+                    && !"fFrRbBuU".Contains(line[i]))
+                {
+                    i++;
+                }
+                // If we didn't advance (stuck on a prefix char that isn't followed by quote), advance one
+                if (i == start)
+                {
+                    i++;
+                }
+                tokens.Add(line.Substring(start, i - start));
             }
         }
 
-        return result.ToString();
+        return tokens;
     }
 }

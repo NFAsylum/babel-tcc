@@ -1063,4 +1063,125 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             Directory.Delete(tempDir, true);
         }
     }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_ModifiedLineWithVariableE_PreservesVariable()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // User changes only "x" to "y" on a line that also has variable "e"
+            string original = "try { } catch (Exception e) { x = e.Message; }";
+            string translated = "tentar { } capturar (Exception e) { x = e.Message; }";
+            string edited = "tentar { } capturar (Exception e) { y = e.Message; }"; // only x->y changed
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // "e" tokens unchanged between previous and edited → copied from original
+            Assert.Contains("Exception e", result.Value);
+            Assert.Contains("e.Message", result.Value);
+            // "x" changed to "y"
+            Assert.Contains("y = e.Message", result.Value);
+            Assert.DoesNotContain("x = e.Message", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_StringContent_NotReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // String contains "classe" which is a translated keyword — should NOT be reversed
+            string original = "string x = \"classe is a word\";";
+            string translated = "texto x = \"classe is a word\";";
+            string edited = "texto y = \"classe is a word\";"; // only x->y changed
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // String content preserved (not reverse translated)
+            Assert.Contains("\"classe is a word\"", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void TokenizeLine_SeparatesWordsAndOperators()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("publico classe Foo { }");
+        Assert.Contains("publico", tokens);
+        Assert.Contains("classe", tokens);
+        Assert.Contains("Foo", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("publico classe Foo { }", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_PreservesStringLiterals()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = \"classe definir\"");
+        // The string "classe definir" should be a single token
+        Assert.Contains("\"classe definir\"", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = \"classe definir\"", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_PreservesComments()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = 1 // classe definir");
+        Assert.Contains("// classe definir", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = 1 // classe definir", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_PreservesPythonComments()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = 1 # definir algo");
+        Assert.Contains("# definir algo", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = 1 # definir algo", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_PreservesFStrings()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = f\"definir {nome}\"");
+        // f-string should be a single token
+        Assert.Contains("f\"definir {nome}\"", tokens);
+    }
 }
