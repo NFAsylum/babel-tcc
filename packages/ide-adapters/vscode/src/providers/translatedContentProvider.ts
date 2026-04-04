@@ -68,8 +68,12 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     this.outputChannel.appendLine(`TranslatedContentProvider: reverse translating ${originalPath}`);
 
     try {
-      const originalCode: string = await this.coreBridge.translateFromNaturalLanguage(
-        translatedContent, fileExtension, sourceLanguage
+      const currentOriginal: string = await this.readOriginalFile(originalPath);
+      const cacheKey: string = this.buildCacheKey(originalPath);
+      const previousTranslated: string = this.cache.get(cacheKey) || '';
+
+      const originalCode: string = await this.coreBridge.applyTranslatedEdits(
+        currentOriginal, previousTranslated, translatedContent, fileExtension, sourceLanguage
       );
 
       const originalUri: vscode.Uri = vscode.Uri.file(originalPath);
@@ -84,7 +88,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
         updatedOriginal, fileExtension, targetLanguage
       );
 
-      const cacheKey: string = this.buildCacheKey(originalPath);
       this.cache.set(cacheKey, freshTranslation);
 
       setTimeout(async (): Promise<void> => {

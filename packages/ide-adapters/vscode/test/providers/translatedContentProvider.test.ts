@@ -7,6 +7,7 @@ describe('TranslatedContentProvider', () => {
   let mockCoreBridge: {
     translateToNaturalLanguage: ReturnType<typeof vi.fn>;
     translateFromNaturalLanguage: ReturnType<typeof vi.fn>;
+    applyTranslatedEdits: ReturnType<typeof vi.fn>;
   };
   let mockLanguageDetector: {
     isSupported: ReturnType<typeof vi.fn>;
@@ -25,6 +26,7 @@ describe('TranslatedContentProvider', () => {
     mockCoreBridge = {
       translateToNaturalLanguage: vi.fn().mockResolvedValue('publico classe Foo {}'),
       translateFromNaturalLanguage: vi.fn().mockResolvedValue('public class Foo {}'),
+      applyTranslatedEdits: vi.fn().mockResolvedValue('public class Foo {}'),
     };
     mockLanguageDetector = {
       isSupported: vi.fn().mockReturnValue(true),
@@ -126,21 +128,19 @@ describe('TranslatedContentProvider', () => {
       expect(mockCoreBridge.translateFromNaturalLanguage).not.toHaveBeenCalled();
     });
 
-    it('should reverse translate and write original', async () => {
+    it('should apply translated edits and write original', async () => {
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
       const content = new TextEncoder().encode('publico classe Foo {}');
 
       workspace.textDocuments = [];
       await provider.writeFile(uri, content);
 
-      expect(mockCoreBridge.translateFromNaturalLanguage).toHaveBeenCalledWith(
-        'publico classe Foo {}', '.cs', 'pt-br'
-      );
+      expect(mockCoreBridge.applyTranslatedEdits).toHaveBeenCalled();
       expect(workspace.fs.writeFile).toHaveBeenCalled();
     });
 
     it('should show error when reverse translation fails', async () => {
-      mockCoreBridge.translateFromNaturalLanguage.mockRejectedValue(new Error('fail'));
+      mockCoreBridge.applyTranslatedEdits.mockRejectedValue(new Error('fail'));
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
 
       await provider.writeFile(uri, new TextEncoder().encode('test'));

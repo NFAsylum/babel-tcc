@@ -855,4 +855,473 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             Directory.Delete(tempDir, true);
         }
     }
+
+    // ========================================================================
+    // ApplyTranslatedEditsAsync (diff-based reverse, tarefa 085)
+    // ========================================================================
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_UnchangedLines_CopiedFromOriginal()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n    public int x;\n}";
+            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
+            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // no changes
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(original, result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_ModifiedLine_ReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n}";
+            string translated = "publico classe Foo\n{\n}";
+            string edited = "publico classe Bar\n{\n}"; // changed Foo to Bar
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Contains("public class Bar", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_AddedLine_ReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n}";
+            string translated = "publico classe Foo\n{\n}";
+            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // added line
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Contains("public int x;", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_RemovedLine_RemovedFromOriginal()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = "public class Foo\n{\n    public int x;\n}";
+            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
+            string edited = "publico classe Foo\n{\n}"; // removed line
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.DoesNotContain("int x", result.Value);
+            Assert.Contains("class Foo", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_VariableE_NotCorruptedToAnd()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // "e" is a common variable in C# (catch Exception e)
+            // The translation of "is" (ID 36) is "igual" in pt-br-ascii,
+            // but if it were "e", the old scanner would corrupt variable "e" to "is"
+            string original = "try { } catch (Exception e) { }";
+            string translated = "tentar { } capturar (Exception e) { }";
+            string edited = "tentar { } capturar (Exception e) { }"; // no changes
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // Variable "e" should NOT be corrupted
+            Assert.Contains("Exception e", result.Value);
+            Assert.DoesNotContain("Exception is", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_NewFile_AllLinesReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            string original = ""; // new file
+            string translated = ""; // no previous translation
+            string edited = "publico classe Foo\n{\n}"; // user wrote from scratch
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            Assert.Contains("public class Foo", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_ModifiedLineWithVariableE_PreservesVariable()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // User changes only "x" to "y" on a line that also has variable "e"
+            string original = "try { } catch (Exception e) { x = e.Message; }";
+            string translated = "tentar { } capturar (Exception e) { x = e.Message; }";
+            string edited = "tentar { } capturar (Exception e) { y = e.Message; }"; // only x->y changed
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // "e" tokens unchanged between previous and edited → copied from original
+            Assert.Contains("Exception e", result.Value);
+            Assert.Contains("e.Message", result.Value);
+            // "x" changed to "y"
+            Assert.Contains("y = e.Message", result.Value);
+            Assert.DoesNotContain("x = e.Message", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_StringContent_NotReverseTranslated()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // String contains "classe" which is a translated keyword — should NOT be reversed
+            string original = "string x = \"classe is a word\";";
+            string translated = "texto x = \"classe is a word\";";
+            string edited = "texto y = \"classe is a word\";"; // only x->y changed
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // String content preserved (not reverse translated)
+            Assert.Contains("\"classe is a word\"", result.Value);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void TokenizeLine_SeparatesWordsAndOperators()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("publico classe Foo { }");
+        Assert.Contains("publico", tokens);
+        Assert.Contains("classe", tokens);
+        Assert.Contains("Foo", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("publico classe Foo { }", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_PreservesStringLiterals()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = \"classe definir\"");
+        // The string "classe definir" should be a single token
+        Assert.Contains("\"classe definir\"", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = \"classe definir\"", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_PreservesComments()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = 1 // classe definir");
+        Assert.Contains("// classe definir", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = 1 // classe definir", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_PreservesPythonComments()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = 1 # definir algo");
+        Assert.Contains("# definir algo", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = 1 # definir algo", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_FStrings_ExpressionsTokenizedSeparately()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = f\"definir {nome}\"");
+        // f-string segments are separate tokens; expression inside {} is tokenized
+        Assert.Contains("nome", tokens);
+        // String literal parts are preserved
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = f\"definir {nome}\"", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_CSharpInterpolated_ExpressionsTokenizedSeparately()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = $\"hello {classe + retornar}\"");
+        // Keywords inside {} are separate tokens that can be reverse translated
+        Assert.Contains("classe", tokens);
+        Assert.Contains("retornar", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = $\"hello {classe + retornar}\"", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_CSharpInterpolatedVerbatim_Recognized()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = $@\"hello {classe}\"");
+        Assert.Contains("classe", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = $@\"hello {classe}\"", joined);
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_InsertInMiddle_DoesNotDesalign()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // 3 lines, user inserts a new line in the middle
+            string original = "public class Foo\n{\n}";
+            string translated = "publico classe Foo\n{\n}";
+            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // inserted line 3
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // Original lines should be preserved (not reverse translated)
+            Assert.Contains("public class Foo", result.Value);
+            // Inserted line should be reverse translated
+            Assert.Contains("public int x;", result.Value);
+            // Closing brace from original preserved
+            Assert.EndsWith("}", result.Value.Trim());
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyTranslatedEdits_DeleteInMiddle_DoesNotDesalign()
+    {
+        CSharpAdapter realAdapter = new CSharpAdapter();
+        LanguageRegistry registry = new LanguageRegistry();
+        registry.RegisterAdapter(realAdapter);
+        NaturalLanguageProvider provider = CreateProvider();
+
+        string tempDir = Path.Combine(Path.GetTempPath(), $"orch_diff_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            IdentifierMapper mapper = new IdentifierMapper();
+            mapper.LoadMap(tempDir);
+
+            TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
+
+            // 4 lines, user deletes line 3
+            string original = "public class Foo\n{\n    public int x;\n}";
+            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
+            string edited = "publico classe Foo\n{\n}"; // deleted line 3
+
+            OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+                original, translated, edited, ".cs", "pt-br");
+
+            Assert.True(result.IsSuccess);
+            // Remaining lines preserved from original
+            Assert.Contains("public class Foo", result.Value);
+            // Deleted line should not be in result
+            Assert.DoesNotContain("int x", result.Value);
+            // Closing brace preserved
+            Assert.EndsWith("}", result.Value.Trim());
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ComputeDiff_InsertInMiddle_ProducesCorrectOps()
+    {
+        string[] previous = { "A", "B", "C" };
+        string[] edited = { "A", "X", "B", "C" };
+
+        List<DiffOp> ops = TranslationOrchestrator.ComputeDiff(previous, edited);
+
+        Assert.Equal(DiffOpType.Equal, ops[0].Type);
+        Assert.Equal("A", ops[0].EditedLine);
+
+        Assert.Equal(DiffOpType.Insert, ops[1].Type);
+        Assert.Equal("X", ops[1].EditedLine);
+
+        Assert.Equal(DiffOpType.Equal, ops[2].Type);
+        Assert.Equal("B", ops[2].EditedLine);
+
+        Assert.Equal(DiffOpType.Equal, ops[3].Type);
+        Assert.Equal("C", ops[3].EditedLine);
+    }
+
+    [Fact]
+    public void ComputeDiff_DeleteInMiddle_ProducesCorrectOps()
+    {
+        string[] previous = { "A", "B", "C" };
+        string[] edited = { "A", "C" };
+
+        List<DiffOp> ops = TranslationOrchestrator.ComputeDiff(previous, edited);
+
+        Assert.Equal(DiffOpType.Equal, ops[0].Type);
+        Assert.Equal("A", ops[0].EditedLine);
+
+        Assert.Equal(DiffOpType.Delete, ops[1].Type);
+        Assert.Equal("B", ops[1].PreviousLine);
+
+        Assert.Equal(DiffOpType.Equal, ops[2].Type);
+        Assert.Equal("C", ops[2].EditedLine);
+    }
 }

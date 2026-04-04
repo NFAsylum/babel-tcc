@@ -179,6 +179,19 @@ public class Program
                     return HandleValidateSyntax(parseResult.Value);
                 }
 
+            case "ApplyTranslatedEdits":
+                {
+                    OperationResultGeneric<ApplyEditsRequest> parseResult = JsonFileReader.ReadFromString<ApplyEditsRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    ApplyEditsRequest request = parseResult.Value;
+                    TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
+                        orchestratorCache, request.SourceLanguage, translationsPath, projectPath);
+                    return await HandleApplyTranslatedEdits(orchestrator, request);
+                }
+
             case "GetSupportedLanguages":
                 return HandleGetSupportedLanguages(translationsPath);
 
@@ -307,6 +320,24 @@ public class Program
     {
         OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
             request.TranslatedCode, request.FileExtension, request.SourceLanguage);
+
+        if (!result.IsSuccess)
+        {
+            return new CoreResponse { Success = false, Error = result.ErrorMessage };
+        }
+
+        return new CoreResponse { Success = true, Result = result.Value };
+    }
+
+    /// <summary>
+    /// Handles applying user edits from translated code back to original using 3-way diff.
+    /// </summary>
+    public static async Task<CoreResponse> HandleApplyTranslatedEdits(
+        TranslationOrchestrator orchestrator, ApplyEditsRequest request)
+    {
+        OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
+            request.OriginalCode, request.PreviousTranslatedCode, request.EditedTranslatedCode,
+            request.FileExtension, request.SourceLanguage);
 
         if (!result.IsSuccess)
         {
