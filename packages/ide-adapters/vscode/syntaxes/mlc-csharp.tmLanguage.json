@@ -6,11 +6,6 @@
     { "include": "#comments" },
     { "include": "#strings" },
     { "include": "#numbers" },
-    { "include": "#keywords-control" },
-    { "include": "#keywords-types" },
-    { "include": "#keywords-modifiers" },
-    { "include": "#keywords-literals" },
-    { "include": "#keywords-other" },
     { "include": "#tradu-annotations" }
   ],
   "repository": {
@@ -69,46 +64,6 @@
         {
           "name": "constant.numeric.mlc-csharp",
           "match": "\\b(0[xX][0-9a-fA-F_]+|0[bB][01_]+|[0-9][0-9_]*(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?[fFdDmMlLuU]?)\\b"
-        }
-      ]
-    },
-    "keywords-control": {
-      "patterns": [
-        {
-          "name": "keyword.control.mlc-csharp",
-          "match": "\\b(se|senao|para|paracada|enquanto|faca|escolha|caso|padrao|retornar|parar|continuar|lancar|tentar|capturar|finalmente|em|vapara)\\b"
-        }
-      ]
-    },
-    "keywords-types": {
-      "patterns": [
-        {
-          "name": "keyword.type.mlc-csharp",
-          "match": "\\b(vazio|inteiro|texto|booleano|decimal|flutuante|duplo|longo|curto|byte|caractere|objeto|dinamico|var)\\b"
-        }
-      ]
-    },
-    "keywords-modifiers": {
-      "patterns": [
-        {
-          "name": "keyword.other.modifier.mlc-csharp",
-          "match": "\\b(publico|protegido|privado|interno|estatico|constante|somenteleitura|virtual|sobrescrever|abstrato|selado|assincrono|parcial|externo|volatil|inseguro|fixo)\\b"
-        }
-      ]
-    },
-    "keywords-literals": {
-      "patterns": [
-        {
-          "name": "constant.language.mlc-csharp",
-          "match": "\\b(verdadeiro|falso|nulo)\\b"
-        }
-      ]
-    },
-    "keywords-other": {
-      "patterns": [
-        {
-          "name": "keyword.other.mlc-csharp",
-          "match": "\\b(usando|espaconome|classe|estrutura|enumeracao|interface|novo|este|base|tipode|tamanhode|como|igual|referencia|aguardar|delegado|evento|operador|implicito|explicito|verificado|naoverificado|trancar|saida|parametros)\\b"
         }
       ]
     },

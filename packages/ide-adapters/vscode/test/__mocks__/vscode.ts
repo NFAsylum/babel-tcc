@@ -128,6 +128,24 @@ export class TabInputText {
   constructor(public uri: Uri) {}
 }
 
+export class SemanticTokensLegend {
+  constructor(
+    public tokenTypes: string[],
+    public tokenModifiers: string[] = []
+  ) {}
+}
+
+export class SemanticTokensBuilder {
+  private tokens: Array<{ line: number; char: number; length: number; type: number }> = [];
+  constructor(public legend?: SemanticTokensLegend) {}
+  push(line: number, char: number, length: number, tokenType: number): void {
+    this.tokens.push({ line, char, length, type: tokenType });
+  }
+  build(): { data: Uint32Array } {
+    return { data: new Uint32Array(this.tokens.length * 5) };
+  }
+}
+
 // --- Enums ---
 
 export enum CompletionItemKind {
@@ -242,6 +260,7 @@ export const commands = {
 export const languages = {
   registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
   registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  registerDocumentSemanticTokensProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
 
 // --- Helper to set config values in tests ---

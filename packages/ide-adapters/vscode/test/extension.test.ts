@@ -58,10 +58,10 @@ describe('extension', () => {
       expect(languages.registerHoverProvider).toHaveBeenCalledTimes(2);
     });
 
-    it('should push exactly 18 subscriptions to context', () => {
+    it('should push exactly 20 subscriptions to context', () => {
       const context = makeContext();
       activate(context as any);
-      expect(context.subscriptions.length).toBe(18);
+      expect(context.subscriptions.length).toBe(20);
     });
 
     it('should create file watcher for .cs and .py files', () => {
