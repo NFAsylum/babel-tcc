@@ -533,125 +533,62 @@ public class TranslationOrchestrator
 
     /// <summary>
     /// Tokenizes a line into a list of tokens preserving all characters.
-    /// Each token is either a word (letters/digits/underscore), a string literal (including quotes),
-    /// a comment (# or // to end of line), or a sequence of non-word characters (whitespace, operators).
+    /// Each token is either a word, a string literal segment, a comment, or non-word characters.
+    /// For interpolated strings (f"...", $"..."), expressions inside {} are tokenized separately.
     /// Concatenating all tokens reproduces the original line exactly.
     /// </summary>
     public static List<string> TokenizeLine(string line)
     {
         List<string> tokens = new();
         int i = 0;
+        TokenizeSegment(line, ref i, tokens, '\0');
+        return tokens;
+    }
 
+    /// <summary>
+    /// Tokenizes a segment of text, stopping at the end or at a closing delimiter.
+    /// Used recursively for expressions inside interpolated string braces.
+    /// </summary>
+    public static void TokenizeSegment(string line, ref int i, List<string> tokens, char stopAt)
+    {
         while (i < line.Length)
         {
+            if (stopAt != '\0' && line[i] == stopAt)
+            {
+                return;
+            }
+
             // Comment: # (Python) or // (C#) to end of line
             if (line[i] == '#' || (i + 1 < line.Length && line[i] == '/' && line[i + 1] == '/'))
             {
                 tokens.Add(line.Substring(i));
-                break;
+                i = line.Length;
+                return;
             }
 
-            // String literal: capture everything from opening quote to closing quote
-            if (line[i] == '"' || line[i] == '\'')
+            // Detect string prefix and type
+            bool isInterpolated = false;
+            int prefixStart = i;
+
+            // Check for $@" or @$" (C# interpolated verbatim)
+            if (i + 2 < line.Length
+                && ((line[i] == '$' && line[i + 1] == '@' && line[i + 2] == '"')
+                 || (line[i] == '@' && line[i + 1] == '$' && line[i + 2] == '"')))
             {
-                int start = i;
-                char quote = line[i];
-                i++;
-
-                // Check for triple quote
-                bool isTriple = i + 1 < line.Length && line[i] == quote && line[i + 1] == quote;
-                if (isTriple)
-                {
-                    i += 2; // skip past the other two quotes
-                    string tripleQuote = new string(quote, 3);
-                    int endIdx = line.IndexOf(tripleQuote, i);
-                    if (endIdx >= 0)
-                    {
-                        i = endIdx + 3;
-                    }
-                    else
-                    {
-                        i = line.Length; // unterminated triple quote, consume rest of line
-                    }
-                }
-                else
-                {
-                    while (i < line.Length)
-                    {
-                        if (line[i] == '\\' && i + 1 < line.Length)
-                        {
-                            i += 2; // skip escape
-                        }
-                        else if (line[i] == quote)
-                        {
-                            i++;
-                            break;
-                        }
-                        else
-                        {
-                            i++;
-                        }
-                    }
-                }
-
-                tokens.Add(line.Substring(start, i - start));
+                isInterpolated = true;
+                TokenizeInterpolatedString(line, ref i, tokens, '"', 2);
                 continue;
             }
 
-            // String prefix (f, r, b, u, etc.) followed by quote
-            if ("fFrRbBuU".Contains(line[i]) && i + 1 < line.Length && (line[i + 1] == '"' || line[i + 1] == '\''))
+            // Check for $" (C# interpolated)
+            if (line[i] == '$' && i + 1 < line.Length && line[i + 1] == '"')
             {
-                int start = i;
-                i++; // skip prefix
-                // Handle possible double prefix (rb, fr, etc.)
-                if (i < line.Length && "fFrRbBuU".Contains(line[i]) && i + 1 < line.Length && (line[i + 1] == '"' || line[i + 1] == '\''))
-                {
-                    i++;
-                }
-
-                char quote = line[i];
-                i++;
-
-                bool isTriple = i + 1 < line.Length && line[i] == quote && line[i + 1] == quote;
-                if (isTriple)
-                {
-                    i += 2;
-                    string tripleQuote = new string(quote, 3);
-                    int endIdx = line.IndexOf(tripleQuote, i);
-                    if (endIdx >= 0)
-                    {
-                        i = endIdx + 3;
-                    }
-                    else
-                    {
-                        i = line.Length;
-                    }
-                }
-                else
-                {
-                    while (i < line.Length)
-                    {
-                        if (line[i] == '\\' && i + 1 < line.Length)
-                        {
-                            i += 2;
-                        }
-                        else if (line[i] == quote)
-                        {
-                            i++;
-                            break;
-                        }
-                        else
-                        {
-                            i++;
-                        }
-                    }
-                }
-
-                tokens.Add(line.Substring(start, i - start));
+                isInterpolated = true;
+                TokenizeInterpolatedString(line, ref i, tokens, '"', 1);
                 continue;
             }
 
-            // C# verbatim string @"..."
+            // Check for @" (C# verbatim — not interpolated, atomic token)
             if (line[i] == '@' && i + 1 < line.Length && line[i + 1] == '"')
             {
                 int start = i;
@@ -662,7 +599,7 @@ public class TranslationOrchestrator
                     {
                         if (i + 1 < line.Length && line[i + 1] == '"')
                         {
-                            i += 2; // escaped quote in verbatim
+                            i += 2;
                         }
                         else
                         {
@@ -679,28 +616,38 @@ public class TranslationOrchestrator
                 continue;
             }
 
-            // C# interpolated string $"..."
-            if (line[i] == '$' && i + 1 < line.Length && line[i + 1] == '"')
+            // Check for string prefix (f, r, b, u, etc.) followed by quote
+            if ("fFrRbBuU".Contains(line[i]) && i + 1 < line.Length)
             {
-                int start = i;
-                i += 2;
-                while (i < line.Length)
+                int prefixLen = 1;
+                // Double prefix (rb, fr, etc.)
+                if ("fFrRbBuU".Contains(line[i + 1]) && i + 2 < line.Length && (line[i + 2] == '"' || line[i + 2] == '\''))
                 {
-                    if (line[i] == '\\' && i + 1 < line.Length)
+                    prefixLen = 2;
+                }
+
+                if (i + prefixLen < line.Length && (line[i + prefixLen] == '"' || line[i + prefixLen] == '\''))
+                {
+                    string prefix = line.Substring(i, prefixLen);
+                    bool isFString = prefix.Contains('f') || prefix.Contains('F');
+
+                    if (isFString)
                     {
-                        i += 2;
-                    }
-                    else if (line[i] == '"')
-                    {
-                        i++;
-                        break;
+                        TokenizeInterpolatedString(line, ref i, tokens, line[i + prefixLen], prefixLen);
                     }
                     else
                     {
-                        i++;
+                        // Non-interpolated prefixed string (r, b, u, rb, br) — atomic token
+                        ConsumeSimpleString(line, ref i, tokens, prefixLen);
                     }
+                    continue;
                 }
-                tokens.Add(line.Substring(start, i - start));
+            }
+
+            // Plain string literal (no prefix)
+            if (line[i] == '"' || line[i] == '\'')
+            {
+                ConsumeSimpleString(line, ref i, tokens, 0);
                 continue;
             }
 
@@ -716,27 +663,109 @@ public class TranslationOrchestrator
                 continue;
             }
 
-            // Non-word characters (whitespace, operators, delimiters)
+            // Non-word single character (whitespace, operator, delimiter, brace)
+            tokens.Add(line[i].ToString());
+            i++;
+        }
+    }
+
+    /// <summary>
+    /// Consumes a simple (non-interpolated) string literal as a single atomic token.
+    /// </summary>
+    public static void ConsumeSimpleString(string line, ref int i, List<string> tokens, int prefixLen)
+    {
+        int start = i;
+        i += prefixLen;
+        char quote = line[i];
+        i++;
+
+        bool isTriple = i + 1 < line.Length && line[i] == quote && line[i + 1] == quote;
+        if (isTriple)
+        {
+            i += 2;
+            string tripleQuote = new string(quote, 3);
+            int endIdx = line.IndexOf(tripleQuote, i);
+            if (endIdx >= 0)
             {
-                int start = i;
-                while (i < line.Length && !char.IsLetter(line[i]) && line[i] != '_'
-                    && line[i] != '"' && line[i] != '\'' && line[i] != '#'
-                    && !(line[i] == '/' && i + 1 < line.Length && line[i + 1] == '/')
-                    && !(line[i] == '@' && i + 1 < line.Length && line[i + 1] == '"')
-                    && !(line[i] == '$' && i + 1 < line.Length && line[i + 1] == '"')
-                    && !"fFrRbBuU".Contains(line[i]))
+                i = endIdx + 3;
+            }
+            else
+            {
+                i = line.Length;
+            }
+        }
+        else
+        {
+            while (i < line.Length)
+            {
+                if (line[i] == '\\' && i + 1 < line.Length)
+                {
+                    i += 2;
+                }
+                else if (line[i] == quote)
+                {
+                    i++;
+                    break;
+                }
+                else
                 {
                     i++;
                 }
-                // If we didn't advance (stuck on a prefix char that isn't followed by quote), advance one
-                if (i == start)
-                {
-                    i++;
-                }
-                tokens.Add(line.Substring(start, i - start));
             }
         }
 
-        return tokens;
+        tokens.Add(line.Substring(start, i - start));
+    }
+
+    /// <summary>
+    /// Tokenizes an interpolated string (f"...", $"...", $@"...").
+    /// String literal segments are atomic tokens. Expressions inside {} are tokenized recursively.
+    /// </summary>
+    public static void TokenizeInterpolatedString(string line, ref int i, List<string> tokens, char quote, int prefixLen)
+    {
+        int start = i;
+        i += prefixLen; // skip prefix
+        i++; // skip opening quote
+
+        while (i < line.Length)
+        {
+            if (line[i] == '\\' && i + 1 < line.Length)
+            {
+                i += 2;
+            }
+            else if (line[i] == '{')
+            {
+                // Emit the string segment up to (including) the {
+                tokens.Add(line.Substring(start, i - start + 1));
+                i++; // past {
+                start = i;
+
+                // Tokenize the expression inside {} recursively
+                TokenizeSegment(line, ref i, tokens, '}');
+
+                if (i < line.Length && line[i] == '}')
+                {
+                    tokens.Add("}");
+                    i++;
+                }
+                start = i;
+            }
+            else if (line[i] == quote)
+            {
+                i++;
+                tokens.Add(line.Substring(start, i - start));
+                return;
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        // Unterminated — emit what we have
+        if (start < i)
+        {
+            tokens.Add(line.Substring(start, i - start));
+        }
     }
 }

@@ -1178,10 +1178,33 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
     }
 
     [Fact]
-    public void TokenizeLine_PreservesFStrings()
+    public void TokenizeLine_FStrings_ExpressionsTokenizedSeparately()
     {
         List<string> tokens = TranslationOrchestrator.TokenizeLine("x = f\"definir {nome}\"");
-        // f-string should be a single token
-        Assert.Contains("f\"definir {nome}\"", tokens);
+        // f-string segments are separate tokens; expression inside {} is tokenized
+        Assert.Contains("nome", tokens);
+        // String literal parts are preserved
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = f\"definir {nome}\"", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_CSharpInterpolated_ExpressionsTokenizedSeparately()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = $\"hello {classe + retornar}\"");
+        // Keywords inside {} are separate tokens that can be reverse translated
+        Assert.Contains("classe", tokens);
+        Assert.Contains("retornar", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = $\"hello {classe + retornar}\"", joined);
+    }
+
+    [Fact]
+    public void TokenizeLine_CSharpInterpolatedVerbatim_Recognized()
+    {
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("x = $@\"hello {classe}\"");
+        Assert.Contains("classe", tokens);
+        string joined = string.Join("", tokens);
+        Assert.Equal("x = $@\"hello {classe}\"", joined);
     }
 }
