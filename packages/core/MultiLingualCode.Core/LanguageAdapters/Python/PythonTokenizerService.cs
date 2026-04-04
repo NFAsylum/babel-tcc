@@ -138,6 +138,8 @@ public class PythonTokenizerService : IDisposable
                 StandardErrorEncoding = utf8NoBom
             };
 
+            startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
+
             if (!string.IsNullOrEmpty(ResolvedPythonArgs))
             {
                 startInfo.Arguments = $"{ResolvedPythonArgs} \"{scriptPath}\"";
