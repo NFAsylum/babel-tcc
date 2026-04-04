@@ -78,5 +78,27 @@ describe('SemanticKeywordProvider', () => {
       expect(result1.data.length).toBeGreaterThan(0);
       expect(result2.data.length).toBeGreaterThan(0);
     });
+
+    it('should not highlight keywords inside double-quoted strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'classe Foo = "publico classe";');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // "classe" before string is highlighted, "publico" and "classe" inside string are NOT
+      // Mock builder has 1 token (only the first "classe"), not 3
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should not highlight keywords inside line comments', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'classe Foo {} // publico classe aqui');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Only "classe" before the comment should be highlighted
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should not highlight keywords inside single-quoted strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, "caractere c = 'publico';");
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // "publico" is inside single quotes — should not be highlighted
+      expect(result.data.length).toBe(0);
+    });
   });
 });

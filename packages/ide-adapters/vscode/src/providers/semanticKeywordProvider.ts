@@ -8,6 +8,58 @@ const TOKEN_MODIFIERS: string[] = [];
 /** Semantic tokens legend used for keyword highlighting in translated documents. */
 export const SEMANTIC_TOKENS_LEGEND = new vscode.SemanticTokensLegend(TOKEN_TYPES, TOKEN_MODIFIERS);
 
+/**
+ * Checks if a position in a line is inside a string or comment.
+ * Scans from the start of the line tracking quote and comment state.
+ */
+function isInsideStringOrComment(text: string, position: number): boolean {
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inLineComment = false;
+
+  for (let i = 0; i < position && i < text.length; i++) {
+    if (inLineComment) {
+      return true;
+    }
+
+    const ch: string = text[i];
+    const next: string = i + 1 < text.length ? text[i + 1] : '';
+
+    if (!inSingleQuote && !inDoubleQuote) {
+      if (ch === '/' && next === '/') {
+        inLineComment = true;
+        continue;
+      }
+      if (ch === '"') {
+        inDoubleQuote = true;
+        continue;
+      }
+      if (ch === '\'') {
+        inSingleQuote = true;
+        continue;
+      }
+    } else if (inDoubleQuote) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === '"') {
+        inDoubleQuote = false;
+      }
+    } else if (inSingleQuote) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === '\'') {
+        inSingleQuote = false;
+      }
+    }
+  }
+
+  return inSingleQuote || inDoubleQuote || inLineComment;
+}
+
 /** Provides semantic tokens for translated keywords, enabling dynamic syntax highlighting. */
 export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensProvider {
   private keywordMapService: KeywordMapService;
@@ -18,8 +70,7 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
 
   /**
    * Provides semantic tokens for all translated keywords in the document.
-   * Each translated keyword is tagged as 'keyword' so the VS Code theme
-   * highlights it appropriately.
+   * Skips keywords inside strings and comments.
    */
   public provideDocumentSemanticTokens(
     document: vscode.TextDocument
@@ -39,20 +90,15 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
 
     for (let line = 0; line < document.lineCount; line++) {
       const text: string = document.lineAt(line).text;
-      const words: RegExpMatchArray | null = text.match(/\b[a-zA-ZÀ-ÿ_][a-zA-ZÀ-ÿ0-9_]*\b/g);
+      const wordRegex: RegExp = /\b[a-zA-ZÀ-ÿ_][a-zA-ZÀ-ÿ0-9_]*\b/g;
+      let match: RegExpExecArray | null;
 
-      if (!words) {
-        continue;
-      }
+      while ((match = wordRegex.exec(text)) !== null) {
+        const word: string = match[0];
+        const col: number = match.index;
 
-      let searchStart = 0;
-      for (const word of words) {
-        if (translatedKeywords.has(word.toLowerCase())) {
-          const col: number = text.indexOf(word, searchStart);
-          if (col >= 0) {
-            builder.push(line, col, word.length, 0);
-            searchStart = col + word.length;
-          }
+        if (translatedKeywords.has(word.toLowerCase()) && !isInsideStringOrComment(text, col)) {
+          builder.push(line, col, word.length, 0);
         }
       }
     }
