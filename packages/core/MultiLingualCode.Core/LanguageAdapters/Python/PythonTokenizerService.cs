@@ -123,6 +123,8 @@ public class PythonTokenizerService : IDisposable
 
         try
         {
+            System.Text.Encoding utf8NoBom = new System.Text.UTF8Encoding(false);
+
             ProcessStartInfo startInfo = new()
             {
                 FileName = ResolvedPythonPath,
@@ -130,8 +132,13 @@ public class PythonTokenizerService : IDisposable
                 UseShellExecute = false,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardError = true,
+                StandardInputEncoding = utf8NoBom,
+                StandardOutputEncoding = utf8NoBom,
+                StandardErrorEncoding = utf8NoBom
             };
+
+            startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
 
             if (!string.IsNullOrEmpty(ResolvedPythonArgs))
             {
