@@ -17,6 +17,7 @@ describe('TranslatedContentProvider', () => {
   let mockConfigService: {
     isEnabled: ReturnType<typeof vi.fn>;
     getLanguage: ReturnType<typeof vi.fn>;
+    getLanguageForProgrammingLanguage: ReturnType<typeof vi.fn>;
   };
   let outputChannel: { appendLine: ReturnType<typeof vi.fn> };
 
@@ -36,6 +37,7 @@ describe('TranslatedContentProvider', () => {
     mockConfigService = {
       isEnabled: vi.fn().mockReturnValue(true),
       getLanguage: vi.fn().mockReturnValue('pt-br'),
+      getLanguageForProgrammingLanguage: vi.fn().mockReturnValue('pt-br'),
     };
     outputChannel = { appendLine: vi.fn() };
 

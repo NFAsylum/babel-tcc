@@ -45,7 +45,7 @@ export class KeywordMapService {
       return {};
     }
 
-    const language: string = this.configService.getLanguage();
+    const language: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
     const cacheKey: string = `${language}::${programmingLanguage}`;
 
     const cached: Record<string, string> | undefined = this.cache.get(cacheKey);

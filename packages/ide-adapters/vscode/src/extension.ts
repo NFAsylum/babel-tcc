@@ -93,7 +93,7 @@ export function activate(context: vscode.ExtensionContext): void {
   translatedContentProvider = new TranslatedContentProvider(
     coreBridge, languageDetector, configService, outputChannel
   );
-  statusBar = new StatusBar(configService);
+  statusBar = new StatusBar(configService, languageDetector);
   autoTranslateManager = new AutoTranslateManager(
     configService, languageDetector, translatedContentProvider, outputChannel
   );
@@ -177,13 +177,43 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch {
         languages = [configService.getLanguage()];
       }
+
+      const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+      const filePath: string = editor ? editor.document.uri.path : '';
+      const programmingLanguage: string | undefined = filePath
+        ? languageDetector.detectLanguage(filePath)
+        : undefined;
+
+      type ScopeItem = vscode.QuickPickItem & { scope: 'global' | 'language' };
+      let scope: 'global' | 'language' = 'global';
+
+      if (programmingLanguage) {
+        const scopeItems: ScopeItem[] = [
+          { label: '$(globe) All languages (global)', scope: 'global' },
+          { label: `$(file-code) ${programmingLanguage} only`, scope: 'language' },
+        ];
+        const scopeChoice: ScopeItem | undefined = await vscode.window.showQuickPick(scopeItems, {
+          placeHolder: 'Apply language change to...'
+        });
+        if (!scopeChoice) {
+          return;
+        }
+        scope = scopeChoice.scope;
+      }
+
       const selected: string | undefined = await vscode.window.showQuickPick(languages, {
         placeHolder: 'Select target language for translation'
       });
-      if (selected) {
+      if (!selected) {
+        return;
+      }
+
+      if (scope === 'language' && programmingLanguage) {
+        await configService.setLanguageOverride(programmingLanguage, selected);
+        outputChannel.appendLine(`Language for ${programmingLanguage} set to: ${selected}`);
+        vscode.window.showInformationMessage(`Babel TCC: Language for ${programmingLanguage} set to ${selected}.`);
+      } else {
         await configService.setLanguage(selected);
-        // handleConfigChange in autoTranslateManager handles cache invalidation,
-        // dirty document check, and tab refresh
         outputChannel.appendLine(`Language set to: ${selected}`);
         vscode.window.showInformationMessage(`Babel TCC: Language set to ${selected}.`);
       }

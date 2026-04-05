@@ -88,6 +88,59 @@ describe('ConfigurationService', () => {
     });
   });
 
+  describe('getLanguageForProgrammingLanguage', () => {
+    it('should return global language when no override is set', () => {
+      configStore['language'] = 'pt-br';
+      expect(service.getLanguageForProgrammingLanguage('CSharp')).toBe('pt-br');
+    });
+
+    it('should return override when set for programming language', () => {
+      configStore['language'] = 'pt-br';
+      configStore['languageOverrides'] = { CSharp: 'es-es' };
+      expect(service.getLanguageForProgrammingLanguage('CSharp')).toBe('es-es');
+    });
+
+    it('should return global language for programming language without override', () => {
+      configStore['language'] = 'pt-br';
+      configStore['languageOverrides'] = { CSharp: 'es-es' };
+      expect(service.getLanguageForProgrammingLanguage('Python')).toBe('pt-br');
+    });
+
+    it('should support different overrides for different programming languages', () => {
+      configStore['language'] = 'pt-br';
+      configStore['languageOverrides'] = { CSharp: 'es-es', Python: 'fr-fr' };
+      expect(service.getLanguageForProgrammingLanguage('CSharp')).toBe('es-es');
+      expect(service.getLanguageForProgrammingLanguage('Python')).toBe('fr-fr');
+    });
+
+    it('should match keys case-insensitively', () => {
+      configStore['languageOverrides'] = { csharp: 'es-es' };
+      expect(service.getLanguageForProgrammingLanguage('CSharp')).toBe('es-es');
+    });
+  });
+
+  describe('setLanguageOverride', () => {
+    it('should call config.update with override added', async () => {
+      configStore['languageOverrides'] = {};
+      await service.setLanguageOverride('CSharp', 'es-es');
+      expect(updateMock).toHaveBeenCalledWith(
+        'languageOverrides',
+        { CSharp: 'es-es' },
+        ConfigurationTarget.Global
+      );
+    });
+
+    it('should remove override when language is undefined', async () => {
+      configStore['languageOverrides'] = { CSharp: 'es-es', Python: 'fr-fr' };
+      await service.setLanguageOverride('CSharp', undefined);
+      expect(updateMock).toHaveBeenCalledWith(
+        'languageOverrides',
+        { Python: 'fr-fr' },
+        ConfigurationTarget.Global
+      );
+    });
+  });
+
   describe('onDidChangeConfiguration', () => {
     it('should fire event when babel-tcc config changes', () => {
       const listener = vi.fn();

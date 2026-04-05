@@ -4,6 +4,7 @@ import { CONFIG_SECTION } from '../config/constants';
 const KEY_ENABLED = 'enabled';
 const KEY_LANGUAGE = 'language';
 const KEY_READONLY = 'readonly';
+const KEY_LANGUAGE_OVERRIDES = 'languageOverrides';
 
 /** Manages VS Code workspace configuration for the Babel TCC extension. */
 export class ConfigurationService implements vscode.Disposable {
@@ -43,6 +44,24 @@ export class ConfigurationService implements vscode.Disposable {
   }
 
   /**
+   * Returns the target language for a specific programming language.
+   * Uses languageOverrides if set, otherwise falls back to the global language.
+   * @param programmingLanguage - The programming language name (e.g., "CSharp", "Python").
+   * @returns The language code for that programming language.
+   */
+  public getLanguageForProgrammingLanguage(programmingLanguage: string): string {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    const overrides: Record<string, string> = config.get<Record<string, string>>(KEY_LANGUAGE_OVERRIDES, {});
+    const lowerKey: string = programmingLanguage.toLowerCase();
+    for (const [key, value] of Object.entries(overrides)) {
+      if (key.toLowerCase() === lowerKey && value) {
+        return value;
+      }
+    }
+    return this.getLanguage();
+  }
+
+  /**
    * Sets whether translation is enabled in the global configuration.
    * @param enabled - `true` to enable translation, `false` to disable it.
    */
@@ -58,6 +77,22 @@ export class ConfigurationService implements vscode.Disposable {
   public async setLanguage(language: string): Promise<void> {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
     await config.update(KEY_LANGUAGE, language, vscode.ConfigurationTarget.Global);
+  }
+
+  /**
+   * Sets a language override for a specific programming language.
+   * @param programmingLanguage - The programming language name (e.g., "CSharp").
+   * @param language - The target language code, or undefined to remove the override.
+   */
+  public async setLanguageOverride(programmingLanguage: string, language: string | undefined): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    const overrides: Record<string, string> = { ...config.get<Record<string, string>>(KEY_LANGUAGE_OVERRIDES, {}) };
+    if (language) {
+      overrides[programmingLanguage] = language;
+    } else {
+      delete overrides[programmingLanguage];
+    }
+    await config.update(KEY_LANGUAGE_OVERRIDES, overrides, vscode.ConfigurationTarget.Global);
   }
 
   /** Returns whether translated views should open in readonly mode. Defaults to false. */
