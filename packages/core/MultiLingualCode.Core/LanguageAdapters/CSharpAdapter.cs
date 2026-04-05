@@ -499,34 +499,6 @@ public class CSharpAdapter : ILanguageAdapter
     }
 
     /// <summary>
-    /// Recursively collects text replacements from the AST for code generation.
-    /// Kept for backward compatibility but Generate() now uses AdapterHelpers.
-    /// </summary>
-    /// <param name="node">The current AST node to process.</param>
-    /// <param name="replacements">The list to accumulate replacement tuples (start, end, new text) into.</param>
-    public static void CollectReplacements(ASTNode node, List<(int Start, int End, string NewText)> replacements)
-    {
-        switch (node)
-        {
-            case KeywordNode keyword:
-                replacements.Add((keyword.StartPosition, keyword.EndPosition, keyword.Text));
-                break;
-            case IdentifierNode identifier:
-                replacements.Add((identifier.StartPosition, identifier.EndPosition, identifier.Name));
-                break;
-            case LiteralNode literal when literal.Type == LiteralType.String:
-                string quotedValue = "\"" + literal.Value + "\"";
-                replacements.Add((literal.StartPosition, literal.EndPosition, quotedValue));
-                break;
-        }
-
-        foreach (ASTNode child in node.Children)
-        {
-            CollectReplacements(child, replacements);
-        }
-    }
-
-    /// <summary>
     /// Converts a Roslyn-based <see cref="LiteralTokenKind"/> to the AST model's <see cref="LiteralType"/>.
     /// </summary>
     /// <param name="kind">The Roslyn literal token kind.</param>
