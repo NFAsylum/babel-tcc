@@ -23,6 +23,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public cache: Map<string, string> = new Map<string, string>();
   public writingPaths: Set<string> = new Set<string>();
   public refreshingPaths: Set<string> = new Set<string>();
+  public saveQueue: Map<string, Promise<void>> = new Map<string, Promise<void>>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
     new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
@@ -61,6 +62,17 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       return;
     }
 
+    // Queue saves per path: if a save is already in progress, the next one
+    // waits for it to complete before starting. This prevents the second save
+    // from reading the partially-written file as "original".
+    const previousSave: Promise<void> = this.saveQueue.get(originalPath) || Promise.resolve();
+    const currentSave: Promise<void> = previousSave.then((): Promise<void> => this.doWriteFile(uri, content));
+    this.saveQueue.set(originalPath, currentSave);
+    await currentSave;
+  }
+
+  public async doWriteFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
+    const originalPath: string = uri.path;
     const translatedContent: string = Buffer.from(content).toString('utf-8');
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
     const sourceLanguage: string = this.configService.getLanguage();

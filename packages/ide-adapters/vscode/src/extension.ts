@@ -13,6 +13,7 @@ import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
 import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/semanticKeywordProvider';
 import { buildFileWatcherPattern } from './config/languages';
+import { COMMANDS } from './config/constants';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -112,37 +113,30 @@ export function activate(context: vscode.ExtensionContext): void {
     coreBridge.translationsPath, configService, languageDetector, outputChannel
   );
 
+  const SCHEMES: string[] = [TRANSLATED_SCHEME, READONLY_SCHEME];
+
   const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService, languageDetector);
-  const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
-    { scheme: TRANSLATED_SCHEME },
-    completionProvider
-  );
-  const completionRegistrationReadonly: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
-    { scheme: READONLY_SCHEME },
-    completionProvider
-  );
+  for (const scheme of SCHEMES) {
+    context.subscriptions.push(
+      vscode.languages.registerCompletionItemProvider({ scheme }, completionProvider)
+    );
+  }
 
   const hoverProviderInstance: HoverProvider = new HoverProvider(keywordMapService, languageDetector);
-  const hoverRegistration: vscode.Disposable = vscode.languages.registerHoverProvider(
-    { scheme: TRANSLATED_SCHEME },
-    hoverProviderInstance
-  );
-  const hoverRegistrationReadonly: vscode.Disposable = vscode.languages.registerHoverProvider(
-    { scheme: READONLY_SCHEME },
-    hoverProviderInstance
-  );
+  for (const scheme of SCHEMES) {
+    context.subscriptions.push(
+      vscode.languages.registerHoverProvider({ scheme }, hoverProviderInstance)
+    );
+  }
 
   const semanticKeywordProvider: SemanticKeywordProvider = new SemanticKeywordProvider(keywordMapService);
-  const semanticRegistration: vscode.Disposable = vscode.languages.registerDocumentSemanticTokensProvider(
-    { scheme: TRANSLATED_SCHEME },
-    semanticKeywordProvider,
-    SEMANTIC_TOKENS_LEGEND
-  );
-  const semanticRegistrationReadonly: vscode.Disposable = vscode.languages.registerDocumentSemanticTokensProvider(
-    { scheme: READONLY_SCHEME },
-    semanticKeywordProvider,
-    SEMANTIC_TOKENS_LEGEND
-  );
+  for (const scheme of SCHEMES) {
+    context.subscriptions.push(
+      vscode.languages.registerDocumentSemanticTokensProvider(
+        { scheme }, semanticKeywordProvider, SEMANTIC_TOKENS_LEGEND
+      )
+    );
+  }
 
   const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(buildFileWatcherPattern());
   const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
@@ -159,7 +153,7 @@ export function activate(context: vscode.ExtensionContext): void {
   outputChannel.appendLine('All services and providers initialized.');
 
   const toggleCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.toggle',
+    COMMANDS.TOGGLE,
     async (): Promise<void> => {
       const currentEnabled: boolean = configService.isEnabled();
       await configService.setEnabled(!currentEnabled);
@@ -174,7 +168,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const selectLanguageCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.selectLanguage',
+    COMMANDS.SELECT_LANGUAGE,
     async (): Promise<void> => {
       let languages: string[];
       try {
@@ -187,7 +181,8 @@ export function activate(context: vscode.ExtensionContext): void {
       });
       if (selected) {
         await configService.setLanguage(selected);
-        translatedContentProvider.invalidateAll();
+        // handleConfigChange in autoTranslateManager handles cache invalidation,
+        // dirty document check, and tab refresh
         outputChannel.appendLine(`Language set to: ${selected}`);
         vscode.window.showInformationMessage(`Babel TCC: Language set to ${selected}.`);
       }
@@ -195,7 +190,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const openTranslatedEditableCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.openTranslatedEditable',
+    COMMANDS.OPEN_TRANSLATED_EDITABLE,
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
@@ -221,7 +216,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const openTranslatedReadonlyCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.openTranslatedReadonly',
+    COMMANDS.OPEN_TRANSLATED_READONLY,
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
@@ -247,7 +242,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const showOriginalCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.showOriginal',
+    COMMANDS.SHOW_ORIGINAL,
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
@@ -272,12 +267,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(fileWatcherChangeHandler);
   context.subscriptions.push(providerRegistration);
   context.subscriptions.push(readonlyProviderRegistration);
-  context.subscriptions.push(completionRegistration);
-  context.subscriptions.push(completionRegistrationReadonly);
-  context.subscriptions.push(hoverRegistration);
-  context.subscriptions.push(hoverRegistrationReadonly);
-  context.subscriptions.push(semanticRegistration);
-  context.subscriptions.push(semanticRegistrationReadonly);
+  // completion, hover, semantic registrations are pushed in the for-loops above
   context.subscriptions.push(configService);
   context.subscriptions.push(keywordMapService);
   context.subscriptions.push(statusBar);
