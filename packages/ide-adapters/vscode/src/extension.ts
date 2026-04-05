@@ -13,6 +13,7 @@ import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
 import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/semanticKeywordProvider';
 import { buildFileWatcherPattern } from './config/languages';
+import { COMMANDS } from './config/constants';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -159,7 +160,7 @@ export function activate(context: vscode.ExtensionContext): void {
   outputChannel.appendLine('All services and providers initialized.');
 
   const toggleCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.toggle',
+    COMMANDS.TOGGLE,
     async (): Promise<void> => {
       const currentEnabled: boolean = configService.isEnabled();
       await configService.setEnabled(!currentEnabled);
@@ -174,7 +175,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const selectLanguageCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.selectLanguage',
+    COMMANDS.SELECT_LANGUAGE,
     async (): Promise<void> => {
       let languages: string[];
       try {
@@ -195,7 +196,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const openTranslatedEditableCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.openTranslatedEditable',
+    COMMANDS.OPEN_TRANSLATED_EDITABLE,
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
@@ -221,7 +222,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const openTranslatedReadonlyCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.openTranslatedReadonly',
+    COMMANDS.OPEN_TRANSLATED_READONLY,
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
@@ -247,7 +248,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   const showOriginalCommand: vscode.Disposable = vscode.commands.registerCommand(
-    'babel-tcc.showOriginal',
+    COMMANDS.SHOW_ORIGINAL,
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
