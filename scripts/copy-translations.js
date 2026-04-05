@@ -6,9 +6,14 @@ const DEST = path.join(VSCODE_DIR, 'translations');
 const FULL_REPO = path.resolve(__dirname, '..', '..', 'babel-tcc-translations');
 const TEST_DATA = path.resolve(__dirname, '..', 'packages', 'core', 'MultiLingualCode.Core.Tests', 'TestData', 'translations');
 
+const SKIP_DIRS = new Set(['.git', 'node_modules', 'scripts', '__pycache__']);
+
 function copyDir(src, dest) {
     fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src)) {
+        if (SKIP_DIRS.has(entry)) {
+            continue;
+        }
         const srcPath = path.join(src, entry);
         const destPath = path.join(dest, entry);
         if (fs.statSync(srcPath).isDirectory()) {
