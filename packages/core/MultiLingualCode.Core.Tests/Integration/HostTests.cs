@@ -490,4 +490,96 @@ public class HostTests : IDisposable
 
         Assert.False(result.IsSuccess);
     }
+
+    // === Error paths ===
+
+    [Fact]
+    public async Task RouteRequest_TranslateWithMalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("TranslateToNaturalLanguage",
+            "{\"targetLanguage\":\"pt-br\",\"sourceCode\":\"x\",\"fileExtension\":}");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task RouteRequest_TranslateFromWithMalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("TranslateFromNaturalLanguage",
+            "{\"sourceLanguage\":\"pt-br\",bad}");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task RouteRequest_ValidateSyntaxWithMalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("ValidateSyntax", "not json");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task HandleTranslateToNaturalLanguage_InvalidExtension_ReturnsError()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+        Host.TranslateRequest request = new Host.TranslateRequest
+        {
+            SourceCode = "code",
+            FileExtension = ".xyz",
+            TargetLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleTranslateToNaturalLanguage(orchestrator, request);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task HandleTranslateFromNaturalLanguage_InvalidExtension_ReturnsError()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+        Host.ReverseTranslateRequest request = new Host.ReverseTranslateRequest
+        {
+            TranslatedCode = "code",
+            FileExtension = ".xyz",
+            SourceLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleTranslateFromNaturalLanguage(orchestrator, request);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task HandleApplyTranslatedEdits_ValidInput_ReturnsSuccess()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+
+        Host.CoreResponse translated = await Host.Program.HandleTranslateToNaturalLanguage(orchestrator,
+            new Host.TranslateRequest { SourceCode = "public class Foo {}", FileExtension = ".cs", TargetLanguage = "pt-br" });
+        Assert.True(translated.Success);
+
+        Host.ApplyEditsRequest request = new Host.ApplyEditsRequest
+        {
+            OriginalCode = "public class Foo {}",
+            PreviousTranslatedCode = translated.Result,
+            EditedTranslatedCode = translated.Result,
+            FileExtension = ".cs",
+            SourceLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleApplyTranslatedEdits(orchestrator, request);
+
+        Assert.True(result.Success, result.Error);
+    }
+
+    [Fact]
+    public void HandleValidateSyntax_InvalidExtension_ReturnsError()
+    {
+        Host.CoreResponse result = Host.Program.HandleValidateSyntax(
+            new Host.ValidateRequest { SourceCode = "x", FileExtension = ".xyz" }, Registry);
+
+        Assert.False(result.Success);
+    }
 }
