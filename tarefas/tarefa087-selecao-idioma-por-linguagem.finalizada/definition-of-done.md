@@ -1,4 +1,4 @@
-# Definition of Done - Tarefa 085
+# Definition of Done - Tarefa 087
 
 - [ ] Configuracao `babel-tcc.languageOverrides` adicionada ao package.json
 - [ ] ConfigurationService retorna idioma correto por linguagem de programacao
