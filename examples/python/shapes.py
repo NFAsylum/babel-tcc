@@ -1,16 +1,16 @@
 import math
 
 
-class Shape: # tradu:Forma
-    def area(self): # tradu:area
+class Shape: # tradu[pt-br]:Forma
+    def area(self): # tradu[pt-br]:area
         raise NotImplementedError("Subclasses must implement area()")
 
-    def perimeter(self): # tradu:perimetro
+    def perimeter(self): # tradu[pt-br]:perimetro
         raise NotImplementedError("Subclasses must implement perimeter()")
 
 
-class Circle(Shape): # tradu:Circulo
-    def __init__(self, radius): # tradu:raio
+class Circle(Shape): # tradu[pt-br]:Circulo
+    def __init__(self, radius): # tradu[pt-br]:raio
         if radius <= 0:
             raise ValueError("Radius must be positive")
         self.radius = radius
@@ -25,8 +25,8 @@ class Circle(Shape): # tradu:Circulo
         return f"Circle(radius={self.radius})"
 
 
-class Rectangle(Shape): # tradu:Retangulo
-    def __init__(self, width, height): # tradu:largura,height:altura
+class Rectangle(Shape): # tradu[pt-br]:Retangulo
+    def __init__(self, width, height): # tradu[pt-br]:largura,height:altura
         if width <= 0 or height <= 0:
             raise ValueError("Dimensions must be positive")
         self.width = width
@@ -38,14 +38,14 @@ class Rectangle(Shape): # tradu:Retangulo
     def perimeter(self):
         return 2 * (self.width + self.height)
 
-    def is_square(self): # tradu:eh_quadrado
+    def is_square(self): # tradu[pt-br]:eh_quadrado
         return self.width == self.height
 
     def __str__(self):
         return f"Rectangle({self.width}x{self.height})"
 
 
-class Triangle(Shape): # tradu:Triangulo
+class Triangle(Shape): # tradu[pt-br]:Triangulo
     def __init__(self, a, b, c):
         if a + b <= c or a + c <= b or b + c <= a:
             raise ValueError("Invalid triangle sides")
@@ -60,14 +60,14 @@ class Triangle(Shape): # tradu:Triangulo
     def perimeter(self):
         return self.a + self.b + self.c
 
-    def is_equilateral(self): # tradu:eh_equilatero
+    def is_equilateral(self): # tradu[pt-br]:eh_equilatero
         return self.a == self.b == self.c
 
     def __str__(self):
         return f"Triangle({self.a}, {self.b}, {self.c})"
 
 
-def print_shapes_report(shapes): # tradu:imprimir_relatorio_formas,shapes:formas
+def print_shapes_report(shapes): # tradu[pt-br]:imprimir_relatorio_formas,shapes:formas
     for shape in shapes:
         print(f"{shape}")
         print(f"  Area: {shape.area():.2f}")
