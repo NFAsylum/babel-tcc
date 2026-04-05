@@ -81,7 +81,9 @@ public class Program
     public static async Task<int> RunSingleRequest(
         string method, string paramsJson, string translationsPath, string projectPath)
     {
-        CoreResponse coreResponse = await ExecuteMethod(method, paramsJson, translationsPath, projectPath);
+        LanguageRegistry registry = CreateRegistry();
+        Dictionary<string, TranslationOrchestrator> cache = new();
+        CoreResponse coreResponse = await RouteRequest(method, paramsJson, registry, translationsPath, projectPath, cache);
         string json = JsonSerializer.Serialize(coreResponse, JsonOptions);
         Console.WriteLine(json);
         return coreResponse.Success ? 0 : 1;
@@ -89,10 +91,10 @@ public class Program
 
     /// <summary>
     /// Persistent mode: read JSON Lines from stdin, process each request, respond on stdout.
-    /// The orchestrator is created once and reused across all requests.
     /// </summary>
     public static async Task<int> RunPersistent(string translationsPath, string projectPath)
     {
+        LanguageRegistry registry = CreateRegistry();
         Dictionary<string, TranslationOrchestrator> orchestratorCache = new();
         string? line;
 
@@ -121,8 +123,7 @@ public class Program
                     ? paramsElement.GetRawText()
                     : "{}";
 
-                response = await ExecuteMethodPersistent(
-                    requestMethod, requestParams, translationsPath, projectPath, orchestratorCache);
+                response = await RouteRequest(requestMethod, requestParams, registry, translationsPath, projectPath, orchestratorCache);
             }
             catch (Exception ex)
             {
@@ -138,12 +139,45 @@ public class Program
     }
 
     /// <summary>
-    /// Routes a method in persistent mode, reusing cached orchestrators by language code.
+    /// Unified request router. Routes method to handler using two-level dispatch:
+    /// Level 1 handles methods that don't need an orchestrator.
+    /// Level 2 creates orchestrator on demand for translation methods.
     /// </summary>
-    public static async Task<CoreResponse> ExecuteMethodPersistent(
-        string method, string paramsJson, string translationsPath, string projectPath,
+    public static async Task<CoreResponse> RouteRequest(
+        string method,
+        string paramsJson,
+        LanguageRegistry registry,
+        string translationsPath,
+        string projectPath,
         Dictionary<string, TranslationOrchestrator> orchestratorCache)
     {
+        // Level 1: methods that don't need an orchestrator
+        switch (method)
+        {
+            case "ValidateSyntax":
+                {
+                    OperationResultGeneric<ValidateRequest> parseResult = JsonFileReader.ReadFromString<ValidateRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    return HandleValidateSyntax(parseResult.Value, registry);
+                }
+
+            case "GetSupportedLanguages":
+                return HandleGetSupportedLanguages(translationsPath);
+        }
+
+        // Level 2: methods that need an orchestrator (created on demand)
+        OperationResultGeneric<string> langResult = ExtractLanguageCode(method, paramsJson);
+        if (!langResult.IsSuccess)
+        {
+            return new CoreResponse { Success = false, Error = langResult.ErrorMessage };
+        }
+
+        TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
+            orchestratorCache, langResult.Value, translationsPath, projectPath);
+
         switch (method)
         {
             case "TranslateToNaturalLanguage":
@@ -153,10 +187,7 @@ public class Program
                     {
                         return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
                     }
-                    TranslateRequest request = parseResult.Value;
-                    TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
-                        orchestratorCache, request.TargetLanguage, translationsPath, projectPath);
-                    return await HandleTranslateToNaturalLanguage(orchestrator, request);
+                    return await HandleTranslateToNaturalLanguage(orchestrator, parseResult.Value);
                 }
 
             case "TranslateFromNaturalLanguage":
@@ -166,20 +197,7 @@ public class Program
                     {
                         return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
                     }
-                    ReverseTranslateRequest request = parseResult.Value;
-                    TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
-                        orchestratorCache, request.SourceLanguage, translationsPath, projectPath);
-                    return await HandleTranslateFromNaturalLanguage(orchestrator, request);
-                }
-
-            case "ValidateSyntax":
-                {
-                    OperationResultGeneric<ValidateRequest> parseResult = JsonFileReader.ReadFromString<ValidateRequest>(paramsJson, JsonOptions);
-                    if (!parseResult.IsSuccess)
-                    {
-                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
-                    }
-                    return HandleValidateSyntax(parseResult.Value);
+                    return await HandleTranslateFromNaturalLanguage(orchestrator, parseResult.Value);
                 }
 
             case "ApplyTranslatedEdits":
@@ -189,17 +207,40 @@ public class Program
                     {
                         return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
                     }
-                    ApplyEditsRequest request = parseResult.Value;
-                    TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
-                        orchestratorCache, request.SourceLanguage, translationsPath, projectPath);
-                    return await HandleApplyTranslatedEdits(orchestrator, request);
+                    return await HandleApplyTranslatedEdits(orchestrator, parseResult.Value);
                 }
-
-            case "GetSupportedLanguages":
-                return HandleGetSupportedLanguages(translationsPath);
 
             default:
                 return new CoreResponse { Success = false, Error = $"Unknown method: {method}" };
+        }
+    }
+
+    /// <summary>
+    /// Extracts the language code from a JSON request based on the method name.
+    /// </summary>
+    public static OperationResultGeneric<string> ExtractLanguageCode(string method, string paramsJson)
+    {
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(paramsJson);
+            JsonElement root = doc.RootElement;
+
+            string propertyName = method == "TranslateToNaturalLanguage" ? "targetLanguage" : "sourceLanguage";
+
+            if (root.TryGetProperty(propertyName, out JsonElement langElement))
+            {
+                string languageCode = langElement.GetString() ?? "";
+                if (!string.IsNullOrEmpty(languageCode))
+                {
+                    return OperationResultGeneric<string>.Ok(languageCode);
+                }
+            }
+
+            return OperationResultGeneric<string>.Fail($"Missing or empty '{propertyName}' in request params");
+        }
+        catch (JsonException ex)
+        {
+            return OperationResultGeneric<string>.Fail($"Invalid JSON in params: {ex.Message}");
         }
     }
 
@@ -229,56 +270,6 @@ public class Program
         registry.RegisterAdapter(new CSharpAdapter());
         registry.RegisterAdapter(new PythonAdapter());
         return registry;
-    }
-
-    /// <summary>
-    /// Routes a method name to its handler, deserializes parameters, and returns the response.
-    /// </summary>
-    public static async Task<CoreResponse> ExecuteMethod(
-        string method, string paramsJson, string translationsPath, string projectPath)
-    {
-        switch (method)
-        {
-            case "TranslateToNaturalLanguage":
-                {
-                    OperationResultGeneric<TranslateRequest> parseResult = JsonFileReader.ReadFromString<TranslateRequest>(paramsJson, JsonOptions);
-                    if (!parseResult.IsSuccess)
-                    {
-                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
-                    }
-                    TranslateRequest request = parseResult.Value;
-                    TranslationOrchestrator orchestrator = CreateOrchestrator(request.TargetLanguage, translationsPath, projectPath);
-                    return await HandleTranslateToNaturalLanguage(orchestrator, request);
-                }
-
-            case "TranslateFromNaturalLanguage":
-                {
-                    OperationResultGeneric<ReverseTranslateRequest> parseResult = JsonFileReader.ReadFromString<ReverseTranslateRequest>(paramsJson, JsonOptions);
-                    if (!parseResult.IsSuccess)
-                    {
-                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
-                    }
-                    ReverseTranslateRequest request = parseResult.Value;
-                    TranslationOrchestrator orchestrator = CreateOrchestrator(request.SourceLanguage, translationsPath, projectPath);
-                    return await HandleTranslateFromNaturalLanguage(orchestrator, request);
-                }
-
-            case "ValidateSyntax":
-                {
-                    OperationResultGeneric<ValidateRequest> parseResult = JsonFileReader.ReadFromString<ValidateRequest>(paramsJson, JsonOptions);
-                    if (!parseResult.IsSuccess)
-                    {
-                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
-                    }
-                    return HandleValidateSyntax(parseResult.Value);
-                }
-
-            case "GetSupportedLanguages":
-                return HandleGetSupportedLanguages(translationsPath);
-
-            default:
-                return new CoreResponse { Success = false, Error = $"Unknown method: {method}" };
-        }
     }
 
     /// <summary>
@@ -353,10 +344,8 @@ public class Program
     /// <summary>
     /// Handles validating source code syntax and returning diagnostics.
     /// </summary>
-    public static CoreResponse HandleValidateSyntax(ValidateRequest request)
+    public static CoreResponse HandleValidateSyntax(ValidateRequest request, LanguageRegistry registry)
     {
-        LanguageRegistry registry = CreateRegistry();
-
         OperationResultGeneric<ILanguageAdapter> adapterResult = registry.GetAdapter(request.FileExtension);
         if (!adapterResult.IsSuccess)
         {
