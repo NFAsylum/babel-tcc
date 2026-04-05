@@ -75,7 +75,8 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     const originalPath: string = uri.path;
     const translatedContent: string = Buffer.from(content).toString('utf-8');
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
-    const sourceLanguage: string = this.configService.getLanguage();
+    const programmingLanguage: string = this.languageDetector.detectLanguage(originalPath) || '';
+    const sourceLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
 
     this.outputChannel.appendLine(`TranslatedContentProvider: reverse translating ${originalPath}`);
 
@@ -94,7 +95,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       await vscode.workspace.fs.writeFile(originalUri, encoder.encode(originalCode));
       setTimeout((): void => { this.writingPaths.delete(originalPath); }, 500);
 
-      const targetLanguage: string = this.configService.getLanguage();
+      const targetLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
       const updatedOriginal: string = await this.readOriginalFile(originalPath);
       const freshTranslation: string = await this.translateContent(
         updatedOriginal, fileExtension, targetLanguage
@@ -173,7 +174,8 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     }
 
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
-    const targetLanguage: string = this.configService.getLanguage();
+    const programmingLanguage: string = this.languageDetector.detectLanguage(originalPath) || '';
+    const targetLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
 
     const translated: string = await this.translateContent(originalContent, fileExtension, targetLanguage);
     this.cache.set(cacheKey, translated);
@@ -226,10 +228,11 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   }
 
   /**
-   * Builds a cache key combining the file path and the current target language.
+   * Builds a cache key combining the file path and the target language for that file's programming language.
    */
   public buildCacheKey(filePath: string): string {
-    const language: string = this.configService.getLanguage();
+    const programmingLanguage: string = this.languageDetector.detectLanguage(filePath) || '';
+    const language: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
     return `${filePath}::${language}`;
   }
 

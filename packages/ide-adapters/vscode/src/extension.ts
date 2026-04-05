@@ -92,7 +92,7 @@ export function activate(context: vscode.ExtensionContext): void {
   translatedContentProvider = new TranslatedContentProvider(
     coreBridge, languageDetector, configService, outputChannel
   );
-  statusBar = new StatusBar(configService);
+  statusBar = new StatusBar(configService, languageDetector);
   autoTranslateManager = new AutoTranslateManager(
     configService, languageDetector, translatedContentProvider, outputChannel
   );

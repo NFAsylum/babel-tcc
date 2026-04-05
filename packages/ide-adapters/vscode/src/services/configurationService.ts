@@ -4,6 +4,7 @@ const CONFIG_SECTION = 'babel-tcc';
 const KEY_ENABLED = 'enabled';
 const KEY_LANGUAGE = 'language';
 const KEY_READONLY = 'readonly';
+const KEY_LANGUAGE_OVERRIDES = 'languageOverrides';
 
 /** Manages VS Code workspace configuration for the Babel TCC extension. */
 export class ConfigurationService implements vscode.Disposable {
@@ -40,6 +41,22 @@ export class ConfigurationService implements vscode.Disposable {
   public getLanguage(): string {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
     return config.get<string>(KEY_LANGUAGE, 'pt-br');
+  }
+
+  /**
+   * Returns the target language for a specific programming language.
+   * Uses languageOverrides if set, otherwise falls back to the global language.
+   * @param programmingLanguage - The programming language name (e.g., "CSharp", "Python").
+   * @returns The language code for that programming language.
+   */
+  public getLanguageForProgrammingLanguage(programmingLanguage: string): string {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    const overrides: Record<string, string> = config.get<Record<string, string>>(KEY_LANGUAGE_OVERRIDES, {});
+    const override: string | undefined = overrides[programmingLanguage];
+    if (override) {
+      return override;
+    }
+    return this.getLanguage();
   }
 
   /**
