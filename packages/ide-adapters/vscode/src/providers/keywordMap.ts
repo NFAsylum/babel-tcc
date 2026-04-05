@@ -50,7 +50,7 @@ export class KeywordMapService {
       return {};
     }
 
-    const language: string = this.configService.getLanguage();
+    const language: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
     const progLangKey: string = programmingLanguage.toLowerCase();
 
     if (language !== this.cachedLanguage || progLangKey !== this.cachedProgrammingLanguage) {

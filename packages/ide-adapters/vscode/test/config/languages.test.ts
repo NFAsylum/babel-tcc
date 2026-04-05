@@ -74,5 +74,23 @@ describe('languages config', () => {
         expect(fs.existsSync(grammarFile)).toBe(true);
       }
     });
+
+    it('should have languageOverrides property for each supported language', () => {
+      const contributes: Record<string, unknown> = (packageJson as Record<string, Record<string, unknown>>)['contributes'];
+      const configuration: Record<string, unknown> = (contributes['configuration'] as Record<string, unknown>);
+      const properties: Record<string, unknown> = (configuration['properties'] as Record<string, unknown>);
+      const overridesConfig: Record<string, unknown> = (properties['babel-tcc.languageOverrides'] as Record<string, unknown>);
+      const overrideProperties: Record<string, unknown> = (overridesConfig['properties'] as Record<string, unknown>);
+
+      for (const lang of SUPPORTED_LANGUAGES) {
+        expect(overrideProperties).toHaveProperty(lang.name);
+      }
+
+      const overrideKeys: string[] = Object.keys(overrideProperties);
+      const supportedNames: string[] = SUPPORTED_LANGUAGES.map((l) => l.name);
+      for (const key of overrideKeys) {
+        expect(supportedNames).toContain(key);
+      }
+    });
   });
 });

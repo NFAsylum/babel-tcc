@@ -92,9 +92,11 @@
           "type": "object",
           "default": {},
           "description": "Override target language per programming language. Keys are programming language names (e.g. 'CSharp', 'Python'), values are language codes (e.g. 'pt-br', 'es-es'). Falls back to babel-tcc.language if no override is set.",
-          "additionalProperties": {
-            "type": "string"
-          }
+          "properties": {
+            "CSharp": { "type": "string", "description": "Target language for C# files" },
+            "Python": { "type": "string", "description": "Target language for Python files" }
+          },
+          "additionalProperties": false
         }
       }
     },

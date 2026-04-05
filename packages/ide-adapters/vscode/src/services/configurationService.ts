@@ -52,9 +52,11 @@ export class ConfigurationService implements vscode.Disposable {
   public getLanguageForProgrammingLanguage(programmingLanguage: string): string {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
     const overrides: Record<string, string> = config.get<Record<string, string>>(KEY_LANGUAGE_OVERRIDES, {});
-    const override: string | undefined = overrides[programmingLanguage];
-    if (override) {
-      return override;
+    const lowerKey: string = programmingLanguage.toLowerCase();
+    for (const [key, value] of Object.entries(overrides)) {
+      if (key.toLowerCase() === lowerKey && value) {
+        return value;
+      }
     }
     return this.getLanguage();
   }
@@ -75,6 +77,22 @@ export class ConfigurationService implements vscode.Disposable {
   public async setLanguage(language: string): Promise<void> {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
     await config.update(KEY_LANGUAGE, language, vscode.ConfigurationTarget.Global);
+  }
+
+  /**
+   * Sets a language override for a specific programming language.
+   * @param programmingLanguage - The programming language name (e.g., "CSharp").
+   * @param language - The target language code, or undefined to remove the override.
+   */
+  public async setLanguageOverride(programmingLanguage: string, language: string | undefined): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    const overrides: Record<string, string> = { ...config.get<Record<string, string>>(KEY_LANGUAGE_OVERRIDES, {}) };
+    if (language) {
+      overrides[programmingLanguage] = language;
+    } else {
+      delete overrides[programmingLanguage];
+    }
+    await config.update(KEY_LANGUAGE_OVERRIDES, overrides, vscode.ConfigurationTarget.Global);
   }
 
   /** Returns whether translated views should open in readonly mode. Defaults to false. */
