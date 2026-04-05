@@ -118,17 +118,23 @@ export class AutoTranslateManager implements vscode.Disposable {
     const wasReadonly: boolean = this.previousReadonly;
 
     this.previousEnabled = currentEnabled;
-    this.previousLanguage = currentLanguage;
     this.previousReadonly = currentReadonly;
 
     if (wasEnabled && !currentEnabled) {
+      this.previousLanguage = currentLanguage;
       await this.replaceTranslatedWithOriginals();
     } else if (!wasEnabled && currentEnabled) {
+      this.previousLanguage = currentLanguage;
       await this.replaceOriginalsWithTranslated();
     } else if (currentEnabled && currentLanguage !== previousLanguage) {
-      await this.refreshTranslatedTabs();
-    } else if (currentEnabled && currentReadonly !== wasReadonly) {
-      await this.switchScheme(wasReadonly ? READONLY_SCHEME : TRANSLATED_SCHEME);
+      // Update previousLanguage AFTER refreshTranslatedTabs so that cancel can revert
+      await this.refreshTranslatedTabs(previousLanguage);
+      this.previousLanguage = this.configService.getLanguage();
+    } else {
+      this.previousLanguage = currentLanguage;
+      if (currentEnabled && currentReadonly !== wasReadonly) {
+        await this.switchScheme(wasReadonly ? READONLY_SCHEME : TRANSLATED_SCHEME);
+      }
     }
   }
 
@@ -210,7 +216,7 @@ export class AutoTranslateManager implements vscode.Disposable {
   }
 
   /** Refreshes all translated tabs for a new language, handling unsaved edits. */
-  public async refreshTranslatedTabs(): Promise<void> {
+  public async refreshTranslatedTabs(oldLanguage: string): Promise<void> {
     const translatedTabs: TabInfo[] = [
       ...this.findTabsByScheme(TRANSLATED_SCHEME),
       ...this.findTabsByScheme(READONLY_SCHEME)
@@ -232,7 +238,7 @@ export class AutoTranslateManager implements vscode.Disposable {
 
       if (choice === 'Cancel' || choice === undefined) {
         // Revert language config to previous
-        await this.configService.setLanguage(this.previousLanguage);
+        await this.configService.setLanguage(oldLanguage);
         this.outputChannel.appendLine('AutoTranslate: language switch cancelled by user');
         return;
       }
