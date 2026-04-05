@@ -30,6 +30,7 @@ export class KeywordMapService {
     this.configSubscription = configService.onDidChangeConfiguration((): void => {
       this.cache.clear();
       this.identifierCache.clear();
+      this.warmCache();
     });
   }
 
