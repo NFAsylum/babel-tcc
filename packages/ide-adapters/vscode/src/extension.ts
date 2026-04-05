@@ -112,37 +112,30 @@ export function activate(context: vscode.ExtensionContext): void {
     coreBridge.translationsPath, configService, languageDetector, outputChannel
   );
 
+  const SCHEMES: string[] = [TRANSLATED_SCHEME, READONLY_SCHEME];
+
   const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService, languageDetector);
-  const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
-    { scheme: TRANSLATED_SCHEME },
-    completionProvider
-  );
-  const completionRegistrationReadonly: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
-    { scheme: READONLY_SCHEME },
-    completionProvider
-  );
+  for (const scheme of SCHEMES) {
+    context.subscriptions.push(
+      vscode.languages.registerCompletionItemProvider({ scheme }, completionProvider)
+    );
+  }
 
   const hoverProviderInstance: HoverProvider = new HoverProvider(keywordMapService, languageDetector);
-  const hoverRegistration: vscode.Disposable = vscode.languages.registerHoverProvider(
-    { scheme: TRANSLATED_SCHEME },
-    hoverProviderInstance
-  );
-  const hoverRegistrationReadonly: vscode.Disposable = vscode.languages.registerHoverProvider(
-    { scheme: READONLY_SCHEME },
-    hoverProviderInstance
-  );
+  for (const scheme of SCHEMES) {
+    context.subscriptions.push(
+      vscode.languages.registerHoverProvider({ scheme }, hoverProviderInstance)
+    );
+  }
 
   const semanticKeywordProvider: SemanticKeywordProvider = new SemanticKeywordProvider(keywordMapService);
-  const semanticRegistration: vscode.Disposable = vscode.languages.registerDocumentSemanticTokensProvider(
-    { scheme: TRANSLATED_SCHEME },
-    semanticKeywordProvider,
-    SEMANTIC_TOKENS_LEGEND
-  );
-  const semanticRegistrationReadonly: vscode.Disposable = vscode.languages.registerDocumentSemanticTokensProvider(
-    { scheme: READONLY_SCHEME },
-    semanticKeywordProvider,
-    SEMANTIC_TOKENS_LEGEND
-  );
+  for (const scheme of SCHEMES) {
+    context.subscriptions.push(
+      vscode.languages.registerDocumentSemanticTokensProvider(
+        { scheme }, semanticKeywordProvider, SEMANTIC_TOKENS_LEGEND
+      )
+    );
+  }
 
   const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(buildFileWatcherPattern());
   const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
@@ -272,12 +265,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(fileWatcherChangeHandler);
   context.subscriptions.push(providerRegistration);
   context.subscriptions.push(readonlyProviderRegistration);
-  context.subscriptions.push(completionRegistration);
-  context.subscriptions.push(completionRegistrationReadonly);
-  context.subscriptions.push(hoverRegistration);
-  context.subscriptions.push(hoverRegistrationReadonly);
-  context.subscriptions.push(semanticRegistration);
-  context.subscriptions.push(semanticRegistrationReadonly);
+  // completion, hover, semantic registrations are pushed in the for-loops above
   context.subscriptions.push(configService);
   context.subscriptions.push(keywordMapService);
   context.subscriptions.push(statusBar);
