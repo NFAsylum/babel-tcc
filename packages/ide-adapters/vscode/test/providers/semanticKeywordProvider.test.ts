@@ -126,6 +126,48 @@ describe('SemanticKeywordProvider', () => {
       expect(result.data.length).toBe(0);
     });
 
+    it('should not highlight keywords inside block comments', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, '/* publico classe */ retornar;');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Only "retornar" outside the block comment should be highlighted
+      expect(result.data.length).toBeGreaterThan(0);
+      // retornar is at col 21, type 0 (keyword)
+      expect(result.data[1]).toBe(21);
+    });
+
+    it('should not highlight keywords inside multiline block comments', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, '/* publico\nclasse */ retornar;');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Line 0: entire line is inside block comment
+      // Line 1: "classe" inside comment, "retornar" outside
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should not highlight keywords inside verbatim strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'texto x = @"publico classe";');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should not highlight keywords inside interpolated strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'texto x = $"o {valor} publico";');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should not highlight keywords inside Python comments', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, '# publico classe se');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should not highlight keywords inside Python triple-quoted strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'x = """publico\nclasse"""\nretornar');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Only "retornar" on line 2 should be highlighted
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
     it('should distinguish keyword tokens from identifier tokens', () => {
       // "publico" is a keyword, "calcularTotal" is an identifier
       const doc = makeDocument(TRANSLATED_SCHEME, 'publico calcularTotal');

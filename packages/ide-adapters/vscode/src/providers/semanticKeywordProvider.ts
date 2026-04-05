@@ -9,55 +9,151 @@ const TOKEN_MODIFIERS: string[] = [];
 export const SEMANTIC_TOKENS_LEGEND = new vscode.SemanticTokensLegend(TOKEN_TYPES, TOKEN_MODIFIERS);
 
 /**
- * Checks if a position in a line is inside a string or comment.
- * Scans from the start of the line tracking quote and comment state.
+ * Scans a line tracking string/comment state. Returns the state after the line ends
+ * and whether each position is inside a string or comment.
+ * Handles: line comments (// and #), block comments, regular/verbatim/interpolated strings,
+ * and Python triple-quoted strings. Tracks state across lines for multiline constructs.
  */
-function isInsideStringOrComment(text: string, position: number): boolean {
-  let inSingleQuote = false;
-  let inDoubleQuote = false;
+function scanLine(text: string, inBlockComment: boolean, inBlockString: boolean, blockStringDelimiter: string): {
+  insideAt: boolean[];
+  outBlockComment: boolean;
+  outBlockString: boolean;
+  outBlockStringDelimiter: string;
+} {
+  const insideAt: boolean[] = new Array<boolean>(text.length).fill(false);
+  let inString = false;
   let inLineComment = false;
+  let stringEscapeNext = false;
+  let verbatim = false;
 
-  for (let i = 0; i < position && i < text.length; i++) {
-    if (inLineComment) {
-      return true;
-    }
-
+  for (let i = 0; i < text.length; i++) {
     const ch: string = text[i];
     const next: string = i + 1 < text.length ? text[i + 1] : '';
+    const next2: string = i + 2 < text.length ? text[i + 2] : '';
 
-    if (!inSingleQuote && !inDoubleQuote) {
-      if (ch === '/' && next === '/') {
-        inLineComment = true;
-        continue;
+    if (inBlockString) {
+      insideAt[i] = true;
+      if (ch + next + next2 === blockStringDelimiter) {
+        insideAt[i + 1] = true;
+        insideAt[i + 2] = true;
+        i += 2;
+        inBlockString = false;
+        blockStringDelimiter = '';
       }
-      if (ch === '"') {
-        inDoubleQuote = true;
-        continue;
-      }
-      if (ch === '\'') {
-        inSingleQuote = true;
-        continue;
-      }
-    } else if (inDoubleQuote) {
-      if (ch === '\\') {
+      continue;
+    }
+
+    if (inBlockComment) {
+      insideAt[i] = true;
+      if (ch === '*' && next === '/') {
+        insideAt[i + 1] = true;
         i++;
+        inBlockComment = false;
+      }
+      continue;
+    }
+
+    if (inLineComment) {
+      insideAt[i] = true;
+      continue;
+    }
+
+    if (inString) {
+      insideAt[i] = true;
+      if (stringEscapeNext) {
+        stringEscapeNext = false;
         continue;
       }
-      if (ch === '"') {
-        inDoubleQuote = false;
+      if (verbatim) {
+        if (ch === '"' && next === '"') {
+          insideAt[i + 1] = true;
+          i++;
+          continue;
+        }
+        if (ch === '"') {
+          inString = false;
+          verbatim = false;
+        }
+      } else {
+        if (ch === '\\') {
+          stringEscapeNext = true;
+          continue;
+        }
+        if (ch === '"') {
+          inString = false;
+        }
       }
-    } else if (inSingleQuote) {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === '\'') {
-        inSingleQuote = false;
-      }
+      continue;
+    }
+
+    // Not inside anything — detect starts
+    if (ch === '/' && next === '/') {
+      inLineComment = true;
+      insideAt[i] = true;
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      inBlockComment = true;
+      insideAt[i] = true;
+      insideAt[i + 1] = true;
+      i++;
+      continue;
+    }
+    if (ch === '#') {
+      inLineComment = true;
+      insideAt[i] = true;
+      continue;
+    }
+
+    // Triple-quoted strings (Python)
+    if ((ch === '"' && next === '"' && next2 === '"') || (ch === '\'' && next === '\'' && next2 === '\'')) {
+      const delim: string = ch + next + next2;
+      inBlockString = true;
+      blockStringDelimiter = delim;
+      insideAt[i] = true;
+      insideAt[i + 1] = true;
+      insideAt[i + 2] = true;
+      i += 2;
+      continue;
+    }
+
+    // Verbatim/interpolated strings: @", $", $@", @$"
+    if ((ch === '@' || ch === '$') && next === '"') {
+      inString = true;
+      verbatim = ch === '@';
+      insideAt[i] = true;
+      insideAt[i + 1] = true;
+      i++;
+      continue;
+    }
+    if ((ch === '$' && next === '@' && next2 === '"') || (ch === '@' && next === '$' && next2 === '"')) {
+      inString = true;
+      verbatim = true;
+      insideAt[i] = true;
+      insideAt[i + 1] = true;
+      insideAt[i + 2] = true;
+      i += 2;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      insideAt[i] = true;
+      continue;
+    }
+    if (ch === '\'') {
+      inString = true;
+      insideAt[i] = true;
+      continue;
     }
   }
 
-  return inSingleQuote || inDoubleQuote || inLineComment;
+  return {
+    insideAt,
+    outBlockComment: inBlockComment,
+    outBlockString: inBlockString,
+    outBlockStringDelimiter: blockStringDelimiter,
+  };
 }
 
 /** Provides semantic tokens for translated keywords, enabling dynamic syntax highlighting. */
@@ -91,8 +187,17 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
       return builder.build();
     }
 
+    let inBlockComment = false;
+    let inBlockString = false;
+    let blockStringDelimiter = '';
+
     for (let line = 0; line < document.lineCount; line++) {
       const text: string = document.lineAt(line).text;
+      const scan: ReturnType<typeof scanLine> = scanLine(text, inBlockComment, inBlockString, blockStringDelimiter);
+      inBlockComment = scan.outBlockComment;
+      inBlockString = scan.outBlockString;
+      blockStringDelimiter = scan.outBlockStringDelimiter;
+
       const wordRegex: RegExp = /\b[a-zA-ZÀ-ÿ_][a-zA-ZÀ-ÿ0-9_]*\b/g;
       let match: RegExpExecArray | null;
 
@@ -100,7 +205,7 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
         const word: string = match[0];
         const col: number = match.index;
 
-        if (isInsideStringOrComment(text, col)) {
+        if (scan.insideAt[col]) {
           continue;
         }
 
