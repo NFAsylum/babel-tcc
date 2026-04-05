@@ -249,6 +249,25 @@ export class CoreBridge {
     return response.result;
   }
 
+  public async getKeywordMap(
+    fileExtension: string,
+    targetLanguage: string
+  ): Promise<Record<string, string>> {
+    const params: Record<string, string> = { fileExtension, targetLanguage };
+    const response: CoreResponse = await this.invokeCore('GetKeywordMap', params);
+    const parsed: Record<string, string> = JSON.parse(response.result) as Record<string, string>;
+    return parsed;
+  }
+
+  public async getIdentifierMap(
+    targetLanguage: string
+  ): Promise<Record<string, string>> {
+    const params: Record<string, string> = { targetLanguage };
+    const response: CoreResponse = await this.invokeCore('GetIdentifierMap', params);
+    const parsed: Record<string, string> = JSON.parse(response.result) as Record<string, string>;
+    return parsed;
+  }
+
   public async validateSyntax(
     sourceCode: string,
     fileExtension: string

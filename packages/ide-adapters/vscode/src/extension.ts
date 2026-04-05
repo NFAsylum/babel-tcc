@@ -109,8 +109,9 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   keywordMapService = new KeywordMapService(
-    coreBridge.translationsPath, configService, languageDetector, outputChannel
+    coreBridge, configService, languageDetector, outputChannel
   );
+  keywordMapService.warmCache();
 
   const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService, languageDetector);
   const completionRegistration: vscode.Disposable = vscode.languages.registerCompletionItemProvider(
