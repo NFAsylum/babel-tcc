@@ -99,6 +99,7 @@ export class KeywordMapService {
       } catch (err: unknown) {
         const message: string = err instanceof Error ? err.message : String(err);
         this.outputChannel.appendLine(`KeywordMapService: failed to load keywords for ${programmingLanguage}/${language} - ${message}`);
+        vscode.window.showWarningMessage('Babel TCC: Failed to load translations. Completion and highlighting may not work.');
       }
     }
 
@@ -111,6 +112,7 @@ export class KeywordMapService {
       } catch (err: unknown) {
         const message: string = err instanceof Error ? err.message : String(err);
         this.outputChannel.appendLine(`KeywordMapService: failed to load identifiers for ${language} - ${message}`);
+        vscode.window.showWarningMessage('Babel TCC: Failed to load identifier translations. Highlighting may not work.');
       }
     }
   }
