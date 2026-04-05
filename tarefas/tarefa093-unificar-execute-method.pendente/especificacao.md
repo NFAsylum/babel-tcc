@@ -42,9 +42,13 @@ public static async Task<CoreResponse> RouteRequest(
     }
 
     // Nivel 2: metodos que precisam de orchestrator (criado sob demanda)
-    string languageCode = ExtractLanguageCode(method, paramsJson);
+    OperationResultGeneric<string> langResult = ExtractLanguageCode(method, paramsJson);
+    if (!langResult.IsSuccess)
+    {
+        return new CoreResponse { Success = false, Error = langResult.ErrorMessage };
+    }
     TranslationOrchestrator orchestrator = GetOrCreateOrchestrator(
-        orchestratorCache, languageCode, translationsPath, projectPath);
+        orchestratorCache, langResult.Value, translationsPath, projectPath);
 
     switch (method)
     {
