@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { KeywordMapService } from './keywordMap';
 import { isTranslatedScheme } from './translatedContentProvider';
 
-const TOKEN_TYPES = ['keyword'];
+const TOKEN_TYPES = ['keyword', 'variable'];
 const TOKEN_MODIFIERS: string[] = [];
 
 /** Semantic tokens legend used for keyword highlighting in translated documents. */
@@ -84,7 +84,10 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
     const keywordMap: Record<string, string> = this.keywordMapService.getMap(document.uri.path);
     const translatedKeywords: Set<string> = new Set(Object.keys(keywordMap));
 
-    if (translatedKeywords.size === 0) {
+    const identifierMap: Record<string, string> = this.keywordMapService.getIdentifierMap(document.uri.path);
+    const translatedIdentifiers: Set<string> = new Set(Object.keys(identifierMap));
+
+    if (translatedKeywords.size === 0 && translatedIdentifiers.size === 0) {
       return builder.build();
     }
 
@@ -97,8 +100,14 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
         const word: string = match[0];
         const col: number = match.index;
 
-        if (translatedKeywords.has(word.toLowerCase()) && !isInsideStringOrComment(text, col)) {
+        if (isInsideStringOrComment(text, col)) {
+          continue;
+        }
+
+        if (translatedKeywords.has(word.toLowerCase())) {
           builder.push(line, col, word.length, 0);
+        } else if (translatedIdentifiers.has(word)) {
+          builder.push(line, col, word.length, 1);
         }
       }
     }
