@@ -187,7 +187,8 @@ export function activate(context: vscode.ExtensionContext): void {
       });
       if (selected) {
         await configService.setLanguage(selected);
-        translatedContentProvider.invalidateAll();
+        // handleConfigChange in autoTranslateManager handles cache invalidation,
+        // dirty document check, and tab refresh
         outputChannel.appendLine(`Language set to: ${selected}`);
         vscode.window.showInformationMessage(`Babel TCC: Language set to ${selected}.`);
       }

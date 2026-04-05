@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ConfigurationService } from '../services/configurationService';
 import { LanguageDetector } from '../services/languageDetector';
-import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME } from './translatedContentProvider';
+import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './translatedContentProvider';
 
 /** Manages automatic translation of .cs tabs based on the enabled/language configuration. */
 export class AutoTranslateManager implements vscode.Disposable {
@@ -209,19 +209,64 @@ export class AutoTranslateManager implements vscode.Disposable {
     this.outputChannel.appendLine('AutoTranslate: replaced all .cs tabs with translated views');
   }
 
-  /** Invalidates cache and fires change events to refresh all open translated tabs. */
+  /** Refreshes all translated tabs for a new language, handling unsaved edits. */
   public async refreshTranslatedTabs(): Promise<void> {
     const translatedTabs: TabInfo[] = [
       ...this.findTabsByScheme(TRANSLATED_SCHEME),
       ...this.findTabsByScheme(READONLY_SCHEME)
     ];
 
+    // Check for unsaved edits in translated documents
+    const dirtyDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(
+      (doc: vscode.TextDocument): boolean =>
+        isTranslatedScheme(doc.uri.scheme) && doc.isDirty
+    );
+
+    if (dirtyDocs.length > 0) {
+      const choice: string | undefined = await vscode.window.showWarningMessage(
+        `Babel TCC: ${dirtyDocs.length} translated file(s) have unsaved changes. What would you like to do before switching languages?`,
+        'Save and switch',
+        'Discard and switch',
+        'Cancel'
+      );
+
+      if (choice === 'Cancel' || choice === undefined) {
+        // Revert language config to previous
+        await this.configService.setLanguage(this.previousLanguage);
+        this.outputChannel.appendLine('AutoTranslate: language switch cancelled by user');
+        return;
+      }
+
+      if (choice === 'Save and switch') {
+        for (const doc of dirtyDocs) {
+          try {
+            await doc.save();
+          } catch (error: unknown) {
+            const message: string = error instanceof Error ? error.message : String(error);
+            this.outputChannel.appendLine(`AutoTranslate: failed to save ${doc.uri.path} - ${message}`);
+          }
+        }
+      }
+      // 'Discard and switch' — just proceed without saving
+    }
+
+    // Close translated tabs and reopen with new language
     this.contentProvider.invalidateAll();
 
-    for (const { tab } of translatedTabs) {
-      this.contentProvider.invalidateCache(
-        (tab.input as vscode.TabInputText).uri
-      );
+    for (const { tab, path, viewColumn } of translatedTabs) {
+      try {
+        // Close old tab
+        await vscode.window.tabGroups.close(tab);
+
+        // Reopen with new language translation
+        const scheme: string = this.getActiveScheme();
+        const newUri: vscode.Uri = vscode.Uri.parse(`${scheme}:${path}`);
+        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(newUri);
+        await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
+      } catch (error: unknown) {
+        const message: string = error instanceof Error ? error.message : String(error);
+        this.outputChannel.appendLine(`AutoTranslate: failed to refresh tab - ${message}`);
+      }
     }
 
     this.outputChannel.appendLine('AutoTranslate: refreshed all translated tabs for new language');

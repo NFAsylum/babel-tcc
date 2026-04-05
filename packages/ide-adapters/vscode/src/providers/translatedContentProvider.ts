@@ -21,7 +21,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public configService: ConfigurationService;
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
-  public cacheLanguage: Map<string, string> = new Map<string, string>();
   public writingPaths: Set<string> = new Set<string>();
   public refreshingPaths: Set<string> = new Set<string>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
@@ -64,9 +63,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
     const translatedContent: string = Buffer.from(content).toString('utf-8');
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
-    // Use the language that was used to translate this content, not the current config language.
-    // If the user switched languages, the editor may still have content in the old language.
-    const sourceLanguage: string = this.cacheLanguage.get(originalPath) || this.configService.getLanguage();
+    const sourceLanguage: string = this.configService.getLanguage();
 
     this.outputChannel.appendLine(`TranslatedContentProvider: reverse translating ${originalPath}`);
 
@@ -92,7 +89,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       );
 
       this.cache.set(cacheKey, freshTranslation);
-      this.cacheLanguage.set(originalPath, targetLanguage);
 
       setTimeout(async (): Promise<void> => {
         try {
@@ -169,7 +165,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
     const translated: string = await this.translateContent(originalContent, fileExtension, targetLanguage);
     this.cache.set(cacheKey, translated);
-    this.cacheLanguage.set(originalPath, targetLanguage);
     return translated;
   }
 
@@ -216,10 +211,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */
   public invalidateAll(): void {
     this.cache.clear();
-    // Note: intentionally NOT clearing cacheLanguage here.
-    // If the editor still has content in the old language and the user saves,
-    // writeFile needs to know which language that content was in.
-    // cacheLanguage is updated when provideContent re-translates in the new language.
   }
 
   /**
