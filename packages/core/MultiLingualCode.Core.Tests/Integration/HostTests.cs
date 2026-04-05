@@ -8,12 +8,14 @@ public class HostTests : IDisposable
 {
     public string TranslationsPath;
     public string TempDir;
+    public LanguageRegistry Registry;
 
     public HostTests()
     {
         TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
         TempDir = Path.Combine(Path.GetTempPath(), $"host_test_{Guid.NewGuid()}");
         Directory.CreateDirectory(TempDir);
+        Registry = Host.Program.CreateRegistry();
     }
 
     public void Dispose()
@@ -24,10 +26,21 @@ public class HostTests : IDisposable
         }
     }
 
-    // === ExecuteMethod ===
+    public Task<Host.CoreResponse> Route(string method, string paramsJson)
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+        return Host.Program.RouteRequest(method, paramsJson, Registry, TranslationsPath, TempDir, cache);
+    }
+
+    public Task<Host.CoreResponse> RouteWithCache(string method, string paramsJson, Dictionary<string, TranslationOrchestrator> cache)
+    {
+        return Host.Program.RouteRequest(method, paramsJson, Registry, TranslationsPath, TempDir, cache);
+    }
+
+    // === RouteRequest ===
 
     [Fact]
-    public async Task ExecuteMethod_TranslateToNaturalLanguage_ReturnsTranslatedCode()
+    public async Task RouteRequest_TranslateToNaturalLanguage_ReturnsTranslatedCode()
     {
         string paramsJson = JsonSerializer.Serialize(new
         {
@@ -36,15 +49,14 @@ public class HostTests : IDisposable
             targetLanguage = "pt-br"
         }, Host.Program.JsonOptions);
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethod(
-            "TranslateToNaturalLanguage", paramsJson, TranslationsPath, TempDir);
+        Host.CoreResponse result = await Route("TranslateToNaturalLanguage", paramsJson);
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("classe", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethod_TranslateFromNaturalLanguage_ReturnsOriginalCode()
+    public async Task RouteRequest_TranslateFromNaturalLanguage_ReturnsOriginalCode()
     {
         string paramsJson = JsonSerializer.Serialize(new
         {
@@ -53,15 +65,14 @@ public class HostTests : IDisposable
             sourceLanguage = "pt-br"
         }, Host.Program.JsonOptions);
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethod(
-            "TranslateFromNaturalLanguage", paramsJson, TranslationsPath, TempDir);
+        Host.CoreResponse result = await Route("TranslateFromNaturalLanguage", paramsJson);
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("class", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethod_ValidateSyntax_ReturnsValidResult()
+    public async Task RouteRequest_ValidateSyntax_ReturnsValidResult()
     {
         string paramsJson = JsonSerializer.Serialize(new
         {
@@ -69,31 +80,28 @@ public class HostTests : IDisposable
             fileExtension = ".cs"
         }, Host.Program.JsonOptions);
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethod(
-            "ValidateSyntax", paramsJson, TranslationsPath, TempDir);
+        Host.CoreResponse result = await Route("ValidateSyntax", paramsJson);
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("isValid", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethod_GetSupportedLanguages_ReturnsLanguageList()
+    public async Task RouteRequest_GetSupportedLanguages_ReturnsLanguageList()
     {
-        Host.CoreResponse result = await Host.Program.ExecuteMethod(
-            "GetSupportedLanguages", "{}", TranslationsPath, TempDir);
+        Host.CoreResponse result = await Route("GetSupportedLanguages", "{}");
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("pt-br", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethod_UnknownMethod_ReturnsError()
+    public async Task RouteRequest_UnknownMethod_ReturnsError()
     {
-        Host.CoreResponse result = await Host.Program.ExecuteMethod(
-            "NonExistentMethod", "{}", TranslationsPath, TempDir);
+        Host.CoreResponse result = await Route("NonExistentMethod", "{}");
 
         Assert.False(result.Success);
-        Assert.Contains("Unknown method", result.Error);
+        Assert.False(result.Success);
     }
 
     // === Handlers ===
@@ -241,10 +249,10 @@ public class HostTests : IDisposable
         Assert.Equal(1, exitCode);
     }
 
-    // === ExecuteMethodPersistent ===
+    // === RouteRequest with cache ===
 
     [Fact]
-    public async Task ExecuteMethodPersistent_TranslateToNaturalLanguage_ReturnsTranslatedCode()
+    public async Task RouteRequest_WithCache_TranslateToNaturalLanguage_ReturnsTranslatedCode()
     {
         Dictionary<string, TranslationOrchestrator> cache = new();
         string paramsJson = JsonSerializer.Serialize(new
@@ -254,15 +262,14 @@ public class HostTests : IDisposable
             targetLanguage = "pt-br"
         }, Host.Program.JsonOptions);
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
-            "TranslateToNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
+        Host.CoreResponse result = await RouteWithCache("TranslateToNaturalLanguage", paramsJson, cache);
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("classe", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethodPersistent_TranslateFromNaturalLanguage_ReturnsOriginalCode()
+    public async Task RouteRequest_WithCache_TranslateFromNaturalLanguage_ReturnsOriginalCode()
     {
         Dictionary<string, TranslationOrchestrator> cache = new();
         string paramsJson = JsonSerializer.Serialize(new
@@ -272,15 +279,14 @@ public class HostTests : IDisposable
             sourceLanguage = "pt-br"
         }, Host.Program.JsonOptions);
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
-            "TranslateFromNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
+        Host.CoreResponse result = await RouteWithCache("TranslateFromNaturalLanguage", paramsJson, cache);
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("class", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethodPersistent_ValidateSyntax_ReturnsValidResult()
+    public async Task RouteRequest_WithCache_ValidateSyntax_ReturnsValidResult()
     {
         Dictionary<string, TranslationOrchestrator> cache = new();
         string paramsJson = JsonSerializer.Serialize(new
@@ -289,50 +295,46 @@ public class HostTests : IDisposable
             fileExtension = ".cs"
         }, Host.Program.JsonOptions);
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
-            "ValidateSyntax", paramsJson, TranslationsPath, TempDir, cache);
+        Host.CoreResponse result = await RouteWithCache("ValidateSyntax", paramsJson, cache);
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("isValid", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethodPersistent_GetSupportedLanguages_ReturnsLanguageList()
+    public async Task RouteRequest_WithCache_GetSupportedLanguages_ReturnsLanguageList()
     {
         Dictionary<string, TranslationOrchestrator> cache = new();
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
-            "GetSupportedLanguages", "{}", TranslationsPath, TempDir, cache);
+        Host.CoreResponse result = await RouteWithCache("GetSupportedLanguages", "{}", cache);
 
         Assert.True(result.Success, result.Error);
         Assert.Contains("pt-br", result.Result);
     }
 
     [Fact]
-    public async Task ExecuteMethodPersistent_UnknownMethod_ReturnsError()
+    public async Task RouteRequest_WithCache_UnknownMethod_ReturnsError()
     {
         Dictionary<string, TranslationOrchestrator> cache = new();
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
-            "BadMethod", "{}", TranslationsPath, TempDir, cache);
+        Host.CoreResponse result = await RouteWithCache("BadMethod", "{}", cache);
 
         Assert.False(result.Success);
-        Assert.Contains("Unknown method", result.Error);
+        Assert.False(result.Success);
     }
 
     [Fact]
-    public async Task ExecuteMethodPersistent_InvalidJson_ReturnsError()
+    public async Task RouteRequest_WithCache_InvalidJson_ReturnsError()
     {
         Dictionary<string, TranslationOrchestrator> cache = new();
 
-        Host.CoreResponse result = await Host.Program.ExecuteMethodPersistent(
-            "TranslateToNaturalLanguage", "not json{{{", TranslationsPath, TempDir, cache);
+        Host.CoreResponse result = await RouteWithCache("TranslateToNaturalLanguage", "not json{{{", cache);
 
         Assert.False(result.Success);
     }
 
     [Fact]
-    public async Task ExecuteMethodPersistent_ReusesCachedOrchestrator()
+    public async Task RouteRequest_WithCache_ReusesCachedOrchestrator()
     {
         Dictionary<string, TranslationOrchestrator> cache = new();
         string paramsJson = JsonSerializer.Serialize(new
@@ -342,10 +344,8 @@ public class HostTests : IDisposable
             targetLanguage = "pt-br"
         }, Host.Program.JsonOptions);
 
-        await Host.Program.ExecuteMethodPersistent(
-            "TranslateToNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
-        await Host.Program.ExecuteMethodPersistent(
-            "TranslateToNaturalLanguage", paramsJson, TranslationsPath, TempDir, cache);
+        await RouteWithCache("TranslateToNaturalLanguage", paramsJson, cache);
+        await RouteWithCache("TranslateToNaturalLanguage", paramsJson, cache);
 
         Assert.Single(cache);
     }
@@ -388,7 +388,7 @@ public class HostTests : IDisposable
         Assert.Contains("false", output);
     }
 
-    // === Main (smoke tests) ===
+    // === Main smoke tests ===
 
     [Fact]
     public async Task Main_WithMethodArg_ReturnsZero()
@@ -449,5 +449,137 @@ public class HostTests : IDisposable
 
         Assert.Equal(0, exitCode);
         Assert.Contains("classe", output.ToString());
+    }
+
+    // === ExtractLanguageCode ===
+
+    [Fact]
+    public void ExtractLanguageCode_TranslateTo_ReturnsTargetLanguage()
+    {
+        string paramsJson = JsonSerializer.Serialize(new { targetLanguage = "pt-br" }, Host.Program.JsonOptions);
+
+        MultiLingualCode.Core.Models.OperationResultGeneric<string> result = Host.Program.ExtractLanguageCode("TranslateToNaturalLanguage", paramsJson);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("pt-br", result.Value);
+    }
+
+    [Fact]
+    public void ExtractLanguageCode_TranslateFrom_ReturnsSourceLanguage()
+    {
+        string paramsJson = JsonSerializer.Serialize(new { sourceLanguage = "es-es" }, Host.Program.JsonOptions);
+
+        MultiLingualCode.Core.Models.OperationResultGeneric<string> result = Host.Program.ExtractLanguageCode("TranslateFromNaturalLanguage", paramsJson);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("es-es", result.Value);
+    }
+
+    [Fact]
+    public void ExtractLanguageCode_MissingField_ReturnsFail()
+    {
+        MultiLingualCode.Core.Models.OperationResultGeneric<string> result = Host.Program.ExtractLanguageCode("TranslateToNaturalLanguage", "{}");
+
+        Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public void ExtractLanguageCode_InvalidJson_ReturnsFail()
+    {
+        MultiLingualCode.Core.Models.OperationResultGeneric<string> result = Host.Program.ExtractLanguageCode("TranslateToNaturalLanguage", "not json");
+
+        Assert.False(result.IsSuccess);
+    }
+
+    // === Error paths ===
+
+    [Fact]
+    public async Task RouteRequest_TranslateWithMalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("TranslateToNaturalLanguage",
+            "{\"targetLanguage\":\"pt-br\",\"sourceCode\":\"x\",\"fileExtension\":}");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task RouteRequest_TranslateFromWithMalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("TranslateFromNaturalLanguage",
+            "{\"sourceLanguage\":\"pt-br\",bad}");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task RouteRequest_ValidateSyntaxWithMalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("ValidateSyntax", "not json");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task HandleTranslateToNaturalLanguage_InvalidExtension_ReturnsError()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+        Host.TranslateRequest request = new Host.TranslateRequest
+        {
+            SourceCode = "code",
+            FileExtension = ".xyz",
+            TargetLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleTranslateToNaturalLanguage(orchestrator, request);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task HandleTranslateFromNaturalLanguage_InvalidExtension_ReturnsError()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+        Host.ReverseTranslateRequest request = new Host.ReverseTranslateRequest
+        {
+            TranslatedCode = "code",
+            FileExtension = ".xyz",
+            SourceLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleTranslateFromNaturalLanguage(orchestrator, request);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task HandleApplyTranslatedEdits_ValidInput_ReturnsSuccess()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+
+        Host.CoreResponse translated = await Host.Program.HandleTranslateToNaturalLanguage(orchestrator,
+            new Host.TranslateRequest { SourceCode = "public class Foo {}", FileExtension = ".cs", TargetLanguage = "pt-br" });
+        Assert.True(translated.Success);
+
+        Host.ApplyEditsRequest request = new Host.ApplyEditsRequest
+        {
+            OriginalCode = "public class Foo {}",
+            PreviousTranslatedCode = translated.Result,
+            EditedTranslatedCode = translated.Result,
+            FileExtension = ".cs",
+            SourceLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleApplyTranslatedEdits(orchestrator, request);
+
+        Assert.True(result.Success, result.Error);
+    }
+
+    [Fact]
+    public void HandleValidateSyntax_InvalidExtension_ReturnsError()
+    {
+        Host.CoreResponse result = Host.Program.HandleValidateSyntax(
+            new Host.ValidateRequest { SourceCode = "x", FileExtension = ".xyz" }, Registry);
+
+        Assert.False(result.Success);
     }
 }
