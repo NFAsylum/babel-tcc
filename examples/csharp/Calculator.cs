@@ -3,30 +3,30 @@ using System.Collections.Generic;
 
 namespace Examples
 {
-    public class Calculator // tradu:Calculadora
+    public class Calculator // tradu[pt-br]:Calculadora
     {
-        private List<double> history; // tradu:historico
+        private List<double> history; // tradu[pt-br]:historico
 
-        public Calculator() // tradu:Calculadora
+        public Calculator() // tradu[pt-br]:Calculadora
         {
             history = new List<double>();
         }
 
-        public double Add(double a, double b) // tradu:Somar,a:primeiroNumero,b:segundoNumero
+        public double Add(double a, double b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
         {
             double result = a + b;
             history.Add(result);
             return result;
         }
 
-        public double Subtract(double a, double b) // tradu:Subtrair,a:primeiroNumero,b:segundoNumero
+        public double Subtract(double a, double b) // tradu[pt-br]:Subtrair,a:primeiroNumero,b:segundoNumero
         {
             double result = a - b;
             history.Add(result);
             return result;
         }
 
-        public double Divide(double a, double b) // tradu:Dividir,a:dividendo,b:divisor
+        public double Divide(double a, double b) // tradu[pt-br]:Dividir,a:dividendo,b:divisor
         {
             if (b == 0)
             {
@@ -37,7 +37,7 @@ namespace Examples
             return result;
         }
 
-        public void PrintHistory() // tradu:ImprimirHistorico
+        public void PrintHistory() // tradu[pt-br]:ImprimirHistorico
         {
             foreach (var item in history)
             {
@@ -45,7 +45,7 @@ namespace Examples
             }
         }
 
-        public void ClearHistory() // tradu:LimparHistorico
+        public void ClearHistory() // tradu[pt-br]:LimparHistorico
         {
             history.Clear();
         }
