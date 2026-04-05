@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ConfigurationService } from '../services/configurationService';
+import { COMMANDS } from '../config/constants';
 
 const STATUS_BAR_PRIORITY = 100;
 
@@ -15,7 +16,7 @@ export class StatusBar implements vscode.Disposable {
       vscode.StatusBarAlignment.Right,
       STATUS_BAR_PRIORITY
     );
-    this.statusBarItem.command = 'babel-tcc.selectLanguage';
+    this.statusBarItem.command = COMMANDS.SELECT_LANGUAGE;
     this.update();
     this.statusBarItem.show();
 

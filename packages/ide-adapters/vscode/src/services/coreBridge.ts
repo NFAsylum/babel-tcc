@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { spawn, ChildProcess } from 'child_process';
 import * as readline from 'readline';
+import { CONFIG_SECTION, TRANSLATIONS_REPO_NAME } from '../config/constants';
 
 const DEFAULT_TIMEOUT_MS = 10000;
 const MAX_CRASHES = 3;
@@ -266,7 +267,7 @@ export class CoreBridge {
   }
 
   public resolveTranslationsPath(context: vscode.ExtensionContext): string {
-    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('babel-tcc');
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
     const configuredPath: string = config.get<string>('translationsPath', '');
 
     if (configuredPath && fs.existsSync(configuredPath)) {
@@ -276,7 +277,7 @@ export class CoreBridge {
 
     if (this.projectPath) {
       const workspaceParent: string = path.dirname(this.projectPath);
-      const siblingPath: string = path.join(workspaceParent, 'babel-tcc-translations');
+      const siblingPath: string = path.join(workspaceParent, TRANSLATIONS_REPO_NAME);
 
       if (fs.existsSync(siblingPath)) {
         this.outputChannel.appendLine(`CoreBridge: translations auto-detected: ${siblingPath}`);

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
+import { CONFIG_SECTION } from '../config/constants';
 
-const CONFIG_SECTION = 'babel-tcc';
 const KEY_ENABLED = 'enabled';
 const KEY_LANGUAGE = 'language';
 const KEY_READONLY = 'readonly';
