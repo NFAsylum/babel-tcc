@@ -31,26 +31,38 @@ Linguagem activa e a unica opcao per-language.
 
 ## Implementacao
 
-### Construir lista a partir de SUPPORTED_LANGUAGES
-Importar `SUPPORTED_LANGUAGES` de `src/config/languages.ts` e construir
-os itens de scope dinamicamente:
+### Extrair logica de construcao para funcao pura testavel
+A logica de construcao dos scope items deve ser uma funcao pura exportada,
+nao inline no callback do comando. Isso permite testar directamente sem
+depender de mocks do VS Code QuickPick.
 
 ```typescript
+// Em extension.ts ou num modulo separado
 import { SUPPORTED_LANGUAGES } from './config/languages';
 
-const scopeItems: ScopeItem[] = [
-  { label: '$(globe) All languages (global)', scope: 'global', language: undefined },
-];
+export type ScopeItem = { label: string; scope: 'global' | 'language'; language: string | undefined };
 
-for (const lang of SUPPORTED_LANGUAGES) {
-  const isActive: boolean = lang.name === programmingLanguage;
-  scopeItems.push({
-    label: `$(file-code) ${lang.name} only${isActive ? ' (active)' : ''}`,
-    scope: 'language',
-    language: lang.name,
-  });
+export function buildScopeItems(activeProgrammingLanguage: string | undefined): ScopeItem[] {
+  const items: ScopeItem[] = [
+    { label: '$(globe) All languages (global)', scope: 'global', language: undefined },
+  ];
+
+  for (const lang of SUPPORTED_LANGUAGES) {
+    const isActive: boolean = lang.name === activeProgrammingLanguage;
+    items.push({
+      label: `$(file-code) ${lang.name} only${isActive ? ' (active)' : ''}`,
+      scope: 'language',
+      language: lang.name,
+    });
+  }
+
+  return items;
 }
 ```
+
+O callback do selectLanguage chama `buildScopeItems(programmingLanguage)`
+e passa o resultado ao `showQuickPick`. Os testes chamam `buildScopeItems`
+directamente e verificam os items retornados.
 
 ### Usar a linguagem seleccionada (nao a detectada)
 O `setLanguageOverride` deve usar a linguagem do item seleccionado, nao
@@ -67,11 +79,12 @@ Todas as linguagens aparecem na lista sem destaque. O utilizador pode
 configurar qualquer linguagem independente do contexto.
 
 ## Escopo
-- Modificar apenas o callback do comando selectLanguage em extension.ts
+- Extrair buildScopeItems como funcao pura exportada
+- Modificar callback do selectLanguage para usar buildScopeItems
 - Importar SUPPORTED_LANGUAGES de config/languages.ts
 - Nao alterar configurationService, statusBar, ou outros providers
 - Manter retrocompatibilidade: "All languages" continua como primeira opcao
-- Actualizar tipo ScopeItem para incluir campo language
+- Testes chamam buildScopeItems directamente (sem mocks de QuickPick)
 
 ## Notas
 - SUPPORTED_LANGUAGES ja existe e e usado em testes de consistencia (tarefa 074)
