@@ -381,9 +381,19 @@ public class TranslationOrchestrator
             return OperationResultGeneric<string>.Fail(loadResult.ErrorMessage);
         }
 
-        string[] originalLines = originalCode.Split('\n');
-        string[] previousLines = previousTranslatedCode.Split('\n');
-        string[] editedLines = editedTranslatedCode.Split('\n');
+        // Normalize line endings: \r\n -> \n before splitting.
+        // Windows files may have \r\n while translated content from VS Code may have \n.
+        // Without normalization, identical lines appear different and get reverse translated.
+        string normalizedOriginal = originalCode.Replace("\r\n", "\n");
+        string normalizedPrevious = previousTranslatedCode.Replace("\r\n", "\n");
+        string normalizedEdited = editedTranslatedCode.Replace("\r\n", "\n");
+
+        // Preserve original line ending style for output
+        string lineEnding = originalCode.Contains("\r\n") ? "\r\n" : "\n";
+
+        string[] originalLines = normalizedOriginal.Split('\n');
+        string[] previousLines = normalizedPrevious.Split('\n');
+        string[] editedLines = normalizedEdited.Split('\n');
 
         // LCS-based diff: find common lines between previous and edited,
         // preserving order. This handles insertions and deletions in the middle
@@ -429,7 +439,7 @@ public class TranslationOrchestrator
             }
         }
 
-        string result = string.Join("\n", resultLines);
+        string result = string.Join(lineEnding, resultLines);
         return OperationResultGeneric<string>.Ok(result);
     }
 

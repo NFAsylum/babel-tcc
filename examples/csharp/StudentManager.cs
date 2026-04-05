@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace Examples
 {
-    public class Student // tradu:Aluno
+    public class Student // tradu[pt-br]:Aluno
     {
-        public string Name { get; set; } // tradu:Nome
-        public int Age { get; set; } // tradu:Idade
-        public double Grade { get; set; } // tradu:Nota
+        public string Name { get; set; } // tradu[pt-br]:Nome
+        public int Age { get; set; } // tradu[pt-br]:Idade
+        public double Grade { get; set; } // tradu[pt-br]:Nota
 
         public override string ToString()
         {
@@ -16,16 +16,16 @@ namespace Examples
         }
     }
 
-    public class StudentManager // tradu:GerenciadorAlunos
+    public class StudentManager // tradu[pt-br]:GerenciadorAlunos
     {
-        private readonly List<Student> students; // tradu:alunos
+        private readonly List<Student> students; // tradu[pt-br]:alunos
 
-        public StudentManager() // tradu:GerenciadorAlunos
+        public StudentManager() // tradu[pt-br]:GerenciadorAlunos
         {
             students = new List<Student>();
         }
 
-        public void AddStudent(Student student) // tradu:AdicionarAluno,student:aluno
+        public void AddStudent(Student student) // tradu[pt-br]:AdicionarAluno,student:aluno
         {
             if (student == null)
             {
@@ -34,7 +34,7 @@ namespace Examples
             students.Add(student);
         }
 
-        public Student FindByName(string name) // tradu:BuscarPorNome,name:nome
+        public Student FindByName(string name) // tradu[pt-br]:BuscarPorNome,name:nome
         {
             foreach (var student in students)
             {
@@ -46,7 +46,7 @@ namespace Examples
             return null;
         }
 
-        public List<Student> GetPassingStudents(double minimumGrade) // tradu:ObterAprovados,minimumGrade:notaMinima
+        public List<Student> GetPassingStudents(double minimumGrade) // tradu[pt-br]:ObterAprovados,minimumGrade:notaMinima
         {
             var passing = new List<Student>();
             for (int i = 0; i < students.Count; i++)
@@ -59,7 +59,7 @@ namespace Examples
             return passing;
         }
 
-        public double GetAverageGrade() // tradu:ObterMediaNotas
+        public double GetAverageGrade() // tradu[pt-br]:ObterMediaNotas
         {
             if (students.Count == 0)
             {
@@ -74,7 +74,7 @@ namespace Examples
             return total / students.Count;
         }
 
-        public void PrintReport() // tradu:ImprimirRelatorio
+        public void PrintReport() // tradu[pt-br]:ImprimirRelatorio
         {
             Console.WriteLine("=== Student Report ===");
             Console.WriteLine($"Total: {students.Count}");
