@@ -23,7 +23,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public cache: Map<string, string> = new Map<string, string>();
   public writingPaths: Set<string> = new Set<string>();
   public refreshingPaths: Set<string> = new Set<string>();
-  public savingPaths: Set<string> = new Set<string>();
+  public saveQueue: Map<string, Promise<void>> = new Map<string, Promise<void>>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
     new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
@@ -62,15 +62,17 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       return;
     }
 
-    // Prevent concurrent saves on the same file. A second save while the first
-    // is still writing would read the partially-written file as "original",
-    // causing the translated content to overwrite the real original.
-    if (this.savingPaths.has(originalPath)) {
-      this.outputChannel.appendLine(`TranslatedContentProvider: skipping concurrent save for ${originalPath}`);
-      return;
-    }
-    this.savingPaths.add(originalPath);
+    // Queue saves per path: if a save is already in progress, the next one
+    // waits for it to complete before starting. This prevents the second save
+    // from reading the partially-written file as "original".
+    const previousSave: Promise<void> = this.saveQueue.get(originalPath) || Promise.resolve();
+    const currentSave: Promise<void> = previousSave.then((): Promise<void> => this.doWriteFile(uri, content));
+    this.saveQueue.set(originalPath, currentSave);
+    await currentSave;
+  }
 
+  public async doWriteFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
+    const originalPath: string = uri.path;
     const translatedContent: string = Buffer.from(content).toString('utf-8');
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
     const sourceLanguage: string = this.configService.getLanguage();
@@ -133,8 +135,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       vscode.window.showErrorMessage(
         'Babel TCC: Failed to reverse translate. Original file was NOT overwritten.'
       );
-    } finally {
-      this.savingPaths.delete(originalPath);
     }
   }
 
