@@ -142,7 +142,22 @@ export class SemanticTokensBuilder {
     this.tokens.push({ line, char, length, type: tokenType });
   }
   build(): { data: Uint32Array } {
-    return { data: new Uint32Array(this.tokens.length * 5) };
+    const data: Uint32Array = new Uint32Array(this.tokens.length * 5);
+    let prevLine = 0;
+    let prevChar = 0;
+    for (let i = 0; i < this.tokens.length; i++) {
+      const token = this.tokens[i];
+      const deltaLine = token.line - prevLine;
+      const deltaChar = deltaLine === 0 ? token.char - prevChar : token.char;
+      data[i * 5] = deltaLine;
+      data[i * 5 + 1] = deltaChar;
+      data[i * 5 + 2] = token.length;
+      data[i * 5 + 3] = token.type;
+      data[i * 5 + 4] = 0;
+      prevLine = token.line;
+      prevChar = token.char;
+    }
+    return { data };
   }
 }
 

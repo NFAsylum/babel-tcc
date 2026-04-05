@@ -1,47 +1,41 @@
-import * as path from 'path';
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { ConfigurationService } from '../services/configurationService';
 import { LanguageDetector } from '../services/languageDetector';
+import { CoreBridge } from '../services/coreBridge';
 
-interface KeywordsBase {
-  keywords: Record<string, number>;
-}
-
-interface TranslationFile {
-  translations: Record<string, string>;
-}
-
-/** Loads keyword translation maps dynamically from the translation tables for the currently selected language. */
+/**
+ * Loads keyword translation maps from the Core via CoreBridge.
+ * Maps are cached per (language, programmingLanguage) pair and invalidated on config change.
+ * The getMap() method is synchronous — cache is pre-populated via warmCache().
+ */
 export class KeywordMapService {
-  private translationsPath: string;
-  private configService: ConfigurationService;
-  private languageDetector: LanguageDetector;
-  private outputChannel: vscode.OutputChannel;
-  private cachedLanguage: string = '';
-  private cachedProgrammingLanguage: string = '';
-  private cachedMap: Record<string, string> = {};
-  private configSubscription: { dispose(): void };
+  public coreBridge: CoreBridge;
+  public configService: ConfigurationService;
+  public languageDetector: LanguageDetector;
+  public outputChannel: vscode.OutputChannel;
+  public cache: Map<string, Record<string, string>> = new Map<string, Record<string, string>>();
+  public identifierCache: Map<string, Record<string, string>> = new Map<string, Record<string, string>>();
+  public configSubscription: { dispose(): void };
 
   constructor(
-    translationsPath: string,
+    coreBridge: CoreBridge,
     configService: ConfigurationService,
     languageDetector: LanguageDetector,
     outputChannel: vscode.OutputChannel
   ) {
-    this.translationsPath = translationsPath;
+    this.coreBridge = coreBridge;
     this.configService = configService;
     this.languageDetector = languageDetector;
     this.outputChannel = outputChannel;
-    this.configSubscription = configService.onDidChangeConfiguration(() => {
-      this.invalidate();
+    this.configSubscription = configService.onDidChangeConfiguration((): void => {
+      this.cache.clear();
+      this.identifierCache.clear();
     });
   }
 
   /**
-   * Returns a map of translated keywords to their original equivalents for the current language
-   * and the programming language detected from the given file path.
-   * The map is cached and reloaded automatically when the language setting changes.
+   * Returns a map of translated keywords to their original equivalents.
+   * Synchronous — returns from cache. Call warmCache() first to populate.
    * @param filePath - The file path used to detect the programming language.
    */
   public getMap(filePath: string): Record<string, string> {
@@ -51,61 +45,73 @@ export class KeywordMapService {
     }
 
     const language: string = this.configService.getLanguage();
-    const progLangKey: string = programmingLanguage.toLowerCase();
+    const cacheKey: string = `${language}::${programmingLanguage}`;
 
-    if (language !== this.cachedLanguage || progLangKey !== this.cachedProgrammingLanguage) {
-      this.load(language, progLangKey);
-    }
-    return this.cachedMap;
-  }
-
-  private invalidate(): void {
-    this.cachedLanguage = '';
-    this.cachedProgrammingLanguage = '';
-  }
-
-  private load(language: string, programmingLanguage: string): void {
-    const map: Record<string, string> = {};
-
-    const basePath: string = path.join(
-      this.translationsPath, 'programming-languages', programmingLanguage, 'keywords-base.json'
-    );
-    const translationPath: string = path.join(
-      this.translationsPath, 'natural-languages', language, `${programmingLanguage}.json`
-    );
-
-    if (!fs.existsSync(basePath) || !fs.existsSync(translationPath)) {
-      this.cachedMap = map;
-      this.cachedLanguage = language;
-      this.cachedProgrammingLanguage = programmingLanguage;
-      return;
+    const cached: Record<string, string> | undefined = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
     }
 
-    try {
-      const base: KeywordsBase = JSON.parse(fs.readFileSync(basePath, 'utf-8')) as KeywordsBase;
-      const translation: TranslationFile = JSON.parse(
-        fs.readFileSync(translationPath, 'utf-8')
-      ) as TranslationFile;
+    return {};
+  }
 
-      for (const [original, id] of Object.entries(base.keywords)) {
-        const translated: string | undefined = translation.translations[String(id)];
-        if (translated) {
-          map[translated] = original;
-        }
+  /**
+   * Returns a map of translated identifiers to their original equivalents.
+   * Synchronous — returns from cache. Call warmCache() first to populate.
+   * @param filePath - Unused, kept for API consistency. Identifier maps are language-only.
+   */
+  public getIdentifierMap(_filePath: string): Record<string, string> {
+    const language: string = this.configService.getLanguage();
+    const cacheKey: string = `identifiers::${language}`;
+
+    const cached: Record<string, string> | undefined = this.identifierCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    return {};
+  }
+
+  /**
+   * Pre-populates the cache by fetching keyword maps and identifier maps from the Core.
+   * Called during extension activation and after language changes.
+   */
+  public async warmCache(): Promise<void> {
+    const extensions: string[] = this.languageDetector.getSupportedExtensions();
+    const language: string = this.configService.getLanguage();
+
+    for (const ext of extensions) {
+      const programmingLanguage: string | undefined = this.languageDetector.detectLanguage(`file${ext}`);
+      if (!programmingLanguage) {
+        continue;
       }
-    } catch (err: unknown) {
-      const message: string = err instanceof Error ? err.message : String(err);
-      this.outputChannel.appendLine(`KeywordMapService: failed to load translations - ${message}`);
-      vscode.window.showWarningMessage(
-        `Babel TCC: Failed to load keyword translations for ${programmingLanguage}/${language}. Completion and hover may not work.`
-      );
-      this.cachedMap = map;
-      return;
+
+      const cacheKey: string = `${language}::${programmingLanguage}`;
+      if (this.cache.has(cacheKey)) {
+        continue;
+      }
+
+      try {
+        const map: Record<string, string> = await this.coreBridge.getKeywordMap(ext, language);
+        this.cache.set(cacheKey, map);
+        this.outputChannel.appendLine(`KeywordMapService: loaded ${Object.keys(map).length} keywords for ${programmingLanguage}/${language}`);
+      } catch (err: unknown) {
+        const message: string = err instanceof Error ? err.message : String(err);
+        this.outputChannel.appendLine(`KeywordMapService: failed to load keywords for ${programmingLanguage}/${language} - ${message}`);
+      }
     }
 
-    this.cachedMap = map;
-    this.cachedLanguage = language;
-    this.cachedProgrammingLanguage = programmingLanguage;
+    const identifierCacheKey: string = `identifiers::${language}`;
+    if (!this.identifierCache.has(identifierCacheKey)) {
+      try {
+        const map: Record<string, string> = await this.coreBridge.getIdentifierMap(language);
+        this.identifierCache.set(identifierCacheKey, map);
+        this.outputChannel.appendLine(`KeywordMapService: loaded ${Object.keys(map).length} identifiers for ${language}`);
+      } catch (err: unknown) {
+        const message: string = err instanceof Error ? err.message : String(err);
+        this.outputChannel.appendLine(`KeywordMapService: failed to load identifiers for ${language} - ${message}`);
+      }
+    }
   }
 
   /** Disposes of the configuration change subscription. */

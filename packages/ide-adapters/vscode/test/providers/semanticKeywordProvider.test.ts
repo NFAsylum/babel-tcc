@@ -7,8 +7,11 @@ describe('SemanticKeywordProvider', () => {
   let provider: SemanticKeywordProvider;
   const mockKeywordMap = { publico: 'public', classe: 'class', se: 'if', retornar: 'return' };
 
+  const mockIdentifierMap = { calcularTotal: 'calculateTotal', nomeUsuario: 'userName' };
+
   const mockKeywordMapService = {
     getMap: vi.fn(() => mockKeywordMap),
+    getIdentifierMap: vi.fn(() => mockIdentifierMap),
     dispose: vi.fn(),
   };
 
@@ -100,6 +103,40 @@ describe('SemanticKeywordProvider', () => {
       const result = provider.provideDocumentSemanticTokens(doc as any);
       // "se" and "retornar" are inside single quotes — should not be highlighted
       expect(result.data.length).toBe(0);
+    });
+
+    it('should highlight translated identifiers with variable token type', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'resultado = calcularTotal(nomeUsuario);');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // calcularTotal and nomeUsuario should be highlighted as identifiers (type index 1)
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should not highlight identifiers inside strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'texto msg = "calcularTotal nomeUsuario";');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should return empty when both maps are empty', () => {
+      mockKeywordMapService.getMap.mockReturnValueOnce({});
+      mockKeywordMapService.getIdentifierMap.mockReturnValueOnce({});
+      const doc = makeDocument(TRANSLATED_SCHEME, 'foo bar baz');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should distinguish keyword tokens from identifier tokens', () => {
+      // "publico" is a keyword, "calcularTotal" is an identifier
+      const doc = makeDocument(TRANSLATED_SCHEME, 'publico calcularTotal');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Should have tokens for both
+      expect(result.data.length).toBeGreaterThan(0);
+      // Semantic tokens data is encoded as [deltaLine, deltaCol, length, tokenType, tokenModifiers]
+      // First token: publico at col 0, type 0 (keyword)
+      expect(result.data[3]).toBe(0); // tokenType = keyword
+      // Second token: calcularTotal at col 8, type 1 (variable)
+      expect(result.data[8]).toBe(1); // tokenType = variable
     });
   });
 });

@@ -110,8 +110,9 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   keywordMapService = new KeywordMapService(
-    coreBridge.translationsPath, configService, languageDetector, outputChannel
+    coreBridge, configService, languageDetector, outputChannel
   );
+  keywordMapService.warmCache();
 
   const SCHEMES: string[] = [TRANSLATED_SCHEME, READONLY_SCHEME];
 

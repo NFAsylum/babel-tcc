@@ -210,6 +210,26 @@ public class Program
                     return await HandleApplyTranslatedEdits(orchestrator, parseResult.Value);
                 }
 
+            case "GetKeywordMap":
+                {
+                    OperationResultGeneric<GetKeywordMapRequest> parseResult = JsonFileReader.ReadFromString<GetKeywordMapRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    return await HandleGetKeywordMap(orchestrator, parseResult.Value);
+                }
+
+            case "GetIdentifierMap":
+                {
+                    OperationResultGeneric<GetIdentifierMapRequest> parseResult = JsonFileReader.ReadFromString<GetIdentifierMapRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    return HandleGetIdentifierMap(orchestrator, parseResult.Value);
+                }
+
             default:
                 return new CoreResponse { Success = false, Error = $"Unknown method: {method}" };
         }
@@ -225,7 +245,10 @@ public class Program
             using JsonDocument doc = JsonDocument.Parse(paramsJson);
             JsonElement root = doc.RootElement;
 
-            string propertyName = method == "TranslateToNaturalLanguage" ? "targetLanguage" : "sourceLanguage";
+            string propertyName = method == "TranslateToNaturalLanguage"
+                || method == "GetKeywordMap"
+                || method == "GetIdentifierMap"
+                ? "targetLanguage" : "sourceLanguage";
 
             if (root.TryGetProperty(propertyName, out JsonElement langElement))
             {
@@ -321,6 +344,67 @@ public class Program
         }
 
         return new CoreResponse { Success = true, Result = result.Value };
+    }
+
+    /// <summary>
+    /// Returns the keyword translation map (translated -> original) for a language pair.
+    /// </summary>
+    public static async Task<CoreResponse> HandleGetKeywordMap(
+        TranslationOrchestrator orchestrator, GetKeywordMapRequest request)
+    {
+        OperationResultGeneric<ILanguageAdapter> adapterResult = orchestrator.Registry.GetAdapter(request.FileExtension);
+        if (!adapterResult.IsSuccess)
+        {
+            return new CoreResponse { Success = false, Error = adapterResult.ErrorMessage };
+        }
+
+        ILanguageAdapter adapter = adapterResult.Value;
+
+        OperationResult loadResult = await orchestrator.Provider.LoadTranslationTableAsync(adapter.LanguageName);
+        if (!loadResult.IsSuccess)
+        {
+            return new CoreResponse { Success = false, Error = loadResult.ErrorMessage };
+        }
+
+        // Build reversed map: translated keyword -> original keyword
+        Dictionary<string, int> keywordMap = adapter.GetKeywordMap();
+        Dictionary<string, string> reversedMap = new();
+
+        foreach (KeyValuePair<string, int> kvp in keywordMap)
+        {
+            OperationResultGeneric<string> translatedResult = orchestrator.Provider.TranslateKeyword(kvp.Value);
+            if (translatedResult.IsSuccess)
+            {
+                reversedMap[translatedResult.Value] = kvp.Key;
+            }
+        }
+
+        string mapJson = JsonSerializer.Serialize(reversedMap, JsonOptions);
+        return new CoreResponse { Success = true, Result = mapJson };
+    }
+
+    /// <summary>
+    /// Returns the identifier translation map (translated -> original) for a target language.
+    /// Reads from the IdentifierMapper loaded for the current project.
+    /// </summary>
+    public static CoreResponse HandleGetIdentifierMap(
+        TranslationOrchestrator orchestrator, GetIdentifierMapRequest request)
+    {
+        IdentifierMapper mapper = orchestrator.IdentifierMapperService;
+        Dictionary<string, string> reversedMap = new();
+
+        foreach (KeyValuePair<string, Dictionary<string, string>> kvp in mapper.Data.Identifiers)
+        {
+            string originalName = kvp.Key;
+            if (kvp.Value.TryGetValue(request.TargetLanguage, out string? translatedName)
+                && !string.IsNullOrEmpty(translatedName))
+            {
+                reversedMap[translatedName] = originalName;
+            }
+        }
+
+        string mapJson = JsonSerializer.Serialize(reversedMap, JsonOptions);
+        return new CoreResponse { Success = true, Result = mapJson };
     }
 
     /// <summary>
