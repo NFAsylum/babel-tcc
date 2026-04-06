@@ -1,10 +1,18 @@
-# Contexto - Tarefa 098
+# Contexto - Tarefa 099
 
 ## Dependencias
 - Tarefa 061 (Text Scan implementado para C#, benchmark confirmado)
 
 ## Bloqueia
 - Suporte rapido a novas linguagens (JS, Java, Go, etc.)
+
+## Bug existente (PR #122)
+O TextScanTranslator atual e hardcoded para C#. Quando usado com Python,
+keywords dentro de # comentarios sao traduzidas incorretamente porque
+o scanner trata # como preprocessor (C#) em vez de comentario (Python).
+O PR #122 restringe Text Scan a C# (adapter.LanguageName == "CSharp").
+Esta tarefa resolve o bug ao generalizar o scanner com LanguageScanRules
+que configura # como LineComment para Python.
 
 ## Arquivos relevantes
 - packages/core/MultiLingualCode.Core/Services/TextScanTranslator.cs (generalizar)
