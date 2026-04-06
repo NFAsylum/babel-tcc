@@ -16,6 +16,7 @@ export class AutoTranslateManager implements vscode.Disposable {
   public previousReadonly: boolean;
   public editorSubscription: vscode.Disposable;
   public configSubscription: vscode.Disposable;
+  public configChangeQueue: Promise<void> = Promise.resolve();
 
   constructor(
     configService: ConfigurationService,
@@ -40,7 +41,9 @@ export class AutoTranslateManager implements vscode.Disposable {
     );
 
     this.configSubscription = configService.onDidChangeConfiguration((): void => {
-      void this.handleConfigChange();
+      this.configChangeQueue = this.configChangeQueue
+        .then((): Promise<void> => this.handleConfigChange())
+        .catch((): void => {});
     });
   }
 
@@ -284,7 +287,7 @@ export class AutoTranslateManager implements vscode.Disposable {
         const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
           (d: vscode.TextDocument): boolean => d.uri.path === path && isTranslatedScheme(d.uri.scheme)
         );
-        if (doc) {
+        if (doc && doc.getText() !== freshContent) {
           const lastLine: vscode.TextLine = doc.lineAt(doc.lineCount - 1);
           const fullRange: vscode.Range = new vscode.Range(
             new vscode.Position(0, 0),
