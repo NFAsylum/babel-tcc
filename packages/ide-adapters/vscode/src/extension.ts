@@ -231,6 +231,29 @@ export function activate(context: vscode.ExtensionContext): void {
         outputChannel.appendLine(`Language for ${scopeChoice.language} set to: ${selected}`);
         vscode.window.showInformationMessage(`Babel TCC: Language for ${scopeChoice.language} set to ${selected}.`);
       } else {
+        const overrides: Record<string, string> = configService.getLanguageOverrides();
+        const activeOverrides: string[] = Object.entries(overrides)
+          .filter(([, value]: [string, string]): boolean => value !== '')
+          .map(([key, value]: [string, string]): string => `${key}: ${value}`);
+
+        if (activeOverrides.length > 0) {
+          const overrideChoice: string | undefined = await vscode.window.showWarningMessage(
+            `Babel TCC: ${activeOverrides.length} language override(s) will block this change: ${activeOverrides.join(', ')}`,
+            'Remove overrides and apply',
+            'Keep overrides',
+            'Cancel'
+          );
+
+          if (overrideChoice === 'Cancel' || overrideChoice === undefined) {
+            return;
+          }
+
+          if (overrideChoice === 'Remove overrides and apply') {
+            await configService.clearLanguageOverrides();
+            outputChannel.appendLine('Cleared all language overrides.');
+          }
+        }
+
         await configService.setLanguage(selected);
         outputChannel.appendLine(`Language set to: ${selected}`);
         vscode.window.showInformationMessage(`Babel TCC: Language set to ${selected}.`);
