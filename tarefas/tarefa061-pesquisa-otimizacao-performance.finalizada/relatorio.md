@@ -307,14 +307,26 @@ Limitacoes conhecidas: **zero**
    - Com tradu: Text Scan keywords + Roslyn identifiers (35-977ms)
    - Com raw strings: Text Scan puro (0ms, suportado nativamente)
 
-   51/51 edge cases testados. Zero limitacoes.
-   Scanner ja existe como referencia (PythonAdapter.ReverseSubstituteKeywords).
+   51 edge cases + 10/11 equivalencia Roslyn. Zero limitacoes.
 
-   Esforco: refatorar TranslateAstForward para separar keyword translation
-   de identifier translation. O walk ja tem switch por tipo de no.
+   **IMPLEMENTADO** no TranslationOrchestrator (TextScanTranslator.cs).
+   Benchmark real (mesma API): 0-1ms sem tradu vs 35-4077ms com tradu.
+   566/566 testes passando.
+
+### Python: mesma otimizacao aplicavel
+
+O PythonAdapter.ReverseSubstituteKeywords ja usa scan linear para
+traducao reversa (skip # comments, strings Python incluindo triple-quoted
+e f-strings). O mesmo padrao pode ser aplicado para forward translation:
+- Sem tradu: Text Scan com regras Python (# comment, """ strings)
+- Com tradu: tokenizer subprocess (comportamento atual)
+
+O TextScanTranslator.cs atual e especifico para C# (skip //, /* */,
+preprocessor #). Para Python, precisaria de um scanner com regras
+Python ou um scanner configuravel por linguagem.
 
 ### NAO implementar:
 
 2. **Metodo 1 (Incremental Reparse)** — resolve o problema errado (1x).
-3. **Metodo 3 (Cache por Bloco)** — desnecessario com Text Scan (2ms).
+3. **Metodo 3 (Cache por Bloco)** — desnecessario com Text Scan (0-1ms).
 4. **Metodo 4 (Lazy Viewport)** — complexidade muito alta.
