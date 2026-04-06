@@ -45,17 +45,16 @@ Depois:
 
 ## Alternativa: inverter a ordem dos patterns
 Mover `#tradu-annotations` antes de `#comments` na lista de patterns.
-TextMate avalia na ordem da lista — tradu matcharia primeiro.
+Em TextMate grammars, quando dois patterns matcham na mesma posicao,
+o primeiro na lista ganha. Ambos `//.*$` e `//\s*tradu...$` matcham
+na posicao do `//` — se tradu estiver primeiro na lista, ganha.
 
-Problema: nao funciona. TextMate matcha pela POSICAO no texto, nao
-pela ordem na lista. Se dois patterns matcham na mesma posicao, o
-primeiro na lista ganha. Mas ambos `//.*$` e `//\s*tradu...$` matcham
-na posicao do `//`. A ordem da lista IMPORTA neste caso, e inverter
-DEVERIA funcionar.
+Esta abordagem e mais simples que negative lookahead. Porem depende
+da ordem dos patterns — se alguem reordenar a lista no futuro, o
+bug volta silenciosamente. O negative lookahead e mais explicito.
 
-Recomendacao: testar ambas abordagens (inverter ordem vs negative
-lookahead). A inversao e mais simples. O negative lookahead e mais
-explicito e nao depende da ordem.
+Recomendacao: inverter a ordem (mais simples) e adicionar comentario
+no JSON explicando que tradu DEVE vir antes de comments.
 
 ## Escopo
 - Corrigir comment pattern em mlc-csharp.tmLanguage.json
