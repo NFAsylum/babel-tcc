@@ -6,9 +6,11 @@ import { TRANSLATED_SCHEME, READONLY_SCHEME } from '../../src/providers/translat
 describe('HoverProvider', () => {
   let provider: HoverProvider;
   const mockKeywordMap = { publico: 'public', classe: 'class' };
+  const mockIdentifierMap = { Calculadora: 'Calculator', Somar: 'Add' };
 
   const mockKeywordMapService = {
     getMap: vi.fn(() => mockKeywordMap),
+    getIdentifierMap: vi.fn(() => mockIdentifierMap),
     dispose: vi.fn(),
   };
 
@@ -93,6 +95,20 @@ describe('HoverProvider', () => {
       expect(hover).toBeDefined();
       expect(hover!.contents.value).toContain('```python');
       expect(hover!.contents.value).toContain('Python keyword: `class`');
+    });
+
+    it('should show tooltip for translated identifiers', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'Calculadora');
+      const hover = provider.provideHover(doc as any, new Position(0, 3));
+      expect(hover).toBeDefined();
+      expect(hover!.contents.value).toContain('Calculator');
+      expect(hover!.contents.value).toContain('identifier');
+    });
+
+    it('should return undefined for unknown word not in keyword or identifier map', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'xyzUnknown');
+      const hover = provider.provideHover(doc as any, new Position(0, 3));
+      expect(hover).toBeUndefined();
     });
   });
 });

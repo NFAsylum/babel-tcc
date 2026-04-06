@@ -37,16 +37,27 @@ export class HoverProvider implements vscode.HoverProvider {
     }
 
     const word: string = document.getText(wordRange);
+    const detectedLanguage: string | undefined = this.languageDetector.detectLanguage(document.uri.path);
+    const vscodeLangId: string = VSCODE_LANGUAGE_MAP[detectedLanguage || 'CSharp'] || 'plaintext';
+
     const keywordMap: Record<string, string> = this.keywordMapService.getMap(document.uri.path);
     const originalKeyword: string | undefined = keywordMap[word.toLowerCase()];
 
     if (originalKeyword) {
-      const detectedLanguage: string | undefined = this.languageDetector.detectLanguage(document.uri.path);
-      const vscodeLangId: string = VSCODE_LANGUAGE_MAP[detectedLanguage || 'CSharp'] || 'plaintext';
       const languageLabel: string = detectedLanguage || 'keyword';
       const markdown: vscode.MarkdownString = new vscode.MarkdownString();
       markdown.appendCodeblock(`${originalKeyword}`, vscodeLangId);
       markdown.appendMarkdown(`\n\n${languageLabel} keyword: \`${originalKeyword}\``);
+      return new vscode.Hover(markdown, wordRange);
+    }
+
+    const identifierMap: Record<string, string> = this.keywordMapService.getIdentifierMap(document.uri.path);
+    const originalIdentifier: string | undefined = identifierMap[word];
+
+    if (originalIdentifier) {
+      const markdown: vscode.MarkdownString = new vscode.MarkdownString();
+      markdown.appendCodeblock(`${originalIdentifier}`, vscodeLangId);
+      markdown.appendMarkdown(`\n\nidentifier: \`${originalIdentifier}\``);
       return new vscode.Hover(markdown, wordRange);
     }
 

@@ -80,6 +80,22 @@ export class ConfigurationService implements vscode.Disposable {
   }
 
   /**
+   * Returns all active language overrides as a map of programming language to language code.
+   */
+  public getLanguageOverrides(): Record<string, string> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    return config.get<Record<string, string>>(KEY_LANGUAGE_OVERRIDES, {});
+  }
+
+  /**
+   * Removes all language overrides, reverting to global language for all programming languages.
+   */
+  public async clearLanguageOverrides(): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    await config.update(KEY_LANGUAGE_OVERRIDES, {}, vscode.ConfigurationTarget.Global);
+  }
+
+  /**
    * Sets a language override for a specific programming language.
    * @param programmingLanguage - The programming language name (e.g., "CSharp").
    * @param language - The target language code, or undefined to remove the override.
