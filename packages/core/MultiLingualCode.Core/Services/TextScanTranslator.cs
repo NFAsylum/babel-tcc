@@ -6,6 +6,9 @@ namespace MultiLingualCode.Core.Services;
 /// <summary>
 /// Fast keyword translator using linear text scan. Skips strings, comments,
 /// preprocessor directives and raw string literals. O(n) complexity.
+/// Known limitation: verbatim strings @"..." with "" escape may cause
+/// the scanner to exit the string early at the first "". In practice
+/// this is rare and only affects keywords inside verbatim strings.
 /// </summary>
 public class TextScanTranslator
 {

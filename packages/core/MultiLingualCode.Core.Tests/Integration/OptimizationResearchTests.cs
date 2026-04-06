@@ -135,7 +135,7 @@ public class OptimizationResearchTests : IDisposable
 
         results.AppendLine();
         string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
-File.AppendAllText(reportPath, results.ToString());
+        File.AppendAllText(reportPath, results.ToString());
 
         // Output to test log
         Assert.True(true, results.ToString());
@@ -205,7 +205,7 @@ File.AppendAllText(reportPath, results.ToString());
         results.AppendLine();
 
         string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
-File.AppendAllText(reportPath, results.ToString());
+        File.AppendAllText(reportPath, results.ToString());
         Assert.True(true);
     }
 
@@ -288,7 +288,7 @@ File.AppendAllText(reportPath, results.ToString());
         results.AppendLine();
 
         string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
-File.AppendAllText(reportPath, results.ToString());
+        File.AppendAllText(reportPath, results.ToString());
         Assert.True(true);
     }
 
@@ -529,7 +529,7 @@ File.AppendAllText(reportPath, results.ToString());
         results.AppendLine();
 
         string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
-File.AppendAllText(reportPath, results.ToString());
+        File.AppendAllText(reportPath, results.ToString());
         Assert.True(true);
     }
 
@@ -635,7 +635,7 @@ File.AppendAllText(reportPath, results.ToString());
         results.AppendLine();
 
         string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
-File.AppendAllText(reportPath, results.ToString());
+        File.AppendAllText(reportPath, results.ToString());
 
         Assert.True(case1Pass, "publicKey should not be partially translated");
         Assert.True(case2Pass, "keywords in strings should not be translated");
