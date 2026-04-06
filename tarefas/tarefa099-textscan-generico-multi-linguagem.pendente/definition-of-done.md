@@ -1,16 +1,17 @@
-# Definition of Done - Tarefa 098
+# Definition of Done - Tarefa 099
 
 ## TextScan generico
 - [ ] LanguageScanRules definido com configuracao de comentarios/strings
 - [ ] TextScanTranslator aceita LanguageScanRules como parametro
 - [ ] CSharpScanRules extrai regras C# (antes hardcoded)
 - [ ] PythonScanRules extrai regras Python
-- [ ] ILanguageAdapter tem GetScanRules() opcional
+- [ ] Interface ITextScannable criada (sem breaking change em ILanguageAdapter)
+- [ ] CSharpAdapter e PythonAdapter implementam ITextScannable
 
 ## Integracao
-- [ ] TranslationOrchestrator usa Text Scan quando GetScanRules() disponivel
+- [ ] TranslationOrchestrator usa Text Scan quando adapter is ITextScannable
 - [ ] Python forward translation usa Text Scan (sem tradu)
-- [ ] Fallback transparente para parser quando Text Scan nao disponivel
+- [ ] Fallback transparente para parser quando adapter nao e ITextScannable
 
 ## Testes
 - [ ] Edge cases C# continuam passando com regras extraidas

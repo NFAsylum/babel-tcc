@@ -61,13 +61,39 @@ public class StringDelimiter
 - Aceitar LanguageScanRules como parametro em vez de hardcodar C#
 - Mover regras C# para CSharpScanRules
 - Criar PythonScanRules
-- Cada ILanguageAdapter pode expor GetScanRules() (opcional)
+
+### 3b. Interface ITextScannable (sem breaking change)
+
+Em vez de adicionar GetScanRules() a ILanguageAdapter (breaking change
+que obrigaria todos os adapters a implementar), criar interface separada:
+
+```csharp
+public interface ITextScannable
+{
+    LanguageScanRules GetScanRules();
+}
+```
+
+Adapters implementam opcionalmente:
+```csharp
+public class CSharpAdapter : ILanguageAdapter, ITextScannable { ... }
+public class PythonAdapter : ILanguageAdapter, ITextScannable { ... }
+```
 
 ### 4. Integrar no TranslationOrchestrator
 
-- Se adapter tem GetScanRules() e arquivo nao tem tradu: Text Scan
-- Se adapter nao tem GetScanRules(): Roslyn/tokenizer (comportamento atual)
-- Fallback transparente
+```csharp
+if (adapter is ITextScannable scannable && !sourceCode.Contains("tradu"))
+{
+    // Fast path: Text Scan com regras da linguagem
+    Dictionary<string, string> map = TextScanTranslator.BuildTranslationMap(...);
+    return TextScanTranslator.Translate(source, map, scannable.GetScanRules());
+}
+// Full path: parser/tokenizer
+```
+
+- Sem nullable, sem breaking change, extensivel
+- Adapter sem ITextScannable usa parser normalmente (fallback transparente)
 
 ### 5. Suporte rapido a novas linguagens
 
