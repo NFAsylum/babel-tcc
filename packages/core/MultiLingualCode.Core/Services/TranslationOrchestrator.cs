@@ -86,6 +86,30 @@ public class TranslationOrchestrator
             return OperationResultGeneric<string>.Fail(loadResult.ErrorMessage);
         }
 
+        bool needsRoslyn = sourceCode.Contains("tradu");
+
+        // Text Scan only for C# until LanguageScanRules is implemented (tarefa 099).
+        // Python # comments are not handled by the current scanner.
+        bool canTextScan = adapter.LanguageName == "CSharp";
+
+        if (!needsRoslyn && canTextScan)
+        {
+            // Fast path: Text Scan for keyword-only translation
+            Dictionary<string, int> keywordMap = adapter.GetKeywordMap();
+            if (keywordMap != null && keywordMap.Count > 0)
+            {
+                Dictionary<string, string> translationMap = TextScanTranslator.BuildTranslationMap(
+                    keywordMap, Provider);
+                if (translationMap.Count > 0)
+                {
+                    string scanned = TextScanTranslator.Translate(sourceCode, translationMap);
+                    return OperationResultGeneric<string>.Ok(scanned);
+                }
+            }
+            // Fall through to Roslyn if Text Scan can't build a translation map
+        }
+
+        // Full path: Roslyn AST for files with tradu annotations
         ApplyTraduAnnotations(sourceCode, targetLanguage, adapter);
 
         ASTNode ast = adapter.Parse(sourceCode);

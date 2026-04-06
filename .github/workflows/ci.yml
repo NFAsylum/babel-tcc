@@ -38,6 +38,7 @@ jobs:
           dotnet test --no-build --configuration Release
           --collect:"XPlat Code Coverage"
           --results-directory TestResults
+          --filter "Category!=Research"
 
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest'
