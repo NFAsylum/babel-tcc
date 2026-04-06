@@ -222,7 +222,30 @@ strings C# 11 usam Roslyn completo.
 | Load 17000 linhas | <500ms | 2305ms | 2ms | N/A |
 
 Arquivos sem tradu: TODAS as metas atingidas.
-Arquivos com tradu: metas atingidas ate ~5000 linhas (86ms < 200ms).
+Arquivos com tradu: melhoria marginal (Roslyn Parse domina).
+
+## Tradu Density: Cenarios Realistas (~5000 linhas, 500 metodos, 4 runs)
+
+| Tradus no arquivo | Roslyn Full | Text Scan | V2 (Scan+Roslyn id) | V2 Speedup |
+|--------------------|-------------|-----------|---------------------|------------|
+| 0 (nenhum) | 184ms | 0ms | 0ms | **184x** |
+| 1 tradu | 178ms | 3ms | 152ms | 1.2x |
+| 5 tradus | 152ms | 4ms | 113ms | 1.3x |
+| 50 tradus | 205ms | 3ms | 209ms | 1.0x |
+| 500 tradus (todo metodo) | 935ms | 2ms | 936ms | 1.0x |
+
+### Descoberta
+O V2 (Text Scan keywords + Roslyn identifiers) NAO melhora significativamente
+para arquivos com tradu. Motivo: o Roslyn Parse (construir a AST inteira) e
+obrigatorio para encontrar identifiers, mesmo com apenas 1 tradu. O parse
+domina o tempo — pular KeywordNode no walk nao e relevante.
+
+Para arquivos com tradu, o unico caminho rapido seria evitar o Roslyn Parse
+completamente (ex: regex para encontrar identifiers sem AST). Isso e
+complexo e propenso a erros.
+
+**Conclusao pratica**: o beneficio real do sistema hibrido e para arquivos
+SEM tradu — que sao a maioria em qualquer codebase.
 
 ## Resultado Final: Melhor Abordagem Geral (4 runs cada)
 

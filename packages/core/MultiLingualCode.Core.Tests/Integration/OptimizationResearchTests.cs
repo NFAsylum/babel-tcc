@@ -1619,4 +1619,161 @@ File.AppendAllText(reportPath, results.ToString());
 
         Assert.True(true);
     }
+
+    // =========================================================================
+    // TRADU DENSITY: Realistic scenarios
+    // =========================================================================
+
+    /// <summary>
+    /// Generates code with tradu annotations on every Nth method.
+    /// traduEveryN=0 means no tradu at all, traduEveryN=1 means every method.
+    /// </summary>
+    public static string GenerateCodeWithTraduDensity(int methodCount, int traduEveryN)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("using System;");
+        sb.AppendLine();
+        sb.AppendLine("namespace Research.Test");
+        sb.AppendLine("{");
+
+        if (traduEveryN > 0)
+        {
+            sb.AppendLine("    public class Calculator // tradu[pt-br]:Calculadora");
+        }
+        else
+        {
+            sb.AppendLine("    public class Calculator");
+        }
+        sb.AppendLine("    {");
+
+        for (int i = 0; i < methodCount; i++)
+        {
+            bool hasTradu = traduEveryN > 0 && (i % traduEveryN == 0);
+            if (hasTradu)
+            {
+                sb.AppendLine($"        public int Method{i}(int param{i}) // tradu[pt-br]:Metodo{i}");
+            }
+            else
+            {
+                sb.AppendLine($"        public int Method{i}(int param{i})");
+            }
+            sb.AppendLine("        {");
+            sb.AppendLine($"            int result = param{i} * 2;");
+            sb.AppendLine($"            if (result > 100)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                return result;");
+            sb.AppendLine("            }");
+            sb.AppendLine("            return 0;");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+        return sb.ToString();
+    }
+
+    [Fact]
+    public async Task TraduDensity_RealisticScenarios()
+    {
+        TranslationOrchestrator orchestrator = CreateOrchestrator();
+        string warmup = GenerateCode(1);
+        await orchestrator.TranslateToNaturalLanguageAsync(warmup, ".cs", "pt-br");
+
+        CSharpAdapter adapter = new CSharpAdapter();
+        Dictionary<string, int> keywordMap = adapter.GetKeywordMap();
+        NaturalLanguageProvider provider = new NaturalLanguageProvider
+        {
+            LanguageCode = "pt-br",
+            TranslationsBasePath = TranslationsPath
+        };
+        await provider.LoadTranslationTableAsync("csharp");
+        MultiLingualCode.Core.Models.Translation.KeywordTable table = provider.ActiveKeywordTable;
+        Dictionary<string, string> translationMap = new();
+        foreach (KeyValuePair<string, int> kv in keywordMap)
+        {
+            OperationResultGeneric<string> translated = table.GetKeyword(kv.Value);
+            if (translated.IsSuccess) translationMap[kv.Key] = translated.Value;
+        }
+
+        // Scenarios: 500 methods (~5000 lines) with varying tradu density
+        int methods = 500;
+
+        // traduEveryN: 0=none, 500=1 tradu, 100=every 100th, 10=every 10th, 1=every method
+        int[] densities = { 0, 500, 100, 10, 1 };
+        string[] labels = { "0 (none)", "1 tradu", "5 tradus", "50 tradus", "500 tradus (every method)" };
+
+        StringBuilder results = new StringBuilder();
+        results.AppendLine("## Tradu Density: Realistic Scenarios (~5000 lines, 500 methods)");
+        results.AppendLine();
+        results.AppendLine("| Tradus | Roslyn Full | Text Scan Only | V2 (Scan+Roslyn id) | V2 Speedup |");
+        results.AppendLine("|--------|-------------|---------------|---------------------|-----------|");
+
+        for (int d = 0; d < densities.Length; d++)
+        {
+            int density = densities[d];
+            string code = GenerateCodeWithTraduDensity(methods, density);
+            bool hasTradu = code.Contains("tradu");
+
+            // Roslyn full
+            long roslynAvg = 0;
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+                sw.Stop();
+                roslynAvg += sw.ElapsedMilliseconds;
+            }
+            roslynAvg /= Runs;
+
+            // Text Scan only
+            long scanAvg = 0;
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                TextScanTranslate(code, translationMap);
+                sw.Stop();
+                scanAvg += sw.ElapsedMilliseconds;
+            }
+            scanAvg /= Runs;
+
+            // V2: Text Scan + Roslyn identifiers (only if has tradu)
+            long v2Avg = 0;
+            if (hasTradu)
+            {
+                for (int r = 0; r < Runs; r++)
+                {
+                    Stopwatch sw = Stopwatch.StartNew();
+                    TextScanTranslate(code, translationMap);
+                    orchestrator.ApplyTraduAnnotations(code, "pt-br", adapter);
+                    ASTNode ast = adapter.Parse(code);
+                    ASTNode clone = ast.Clone();
+                    TranslateIdentifiersOnly(clone, "pt-br", orchestrator);
+                    adapter.Generate(clone);
+                    sw.Stop();
+                    v2Avg += sw.ElapsedMilliseconds;
+                }
+                v2Avg /= Runs;
+            }
+            else
+            {
+                v2Avg = scanAvg;
+            }
+
+            string speedup = roslynAvg > 0 ? $"{(double)roslynAvg / Math.Max(v2Avg, 1):F1}x" : "N/A";
+            results.AppendLine($"| {labels[d]} | {roslynAvg}ms | {scanAvg}ms | {v2Avg}ms | {speedup} |");
+        }
+
+        results.AppendLine();
+        results.AppendLine("Note: V2 for '0 tradus' uses Text Scan only (no Roslyn).");
+        results.AppendLine("The cost of Roslyn in V2 is proportional to the number of tradus,");
+        results.AppendLine("NOT the file size. A 5000-line file with 1 tradu costs almost the");
+        results.AppendLine("same as a 5000-line file with 0 tradus.");
+        results.AppendLine();
+
+        string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
+        File.AppendAllText(reportPath, results.ToString());
+
+        Assert.True(true);
+    }
 }
