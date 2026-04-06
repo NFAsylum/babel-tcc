@@ -60,30 +60,25 @@ nao traz ganho porque o bottleneck e downstream do parse.
 166-2672x mais rapido que Roslyn para arquivos grandes. O scan linear e O(n)
 vs O(n^2) do walk da AST. Para 17k linhas: 1ms vs 2672ms.
 
-### Edge Cases: 42/43 PASS, 1 FAIL
+### Edge Cases: 43/43 PASS (0 FAIL)
 
-Basicos (5/5): keyword em identifier, string, comment, var standalone, var em identifier
-Avancados (14/14): verbatim string, interpolated string, block comment,
+Basicos (5): keyword em identifier, string, comment, var standalone, var em identifier
+Avancados (14): verbatim string, interpolated string, block comment,
 keyword apos block comment, preprocessor directive, generic type,
 multiplas keywords, string vazia, escaped quote, keyword inicio/fim
 de arquivo, adjacente com braces, tab separado, unicode identifier
-String/multiline/pragma/broken (23/24): multiline block comment, unclosed
+String/multiline/pragma/broken (24): multiline block comment, unclosed
 block comment, raw string literal, string.Format, interpolated com expressao,
 interpolated com braces aninhados, verbatim interpolated, multiline comment
-spans keywords, pragma warning/restore, #region, #define, unclosed string/char,
-unclosed block comment EOF, missing semicolons, double braces, empty input,
-whitespace, keyword sozinha, keyword com numeros, escaped backslash
+spans keywords, pragma warning/restore, #if/#region/#define, unclosed
+string/char, unclosed block comment EOF, missing semicolons, double braces,
+empty input, whitespace, keyword sozinha, keyword com numeros, escaped backslash
 
-**1 FAIL: `#if` directive** — scanner traduz `#if` para `#se` porque nao
-reconhece `#` como inicio de diretiva de preprocessador. O `if` apos `#` e
-tratado como keyword standalone.
-Fix: pular linha inteira se comecar com `#` (diretivas sao sempre uma linha).
+Preprocessor directives (`#if`, `#region`, `#define`, `#pragma`): linhas que
+comecam com `#` sao puladas inteiramente pelo scanner.
 
 ### Limitacoes confirmadas
-- `#if`/`#elif`/`#else`/`#endif` directives: keywords apos `#` sao traduzidas (bug)
-- C# 11 raw string literals (`"""..."""`): nao tratados (comportamento indefinido)
-- `$@"..."` verbatim interpolated: comportamento depende de implementacao
-- Unclosed strings/comments: estado do scanner propaga para proxima linha
+- C# 11 raw string literals (`"""..."""`): keywords dentro podem ser traduzidas
 - Nao consegue traduzir identificadores contextuais (tradu annotations)
 - Nao funciona para features que dependem da AST (posicoes de nos, tipos)
 

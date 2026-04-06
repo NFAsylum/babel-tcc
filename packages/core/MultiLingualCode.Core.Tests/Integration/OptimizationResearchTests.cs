@@ -301,6 +301,16 @@ File.AppendAllText(reportPath, results.ToString());
 
         while (i < code.Length)
         {
+            // Skip preprocessor directives (lines starting with #)
+            if (code[i] == '#' && (i == 0 || code[i - 1] == '\n'))
+            {
+                int end = code.IndexOf('\n', i);
+                if (end < 0) end = code.Length;
+                result.Append(code, i, end - i);
+                i = end;
+                continue;
+            }
+
             // Skip line comments
             if (i + 1 < code.Length && code[i] == '/' && code[i + 1] == '/')
             {
@@ -739,9 +749,11 @@ File.AppendAllText(reportPath, results.ToString());
             // === C# raw string literals (C# 11) ===
             ("raw string literal triple quote",
                 "var x = \"\"\"public class\"\"\";",
-                // TextScan sees """ as empty string + identifier "public" + etc.
-                // This is a known limitation — raw strings not handled
-                o => true), // document behavior, don't assert correctness
+                // TextScan sees """ as: empty string "" then "public class"""
+                // The second " opens a new string containing 'public class""'
+                // Known limitation: raw strings (C# 11) not correctly handled.
+                // We accept that keywords inside raw strings MAY be translated.
+                o => o.Contains("var_t")), // var is outside any string, should be translated
 
             // === String formats ===
             ("string format with braces",
@@ -758,8 +770,10 @@ File.AppendAllText(reportPath, results.ToString());
 
             ("verbatim interpolated",
                 "string s = $@\"line1\npublic\nline3\";",
-                // $@ starts with $ then @, scanner should skip as string
-                o => true), // document behavior
+                // $@ starts with $, then @, then " — scanner sees $ as non-letter,
+                // then @ as non-letter, then " opens a string.
+                // Keywords inside the string should NOT be translated.
+                o => !o.Contains("publico")),
 
             // === Multiline comments ===
             ("multiline comment spans keywords",
@@ -777,8 +791,7 @@ File.AppendAllText(reportPath, results.ToString());
 
             ("#if directive",
                 "#if DEBUG\npublic class Foo {}\n#endif",
-                o => o.Contains("#se") == false && o.Contains("publico")),
-                // # followed by "if" — scanner sees "if" as keyword after #
+                o => o.Contains("#if DEBUG") && o.Contains("publico") && !o.Contains("#se")),
 
             ("#region with keyword",
                 "#region public API\npublic void Foo() {}\n#endregion",
@@ -791,12 +804,13 @@ File.AppendAllText(reportPath, results.ToString());
             // === Broken/incomplete code ===
             ("unclosed string",
                 "string s = \"public class",
-                // Scanner enters string at " and never exits — rest is "inside string"
-                o => true), // document behavior
+                // Scanner enters string at " and never exits — keywords inside are protected
+                o => !o.Contains("publico")),
 
             ("unclosed char literal",
                 "char c = 'public",
-                o => true), // document behavior
+                // Scanner enters char literal at ' and never exits
+                o => !o.Contains("publico")),
 
             ("unclosed block comment at EOF",
                 "public /* class if",
@@ -829,11 +843,14 @@ File.AppendAllText(reportPath, results.ToString());
             // === Nested strings ===
             ("string with escaped backslash before quote",
                 "string s = \"path\\\\public\\\\\";",
-                o => true), // document behavior
+                // \\\\ is two escaped backslashes, then public, then \\\\, then "
+                // "public" is inside the string — should NOT be translated
+                o => !o.Contains("publico")),
 
             ("char containing backslash",
                 "char c = '\\\\';",
-                o => true), // document behavior
+                // '\\' is an escaped backslash char literal
+                o => o.Contains("'\\\\'"))
         };
 
         StringBuilder results = new StringBuilder();
@@ -863,22 +880,14 @@ File.AppendAllText(reportPath, results.ToString());
         results.AppendLine($"Total: {passed} PASS, {failed} FAIL out of {cases.Count}");
         results.AppendLine();
 
-        // Document known limitations
         results.AppendLine("### Known limitations of Text Scan:");
-        results.AppendLine("- C# 11 raw string literals (\"\"\"...\"\"\") not handled");
-        results.AppendLine("- $@\"...\" verbatim interpolated strings: behavior depends on implementation");
-        results.AppendLine("- Unclosed strings/comments: scanner state carries to next line (may affect subsequent code)");
-        results.AppendLine("- #if directive: # is not recognized as preprocessor, 'if' after # is translated");
+        results.AppendLine("- C# 11 raw string literals (\"\"\"...\"\"\") not fully handled (keywords inside may be translated)");
+        results.AppendLine("- Unclosed strings/comments: scanner protects content after opening delimiter");
         results.AppendLine();
 
         string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
         File.AppendAllText(reportPath, results.ToString());
 
-        // Report failures but don't fail test — this is research documenting behavior
-        if (failed > 0)
-        {
-            string failMsg = string.Join("\n", failDetails);
-            Assert.True(true, $"{failed} cases showed unexpected behavior (documented):\n{failMsg}");
-        }
+        Assert.Equal(0, failed);
     }
 }
