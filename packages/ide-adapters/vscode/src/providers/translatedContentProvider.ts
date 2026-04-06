@@ -25,6 +25,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public writingPaths: Set<string> = new Set<string>();
   public refreshingPaths: Set<string> = new Set<string>();
   public saveQueue: Map<string, Promise<void>> = new Map<string, Promise<void>>();
+  public mtimeMap: Map<string, number> = new Map<string, number>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
     new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
@@ -47,7 +48,14 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
   public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
     const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
-    return vscode.workspace.fs.stat(originalUri);
+    const originalStat: vscode.FileStat = await vscode.workspace.fs.stat(originalUri);
+    const virtualMtime: number = this.mtimeMap.get(uri.toString()) || originalStat.mtime;
+    return {
+      type: originalStat.type,
+      ctime: originalStat.ctime,
+      mtime: virtualMtime,
+      size: originalStat.size,
+    };
   }
 
   public async readFile(uri: vscode.Uri): Promise<Uint8Array> {
@@ -226,6 +234,10 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
     const otherScheme: string = uri.scheme === TRANSLATED_SCHEME ? READONLY_SCHEME : TRANSLATED_SCHEME;
     const otherUri: vscode.Uri = vscode.Uri.parse(`${otherScheme}:${uri.path}`);
+
+    const now: number = Date.now();
+    this.mtimeMap.set(uri.toString(), now);
+    this.mtimeMap.set(otherUri.toString(), now);
 
     this.changeEmitter.fire([
       { type: vscode.FileChangeType.Changed, uri: uri },
