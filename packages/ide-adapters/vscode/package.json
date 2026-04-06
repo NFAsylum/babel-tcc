@@ -54,11 +54,11 @@
       },
       {
         "command": "babel-tcc.openTranslatedEditable",
-        "title": "Babel TCC: Traduzir Codigo (Editavel)"
+        "title": "Babel TCC: Open Translated View (Editable)"
       },
       {
         "command": "babel-tcc.openTranslatedReadonly",
-        "title": "Babel TCC: Traduzir Codigo (Readonly)"
+        "title": "Babel TCC: Open Translated View (Readonly)"
       },
       {
         "command": "babel-tcc.showOriginal",
