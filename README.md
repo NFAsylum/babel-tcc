@@ -131,11 +131,11 @@ Adicionar ao `settings.json`:
 Desenvolvedores anotam identificadores customizados no codigo:
 
 ```csharp
-public class Calculator // tradu:Calculadora
+public class Calculator // tradu[pt-br]:Calculadora
 {
-    public int operationCount; // tradu:contagemOperacoes
+    public int operationCount; // tradu[pt-br]:contagemOperacoes
 
-    public int Add(int a, int b) // tradu:Somar,a:primeiroNumero,b:segundoNumero
+    public int Add(int a, int b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
     {
         operationCount++;
         return a + b;
