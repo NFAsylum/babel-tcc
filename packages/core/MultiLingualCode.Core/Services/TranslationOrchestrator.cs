@@ -88,7 +88,11 @@ public class TranslationOrchestrator
 
         bool needsRoslyn = sourceCode.Contains("tradu");
 
-        if (!needsRoslyn)
+        // Text Scan only for C# until LanguageScanRules is implemented (tarefa 099).
+        // Python # comments are not handled by the current scanner.
+        bool canTextScan = adapter.LanguageName == "CSharp";
+
+        if (!needsRoslyn && canTextScan)
         {
             // Fast path: Text Scan for keyword-only translation
             Dictionary<string, int> keywordMap = adapter.GetKeywordMap();
