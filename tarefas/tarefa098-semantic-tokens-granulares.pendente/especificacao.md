@@ -46,44 +46,64 @@ Para Python, classificacao similar:
 
 ### Implementacao
 
-1. Expandir TOKEN_TYPES no semanticKeywordProvider.ts:
-   const TOKEN_TYPES = ['keyword', 'variable', 'type', 'macro'];
-   (VS Code mapeia 'keyword' para controle, 'type' para tipos,
-   'macro' para modifiers — verificar quais token types o tema
-   do utilizador suporta)
+A API de semantic tokens do VS Code tem apenas UM tipo 'keyword' —
+nao ha sub-tipos (keyword.control, keyword.type, etc.). A diferenciacao
+de cores no ficheiro original vem da grammar TextMate (scopes como
+keyword.control.cs, storage.type.cs, storage.modifier.cs), nao de
+semantic tokens standard.
 
-2. Criar mapa de classificacao:
+Para replicar as cores, usar custom token types e semanticTokenScopes
+no package.json para mapear para scopes TextMate que os temas reconhecem:
+
+1. Definir custom token types no semanticKeywordProvider.ts:
+   const TOKEN_TYPES = [
+     'keywordControl',    // 0: if, for, return, etc.
+     'keywordType',       // 1: int, string, void, etc.
+     'keywordModifier',   // 2: public, static, abstract, etc.
+     'keywordLiteral',    // 3: true, false, null
+     'keywordOther',      // 4: using, namespace, class, new, etc.
+     'variable',          // 5: identifiers traduzidos
+   ];
+
+2. No package.json, contribuir semanticTokenScopes que mapeiam
+   custom types para scopes TextMate que os temas ja suportam:
+   "contributes": {
+     "semanticTokenScopes": [{
+       "scopes": {
+         "keywordControl": ["keyword.control"],
+         "keywordType": ["storage.type"],
+         "keywordModifier": ["storage.modifier"],
+         "keywordLiteral": ["constant.language"],
+         "keywordOther": ["keyword.other"]
+       }
+     }]
+   }
+   Isto faz o tema aplicar as mesmas cores que usaria para os
+   scopes TextMate equivalentes.
+
+3. Criar mapa de classificacao:
    const KEYWORD_CATEGORIES: Record<string, number> = {
-     'if': 0, 'else': 0, 'for': 0, ...  // keyword (control)
-     'int': 2, 'string': 2, ...          // type
-     'public': 3, 'static': 3, ...       // macro (modifier)
-     'true': 0, 'false': 0, ...          // keyword (literal)
+     'if': 0, 'else': 0, 'for': 0, ...     // keywordControl
+     'int': 1, 'string': 1, 'void': 1, ... // keywordType
+     'public': 2, 'static': 2, ...          // keywordModifier
+     'true': 3, 'false': 3, 'null': 3,      // keywordLiteral
+     'using': 4, 'namespace': 4, ...         // keywordOther
    };
 
-3. No provideDocumentSemanticTokens, ao emitir token:
+4. No provideDocumentSemanticTokens, ao emitir token:
    const original = keywordMap[word.toLowerCase()];
-   const tokenType = KEYWORD_CATEGORIES[original] ?? 0;
+   const tokenType = KEYWORD_CATEGORIES[original] ?? 4;
    builder.push(line, col, word.length, tokenType);
 
-4. Mapa de classificacao deve cobrir C# e Python. Keywords que
-   nao estao no mapa usam type 0 (keyword generico) como fallback.
-
-### Token types do VS Code
-O VS Code suporta estes semantic token types standard:
-- keyword: for control flow and general keywords
-- type: for type names
-- variable: for variables
-- function: for function names
-- class: for class names
-- string, number, regexp, operator, etc.
-
-O tema do utilizador decide as cores. A extensao so precisa emitir
-os token types correctos.
+5. Mapa de classificacao deve cobrir C# e Python. Keywords que
+   nao estao no mapa usam type 4 (keywordOther) como fallback.
 
 ## Escopo
-- Modificar semanticKeywordProvider.ts: expandir TOKEN_TYPES e legend
+- Modificar semanticKeywordProvider.ts: custom TOKEN_TYPES e legend
+- Adicionar semanticTokenScopes ao package.json
 - Criar mapa KEYWORD_CATEGORIES para C# e Python
 - Usar keyword original do keywordMap para classificar
-- Manter token type 'variable' para identifiers (indice 1)
+- Manter token type 'variable' para identifiers traduzidos
 - Testes: verificar que keywords de controle, tipo e modifier
   recebem token types diferentes
+- Verificar visualmente que cores correspondem ao ficheiro original
