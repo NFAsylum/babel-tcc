@@ -21,9 +21,11 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public configService: ConfigurationService;
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
+  public onTranslationComplete: ((language: string) => void) | null = null;
   public writingPaths: Set<string> = new Set<string>();
   public refreshingPaths: Set<string> = new Set<string>();
   public saveQueue: Map<string, Promise<void>> = new Map<string, Promise<void>>();
+  public mtimeMap: Map<string, number> = new Map<string, number>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
     new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
@@ -46,7 +48,14 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
   public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
     const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
-    return vscode.workspace.fs.stat(originalUri);
+    const originalStat: vscode.FileStat = await vscode.workspace.fs.stat(originalUri);
+    const virtualMtime: number = this.mtimeMap.get(uri.toString()) || originalStat.mtime;
+    return {
+      type: originalStat.type,
+      ctime: originalStat.ctime,
+      mtime: virtualMtime,
+      size: originalStat.size,
+    };
   }
 
   public async readFile(uri: vscode.Uri): Promise<Uint8Array> {
@@ -186,6 +195,9 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
     const translated: string = await this.translateContent(originalContent, fileExtension, targetLanguage);
     this.cache.set(cacheKey, translated);
+    if (this.onTranslationComplete) {
+      this.onTranslationComplete(targetLanguage);
+    }
     return translated;
   }
 
@@ -223,6 +235,10 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     const otherScheme: string = uri.scheme === TRANSLATED_SCHEME ? READONLY_SCHEME : TRANSLATED_SCHEME;
     const otherUri: vscode.Uri = vscode.Uri.parse(`${otherScheme}:${uri.path}`);
 
+    const now: number = Date.now();
+    this.mtimeMap.set(uri.toString(), now);
+    this.mtimeMap.set(otherUri.toString(), now);
+
     this.changeEmitter.fire([
       { type: vscode.FileChangeType.Changed, uri: uri },
       { type: vscode.FileChangeType.Changed, uri: otherUri }
@@ -232,6 +248,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */
   public invalidateAll(): void {
     this.cache.clear();
+    this.mtimeMap.clear();
   }
 
   /**
