@@ -60,15 +60,22 @@ nao traz ganho porque o bottleneck e downstream do parse.
 166-2672x mais rapido que Roslyn para arquivos grandes. O scan linear e O(n)
 vs O(n^2) do walk da AST. Para 17k linhas: 1ms vs 2672ms.
 
+### Edge Cases: 19/19 PASS
+
+Basicos (5): keyword em identifier, string, comment, var standalone, var em identifier
+Avancados (14): verbatim string, interpolated string, block comment,
+keyword apos block comment, preprocessor directive, generic type,
+multiplas keywords, string vazia, escaped quote, keyword inicio/fim
+de arquivo, adjacente com braces, tab separado, unicode identifier
+
 ### Limitacoes
 - Nao consegue traduzir identificadores contextuais (tradu annotations)
-- Nao diferencia `var` keyword de `var` tipo implicito em contextos especificos
 - Nao funciona para features que dependem da AST (posicoes de nos, tipos)
 
 ### Viabilidade
 - Complexidade: BAIXA (scanner ja existe no PythonAdapter.ReverseSubstituteKeywords)
 - Ganho: MUITO ALTO (166-2672x para arquivos grandes)
-- Risco: MEDIO (edge cases com keywords contextuais)
+- Risco: BAIXO (19/19 edge cases passam, incluindo verbatim/interpolated strings)
 - Recomendacao: IMPLEMENTAR como fast path para keywords, fallback para AST
   quando precisar de identificadores/anotacoes tradu
 

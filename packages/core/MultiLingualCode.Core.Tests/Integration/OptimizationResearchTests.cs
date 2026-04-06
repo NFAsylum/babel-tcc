@@ -596,4 +596,114 @@ File.AppendAllText(reportPath, results.ToString());
         Assert.True(case4Pass, "standalone var should be translated");
         Assert.True(case5Pass, "var inside 'variable' should NOT be translated");
     }
+
+    [Fact]
+    public void Method2_TextScan_AdvancedEdgeCases()
+    {
+        Dictionary<string, string> translations = new()
+        {
+            ["public"] = "publico",
+            ["class"] = "classe",
+            ["if"] = "se",
+            ["int"] = "inteiro",
+            ["return"] = "retornar",
+            ["string"] = "texto",
+            ["var"] = "var_traduzido",
+            ["new"] = "novo"
+        };
+
+        List<(string Name, string Input, string MustContain, string MustNotContain)> cases = new()
+        {
+            // Verbatim strings
+            ("verbatim string", @"string s = @""public class"";",
+                @"@""public class""", "publico"),
+
+            // Interpolated strings
+            ("interpolated string", "string s = $\"o {x} public\";",
+                "$\"o {x} public\"", "publico"),
+
+            // Block comments
+            ("block comment", "/* public class */ return;",
+                "/* public class */", ""),
+
+            // Block comment with keyword after
+            ("keyword after block comment", "/* comment */ public class Foo {}",
+                "publico", ""),
+
+            // Preprocessor directives (# is not a comment in C#)
+            ("preprocessor directive", "#region public\npublic class Foo {}",
+                "publico classe", ""),
+
+            // Generic types (int as keyword inside List<int>)
+            ("generic type", "List<int> items = new List<int>();",
+                "List<inteiro>", ""),
+
+            // Multiple keywords on same line
+            ("multiple keywords", "public static int Main() { return 0; }",
+                "publico", ""),
+
+            // Empty string literal
+            ("empty string", "string s = \"\";",
+                "texto s = \"\"", ""),
+
+            // Escaped quote in string
+            ("escaped quote", "string s = \"he said \\\"public\\\"\";",
+                "\\\"public\\\"", "publico classe"),
+
+            // Keyword at start of file
+            ("keyword at file start", "class Foo {}",
+                "classe", ""),
+
+            // Keyword at end of file
+            ("keyword at file end", "int x = 1;\nreturn",
+                "retornar", ""),
+
+            // Adjacent keywords no space separation
+            ("adjacent with braces", "if(true){return;}",
+                "se", ""),
+
+            // Tab-separated keywords
+            ("tab separated", "public\tclass\tFoo",
+                "publico", ""),
+
+            // Unicode identifier that contains keyword substring
+            ("unicode identifier", "int públicoNome = 1;",
+                "públicoNome", ""),
+        };
+
+        StringBuilder results = new StringBuilder();
+        results.AppendLine("## Method 2: Advanced Edge Cases");
+        results.AppendLine();
+
+        int passed = 0;
+        int failed = 0;
+
+        foreach ((string name, string input, string mustContain, string mustNotContain) in cases)
+        {
+            string output = TextScanTranslate(input, translations);
+            bool containsOk = string.IsNullOrEmpty(mustContain) || output.Contains(mustContain);
+            bool notContainsOk = string.IsNullOrEmpty(mustNotContain) || !output.Contains(mustNotContain);
+            bool pass = containsOk && notContainsOk;
+
+            if (pass) passed++; else failed++;
+            results.AppendLine($"- {name}: {(pass ? "PASS" : "FAIL")}");
+            if (!pass)
+            {
+                results.AppendLine($"  Input:  `{input.Replace("\n", "\\n")}`");
+                results.AppendLine($"  Output: `{output.Replace("\n", "\\n")}`");
+                results.AppendLine($"  Expected to contain: `{mustContain}`");
+                if (!string.IsNullOrEmpty(mustNotContain))
+                    results.AppendLine($"  Expected NOT to contain: `{mustNotContain}`");
+            }
+        }
+
+        results.AppendLine();
+        results.AppendLine($"Total: {passed} PASS, {failed} FAIL out of {cases.Count}");
+        results.AppendLine();
+
+        string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
+        File.AppendAllText(reportPath, results.ToString());
+
+        Assert.Equal(0, failed);
+    }
 }
