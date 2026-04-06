@@ -87,8 +87,21 @@ Apos adicionar suporte a `"""..."""` no scanner:
 - codigo entre raw strings: PASS (keywords traduzidas corretamente)
 - raw string com conteudo tradu-like: PASS
 
+### Equivalencia com Roslyn: 10/11 MATCH
+
+Testado com 3 arquivos gerados (95-1710 linhas) e 8 snippets reais
+(classes, strings, comments, verbatim, generics, interpolated).
+
+10 de 11 arquivos produzem output identico ao Roslyn.
+
+1 MISMATCH conhecido e aceitavel: codigo dentro de `#if DEBUG ... #endif`.
+O Roslyn nao traduz codigo em regioes desabilitadas do preprocessador
+(trata como disabled text). O Text Scan traduz. Para traducao visual,
+o Text Scan e mais correto — o usuario quer ver todo o codigo traduzido.
+
 ### Limitacoes confirmadas
-- Nenhuma limitacao conhecida restante
+- Codigo em `#if` sem simbolo definido: Text Scan traduz, Roslyn nao.
+  Diferenca aceitavel (Text Scan e mais util para o usuario).
 - Nao consegue traduzir identificadores contextuais (tradu annotations)
 - Nao funciona para features que dependem da AST (posicoes de nos, tipos)
 
