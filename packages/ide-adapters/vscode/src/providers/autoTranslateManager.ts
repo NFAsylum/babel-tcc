@@ -269,19 +269,36 @@ export class AutoTranslateManager implements vscode.Disposable {
       // 'Discard and switch' — just proceed without saving
     }
 
-    // Close translated tabs and reopen with new language
+    // Update content directly in open documents via applyEdit.
+    // VS Code keeps a working copy for editable FileSystemProvider documents,
+    // so close+reopen returns the cached document. applyEdit modifies the
+    // document directly in memory, bypassing the VS Code cache.
     this.contentProvider.invalidateAll();
 
-    for (const { tab, path, viewColumn } of translatedTabs) {
+    for (const { path } of translatedTabs) {
       try {
-        // Close old tab
-        await vscode.window.tabGroups.close(tab);
-
-        // Reopen with new language translation
         const scheme: string = this.getActiveScheme();
-        const newUri: vscode.Uri = vscode.Uri.parse(`${scheme}:${path}`);
-        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(newUri);
-        await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
+        const uri: vscode.Uri = vscode.Uri.parse(`${scheme}:${path}`);
+        const freshContent: string = await this.contentProvider.provideContent(uri);
+
+        const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
+          (d: vscode.TextDocument): boolean => d.uri.path === path && isTranslatedScheme(d.uri.scheme)
+        );
+        if (doc) {
+          const lastLine: vscode.TextLine = doc.lineAt(doc.lineCount - 1);
+          const fullRange: vscode.Range = new vscode.Range(
+            new vscode.Position(0, 0),
+            lastLine.range.end
+          );
+          const edit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
+          edit.replace(doc.uri, fullRange, freshContent);
+          this.contentProvider.refreshingPaths.add(path);
+          try {
+            await vscode.workspace.applyEdit(edit);
+          } finally {
+            this.contentProvider.refreshingPaths.delete(path);
+          }
+        }
       } catch (error: unknown) {
         const message: string = error instanceof Error ? error.message : String(error);
         this.outputChannel.appendLine(`AutoTranslate: failed to refresh tab - ${message}`);
