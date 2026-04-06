@@ -12,7 +12,7 @@ import { KeywordMapService } from './providers/keywordMap';
 import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
 import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/semanticKeywordProvider';
-import { buildFileWatcherPattern } from './config/languages';
+import { buildFileWatcherPattern, SUPPORTED_LANGUAGES } from './config/languages';
 import { COMMANDS } from './config/constants';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
@@ -180,25 +180,29 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       const filePath: string = editor ? editor.document.uri.path : '';
-      const programmingLanguage: string | undefined = filePath
+      const activeProgrammingLanguage: string | undefined = filePath
         ? languageDetector.detectLanguage(filePath)
         : undefined;
 
-      type ScopeItem = vscode.QuickPickItem & { scope: 'global' | 'language' };
-      let scope: 'global' | 'language' = 'global';
+      type ScopeItem = vscode.QuickPickItem & { scope: 'global' | 'language'; language: string | undefined };
 
-      if (programmingLanguage) {
-        const scopeItems: ScopeItem[] = [
-          { label: '$(globe) All languages (global)', scope: 'global' },
-          { label: `$(file-code) ${programmingLanguage} only`, scope: 'language' },
-        ];
-        const scopeChoice: ScopeItem | undefined = await vscode.window.showQuickPick(scopeItems, {
-          placeHolder: 'Apply language change to...'
+      const scopeItems: ScopeItem[] = [
+        { label: '$(globe) All languages (global)', scope: 'global', language: undefined },
+      ];
+      for (const lang of SUPPORTED_LANGUAGES) {
+        const isActive: boolean = lang.name === activeProgrammingLanguage;
+        scopeItems.push({
+          label: `$(file-code) ${lang.name} only${isActive ? ' (active)' : ''}`,
+          scope: 'language',
+          language: lang.name,
         });
-        if (!scopeChoice) {
-          return;
-        }
-        scope = scopeChoice.scope;
+      }
+
+      const scopeChoice: ScopeItem | undefined = await vscode.window.showQuickPick(scopeItems, {
+        placeHolder: 'Apply language change to...'
+      });
+      if (!scopeChoice) {
+        return;
       }
 
       const selected: string | undefined = await vscode.window.showQuickPick(languages, {
@@ -208,10 +212,10 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      if (scope === 'language' && programmingLanguage) {
-        await configService.setLanguageOverride(programmingLanguage, selected);
-        outputChannel.appendLine(`Language for ${programmingLanguage} set to: ${selected}`);
-        vscode.window.showInformationMessage(`Babel TCC: Language for ${programmingLanguage} set to ${selected}.`);
+      if (scopeChoice.scope === 'language' && scopeChoice.language) {
+        await configService.setLanguageOverride(scopeChoice.language, selected);
+        outputChannel.appendLine(`Language for ${scopeChoice.language} set to: ${selected}`);
+        vscode.window.showInformationMessage(`Babel TCC: Language for ${scopeChoice.language} set to ${selected}.`);
       } else {
         await configService.setLanguage(selected);
         outputChannel.appendLine(`Language set to: ${selected}`);
