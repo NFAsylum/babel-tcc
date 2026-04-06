@@ -10,4 +10,7 @@
   atual e seguro sem concorrencia multi-thread.)
 - [x] LOW-006: README padronizado para formato tradu[pt-br]:
 - [x] LOW-007: Titulos de commands padronizados para ingles.
-  stdout! e resolveTranslationsPath public aceitos com justificativa.
+  stdout!: spawn('dotnet', args) usa stdio default 'pipe', stdout
+  garantido nao-null pelo runtime Node.js.
+  resolveTranslationsPath public: coreBridge.test.ts acessa
+  directamente nos testes (mesmo motivo que LOW-004).
