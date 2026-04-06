@@ -116,3 +116,39 @@ Registro das decisoes tecnicas tomadas no projeto e suas justificativas.
 - Arquitetura permite adicionar outros facilmente depois
 
 **Atualizacao (2026-04):** Python adicionado como segunda linguagem (tarefas 052-060) usando tokenizador nativo via subprocesso. Traduções expandidas para 10 idiomas naturais (pt-br, pt-br-ascii, en-us, es-es, fr-fr, de-de, it-it, ja-jp-romaji, zh-cn, ar-sa).
+
+---
+
+## DT-008: Text Scan como fast path para traducao de keywords
+
+**Decisao:** Usar scan linear de texto (TextScanTranslator) para traduzir
+keywords em arquivos sem anotacoes tradu. Roslyn e usado apenas quando o
+arquivo contem `tradu` (precisa da AST para identifiers).
+
+**Alternativas avaliadas (tarefa 061):**
+- Incremental Reparse (Roslyn WithChangedText): 1x speedup — gargalo nao e o parse
+- Cache por Bloco (hash): 270x — mas desnecessario com Text Scan a 0-1ms
+- Traducao Lazy (viewport): complexidade muito alta para ganho que o Text Scan resolve
+
+**Justificativa:**
+- Benchmark real no pipeline integrado (mesma API TranslateToNaturalLanguageAsync):
+  - Sem tradu (Text Scan): 0-1ms para 17.000 linhas
+  - Com tradu (Roslyn): 35-4077ms para 17.000 linhas
+  - Speedup: 35-4077x
+- 51 edge cases testados (strings, comments, preprocessor, raw strings C# 11): 51/51 PASS
+- Equivalencia com output Roslyn: 10/11 MATCH (1 mismatch aceitavel em `#if` disabled region)
+- Fallback automatico para Roslyn quando keyword map nao disponivel
+- Zero regressoes: 566 testes passando apos integracao
+
+**Aplicabilidade a Python:**
+O PythonAdapter.ReverseSubstituteKeywords ja implementa o mesmo padrao
+(scan linear, skip #comments e strings Python). A otimizacao pode ser
+aplicada para forward translation em Python com o mesmo approach —
+substituir o tokenizer subprocess por Text Scan para arquivos sem tradu.
+
+**Deteccao:**
+```csharp
+bool needsRoslyn = sourceCode.Contains("tradu");
+```
+Se o arquivo contem "tradu", usa Roslyn (AST completo para identifiers).
+Caso contrario, usa Text Scan (O(n) linear, 0-1ms).
