@@ -121,9 +121,51 @@ Elimina overhead de IPC (~8ms por request).
 | Python (sem tradu) | ~8ms (IPC) | 0-1ms | ~8x |
 | JavaScript (novo) | N/A | 0-1ms | Instantaneo |
 
+## Limitacoes conhecidas por linguagem
+
+LanguageScanRules resolve C#, Python e linguagens com sintaxe similar.
+Linguagens com construtos mais complexos precisam de extensoes ao
+scanner. Documentado aqui para que o implementador saiba o que precisa
+resolver ao adicionar cada linguagem.
+
+### Suporte completo (LanguageScanRules suficiente)
+| Linguagem | Notas |
+|-----------|-------|
+| C# | Ja implementado. Verbatim @"" com escape "" e limitacao documentada. |
+| Python | LineComment="#". Triple quotes. f-strings simples. |
+| Java | Mesmo que C# sem preprocessor. """ (Java 13+) requer IsTriple. |
+| Kotlin | Mesmo que Java. String templates ${} simples. |
+| PHP | LineComment="// e #". Sem construtos exoticos no caso basico. |
+
+### Suporte parcial (precisa de extensoes ao scanner)
+| Linguagem | Problema | Extensao necessaria |
+|-----------|----------|---------------------|
+| JavaScript/TypeScript | Template literals `` `...${expr}...` `` com expressoes aninhadas. Scanner trata backtick como string atomica — keywords dentro de ${} nao sao traduzidas. | Adicionar HasInterpolation + InterpolationOpen/Close ao StringDelimiter. Scanner recursivo para ${expr} (Core TokenizeLine ja faz isso). |
+| Rust | Lifetimes 'a confundem com char literals. Nested comments /* /* */ */. Raw strings r#"..."# com # variavel. | Verificar ' seguido de identifier sem ' de fecho = lifetime (nao string). Depth counter para nested comments. Contagem de # para raw strings. |
+| Ruby | Heredocs <<~HEREDOC...HEREDOC com delimitador arbitrario. Nested string syntaxes (%w, %q, %Q). | HeredocStyle: scanner le delimiter na abertura, matcha na linha seguinte. Syntaxes % tratadas como string com delimitador configuravel. |
+| Swift | Nested comments /* /* */ */. Multi-line strings """. String interpolation \(expr). | Depth counter. Interpolacao com \() em vez de ${}. |
+| Go | int, string, true, false, nil NAO sao reserved words — podem ser variaveis. TextScan traduziria todas. | NAO e problema do scanner — e do keyword map. Nao incluir builtins no keyword map de Go. Documentar quais palavras sao realmente reserved (25 keywords). |
+
+### C# 11 raw strings (afecta linguagem actual)
+C# 11 introduziu raw string literals com numero variavel de ":
+  var json = """{"name": "public"}""";
+  var nested = """"pode conter """ dentro"""";
+O TextScan actual lida com """ (3 quotes). Nao lida com 4+.
+StringDelimiter.Open/Close sao fixos — nao suportam contagem
+dinamica. Fix: scanner conta " consecutivos e matcha mesmo numero.
+
+### Python 3.12 f-strings aninhadas (afecta linguagem actual)
+Python 3.12 permite nesting recursivo:
+  msg = f"result: {f'{value:{".2f"}}'}"
+O scanner actual nao lida com nesting de quotes dentro de {}
+recursivamente. Fix: scan recursivo para f-string expressions
+(similar ao Core TokenizeLine).
+
 ## Impacto
 
 - Adicionar nova linguagem: ~2 horas (config + JSONs) em vez de ~2 semanas (parser)
 - Suporte a dezenas de linguagens com apenas keywords: viavel em 1 semana
 - Performance 0-1ms para todas as linguagens sem tradu
 - Zero dependencia externa (sem subprocess, sem parser, sem runtime adicional)
+- Linguagens com construtos complexos (JS template literals, Rust lifetimes,
+  Ruby heredocs) precisam de extensoes ao scanner — documentadas acima
