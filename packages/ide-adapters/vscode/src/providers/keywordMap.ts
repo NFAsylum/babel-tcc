@@ -117,6 +117,23 @@ export class KeywordMapService {
     }
   }
 
+  /**
+   * Re-fetches the identifier map from the Core, replacing stale cached data.
+   * Called after translations populate new identifiers via ApplyTraduAnnotations.
+   */
+  public async refreshIdentifierCache(): Promise<void> {
+    const language: string = this.configService.getLanguage();
+    const identifierCacheKey: string = `identifiers::${language}`;
+    try {
+      const map: Record<string, string> = await this.coreBridge.getIdentifierMap(language);
+      this.identifierCache.set(identifierCacheKey, map);
+      this.outputChannel.appendLine(`KeywordMapService: refreshed ${Object.keys(map).length} identifiers for ${language}`);
+    } catch (err: unknown) {
+      const message: string = err instanceof Error ? err.message : String(err);
+      this.outputChannel.appendLine(`KeywordMapService: failed to refresh identifiers for ${language} - ${message}`);
+    }
+  }
+
   /** Disposes of the configuration change subscription. */
   public dispose(): void {
     this.configSubscription.dispose();

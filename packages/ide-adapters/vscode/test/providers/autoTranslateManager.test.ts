@@ -8,6 +8,7 @@ describe('AutoTranslateManager', () => {
   let mockConfigService: {
     isEnabled: ReturnType<typeof vi.fn>;
     getLanguage: ReturnType<typeof vi.fn>;
+    getLanguageForProgrammingLanguage: ReturnType<typeof vi.fn>;
     isReadonly: ReturnType<typeof vi.fn>;
     onDidChangeConfiguration: ReturnType<typeof vi.fn>;
   };
@@ -27,6 +28,7 @@ describe('AutoTranslateManager', () => {
     mockConfigService = {
       isEnabled: vi.fn().mockReturnValue(true),
       getLanguage: vi.fn().mockReturnValue('pt-br'),
+      getLanguageForProgrammingLanguage: vi.fn().mockReturnValue('pt-br'),
       isReadonly: vi.fn().mockReturnValue(false),
       onDidChangeConfiguration: vi.fn((cb: () => void) => {
         configChangeListener = cb;
@@ -168,6 +170,15 @@ describe('AutoTranslateManager', () => {
 
     it('should refresh tabs when language changes', async () => {
       mockConfigService.getLanguage.mockReturnValue('es-es');
+      window.tabGroups.all = [];
+
+      await manager.handleConfigChange();
+      expect(mockContentProvider.invalidateAll).toHaveBeenCalled();
+    });
+
+    it('should refresh tabs when language override changes', async () => {
+      // Global language stays the same, but override for CSharp changes
+      mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('es-es');
       window.tabGroups.all = [];
 
       await manager.handleConfigChange();

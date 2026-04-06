@@ -136,6 +136,10 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   keywordMapService.warmCache();
 
+  translatedContentProvider.onTranslationComplete = (): void => {
+    keywordMapService.refreshIdentifierCache();
+  };
+
   const SCHEMES: string[] = [TRANSLATED_SCHEME, READONLY_SCHEME];
 
   const completionProvider: CompletionProvider = new CompletionProvider(keywordMapService, languageDetector);

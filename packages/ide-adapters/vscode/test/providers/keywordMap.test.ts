@@ -141,6 +141,19 @@ describe('KeywordMapService', () => {
     });
   });
 
+  describe('refreshIdentifierCache', () => {
+    it('should replace stale identifier cache with fresh data', async () => {
+      await service.warmCache();
+      expect(service.getIdentifierMap('file.cs')).toEqual(MOCK_IDENTIFIER_MAP);
+
+      const updatedMap: Record<string, string> = { novoNome: 'newName' };
+      mockCoreBridge.getIdentifierMap.mockResolvedValue(updatedMap);
+
+      await service.refreshIdentifierCache();
+      expect(service.getIdentifierMap('file.cs')).toEqual(updatedMap);
+    });
+  });
+
   describe('dispose', () => {
     it('should dispose config subscription without error', () => {
       expect(() => service.dispose()).not.toThrow();

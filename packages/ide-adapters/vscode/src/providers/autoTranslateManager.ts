@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ConfigurationService } from '../services/configurationService';
 import { LanguageDetector } from '../services/languageDetector';
 import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './translatedContentProvider';
+import { SUPPORTED_LANGUAGES } from '../config/languages';
 
 /** Manages automatic translation of .cs tabs based on the enabled/language configuration. */
 export class AutoTranslateManager implements vscode.Disposable {
@@ -11,7 +12,7 @@ export class AutoTranslateManager implements vscode.Disposable {
   public outputChannel: vscode.OutputChannel;
   public processingUris: Set<string> = new Set<string>();
   public previousEnabled: boolean;
-  public previousLanguage: string;
+  public previousLanguageFingerprint: string;
   public previousReadonly: boolean;
   public editorSubscription: vscode.Disposable;
   public configSubscription: vscode.Disposable;
@@ -27,7 +28,7 @@ export class AutoTranslateManager implements vscode.Disposable {
     this.contentProvider = contentProvider;
     this.outputChannel = outputChannel;
     this.previousEnabled = configService.isEnabled();
-    this.previousLanguage = configService.getLanguage();
+    this.previousLanguageFingerprint = this.getLanguageFingerprint();
     this.previousReadonly = configService.isReadonly();
 
     this.editorSubscription = vscode.window.onDidChangeActiveTextEditor(
@@ -108,30 +109,42 @@ export class AutoTranslateManager implements vscode.Disposable {
     }
   }
 
+  /**
+   * Builds a fingerprint of all effective languages (global + per-language overrides).
+   * Used to detect changes in any language setting, not just the global one.
+   */
+  public getLanguageFingerprint(): string {
+    const parts: string[] = [this.configService.getLanguage()];
+    for (const lang of SUPPORTED_LANGUAGES) {
+      parts.push(`${lang.name}:${this.configService.getLanguageForProgrammingLanguage(lang.name)}`);
+    }
+    return parts.join('|');
+  }
+
   /** Reacts to config changes: ON->OFF restores originals, OFF->ON translates, language/readonly change refreshes. */
   public async handleConfigChange(): Promise<void> {
     const currentEnabled: boolean = this.configService.isEnabled();
-    const currentLanguage: string = this.configService.getLanguage();
+    const currentFingerprint: string = this.getLanguageFingerprint();
     const currentReadonly: boolean = this.configService.isReadonly();
     const wasEnabled: boolean = this.previousEnabled;
-    const previousLanguage: string = this.previousLanguage;
+    const previousFingerprint: string = this.previousLanguageFingerprint;
     const wasReadonly: boolean = this.previousReadonly;
 
     this.previousEnabled = currentEnabled;
     this.previousReadonly = currentReadonly;
 
     if (wasEnabled && !currentEnabled) {
-      this.previousLanguage = currentLanguage;
+      this.previousLanguageFingerprint = currentFingerprint;
       await this.replaceTranslatedWithOriginals();
     } else if (!wasEnabled && currentEnabled) {
-      this.previousLanguage = currentLanguage;
+      this.previousLanguageFingerprint = currentFingerprint;
       await this.replaceOriginalsWithTranslated();
-    } else if (currentEnabled && currentLanguage !== previousLanguage) {
-      // Update previousLanguage AFTER refreshTranslatedTabs so that cancel can revert
-      await this.refreshTranslatedTabs(previousLanguage);
-      this.previousLanguage = this.configService.getLanguage();
+    } else if (currentEnabled && currentFingerprint !== previousFingerprint) {
+      const previousGlobalLanguage: string = previousFingerprint.split('|')[0];
+      await this.refreshTranslatedTabs(previousGlobalLanguage);
+      this.previousLanguageFingerprint = this.getLanguageFingerprint();
     } else {
-      this.previousLanguage = currentLanguage;
+      this.previousLanguageFingerprint = currentFingerprint;
       if (currentEnabled && currentReadonly !== wasReadonly) {
         await this.switchScheme(wasReadonly ? READONLY_SCHEME : TRANSLATED_SCHEME);
       }
