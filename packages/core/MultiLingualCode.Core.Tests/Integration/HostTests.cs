@@ -491,6 +491,261 @@ public class HostTests : IDisposable
         Assert.False(result.IsSuccess);
     }
 
+    // === HandleGetKeywordMap ===
+
+    [Fact]
+    public async Task HandleGetKeywordMap_ValidRequest_ReturnsReversedMap()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+        Host.GetKeywordMapRequest request = new Host.GetKeywordMapRequest
+        {
+            FileExtension = ".cs",
+            TargetLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleGetKeywordMap(orchestrator, request);
+
+        Assert.True(result.Success, result.Error);
+        Dictionary<string, string> map = JsonSerializer.Deserialize<Dictionary<string, string>>(result.Result, Host.Program.JsonOptions)!;
+        Assert.NotEmpty(map);
+        Assert.True(map.ContainsValue("public") || map.ContainsValue("class") || map.ContainsValue("if"));
+    }
+
+    [Fact]
+    public async Task HandleGetKeywordMap_InvalidExtension_ReturnsError()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+        Host.GetKeywordMapRequest request = new Host.GetKeywordMapRequest
+        {
+            FileExtension = ".xyz",
+            TargetLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = await Host.Program.HandleGetKeywordMap(orchestrator, request);
+
+        Assert.False(result.Success);
+    }
+
+    // === HandleGetIdentifierMap ===
+
+    [Fact]
+    public void HandleGetIdentifierMap_EmptyIdentifiers_ReturnsEmptyMap()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+        Host.GetIdentifierMapRequest request = new Host.GetIdentifierMapRequest
+        {
+            TargetLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = Host.Program.HandleGetIdentifierMap(orchestrator, request);
+
+        Assert.True(result.Success, result.Error);
+        Dictionary<string, string> map = JsonSerializer.Deserialize<Dictionary<string, string>>(result.Result, Host.Program.JsonOptions)!;
+        Assert.Empty(map);
+    }
+
+    [Fact]
+    public async Task HandleGetIdentifierMap_AfterTranslation_ReturnsPopulatedMap()
+    {
+        TranslationOrchestrator orchestrator = Host.Program.CreateOrchestrator("pt-br", TranslationsPath, TempDir);
+
+        // Translate code with tradu annotations to populate identifier map
+        string codeWithTradu = "public class Calculator { // tradu[pt-br]:Calculadora\n  public int Add(int a, int b) { return a + b; } // tradu[pt-br]:Somar\n}";
+        Host.TranslateRequest translateReq = new Host.TranslateRequest
+        {
+            SourceCode = codeWithTradu,
+            FileExtension = ".cs",
+            TargetLanguage = "pt-br"
+        };
+        Host.CoreResponse translateResult = await Host.Program.HandleTranslateToNaturalLanguage(orchestrator, translateReq);
+        Assert.True(translateResult.Success, translateResult.Error);
+
+        Host.GetIdentifierMapRequest request = new Host.GetIdentifierMapRequest
+        {
+            TargetLanguage = "pt-br"
+        };
+
+        Host.CoreResponse result = Host.Program.HandleGetIdentifierMap(orchestrator, request);
+
+        Assert.True(result.Success, result.Error);
+        Dictionary<string, string> map = JsonSerializer.Deserialize<Dictionary<string, string>>(result.Result, Host.Program.JsonOptions)!;
+        Assert.NotEmpty(map);
+    }
+
+    // === RouteRequest for GetKeywordMap and GetIdentifierMap ===
+
+    [Fact]
+    public async Task RouteRequest_GetKeywordMap_ReturnsKeywordMap()
+    {
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            fileExtension = ".cs",
+            targetLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Route("GetKeywordMap", paramsJson);
+
+        Assert.True(result.Success, result.Error);
+        Dictionary<string, string> map = JsonSerializer.Deserialize<Dictionary<string, string>>(result.Result, Host.Program.JsonOptions)!;
+        Assert.NotEmpty(map);
+    }
+
+    [Fact]
+    public async Task RouteRequest_GetIdentifierMap_ReturnsMap()
+    {
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            targetLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Route("GetIdentifierMap", paramsJson);
+
+        Assert.True(result.Success, result.Error);
+    }
+
+    [Fact]
+    public async Task RouteRequest_GetKeywordMap_MalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("GetKeywordMap", "not json{{{");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task RouteRequest_GetIdentifierMap_MalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("GetIdentifierMap", "not json{{{");
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task RouteRequest_ApplyTranslatedEdits_ReturnsSuccess()
+    {
+        Dictionary<string, TranslationOrchestrator> cache = new();
+        string translateJson = JsonSerializer.Serialize(new
+        {
+            sourceCode = "public class Foo {}",
+            fileExtension = ".cs",
+            targetLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse translated = await RouteWithCache("TranslateToNaturalLanguage", translateJson, cache);
+        Assert.True(translated.Success);
+
+        string applyJson = JsonSerializer.Serialize(new
+        {
+            originalCode = "public class Foo {}",
+            previousTranslatedCode = translated.Result,
+            editedTranslatedCode = translated.Result,
+            fileExtension = ".cs",
+            sourceLanguage = "pt-br"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await RouteWithCache("ApplyTranslatedEdits", applyJson, cache);
+
+        Assert.True(result.Success, result.Error);
+    }
+
+    [Fact]
+    public async Task RouteRequest_ApplyTranslatedEdits_MalformedJson_ReturnsError()
+    {
+        Host.CoreResponse result = await Route("ApplyTranslatedEdits", "bad json{");
+
+        Assert.False(result.Success);
+    }
+
+    // === ExtractLanguageCode for GetKeywordMap/GetIdentifierMap ===
+
+    [Fact]
+    public void ExtractLanguageCode_GetKeywordMap_ReturnsTargetLanguage()
+    {
+        string paramsJson = JsonSerializer.Serialize(new { targetLanguage = "pt-br" }, Host.Program.JsonOptions);
+
+        MultiLingualCode.Core.Models.OperationResultGeneric<string> result = Host.Program.ExtractLanguageCode("GetKeywordMap", paramsJson);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("pt-br", result.Value);
+    }
+
+    [Fact]
+    public void ExtractLanguageCode_GetIdentifierMap_ReturnsTargetLanguage()
+    {
+        string paramsJson = JsonSerializer.Serialize(new { targetLanguage = "es-es" }, Host.Program.JsonOptions);
+
+        MultiLingualCode.Core.Models.OperationResultGeneric<string> result = Host.Program.ExtractLanguageCode("GetIdentifierMap", paramsJson);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("es-es", result.Value);
+    }
+
+    // === RunPersistent ===
+
+    [Fact]
+    public async Task RunPersistent_QuitCommand_ReturnsZero()
+    {
+        StringReader input = new StringReader("{\"method\":\"quit\"}\n");
+        Console.SetIn(input);
+
+        int exitCode = await Host.Program.RunPersistent(TranslationsPath, TempDir);
+
+        Console.SetIn(new StreamReader(Console.OpenStandardInput()));
+
+        Assert.Equal(0, exitCode);
+    }
+
+    [Fact]
+    public async Task RunPersistent_TranslateRequest_WritesResponseToStdout()
+    {
+        string request = JsonSerializer.Serialize(new
+        {
+            method = "GetSupportedLanguages",
+            @params = new { }
+        });
+        StringReader input = new StringReader(request + "\n{\"method\":\"quit\"}\n");
+        StringWriter output = new StringWriter();
+        Console.SetIn(input);
+        Console.SetOut(output);
+
+        int exitCode = await Host.Program.RunPersistent(TranslationsPath, TempDir);
+
+        Console.SetIn(new StreamReader(Console.OpenStandardInput()));
+        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("pt-br", output.ToString());
+    }
+
+    [Fact]
+    public async Task RunPersistent_InvalidJson_WritesErrorResponse()
+    {
+        StringReader input = new StringReader("not json\n{\"method\":\"quit\"}\n");
+        StringWriter output = new StringWriter();
+        Console.SetIn(input);
+        Console.SetOut(output);
+
+        int exitCode = await Host.Program.RunPersistent(TranslationsPath, TempDir);
+
+        Console.SetIn(new StreamReader(Console.OpenStandardInput()));
+        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("false", output.ToString());
+    }
+
+    [Fact]
+    public async Task RunPersistent_EmptyLine_SkipsWithoutError()
+    {
+        StringReader input = new StringReader("\n\n{\"method\":\"quit\"}\n");
+        Console.SetIn(input);
+
+        int exitCode = await Host.Program.RunPersistent(TranslationsPath, TempDir);
+
+        Console.SetIn(new StreamReader(Console.OpenStandardInput()));
+
+        Assert.Equal(0, exitCode);
+    }
+
     // === Error paths ===
 
     [Fact]
