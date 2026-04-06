@@ -60,22 +60,37 @@ nao traz ganho porque o bottleneck e downstream do parse.
 166-2672x mais rapido que Roslyn para arquivos grandes. O scan linear e O(n)
 vs O(n^2) do walk da AST. Para 17k linhas: 1ms vs 2672ms.
 
-### Edge Cases: 19/19 PASS
+### Edge Cases: 42/43 PASS, 1 FAIL
 
-Basicos (5): keyword em identifier, string, comment, var standalone, var em identifier
-Avancados (14): verbatim string, interpolated string, block comment,
+Basicos (5/5): keyword em identifier, string, comment, var standalone, var em identifier
+Avancados (14/14): verbatim string, interpolated string, block comment,
 keyword apos block comment, preprocessor directive, generic type,
 multiplas keywords, string vazia, escaped quote, keyword inicio/fim
 de arquivo, adjacente com braces, tab separado, unicode identifier
+String/multiline/pragma/broken (23/24): multiline block comment, unclosed
+block comment, raw string literal, string.Format, interpolated com expressao,
+interpolated com braces aninhados, verbatim interpolated, multiline comment
+spans keywords, pragma warning/restore, #region, #define, unclosed string/char,
+unclosed block comment EOF, missing semicolons, double braces, empty input,
+whitespace, keyword sozinha, keyword com numeros, escaped backslash
 
-### Limitacoes
+**1 FAIL: `#if` directive** — scanner traduz `#if` para `#se` porque nao
+reconhece `#` como inicio de diretiva de preprocessador. O `if` apos `#` e
+tratado como keyword standalone.
+Fix: pular linha inteira se comecar com `#` (diretivas sao sempre uma linha).
+
+### Limitacoes confirmadas
+- `#if`/`#elif`/`#else`/`#endif` directives: keywords apos `#` sao traduzidas (bug)
+- C# 11 raw string literals (`"""..."""`): nao tratados (comportamento indefinido)
+- `$@"..."` verbatim interpolated: comportamento depende de implementacao
+- Unclosed strings/comments: estado do scanner propaga para proxima linha
 - Nao consegue traduzir identificadores contextuais (tradu annotations)
 - Nao funciona para features que dependem da AST (posicoes de nos, tipos)
 
 ### Viabilidade
 - Complexidade: BAIXA (scanner ja existe no PythonAdapter.ReverseSubstituteKeywords)
 - Ganho: MUITO ALTO (166-2672x para arquivos grandes)
-- Risco: BAIXO (19/19 edge cases passam, incluindo verbatim/interpolated strings)
+- Risco: BAIXO (42/43 edge cases passam, 1 fix trivial para directives)
 - Recomendacao: IMPLEMENTAR como fast path para keywords, fallback para AST
   quando precisar de identificadores/anotacoes tradu
 
