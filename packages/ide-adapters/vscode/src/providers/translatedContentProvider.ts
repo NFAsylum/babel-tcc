@@ -233,15 +233,8 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     ]);
   }
 
-  /** Clears the entire translation cache and notifies VS Code that all cached documents changed. */
+  /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */
   public invalidateAll(): void {
-    for (const key of this.cache.keys()) {
-      const path: string = key.split('::')[0];
-      this.changeEmitter.fire([
-        { type: vscode.FileChangeType.Changed, uri: vscode.Uri.parse(`${TRANSLATED_SCHEME}:${path}`) },
-        { type: vscode.FileChangeType.Changed, uri: vscode.Uri.parse(`${READONLY_SCHEME}:${path}`) }
-      ]);
-    }
     this.cache.clear();
   }
 
