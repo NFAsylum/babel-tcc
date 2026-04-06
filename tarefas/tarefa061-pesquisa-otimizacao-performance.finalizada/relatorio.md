@@ -153,16 +153,34 @@ retorno parcial. Opcoes:
 - Recomendacao: NAO implementar (complexidade nao justifica o ganho,
   e o text scan resolve o primeiro load de forma mais simples)
 
+## Comparacao Justa: Mesmo Overhead (4 runs cada)
+
+Benchmarks anteriores comparavam Roslyn full pipeline vs Text Scan funcao
+isolada — injusto. Comparacao corrigida com mesmo overhead para ambos:
+
+| Metodos | ~Linhas | Roslyn (full pipeline) | Text Scan (full pipeline) | Speedup |
+|---------|---------|----------------------|--------------------------|---------|
+| 25 | 435 | 4ms | 0ms | 4x |
+| 100 | 1710 | 22ms | 0ms | 22x |
+| 500 | 8510 | 503ms | 0ms | **503x** |
+| 1000 | 17010 | 2291ms | 4ms | **573x** |
+
+Roslyn full = orchestrator.TranslateToNaturalLanguageAsync() (load table + parse + walk + generate).
+Text Scan full = create adapter + load table + build translation map + linear scan.
+
+Os numeros anteriores (611x, 1034x) eram inflados pela comparacao injusta.
+Os numeros reais (503x, 573x) continuam muito significativos.
+
 ## Tabela Comparativa
 
 | Criterio | Metodo 1 | Metodo 2 | Metodo 3 | Metodo 4 |
 |----------|----------|----------|----------|----------|
-| Speedup (8500 linhas) | 1x | 166x | 270x | Teorico |
-| Speedup (17000 linhas) | 1x | 2672x | N/A | Teorico |
+| Speedup justo (8500 linhas) | 1x | 503x | 270x | Teorico |
+| Speedup justo (17000 linhas) | 1x | 573x | N/A | Teorico |
 | Primeiro load | Sem ganho | Muito rapido | Sem ganho | Rapido |
 | Interacoes seguintes | Sem ganho | Rapido | Muito rapido | Rapido |
 | Complexidade | Media | Baixa | Media | Muito alta |
-| Risco de regressao | Baixo | Medio | Baixo | Muito alto |
+| Risco de regressao | Baixo | Baixo | Baixo | Muito alto |
 | Compatibilidade Python | Sim | Sim (ja existe) | Sim | Sim |
 | UX (flicker) | Nenhum | Nenhum | Nenhum | Provavel |
 

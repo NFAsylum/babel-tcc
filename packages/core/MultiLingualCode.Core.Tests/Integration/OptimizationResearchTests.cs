@@ -1959,4 +1959,130 @@ File.AppendAllText(reportPath, results.ToString());
         }
         Assert.Equal(0, unexpectedMismatches);
     }
+
+    // =========================================================================
+    // FAIR COMPARISON: Both pipelines with same overhead
+    // =========================================================================
+
+    [Fact]
+    public async Task FairComparison_SameOverhead()
+    {
+        StringBuilder results = new StringBuilder();
+        results.AppendLine("## Fair Comparison: Same Overhead for Both Pipelines");
+        results.AppendLine();
+        results.AppendLine("Both pipelines include: load adapter, load translation table, build map.");
+        results.AppendLine("Roslyn: Parse AST + Walk + Generate. Text Scan: linear scan + replace.");
+        results.AppendLine();
+        results.AppendLine("| Methods | ~Lines | Roslyn (isolated) | Text Scan (isolated) | Roslyn (full pipeline) | Text Scan (full pipeline) | Fair Speedup |");
+        results.AppendLine("|---------|--------|-------------------|---------------------|----------------------|--------------------------|-------------|");
+
+        int[] methodCounts = { 25, 100, 500, 1000 };
+
+        foreach (int methods in methodCounts)
+        {
+            string code = GenerateCode(methods);
+            int lines = code.Split('\n').Length;
+
+            // --- Roslyn isolated: just parse + walk + generate ---
+            CSharpAdapter roslynAdapter = new CSharpAdapter();
+            long[] roslynIsolated = new long[Runs];
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                ASTNode ast = roslynAdapter.Parse(code);
+                ASTNode clone = ast.Clone();
+                // Walk would go here (simulated by Generate)
+                roslynAdapter.Generate(clone);
+                sw.Stop();
+                roslynIsolated[r] = sw.ElapsedMilliseconds;
+            }
+
+            // --- Text Scan isolated: just scan + replace ---
+            // Pre-build map (same as Roslyn pre-loads tables)
+            CSharpAdapter scanAdapter = new CSharpAdapter();
+            Dictionary<string, int> keywordMap = scanAdapter.GetKeywordMap();
+            NaturalLanguageProvider scanProvider = new NaturalLanguageProvider
+            {
+                LanguageCode = "pt-br",
+                TranslationsBasePath = TranslationsPath
+            };
+            await scanProvider.LoadTranslationTableAsync("csharp");
+            Dictionary<string, string> translationMap = new();
+            foreach (KeyValuePair<string, int> kv in keywordMap)
+            {
+                OperationResultGeneric<string> translated = scanProvider.TranslateKeyword(kv.Value);
+                if (translated.IsSuccess) translationMap[kv.Key] = translated.Value;
+            }
+
+            long[] scanIsolated = new long[Runs];
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                TextScanTranslate(code, translationMap);
+                sw.Stop();
+                scanIsolated[r] = sw.ElapsedMilliseconds;
+            }
+
+            // --- Roslyn full pipeline: orchestrator end-to-end ---
+            TranslationOrchestrator orchestrator = CreateOrchestrator();
+            await orchestrator.TranslateToNaturalLanguageAsync(GenerateCode(1), ".cs", "pt-br"); // warmup
+
+            long[] roslynFull = new long[Runs];
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+                sw.Stop();
+                roslynFull[r] = sw.ElapsedMilliseconds;
+            }
+
+            // --- Text Scan full pipeline: load tables + scan ---
+            long[] scanFull = new long[Runs];
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+
+                // Same overhead as Roslyn: get adapter, load table, build map
+                CSharpAdapter fullAdapter = new CSharpAdapter();
+                Dictionary<string, int> fullKeywordMap = fullAdapter.GetKeywordMap();
+                NaturalLanguageProvider fullProvider = new NaturalLanguageProvider
+                {
+                    LanguageCode = "pt-br",
+                    TranslationsBasePath = TranslationsPath
+                };
+                await fullProvider.LoadTranslationTableAsync("csharp");
+                Dictionary<string, string> fullMap = new();
+                foreach (KeyValuePair<string, int> kv in fullKeywordMap)
+                {
+                    OperationResultGeneric<string> translated = fullProvider.TranslateKeyword(kv.Value);
+                    if (translated.IsSuccess) fullMap[kv.Key] = translated.Value;
+                }
+                TextScanTranslate(code, fullMap);
+
+                sw.Stop();
+                scanFull[r] = sw.ElapsedMilliseconds;
+            }
+
+            long riAvg = roslynIsolated.Sum() / Runs;
+            long siAvg = scanIsolated.Sum() / Runs;
+            long rfAvg = roslynFull.Sum() / Runs;
+            long sfAvg = scanFull.Sum() / Runs;
+            string fairSpeedup = rfAvg > 0 ? $"{(double)rfAvg / Math.Max(sfAvg, 1):F1}x" : "N/A";
+
+            results.AppendLine($"| {methods} | {lines} | {riAvg}ms | {siAvg}ms | {rfAvg}ms | {sfAvg}ms | {fairSpeedup} |");
+        }
+
+        results.AppendLine();
+        results.AppendLine("Roslyn (isolated) = Parse + Clone + Generate only.");
+        results.AppendLine("Text Scan (isolated) = scan + replace with pre-built map.");
+        results.AppendLine("Roslyn (full pipeline) = orchestrator.TranslateToNaturalLanguageAsync().");
+        results.AppendLine("Text Scan (full pipeline) = create adapter + load table + build map + scan.");
+        results.AppendLine("Fair Speedup = Roslyn full / Text Scan full.");
+        results.AppendLine();
+
+        string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
+        File.AppendAllText(reportPath, results.ToString());
+
+        Assert.True(true);
+    }
 }
