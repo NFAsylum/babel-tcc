@@ -4,7 +4,7 @@ import { commands, workspace, window, languages, Uri } from './__mocks__/vscode'
 
 vi.mock('fs');
 
-import { activate, deactivate } from '../src/extension';
+import { activate, deactivate, buildScopeItems } from '../src/extension';
 
 function makeContext(): { extensionPath: string; subscriptions: { dispose(): void }[] } {
   return {
@@ -127,6 +127,37 @@ describe('extension', () => {
       await readonlyCall![1]();
 
       expect(window.showWarningMessage).toHaveBeenCalledWith('Babel TCC: File type not supported for translation.');
+    });
+  });
+
+  describe('buildScopeItems', () => {
+    it('should list all languages with active file open', () => {
+      const items = buildScopeItems('CSharp');
+      const labels: string[] = items.map((i) => i.label);
+      expect(labels[0]).toContain('All languages');
+      expect(labels).toEqual(expect.arrayContaining([
+        expect.stringContaining('CSharp'),
+        expect.stringContaining('Python'),
+      ]));
+      const csharpItem = items.find((i) => i.language === 'CSharp');
+      expect(csharpItem?.label).toContain('(active)');
+      const pythonItem = items.find((i) => i.language === 'Python');
+      expect(pythonItem?.label).not.toContain('(active)');
+    });
+
+    it('should list all languages without active file', () => {
+      const items = buildScopeItems(undefined);
+      expect(items.length).toBe(3); // global + CSharp + Python
+      for (const item of items) {
+        expect(item.label).not.toContain('(active)');
+      }
+    });
+
+    it('should set correct language field for per-language items', () => {
+      const items = buildScopeItems('CSharp');
+      const pythonItem = items.find((i) => i.language === 'Python');
+      expect(pythonItem).toBeDefined();
+      expect(pythonItem?.scope).toBe('language');
     });
   });
 

@@ -17,6 +17,28 @@ import { COMMANDS } from './config/constants';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
+/** Item in the scope QuickPick for selectLanguage command. */
+export type ScopeItem = vscode.QuickPickItem & { scope: 'global' | 'language'; language: string | undefined };
+
+/**
+ * Builds the list of scope items for the selectLanguage QuickPick.
+ * Lists all registered languages, marking the active one with "(active)".
+ */
+export function buildScopeItems(activeProgrammingLanguage: string | undefined): ScopeItem[] {
+  const items: ScopeItem[] = [
+    { label: '$(globe) All languages (global)', scope: 'global', language: undefined },
+  ];
+  for (const lang of SUPPORTED_LANGUAGES) {
+    const isActive: boolean = lang.name === activeProgrammingLanguage;
+    items.push({
+      label: `$(file-code) ${lang.name} only${isActive ? ' (active)' : ''}`,
+      scope: 'language',
+      language: lang.name,
+    });
+  }
+  return items;
+}
+
 let outputChannel: vscode.OutputChannel;
 let coreBridge: CoreBridge;
 let languageDetector: LanguageDetector;
@@ -184,19 +206,7 @@ export function activate(context: vscode.ExtensionContext): void {
         ? languageDetector.detectLanguage(filePath)
         : undefined;
 
-      type ScopeItem = vscode.QuickPickItem & { scope: 'global' | 'language'; language: string | undefined };
-
-      const scopeItems: ScopeItem[] = [
-        { label: '$(globe) All languages (global)', scope: 'global', language: undefined },
-      ];
-      for (const lang of SUPPORTED_LANGUAGES) {
-        const isActive: boolean = lang.name === activeProgrammingLanguage;
-        scopeItems.push({
-          label: `$(file-code) ${lang.name} only${isActive ? ' (active)' : ''}`,
-          scope: 'language',
-          language: lang.name,
-        });
-      }
+      const scopeItems: ScopeItem[] = buildScopeItems(activeProgrammingLanguage);
 
       const scopeChoice: ScopeItem | undefined = await vscode.window.showQuickPick(scopeItems, {
         placeHolder: 'Apply language change to...'
