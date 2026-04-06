@@ -21,7 +21,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public configService: ConfigurationService;
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
-  public onTranslationComplete: (() => void) | null = null;
+  public onTranslationComplete: ((language: string) => void) | null = null;
   public writingPaths: Set<string> = new Set<string>();
   public refreshingPaths: Set<string> = new Set<string>();
   public saveQueue: Map<string, Promise<void>> = new Map<string, Promise<void>>();
@@ -188,7 +188,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     const translated: string = await this.translateContent(originalContent, fileExtension, targetLanguage);
     this.cache.set(cacheKey, translated);
     if (this.onTranslationComplete) {
-      this.onTranslationComplete();
+      this.onTranslationComplete(targetLanguage);
     }
     return translated;
   }

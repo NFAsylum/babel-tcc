@@ -149,7 +149,7 @@ describe('KeywordMapService', () => {
       const updatedMap: Record<string, string> = { novoNome: 'newName' };
       mockCoreBridge.getIdentifierMap.mockResolvedValue(updatedMap);
 
-      await service.refreshIdentifierCache();
+      await service.refreshIdentifierCache('pt-br');
       expect(service.getIdentifierMap('file.cs')).toEqual(updatedMap);
     });
   });

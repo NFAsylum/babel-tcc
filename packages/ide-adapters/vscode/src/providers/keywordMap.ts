@@ -120,9 +120,9 @@ export class KeywordMapService {
   /**
    * Re-fetches the identifier map from the Core, replacing stale cached data.
    * Called after translations populate new identifiers via ApplyTraduAnnotations.
+   * @param language - The effective language used in the translation.
    */
-  public async refreshIdentifierCache(): Promise<void> {
-    const language: string = this.configService.getLanguage();
+  public async refreshIdentifierCache(language: string): Promise<void> {
     const identifierCacheKey: string = `identifiers::${language}`;
     try {
       const map: Record<string, string> = await this.coreBridge.getIdentifierMap(language);
