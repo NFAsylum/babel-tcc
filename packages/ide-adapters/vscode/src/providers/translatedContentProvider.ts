@@ -248,6 +248,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */
   public invalidateAll(): void {
     this.cache.clear();
+    this.mtimeMap.clear();
   }
 
   /**

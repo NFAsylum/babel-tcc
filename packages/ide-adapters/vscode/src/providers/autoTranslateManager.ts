@@ -43,7 +43,10 @@ export class AutoTranslateManager implements vscode.Disposable {
     this.configSubscription = configService.onDidChangeConfiguration((): void => {
       this.configChangeQueue = this.configChangeQueue
         .then((): Promise<void> => this.handleConfigChange())
-        .catch((): void => {});
+        .catch((err: unknown): void => {
+          const message: string = err instanceof Error ? err.message : String(err);
+          this.outputChannel.appendLine(`AutoTranslate: config change failed - ${message}`);
+        });
     });
   }
 
