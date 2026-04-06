@@ -90,9 +90,16 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       );
 
       const originalUri: vscode.Uri = vscode.Uri.file(originalPath);
-      const encoder: TextEncoder = new TextEncoder();
       this.writingPaths.add(originalPath);
-      await vscode.workspace.fs.writeFile(originalUri, encoder.encode(originalCode));
+      const originalDoc: vscode.TextDocument = await vscode.workspace.openTextDocument(originalUri);
+      const fullRange: vscode.Range = new vscode.Range(
+        new vscode.Position(0, 0),
+        originalDoc.lineAt(originalDoc.lineCount - 1).range.end
+      );
+      const writeEdit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
+      writeEdit.replace(originalUri, fullRange, originalCode);
+      await vscode.workspace.applyEdit(writeEdit);
+      await originalDoc.save();
       setTimeout((): void => { this.writingPaths.delete(originalPath); }, 500);
 
       const targetLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
@@ -237,12 +244,12 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   }
 
   /**
-   * Reads the original source file from disk as a UTF-8 string.
+   * Reads the original source file from disk, respecting the workspace encoding setting.
    */
   public async readOriginalFile(filePath: string): Promise<string> {
     const uri: vscode.Uri = vscode.Uri.file(filePath);
-    const content: Uint8Array = await vscode.workspace.fs.readFile(uri);
-    return Buffer.from(content).toString('utf-8');
+    const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(uri);
+    return doc.getText();
   }
 
   /** Disposes of resources by clearing the cache and releasing the change event emitter. */
