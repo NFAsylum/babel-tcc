@@ -42,19 +42,34 @@ public class StringDelimiter
 
 ### 2. Regras pre-definidas para linguagens existentes e novas
 
+### Suporte completo (LanguageScanRules suficiente)
+
 | Linguagem | LineComment | BlockComment | Preprocessor | Strings |
 |-----------|------------|-------------|--------------|---------|
 | C# | // | /* */ | # | " ' @" $" """ |
 | Python | # | — | — | " ' """ ''' f" r" |
-| JavaScript | // | /* */ | — | " ' ` |
-| TypeScript | // | /* */ | — | " ' ` |
 | Java | // | /* */ | — | " ' """ (Java 13+) |
-| Go | // | /* */ | — | " ` |
-| Rust | // | /* */ | — | " r#" |
-| Ruby | # | =begin/=end | — | " ' |
 | PHP | // # | /* */ | — | " ' |
 | Kotlin | // | /* */ | — | " """ |
 | Swift | // | /* */ | — | " """ |
+
+### Suporte parcial (limitacoes documentadas)
+
+| Linguagem | Limitacao | Impacto |
+|-----------|----------|---------|
+| JavaScript/TypeScript | Template literals `` `${expr}` `` — keywords em expressoes dentro de `${}` nao sao distinguidas do texto da string | Keywords em `${}` seriam traduzidas (correto para forward translation) |
+| Go | `int`, `string`, `true` nao sao reserved words — sao predeclared identifiers que podem ser redefinidos | Text Scan traduziria todas as ocorrencias, mesmo quando redefinidas pelo usuario. Raro na pratica. |
+| Rust | Lifetimes `'a` confundem com char literal. Raw strings `r#"..."#` e nested `/* */` nao suportados. | Necessitaria extensoes ao LanguageScanRules |
+| Ruby | Heredocs `<<~HEREDOC`, syntaxes `%w`, `%q`, `=begin/=end` block comments | Necessitaria extensoes ao LanguageScanRules |
+
+### Nao suportavel sem extensoes
+
+As limitacoes acima nao afetam C#, Python, Java, PHP, Kotlin e Swift.
+Para JS/TS e Go, o suporte parcial e funcional para a maioria dos
+arquivos (template literals com keywords sao raros, redefinicao de
+predeclared identifiers em Go e extremamente raro).
+Para Rust e Ruby, LanguageScanRules precisaria de extensoes (depth
+counter para nested comments, heredoc parser, etc.).
 
 ### 3. Refatorar TextScanTranslator
 
