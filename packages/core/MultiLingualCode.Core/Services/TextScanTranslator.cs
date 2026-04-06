@@ -121,7 +121,10 @@ public class TextScanTranslator
                 }
                 string word = code.Substring(start, i - start);
 
-                if (translations.TryGetValue(word, out string translated))
+                // Skip escaped identifiers (@keyword in C#) — @ before word means it's an identifier, not a keyword
+                bool isEscapedIdentifier = start > 0 && code[start - 1] == '@';
+
+                if (!isEscapedIdentifier && translations.TryGetValue(word, out string? translated))
                 {
                     result.Append(translated);
                 }
