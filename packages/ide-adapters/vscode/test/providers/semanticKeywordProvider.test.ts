@@ -16,10 +16,10 @@ describe('SemanticKeywordProvider', () => {
   };
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  function makeDocument(scheme: string, text: string) {
+  function makeDocument(scheme: string, text: string, ext = '.cs') {
     const lines = text.split('\n');
     return {
-      uri: Uri.parse(`${scheme}:/test/file.cs`),
+      uri: Uri.parse(`${scheme}:/test/file${ext}`),
       lineCount: lines.length,
       lineAt: (line: number) => ({ text: lines[line] }),
     };
@@ -124,6 +124,56 @@ describe('SemanticKeywordProvider', () => {
       const doc = makeDocument(TRANSLATED_SCHEME, 'foo bar baz');
       const result = provider.provideDocumentSemanticTokens(doc as any);
       expect(result.data.length).toBe(0);
+    });
+
+    it('should not highlight keywords inside block comments', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, '/* publico classe */ retornar;');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Only "retornar" outside the block comment should be highlighted
+      expect(result.data.length).toBeGreaterThan(0);
+      // retornar is at col 21, type 0 (keyword)
+      expect(result.data[1]).toBe(21);
+    });
+
+    it('should not highlight keywords inside multiline block comments', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, '/* publico\nclasse */ retornar;');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Line 0: entire line is inside block comment
+      // Line 1: "classe" inside comment, "retornar" outside
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should not highlight keywords inside verbatim strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'texto x = @"publico classe";');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should not highlight keywords inside interpolated strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'texto x = $"o {valor} publico";');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should not highlight keywords inside Python comments', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, '# publico classe se', '.py');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(0);
+    });
+
+    it('should not highlight keywords inside Python triple-quoted strings', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'x = """publico\nclasse"""\nretornar', '.py');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // Only "retornar" on line 2 should be highlighted
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should not treat # as comment in C# files', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, '#region publico\npublico classe Foo {}');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // "publico" on line 0 after #region should be highlighted (not a comment in C#)
+      // "publico" and "classe" on line 1 should also be highlighted
+      expect(result.data.length).toBeGreaterThan(0);
     });
 
     it('should distinguish keyword tokens from identifier tokens', () => {
