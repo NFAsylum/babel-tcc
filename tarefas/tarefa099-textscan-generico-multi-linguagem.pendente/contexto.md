@@ -17,15 +17,15 @@ que configura # como LineComment para Python.
 ## Arquivos relevantes
 - packages/core/MultiLingualCode.Core/Services/TextScanTranslator.cs (generalizar)
 - packages/core/MultiLingualCode.Core/Services/TranslationOrchestrator.cs (integrar)
-- packages/core/MultiLingualCode.Core/Interfaces/ILanguageAdapter.cs (GetScanRules)
+- packages/core/MultiLingualCode.Core/Interfaces/ITextScannable.cs (NOVO — interface separada)
 - packages/core/MultiLingualCode.Core/LanguageAdapters/Python/PythonAdapter.cs (usar Text Scan)
 - packages/core/MultiLingualCode.Core/LanguageAdapters/CSharpAdapter.cs (extrair regras)
 - docs/developer-guide/adding-new-language.md (documentar caminho Text Scan)
 
 ## Notas
-- PythonAdapter.ReverseSubstituteKeywords (linhas 203-290) ja implementa
+- PythonAdapter.ReverseSubstituteKeywords (linhas 203-296) ja implementa
   scan linear com skip de # comments e strings Python. Usar como referencia.
-- O TextScanTranslator.cs atual tem 175 linhas. A generalizacao deve
+- O TextScanTranslator.cs atual tem 181 linhas. A generalizacao deve
   manter a simplicidade — configuracao por dados, nao por heranca.
 - Novas linguagens sem tradu nao precisam de ILanguageAdapter completo.
-  Um adapter minimo com GetScanRules() + GetKeywordMap() seria suficiente.
+  Um adapter minimo com ITextScannable + GetKeywordMap() seria suficiente.
