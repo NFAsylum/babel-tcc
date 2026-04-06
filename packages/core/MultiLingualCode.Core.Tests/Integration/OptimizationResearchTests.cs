@@ -1965,6 +1965,68 @@ File.AppendAllText(reportPath, results.ToString());
     // =========================================================================
 
     [Fact]
+    public async Task RealPipeline_IntegratedTextScan()
+    {
+        TranslationOrchestrator orchestrator = CreateOrchestrator();
+        string warmup = GenerateCode(1);
+        await orchestrator.TranslateToNaturalLanguageAsync(warmup, ".cs", "pt-br");
+
+        int[] methodCounts = { 25, 100, 500, 1000 };
+
+        StringBuilder results = new StringBuilder();
+        results.AppendLine("## REAL PIPELINE: Integrated Text Scan vs Roslyn (same API call)");
+        results.AppendLine();
+        results.AppendLine("Both use orchestrator.TranslateToNaturalLanguageAsync().");
+        results.AppendLine("Without tradu → Text Scan path. With tradu → Roslyn path.");
+        results.AppendLine();
+        results.AppendLine("| Methods | ~Lines | Without tradu (Text Scan) | With tradu (Roslyn) | Speedup |");
+        results.AppendLine("|---------|--------|--------------------------|--------------------:|--------:|");
+
+        foreach (int methods in methodCounts)
+        {
+            string plainCode = GenerateCode(methods);
+            string traduCode = GenerateCodeWithTradu(methods);
+            int lines = plainCode.Split('\n').Length;
+
+            long[] plainTimes = new long[Runs];
+            long[] traduTimes = new long[Runs];
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(plainCode, ".cs", "pt-br");
+                sw.Stop();
+                Assert.True(result.IsSuccess);
+                // Verify Text Scan actually ran (output has translated keywords)
+                Assert.Contains("publico", result.Value);
+                plainTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(traduCode, ".cs", "pt-br");
+                sw.Stop();
+                Assert.True(result.IsSuccess);
+                traduTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            long plainAvg = plainTimes.Sum() / Runs;
+            long traduAvg = traduTimes.Sum() / Runs;
+            string speedup = traduAvg > 0 ? $"{(double)traduAvg / Math.Max(plainAvg, 1):F0}x" : "N/A";
+
+            results.AppendLine($"| {methods} | {lines} | {plainAvg}ms | {traduAvg}ms | {speedup} |");
+        }
+
+        results.AppendLine();
+
+        string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
+        File.AppendAllText(reportPath, results.ToString());
+
+        Assert.True(true);
+    }
+
+    [Fact]
     public async Task FairComparison_SameOverhead()
     {
         StringBuilder results = new StringBuilder();
