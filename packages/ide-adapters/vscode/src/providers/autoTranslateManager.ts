@@ -272,36 +272,21 @@ export class AutoTranslateManager implements vscode.Disposable {
       // 'Discard and switch' — just proceed without saving
     }
 
-    // Update content directly in open documents via applyEdit.
-    // VS Code keeps a working copy for editable FileSystemProvider documents,
-    // so close+reopen returns the cached document. applyEdit modifies the
-    // document directly in memory, bypassing the VS Code cache.
+    // Close tabs, invalidate per-URI cache (fires changeEmitter to tell VS Code
+    // the virtual file changed), then reopen. Each invalidateCache fires changeEmitter
+    // for both schemes, forcing VS Code to re-read from the provider on next open.
     this.contentProvider.invalidateAll();
 
-    for (const { path } of translatedTabs) {
+    for (const { tab, path, viewColumn } of translatedTabs) {
       try {
+        await vscode.window.tabGroups.close(tab);
+
         const scheme: string = this.getActiveScheme();
         const uri: vscode.Uri = vscode.Uri.parse(`${scheme}:${path}`);
-        const freshContent: string = await this.contentProvider.provideContent(uri);
+        this.contentProvider.invalidateCache(uri);
 
-        const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
-          (d: vscode.TextDocument): boolean => d.uri.path === path && isTranslatedScheme(d.uri.scheme)
-        );
-        if (doc && doc.getText() !== freshContent) {
-          const lastLine: vscode.TextLine = doc.lineAt(doc.lineCount - 1);
-          const fullRange: vscode.Range = new vscode.Range(
-            new vscode.Position(0, 0),
-            lastLine.range.end
-          );
-          const edit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
-          edit.replace(doc.uri, fullRange, freshContent);
-          this.contentProvider.refreshingPaths.add(path);
-          try {
-            await vscode.workspace.applyEdit(edit);
-          } finally {
-            this.contentProvider.refreshingPaths.delete(path);
-          }
-        }
+        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
       } catch (error: unknown) {
         const message: string = error instanceof Error ? error.message : String(error);
         this.outputChannel.appendLine(`AutoTranslate: failed to refresh tab - ${message}`);
