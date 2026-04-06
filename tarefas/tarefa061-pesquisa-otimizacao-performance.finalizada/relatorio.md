@@ -143,32 +143,70 @@ retorno parcial. Opcoes:
 | Compatibilidade Python | Sim | Sim (ja existe) | Sim | Sim |
 | UX (flicker) | Nenhum | Nenhum | Nenhum | Provavel |
 
+## Sistema Hibrido: Text Scan + Roslyn Fallback (4 runs cada)
+
+Logica de decisao:
+- Arquivo contem `tradu` ou `"""` → Roslyn (AST completo)
+- Caso contrario → Text Scan (fast path)
+
+### Cenario A: Arquivos SEM tradu (Text Scan path)
+
+| Metodos | ~Linhas | Roslyn | Hibrido | Speedup |
+|---------|---------|--------|---------|---------|
+| 25 | 435 | 6ms | 0ms | 6x |
+| 100 | 1710 | 25ms | 0ms | 25x |
+| 500 | 8510 | 539ms | 1ms | 539x |
+| 1000 | 17010 | 2069ms | 2ms | **1034x** |
+
+### Cenario B: Arquivos COM tradu (Roslyn fallback)
+
+| Metodos | ~Linhas | Roslyn | Hibrido | Speedup |
+|---------|---------|--------|---------|---------|
+| 25 | 259 | 5ms | 4ms | 1.2x |
+| 100 | 1009 | 39ms | 40ms | 1.0x |
+| 500 | 5009 | 862ms | 870ms | 1.0x |
+| 1000 | 10009 | 3459ms | 3428ms | 1.0x |
+
+### Cenario C: Arquivos COM raw strings (Roslyn fallback)
+
+| Metodos | ~Linhas | Roslyn | Hibrido | Speedup |
+|---------|---------|--------|---------|---------|
+| 25 | 234 | 0ms | 0ms | N/A |
+| 100 | 909 | 5ms | 1ms | 5x |
+
+### Analise
+
+O sistema hibrido tem **zero overhead** para arquivos com tradu/raw strings —
+o custo e apenas um `string.Contains` que e O(n) mas negligivel.
+
+Para arquivos sem tradu (maioria dos arquivos de codigo), o speedup e
+**539-1034x**. 17k linhas: 2069ms → 2ms.
+
+Para arquivos com tradu, o desempenho e identico ao Roslyn (1.0x).
+
 ## Metas de Performance vs Resultados
 
-| Cenario | Meta | Atual | Com Metodo 2 | Com Metodo 2+3 |
-|---------|------|-------|-------------|----------------|
-| Load 1700 linhas | <50ms | 24ms | <1ms | <1ms |
-| Load 17000 linhas | <500ms | 2096ms | ~1ms | ~1ms |
-| Load 85000 linhas | <2s | ~27s | ~5ms | ~5ms |
-| Edicao + retraduzir | <50ms | 24-2096ms | <1ms | <1ms (cache) |
-| Troca de tab (cache) | <5ms | 24-2096ms | <1ms | <1ms |
+| Cenario | Meta | Atual | Hibrido (sem tradu) | Hibrido (com tradu) |
+|---------|------|-------|---------------------|---------------------|
+| Load 1700 linhas | <50ms | 25ms | 0ms | 40ms |
+| Load 17000 linhas | <500ms | 2305ms | 2ms | 3428ms |
+| Edicao + retraduzir | <50ms | 25-2305ms | 0-2ms | 40-3428ms |
+| Troca de tab | <5ms | 25-2305ms | 0-2ms | 40-3428ms |
+
+Arquivos sem tradu: TODAS as metas atingidas.
+Arquivos com tradu: sem melhoria (Roslyn e o unico caminho).
 
 ## Recomendacao
 
-### Implementar (em ordem de prioridade):
+### Implementar:
 
-1. **Metodo 2 (Text Scan)** — maior ganho, menor complexidade.
-   Usar como fast path para traducao de keywords. Scanner ja existe
-   como referencia (PythonAdapter.ReverseSubstituteKeywords).
-   Fallback para AST quando precisar de tradu annotations/identifiers.
-
-2. **Metodo 3 (Cache por Bloco)** — complementa o text scan para
-   interacoes subsequentes. Apenas se o text scan nao for suficiente.
+1. **Sistema Hibrido (Text Scan + Roslyn Fallback)** — maior ganho,
+   menor complexidade. Deteccao por `string.Contains("tradu")` e
+   `string.Contains("\"\"\"")`. 43/43 edge cases testados.
+   Scanner ja existe como referencia (PythonAdapter.ReverseSubstituteKeywords).
 
 ### NAO implementar:
 
-3. **Metodo 1 (Incremental Reparse)** — resolve o problema errado.
-   O gargalo nao e o parse do Roslyn.
-
-4. **Metodo 4 (Lazy Viewport)** — complexidade muito alta para ganho
-   que o text scan ja resolve de forma mais simples.
+2. **Metodo 1 (Incremental Reparse)** — resolve o problema errado.
+3. **Metodo 3 (Cache por Bloco)** — desnecessario se Text Scan ja faz em 2ms.
+4. **Metodo 4 (Lazy Viewport)** — complexidade muito alta.

@@ -890,4 +890,241 @@ File.AppendAllText(reportPath, results.ToString());
 
         Assert.Equal(0, failed);
     }
+
+    // =========================================================================
+    // HYBRID SYSTEM: Text Scan + Roslyn fallback
+    // =========================================================================
+
+    /// <summary>
+    /// Simulates the hybrid approach: use Text Scan for files without tradu/raw strings,
+    /// fall back to Roslyn for files that need AST.
+    /// </summary>
+    public static bool NeedsRoslyn(string code)
+    {
+        return code.Contains("tradu") || code.Contains("\"\"\"");
+    }
+
+    public async Task<string> HybridTranslate(
+        string code, TranslationOrchestrator orchestrator, Dictionary<string, string> translationMap)
+    {
+        if (NeedsRoslyn(code))
+        {
+            OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+            return result.IsSuccess ? result.Value : code;
+        }
+
+        return TextScanTranslate(code, translationMap);
+    }
+
+    public static string GenerateCodeWithTradu(int methodCount)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("using System;");
+        sb.AppendLine();
+        sb.AppendLine("namespace Research.Test");
+        sb.AppendLine("{");
+        sb.AppendLine("    public class Calculator // tradu[pt-br]:Calculadora");
+        sb.AppendLine("    {");
+
+        for (int i = 0; i < methodCount; i++)
+        {
+            sb.AppendLine($"        public int Method{i}(int param{i}) // tradu[pt-br]:Metodo{i}");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            int result = param{i} * 2;");
+            sb.AppendLine($"            if (result > 100)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                return result;");
+            sb.AppendLine("            }");
+            sb.AppendLine("            return 0;");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+        return sb.ToString();
+    }
+
+    public static string GenerateCodeWithRawStrings(int methodCount)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("using System;");
+        sb.AppendLine();
+        sb.AppendLine("namespace Research.Test");
+        sb.AppendLine("{");
+        sb.AppendLine("    public class GeneratedClass");
+        sb.AppendLine("    {");
+
+        for (int i = 0; i < methodCount; i++)
+        {
+            sb.AppendLine($"        public string Method{i}()");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            string sql = \"\"\"");
+            sb.AppendLine($"                SELECT * FROM table{i}");
+            sb.AppendLine($"                WHERE public = true");
+            sb.AppendLine($"                \"\"\";");
+            sb.AppendLine("            return sql;");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+        return sb.ToString();
+    }
+
+    [Fact]
+    public async Task Hybrid_TextScanPlusRoslynFallback_Performance()
+    {
+        TranslationOrchestrator orchestrator = CreateOrchestrator();
+        string warmup = GenerateCode(1);
+        await orchestrator.TranslateToNaturalLanguageAsync(warmup, ".cs", "pt-br");
+
+        CSharpAdapter adapter = new CSharpAdapter();
+        Dictionary<string, int> keywordMap = adapter.GetKeywordMap();
+        NaturalLanguageProvider provider = new NaturalLanguageProvider
+        {
+            LanguageCode = "pt-br",
+            TranslationsBasePath = TranslationsPath
+        };
+        await provider.LoadTranslationTableAsync("csharp");
+        MultiLingualCode.Core.Models.Translation.KeywordTable table = provider.ActiveKeywordTable;
+        Dictionary<string, string> translationMap = new();
+        foreach (KeyValuePair<string, int> kv in keywordMap)
+        {
+            OperationResultGeneric<string> translated = table.GetKeyword(kv.Value);
+            if (translated.IsSuccess) translationMap[kv.Key] = translated.Value;
+        }
+
+        int[] methodCounts = { 25, 100, 500, 1000 };
+
+        StringBuilder results = new StringBuilder();
+        results.AppendLine("## Hybrid System: Text Scan + Roslyn Fallback");
+        results.AppendLine();
+        results.AppendLine("### Scenario A: Files WITHOUT tradu (Text Scan path)");
+        results.AppendLine();
+        results.AppendLine("| Methods | ~Lines | Roslyn Only | Hybrid | Speedup |");
+        results.AppendLine("|---------|--------|-------------|--------|---------|");
+
+        foreach (int methods in methodCounts)
+        {
+            string code = GenerateCode(methods);
+            int lines = code.Split('\n').Length;
+            Assert.False(NeedsRoslyn(code), "plain code should use text scan");
+
+            long[] roslynTimes = new long[Runs];
+            long[] hybridTimes = new long[Runs];
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+                sw.Stop();
+                roslynTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await HybridTranslate(code, orchestrator, translationMap);
+                sw.Stop();
+                hybridTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            long roslynAvg = roslynTimes.Sum() / Runs;
+            long hybridAvg = hybridTimes.Sum() / Runs;
+            string speedup = roslynAvg > 0 ? $"{(double)roslynAvg / Math.Max(hybridAvg, 1):F0}x" : "N/A";
+            results.AppendLine($"| {methods} | {lines} | {roslynAvg}ms | {hybridAvg}ms | {speedup} |");
+        }
+
+        results.AppendLine();
+        results.AppendLine("### Scenario B: Files WITH tradu (Roslyn fallback path)");
+        results.AppendLine();
+        results.AppendLine("| Methods | ~Lines | Roslyn Only | Hybrid | Speedup |");
+        results.AppendLine("|---------|--------|-------------|--------|---------|");
+
+        foreach (int methods in methodCounts)
+        {
+            string code = GenerateCodeWithTradu(methods);
+            int lines = code.Split('\n').Length;
+            Assert.True(NeedsRoslyn(code), "tradu code should use Roslyn");
+
+            long[] roslynTimes = new long[Runs];
+            long[] hybridTimes = new long[Runs];
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+                sw.Stop();
+                roslynTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await HybridTranslate(code, orchestrator, translationMap);
+                sw.Stop();
+                hybridTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            long roslynAvg = roslynTimes.Sum() / Runs;
+            long hybridAvg = hybridTimes.Sum() / Runs;
+            string speedup = hybridAvg > 0 ? $"{(double)roslynAvg / hybridAvg:F1}x" : "N/A";
+            results.AppendLine($"| {methods} | {lines} | {roslynAvg}ms | {hybridAvg}ms | {speedup} |");
+        }
+
+        results.AppendLine();
+        results.AppendLine("### Scenario C: Files WITH raw strings (Roslyn fallback path)");
+        results.AppendLine();
+        results.AppendLine("| Methods | ~Lines | Roslyn Only | Hybrid | Speedup |");
+        results.AppendLine("|---------|--------|-------------|--------|---------|");
+
+        int[] smallCounts = { 25, 100 };
+        foreach (int methods in smallCounts)
+        {
+            string code = GenerateCodeWithRawStrings(methods);
+            int lines = code.Split('\n').Length;
+            Assert.True(NeedsRoslyn(code), "raw string code should use Roslyn");
+
+            long[] roslynTimes = new long[Runs];
+            long[] hybridTimes = new long[Runs];
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await orchestrator.TranslateToNaturalLanguageAsync(code, ".cs", "pt-br");
+                sw.Stop();
+                roslynTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            for (int r = 0; r < Runs; r++)
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+                await HybridTranslate(code, orchestrator, translationMap);
+                sw.Stop();
+                hybridTimes[r] = sw.ElapsedMilliseconds;
+            }
+
+            long roslynAvg = roslynTimes.Sum() / Runs;
+            long hybridAvg = hybridTimes.Sum() / Runs;
+            string speedup = hybridAvg > 0 ? $"{(double)roslynAvg / hybridAvg:F1}x" : "N/A";
+            results.AppendLine($"| {methods} | {lines} | {roslynAvg}ms | {hybridAvg}ms | {speedup} |");
+        }
+
+        results.AppendLine();
+        results.AppendLine("### Decision logic");
+        results.AppendLine("```");
+        results.AppendLine("if (code.Contains(\"tradu\") || code.Contains(\"\\\"\\\"\\\"\"))");
+        results.AppendLine("    → Roslyn (full AST, handles everything)");
+        results.AppendLine("else");
+        results.AppendLine("    → Text Scan (fast path, 43/43 edge cases pass)");
+        results.AppendLine("```");
+        results.AppendLine();
+
+        string reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tarefa061-benchmark-results.md"));
+        File.AppendAllText(reportPath, results.ToString());
+
+        Assert.True(true);
+    }
 }
