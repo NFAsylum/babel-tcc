@@ -11,10 +11,10 @@ export const SEMANTIC_TOKENS_LEGEND = new vscode.SemanticTokensLegend(TOKEN_TYPE
 /**
  * Scans a line tracking string/comment state. Returns the state after the line ends
  * and whether each position is inside a string or comment.
- * Handles: line comments (// and #), block comments, regular/verbatim/interpolated strings,
+ * Handles: line comments (// and # for Python), block comments, regular/verbatim/interpolated strings,
  * and Python triple-quoted strings. Tracks state across lines for multiline constructs.
  */
-function scanLine(text: string, inBlockComment: boolean, inBlockString: boolean, blockStringDelimiter: string): {
+function scanLine(text: string, inBlockComment: boolean, inBlockString: boolean, blockStringDelimiter: string, isPython: boolean): {
   insideAt: boolean[];
   outBlockComment: boolean;
   outBlockString: boolean;
@@ -99,7 +99,7 @@ function scanLine(text: string, inBlockComment: boolean, inBlockString: boolean,
       i++;
       continue;
     }
-    if (ch === '#') {
+    if (isPython && ch === '#') {
       inLineComment = true;
       insideAt[i] = true;
       continue;
@@ -190,10 +190,11 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
     let inBlockComment = false;
     let inBlockString = false;
     let blockStringDelimiter = '';
+    const isPython: boolean = document.uri.path.endsWith('.py');
 
     for (let line = 0; line < document.lineCount; line++) {
       const text: string = document.lineAt(line).text;
-      const scan: ReturnType<typeof scanLine> = scanLine(text, inBlockComment, inBlockString, blockStringDelimiter);
+      const scan: ReturnType<typeof scanLine> = scanLine(text, inBlockComment, inBlockString, blockStringDelimiter, isPython);
       inBlockComment = scan.outBlockComment;
       inBlockString = scan.outBlockString;
       blockStringDelimiter = scan.outBlockStringDelimiter;
