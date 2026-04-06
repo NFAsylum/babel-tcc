@@ -4,11 +4,11 @@
   "scopeName": "source.mlc-python",
   "comment": "Keyword highlighting is not included because translated keywords vary by natural language and cannot be hardcoded in a static TextMate grammar. Highlighting covers comments, strings, numbers, decorators and tradu annotations.",
   "patterns": [
+    { "include": "#tradu-annotations" },
     { "include": "#comments" },
     { "include": "#strings-triple" },
     { "include": "#strings" },
     { "include": "#numbers" },
-    { "include": "#tradu-annotations" },
     { "include": "#decorators" }
   ],
   "repository": {

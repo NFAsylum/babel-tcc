@@ -3,10 +3,10 @@
   "name": "Babel TCC - C# Traduzido",
   "scopeName": "source.mlc-csharp",
   "patterns": [
+    { "include": "#tradu-annotations" },
     { "include": "#comments" },
     { "include": "#strings" },
-    { "include": "#numbers" },
-    { "include": "#tradu-annotations" }
+    { "include": "#numbers" }
   ],
   "repository": {
     "comments": {
