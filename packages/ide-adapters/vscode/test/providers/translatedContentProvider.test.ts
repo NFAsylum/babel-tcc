@@ -46,6 +46,17 @@ describe('TranslatedContentProvider', () => {
     );
     vi.mocked(workspace.fs.writeFile).mockResolvedValue(undefined);
 
+    const mockOriginalDoc = {
+      getText: vi.fn((): string => 'public class Foo {}'),
+      lineAt: vi.fn((): { range: { end: { line: number; character: number } } } =>
+        ({ range: { end: { line: 0, character: 19 } } })),
+      lineCount: 1,
+      save: vi.fn().mockResolvedValue(true),
+      uri: Uri.file('/test/file.cs'),
+    };
+    vi.mocked(workspace.openTextDocument).mockResolvedValue(mockOriginalDoc as any);
+    vi.mocked(workspace.applyEdit).mockResolvedValue(true);
+
     provider = new TranslatedContentProvider(
       mockCoreBridge as any,
       mockLanguageDetector as any,
@@ -130,7 +141,7 @@ describe('TranslatedContentProvider', () => {
       expect(mockCoreBridge.translateFromNaturalLanguage).not.toHaveBeenCalled();
     });
 
-    it('should apply translated edits and write original', async () => {
+    it('should apply translated edits and write original via applyEdit', async () => {
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
       const content = new TextEncoder().encode('publico classe Foo {}');
 
@@ -138,7 +149,7 @@ describe('TranslatedContentProvider', () => {
       await provider.writeFile(uri, content);
 
       expect(mockCoreBridge.applyTranslatedEdits).toHaveBeenCalled();
-      expect(workspace.fs.writeFile).toHaveBeenCalled();
+      expect(workspace.applyEdit).toHaveBeenCalled();
     });
 
     it('should show error when reverse translation fails', async () => {
