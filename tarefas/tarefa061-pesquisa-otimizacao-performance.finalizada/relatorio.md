@@ -158,14 +158,30 @@ Logica de decisao:
 | 500 | 8510 | 539ms | 1ms | 539x |
 | 1000 | 17010 | 2069ms | 2ms | **1034x** |
 
-### Cenario B: Arquivos COM tradu (Roslyn fallback)
+### Cenario B: Arquivos COM tradu — V1 (Roslyn fallback completo)
 
-| Metodos | ~Linhas | Roslyn | Hibrido | Speedup |
-|---------|---------|--------|---------|---------|
+| Metodos | ~Linhas | Roslyn | Hibrido V1 | Speedup |
+|---------|---------|--------|------------|---------|
 | 25 | 259 | 5ms | 4ms | 1.2x |
 | 100 | 1009 | 39ms | 40ms | 1.0x |
 | 500 | 5009 | 862ms | 870ms | 1.0x |
 | 1000 | 10009 | 3459ms | 3428ms | 1.0x |
+
+### Cenario B2: Arquivos COM tradu — V2 (Text Scan keywords + Roslyn identifiers)
+
+Pipeline: Text Scan (keywords) → Roslyn Parse + Walk (apenas identifiers)
+
+| Metodos | ~Linhas | Roslyn Full | Text Scan | Roslyn Parse | Walk (id only) | Total V2 | Speedup |
+|---------|---------|-------------|-----------|-------------|---------------|----------|---------|
+| 25 | 259 | 20ms | 0ms | 1ms | 0ms | 1ms | **20x** |
+| 100 | 1009 | 175ms | 0ms | 2ms | 4ms | 6ms | **29x** |
+| 500 | 5009 | 973ms | 2ms | 3ms | 81ms | 86ms | **11x** |
+| 1000 | 10009 | 3885ms | 4ms | 9ms | 688ms | 701ms | **5.5x** |
+
+O V2 separa keyword translation (Text Scan, ~0ms) de identifier translation
+(Roslyn walk, variavel). O gargalo restante e o Roslyn walk para identifiers,
+que cresce com o numero de nos AST. Mas e 5.5-29x mais rapido que o walk
+completo (keywords + identifiers) porque pula todos os KeywordNode.
 
 ### Cenario C: Arquivos COM raw strings (Roslyn fallback)
 
@@ -176,37 +192,47 @@ Logica de decisao:
 
 ### Analise
 
-O sistema hibrido tem **zero overhead** para arquivos com tradu/raw strings —
-o custo e apenas um `string.Contains` que e O(n) mas negligivel.
+| Tipo de arquivo | Abordagem | Speedup |
+|-----------------|-----------|---------|
+| Sem tradu, sem `"""` | Text Scan puro | 539-1034x |
+| Com tradu | Text Scan keywords + Roslyn identifiers (V2) | 5.5-29x |
+| Com `"""` | Roslyn completo (seguro) | 1x |
 
-Para arquivos sem tradu (maioria dos arquivos de codigo), o speedup e
-**539-1034x**. 17k linhas: 2069ms → 2ms.
-
-Para arquivos com tradu, o desempenho e identico ao Roslyn (1.0x).
+A maioria dos arquivos (sem tradu) fica instantanea. Arquivos com tradu
+tambem melhoram significativamente (5.5-29x). Apenas arquivos com raw
+strings C# 11 usam Roslyn completo.
 
 ## Metas de Performance vs Resultados
 
-| Cenario | Meta | Atual | Hibrido (sem tradu) | Hibrido (com tradu) |
-|---------|------|-------|---------------------|---------------------|
-| Load 1700 linhas | <50ms | 25ms | 0ms | 40ms |
-| Load 17000 linhas | <500ms | 2305ms | 2ms | 3428ms |
-| Edicao + retraduzir | <50ms | 25-2305ms | 0-2ms | 40-3428ms |
-| Troca de tab | <5ms | 25-2305ms | 0-2ms | 40-3428ms |
+| Cenario | Meta | Atual | Sem tradu | Com tradu (V2) |
+|---------|------|-------|-----------|----------------|
+| Load 1000 linhas | <50ms | 25ms | 0ms | 6ms |
+| Load 5000 linhas | <200ms | ~400ms | 1ms | 86ms |
+| Load 10000 linhas | <500ms | ~2300ms | 2ms | 701ms |
+| Load 17000 linhas | <500ms | 2305ms | 2ms | N/A |
 
 Arquivos sem tradu: TODAS as metas atingidas.
-Arquivos com tradu: sem melhoria (Roslyn e o unico caminho).
+Arquivos com tradu: metas atingidas ate ~5000 linhas (86ms < 200ms).
 
 ## Recomendacao
 
 ### Implementar:
 
-1. **Sistema Hibrido (Text Scan + Roslyn Fallback)** — maior ganho,
-   menor complexidade. Deteccao por `string.Contains("tradu")` e
-   `string.Contains("\"\"\"")`. 43/43 edge cases testados.
+1. **Sistema Hibrido V2** — Text Scan para keywords + Roslyn apenas para
+   identifiers. Funciona para TODOS os arquivos:
+   - Sem tradu: Text Scan puro (0-2ms)
+   - Com tradu: Text Scan keywords + Roslyn identifiers (1-701ms)
+   - Com `"""`: Roslyn completo (fallback seguro)
+
+   43/43 edge cases testados para o Text Scan.
    Scanner ja existe como referencia (PythonAdapter.ReverseSubstituteKeywords).
+
+   Esforco estimado: refatorar TranslateAstForward para separar keyword
+   translation de identifier translation. O walk ja tem o switch separado
+   por tipo de no (KeywordNode vs IdentifierNode) — basta condicionar.
 
 ### NAO implementar:
 
-2. **Metodo 1 (Incremental Reparse)** — resolve o problema errado.
-3. **Metodo 3 (Cache por Bloco)** — desnecessario se Text Scan ja faz em 2ms.
+2. **Metodo 1 (Incremental Reparse)** — resolve o problema errado (1x).
+3. **Metodo 3 (Cache por Bloco)** — desnecessario com Text Scan (2ms).
 4. **Metodo 4 (Lazy Viewport)** — complexidade muito alta.
