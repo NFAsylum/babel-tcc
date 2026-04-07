@@ -260,6 +260,15 @@ export class CoreBridge {
     return parsed;
   }
 
+  public async getKeywordCategories(
+    fileExtension: string
+  ): Promise<Record<string, string>> {
+    const params: Record<string, string> = { fileExtension };
+    const response: CoreResponse = await this.invokeCore('GetKeywordCategories', params);
+    const parsed: Record<string, string> = JSON.parse(response.result) as Record<string, string>;
+    return parsed;
+  }
+
   public async getIdentifierMap(
     targetLanguage: string
   ): Promise<Record<string, string>> {
