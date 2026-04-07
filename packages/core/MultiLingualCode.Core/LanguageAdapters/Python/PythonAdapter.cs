@@ -9,10 +9,12 @@ namespace MultiLingualCode.Core.LanguageAdapters.Python;
 /// Language adapter for Python that uses a persistent Python subprocess for tokenization.
 /// Implements IDisposable to ensure the Python subprocess is cleaned up.
 /// </summary>
-public class PythonAdapter : ILanguageAdapter, IDisposable
+public class PythonAdapter : ILanguageAdapter, IDisposable, ITextScannable
 {
     public readonly PythonTokenizerService Tokenizer = new();
     public string CachedSource = "";
+
+    public Services.LanguageScanRules GetScanRules() => Services.LanguageScanRules.Python;
     public List<PythonToken> CachedTokens = new();
 
     /// <summary>

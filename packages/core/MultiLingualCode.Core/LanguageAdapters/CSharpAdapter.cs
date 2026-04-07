@@ -11,10 +11,12 @@ namespace MultiLingualCode.Core.LanguageAdapters;
 /// <summary>
 /// Language adapter for C# that uses Roslyn to parse and generate translated source code.
 /// </summary>
-public class CSharpAdapter : ILanguageAdapter
+public class CSharpAdapter : ILanguageAdapter, ITextScannable
 {
     public string CachedSource = "";
     public SyntaxNode CachedRoot = null!;
+
+    public Services.LanguageScanRules GetScanRules() => Services.LanguageScanRules.CSharp;
 
     /// <summary>
     /// Returns the Roslyn SyntaxNode root for the given source code, caching the result

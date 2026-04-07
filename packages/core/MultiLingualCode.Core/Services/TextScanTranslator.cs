@@ -5,28 +5,28 @@ namespace MultiLingualCode.Core.Services;
 
 /// <summary>
 /// Fast keyword translator using linear text scan. Skips strings, comments,
-/// preprocessor directives and raw string literals. O(n) complexity.
+/// preprocessor directives and raw/triple-quoted string literals. O(n) complexity.
+/// Configurable per language via LanguageScanRules.
 /// Known limitation: verbatim strings @"..." with "" escape may cause
-/// the scanner to exit the string early at the first "". In practice
-/// this is rare and only affects keywords inside verbatim strings.
+/// the scanner to exit the string early at the first "".
 /// </summary>
 public class TextScanTranslator
 {
     /// <summary>
-    /// Translates keywords in source code using a linear scan.
+    /// Translates keywords in source code using a linear scan with language-specific rules.
     /// </summary>
-    /// <param name="code">The source code to translate.</param>
-    /// <param name="translations">Map of original keyword to translated keyword.</param>
-    /// <returns>The translated source code.</returns>
-    public static string Translate(string code, Dictionary<string, string> translations)
+    public static string Translate(string code, Dictionary<string, string> translations, LanguageScanRules rules)
     {
         StringBuilder result = new StringBuilder(code.Length);
         int i = 0;
+        string lineComment = rules.LineComment;
+        string blockStart = rules.BlockCommentStart;
+        string blockEnd = rules.BlockCommentEnd;
 
         while (i < code.Length)
         {
-            // Skip preprocessor directives (# at start of line, possibly indented)
-            if (code[i] == '#' && IsStartOfLine(code, i))
+            // Skip preprocessor directives (# at start of line)
+            if (rules.HasPreprocessor && code[i] == '#' && IsStartOfLine(code, i))
             {
                 int end = code.IndexOf('\n', i);
                 if (end < 0) end = code.Length;
@@ -35,8 +35,9 @@ public class TextScanTranslator
                 continue;
             }
 
-            // Skip line comments (//)
-            if (i + 1 < code.Length && code[i] == '/' && code[i + 1] == '/')
+            // Skip line comments
+            if (lineComment.Length > 0 && i + lineComment.Length <= code.Length
+                && code.AsSpan(i, lineComment.Length).SequenceEqual(lineComment))
             {
                 int end = code.IndexOf('\n', i);
                 if (end < 0) end = code.Length;
@@ -45,42 +46,44 @@ public class TextScanTranslator
                 continue;
             }
 
-            // Skip block comments (/* */)
-            if (i + 1 < code.Length && code[i] == '/' && code[i + 1] == '*')
+            // Skip block comments
+            if (blockStart.Length > 0 && i + blockStart.Length <= code.Length
+                && code.AsSpan(i, blockStart.Length).SequenceEqual(blockStart))
             {
-                int end = code.IndexOf("*/", i + 2, StringComparison.Ordinal);
-                if (end < 0) end = code.Length - 2;
-                end += 2;
+                int end = code.IndexOf(blockEnd, i + blockStart.Length, StringComparison.Ordinal);
+                if (end < 0) end = code.Length - blockEnd.Length;
+                end += blockEnd.Length;
                 result.Append(code, i, end - i);
                 i = end;
                 continue;
             }
 
-            // Skip Python comments (#) — only if # is not at start of line (handled above)
-            // Python files don't have preprocessor, so # mid-line is a comment
-            // This is handled by the caller choosing the right comment style
-
-            // Skip raw string literals (C# 11: """ ... """)
-            if (i + 2 < code.Length && code[i] == '"' && code[i + 1] == '"' && code[i + 2] == '"')
+            // Skip triple-quoted strings (""" or ''')
+            if (rules.HasTripleQuoteStrings && i + 2 < code.Length)
             {
-                result.Append(code[i]);
-                result.Append(code[i + 1]);
-                result.Append(code[i + 2]);
-                i += 3;
-                while (i + 2 < code.Length)
+                if ((code[i] == '"' && code[i + 1] == '"' && code[i + 2] == '"')
+                    || (code[i] == '\'' && code[i + 1] == '\'' && code[i + 2] == '\''))
                 {
-                    if (code[i] == '"' && code[i + 1] == '"' && code[i + 2] == '"')
-                    {
-                        result.Append(code[i]);
-                        result.Append(code[i + 1]);
-                        result.Append(code[i + 2]);
-                        i += 3;
-                        break;
-                    }
+                    char quoteChar = code[i];
                     result.Append(code[i]);
-                    i++;
+                    result.Append(code[i + 1]);
+                    result.Append(code[i + 2]);
+                    i += 3;
+                    while (i + 2 < code.Length)
+                    {
+                        if (code[i] == quoteChar && code[i + 1] == quoteChar && code[i + 2] == quoteChar)
+                        {
+                            result.Append(code[i]);
+                            result.Append(code[i + 1]);
+                            result.Append(code[i + 2]);
+                            i += 3;
+                            break;
+                        }
+                        result.Append(code[i]);
+                        i++;
+                    }
+                    continue;
                 }
-                continue;
             }
 
             // Skip double-quoted strings
@@ -97,8 +100,8 @@ public class TextScanTranslator
                 continue;
             }
 
-            // Skip single-quoted chars
-            if (code[i] == '\'')
+            // Skip single-quoted strings/chars
+            if (rules.HasSingleQuoteStrings && code[i] == '\'')
             {
                 result.Append(code[i]);
                 i++;
@@ -121,8 +124,7 @@ public class TextScanTranslator
                 }
                 string word = code.Substring(start, i - start);
 
-                // Skip escaped identifiers (@keyword in C#) — @ before word means it's an identifier, not a keyword
-                bool isEscapedIdentifier = start > 0 && code[start - 1] == '@';
+                bool isEscapedIdentifier = rules.HasEscapedIdentifiers && start > 0 && code[start - 1] == '@';
 
                 if (!isEscapedIdentifier && translations.TryGetValue(word, out string? translated))
                 {
@@ -140,6 +142,14 @@ public class TextScanTranslator
         }
 
         return result.ToString();
+    }
+
+    /// <summary>
+    /// Overload that uses C# rules for backward compatibility.
+    /// </summary>
+    public static string Translate(string code, Dictionary<string, string> translations)
+    {
+        return Translate(code, translations, LanguageScanRules.CSharp);
     }
 
     /// <summary>
