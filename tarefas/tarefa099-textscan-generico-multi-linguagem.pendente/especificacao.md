@@ -56,20 +56,22 @@ public class StringDelimiter
 
 | Linguagem | Limitacao | Impacto |
 |-----------|----------|---------|
-| JavaScript/TypeScript | Template literals `` `${expr}` `` — keywords em expressoes dentro de `${}` nao sao distinguidas do texto da string | Keywords em `${}` seriam traduzidas (correto para forward translation) |
+| JavaScript/TypeScript | Template literals `` `${expr}` `` — backtick tratado como string delimiter, conteudo inteiro skippado | Keywords dentro de template literals (tanto texto quanto `${}`) nao sao traduzidas |
 | Go | `int`, `string`, `true` nao sao reserved words — sao predeclared identifiers que podem ser redefinidos | Text Scan traduziria todas as ocorrencias, mesmo quando redefinidas pelo usuario. Raro na pratica. |
 | Swift | Nested comments `/* /* */ */` e string interpolation `\(expr)` | Necessita depth counter e tratamento de `\()` |
 | Rust | Lifetimes `'a` confundem com char literal. Raw strings `r#"..."#` e nested `/* */` nao suportados. | Necessitaria extensoes ao LanguageScanRules |
 | Ruby | Heredocs `<<~HEREDOC`, syntaxes `%w`, `%q`, `=begin/=end` block comments | Necessitaria extensoes ao LanguageScanRules |
 
-### Nao suportavel sem extensoes
+### Resumo de suporte
 
-As limitacoes acima nao afetam C#, Python, Java, PHP, Kotlin e Swift.
+As limitacoes acima nao afetam C#, Python, Java, PHP e Kotlin.
 Para JS/TS e Go, o suporte parcial e funcional para a maioria dos
-arquivos (template literals com keywords sao raros, redefinicao de
-predeclared identifiers em Go e extremamente raro).
+arquivos — backtick tratado como string (skip tudo, keywords em `${}`
+nao traduzidas), redefinicao de predeclared identifiers em Go e raro.
+Para Swift, depth counter para nested comments e tratamento de `\(expr)`
+sao necessarios.
 Para Rust e Ruby, LanguageScanRules precisaria de extensoes (depth
-counter para nested comments, heredoc parser, etc.).
+counter, heredoc parser, etc.).
 
 ### 3. Refatorar TextScanTranslator
 
