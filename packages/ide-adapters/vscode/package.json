@@ -100,6 +100,17 @@
         }
       }
     },
+    "semanticTokenScopes": [
+      {
+        "scopes": {
+          "keywordControl": ["keyword.control"],
+          "keywordType": ["storage.type"],
+          "keywordModifier": ["storage.modifier"],
+          "keywordLiteral": ["constant.language"],
+          "keywordOther": ["keyword.other"]
+        }
+      }
+    ],
     "grammars": [
       {
         "language": "mlc-csharp",
