@@ -7,7 +7,7 @@ const TOKEN_TYPES = [
   'keywordType',      // 1: int, string, void, bool, etc.
   'keywordModifier',  // 2: public, static, abstract, etc.
   'keywordLiteral',   // 3: true, false, null/None
-  'keywordOther',     // 4: using, namespace, class, new, etc.
+  'keywordOther',     // 4: using, namespace, new, etc.
   'variable',         // 5: identifiers traduzidos
 ];
 const TOKEN_MODIFIERS: string[] = [];
