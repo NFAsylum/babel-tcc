@@ -29,9 +29,9 @@ public class CoreIntegrationTests : IDisposable
 
     public TranslationOrchestrator CreateOrchestrator(IdentifierMapper mapper)
     {
-        CSharpAdapter adapter = new CSharpAdapter();
         LanguageRegistry registry = new LanguageRegistry();
-        registry.RegisterAdapter(adapter);
+        registry.RegisterAdapter(new CSharpAdapter());
+        registry.RegisterAdapter(new PythonAdapter());
         NaturalLanguageProvider provider = new NaturalLanguageProvider { LanguageCode = "pt-br", TranslationsBasePath = TranslationsPath };
         return new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
     }
@@ -863,5 +863,105 @@ namespace HelloWorld
         Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
 
         Assert.Equal(sourceCode, reverseResult.Value);
+    }
+
+    // === Python Text Scan Equivalence ===
+
+    [RequiresPythonFact]
+    public async Task PythonTextScan_EquivalentToTokenizer_SimpleCode()
+    {
+        string sourceCode = "def foo(x):\n    if x > 0:\n        return x\n    return 0";
+
+        // Text Scan path (no tradu → uses TextScanTranslator)
+        IdentifierMapper textScanMapper = new IdentifierMapper();
+        textScanMapper.LoadMap(TempDir);
+        TranslationOrchestrator textScanOrchestrator = CreateOrchestrator(textScanMapper);
+        OperationResultGeneric<string> textScanResult = await textScanOrchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+        Assert.True(textScanResult.IsSuccess, textScanResult.ErrorMessage);
+
+        // Tokenizer path (force Roslyn/tokenizer by adding tradu)
+        string sourceWithTradu = sourceCode + "\n# tradu[pt-br]:dummy";
+        IdentifierMapper tokenizerMapper = new IdentifierMapper();
+        tokenizerMapper.LoadMap(TempDir);
+        TranslationOrchestrator tokenizerOrchestrator = CreateOrchestrator(tokenizerMapper);
+        OperationResultGeneric<string> tokenizerResult = await tokenizerOrchestrator.TranslateToNaturalLanguageAsync(
+            sourceWithTradu, ".py", "pt-br");
+        Assert.True(tokenizerResult.IsSuccess, tokenizerResult.ErrorMessage);
+
+        // Remove the tradu line from tokenizer output for comparison
+        string tokenizerOutput = tokenizerResult.Value;
+        int lastNewline = tokenizerOutput.LastIndexOf('\n');
+        if (lastNewline >= 0)
+        {
+            tokenizerOutput = tokenizerOutput.Substring(0, lastNewline);
+        }
+
+        Assert.Equal(tokenizerOutput.Trim(), textScanResult.Value.Trim());
+    }
+
+    [RequiresPythonFact]
+    public async Task PythonTextScan_SkipsHashComments()
+    {
+        string sourceCode = "x = 1 # return this value\nreturn x";
+
+        IdentifierMapper commentMapper = new IdentifierMapper();
+        commentMapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(commentMapper);
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+        Assert.True(result.IsSuccess, $"Translation failed: {result.ErrorMessage}");
+
+        // "return" in comment should NOT be translated, "return" in code SHOULD be
+        Assert.Contains("# return this value", result.Value);
+        string secondLine = result.Value.Split('\n')[1];
+        Assert.Contains("retornar", secondLine);
+    }
+
+    [RequiresPythonFact]
+    public async Task PythonTextScan_SkipsTripleQuotedStrings()
+    {
+        string sourceCode = "x = '''return if def'''\nreturn x";
+
+        IdentifierMapper tripleMapper = new IdentifierMapper();
+        tripleMapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(tripleMapper);
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".py", "pt-br");
+        Assert.True(result.IsSuccess);
+
+        // Keywords inside ''' should NOT be translated
+        Assert.Contains("'''return if def'''", result.Value);
+        // "return" on second line SHOULD be translated
+        Assert.Contains("retornar", result.Value.Split('\n')[1]);
+    }
+
+    [RequiresPythonFact]
+    public async Task PythonTextScan_Performance()
+    {
+        // Generate a large Python file
+        System.Text.StringBuilder sb = new();
+        for (int i = 0; i < 500; i++)
+        {
+            sb.AppendLine($"def method_{i}(x):");
+            sb.AppendLine($"    if x > {i}:");
+            sb.AppendLine($"        return x");
+            sb.AppendLine($"    return 0");
+            sb.AppendLine();
+        }
+        string code = sb.ToString();
+
+        IdentifierMapper perfMapper = new IdentifierMapper();
+        perfMapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(perfMapper);
+        // Warmup
+        await orchestrator.TranslateToNaturalLanguageAsync("def f(): pass", ".py", "pt-br");
+
+        System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+        OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(code, ".py", "pt-br");
+        sw.Stop();
+
+        Assert.True(result.IsSuccess);
+        Assert.True(sw.ElapsedMilliseconds < 50, $"Python Text Scan took {sw.ElapsedMilliseconds}ms for ~2500 lines, expected < 50ms");
     }
 }

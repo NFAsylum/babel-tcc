@@ -184,14 +184,49 @@ Criar `syntaxes/mlc-novalinguagem.tmLanguage.json` para syntax highlighting.
 
 O teste de consistencia em `test/config/languages.test.ts` verifica automaticamente que o registro TypeScript esta alinhado com o package.json.
 
+## Caminho rapido: Text Scan (sem parser)
+
+Para linguagens que precisam apenas de traducao de keywords (sem tradu
+annotations), o TextScanTranslator pode ser usado em vez de um parser
+completo. Isso elimina a necessidade de subprocess ou parser externo.
+
+1. Criar `LanguageScanRules` para a linguagem (comentarios, strings):
+
+```csharp
+public static LanguageScanRules MinhaLinguagem = new LanguageScanRules
+{
+    LineComment = "//",
+    BlockCommentStart = "/*",
+    BlockCommentEnd = "*/",
+    HasTripleQuoteStrings = false,
+    HasSingleQuoteStrings = true,
+};
+```
+
+2. Implementar `ITextScannable` no adapter:
+
+```csharp
+public class MinhaLinguagemAdapter : ILanguageAdapter, ITextScannable
+{
+    public LanguageScanRules GetScanRules() => LanguageScanRules.MinhaLinguagem;
+    // ... restante do adapter
+}
+```
+
+O TranslationOrchestrator detecta automaticamente adapters com
+ITextScannable e usa Text Scan (0-1ms) para arquivos sem tradu.
+Para arquivos com tradu, cai para o parser completo.
+
+Performance: 0-1ms para qualquer tamanho de arquivo (vs 2-4s com parser).
+
 ## Implementacoes existentes
 
-- **CSharpAdapter** (`LanguageAdapters/CSharpAdapter.cs`): Usa Roslyn para parsing. Referencia para linguagens com parser .NET nativo.
-- **PythonAdapter** (`LanguageAdapters/Python/PythonAdapter.cs`): Usa subprocesso CPython (`tokenizer_service.py`) via JSON Lines. Referencia para linguagens sem parser .NET.
+- **CSharpAdapter** (`LanguageAdapters/CSharpAdapter.cs`): Usa Roslyn para parsing + Text Scan para keyword-only. Implementa ITextScannable.
+- **PythonAdapter** (`LanguageAdapters/Python/PythonAdapter.cs`): Usa subprocesso CPython + Text Scan para keyword-only. Implementa ITextScannable.
 
 O padrao geral e:
 
-1. Parsear o codigo em tokens (via parser nativo ou subprocesso)
+1. Parsear o codigo em tokens (via parser nativo, subprocesso, ou Text Scan)
 2. Classificar cada token como keyword, identifier ou literal
 3. Criar nos AST com posicoes (start/end) para reconstrucao
 4. `Generate()` aplica substituicoes na ordem reversa das posicoes
