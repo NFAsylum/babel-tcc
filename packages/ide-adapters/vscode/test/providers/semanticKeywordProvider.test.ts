@@ -177,16 +177,30 @@ describe('SemanticKeywordProvider', () => {
     });
 
     it('should distinguish keyword tokens from identifier tokens', () => {
-      // "publico" is a keyword, "calcularTotal" is an identifier
+      // "publico" is a keyword (public → modifier = 2), "calcularTotal" is an identifier (variable = 5)
       const doc = makeDocument(TRANSLATED_SCHEME, 'publico calcularTotal');
       const result = provider.provideDocumentSemanticTokens(doc as any);
-      // Should have tokens for both
       expect(result.data.length).toBeGreaterThan(0);
-      // Semantic tokens data is encoded as [deltaLine, deltaCol, length, tokenType, tokenModifiers]
-      // First token: publico at col 0, type 0 (keyword)
-      expect(result.data[3]).toBe(0); // tokenType = keyword
-      // Second token: calcularTotal at col 8, type 1 (variable)
-      expect(result.data[8]).toBe(1); // tokenType = variable
+      // Semantic tokens data: [deltaLine, deltaCol, length, tokenType, tokenModifiers]
+      expect(result.data[3]).toBe(2); // publico → public → keywordModifier
+      expect(result.data[8]).toBe(5); // calcularTotal → variable
+    });
+
+    it('should assign different token types per keyword category', () => {
+      // se → if → control(0), publico → public → modifier(2), classe → class → type(1)
+      const doc = makeDocument(TRANSLATED_SCHEME, 'se publico classe');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBe(15); // 3 tokens × 5 values
+      expect(result.data[3]).toBe(0);  // se → if → keywordControl
+      expect(result.data[8]).toBe(2);  // publico → public → keywordModifier
+      expect(result.data[13]).toBe(1); // classe → class → keywordType
+    });
+
+    it('should classify return as control keyword', () => {
+      const doc = makeDocument(TRANSLATED_SCHEME, 'retornar;');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBeGreaterThan(0);
+      expect(result.data[3]).toBe(0); // retornar → return → keywordControl
     });
   });
 });
