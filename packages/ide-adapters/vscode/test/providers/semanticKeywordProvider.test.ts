@@ -187,13 +187,13 @@ describe('SemanticKeywordProvider', () => {
     });
 
     it('should assign different token types per keyword category', () => {
-      // se → if → control(0), publico → public → modifier(2), classe → class → other(4)
+      // se → if → control(0), publico → public → modifier(2), classe → class → type(1)
       const doc = makeDocument(TRANSLATED_SCHEME, 'se publico classe');
       const result = provider.provideDocumentSemanticTokens(doc as any);
       expect(result.data.length).toBe(15); // 3 tokens × 5 values
       expect(result.data[3]).toBe(0);  // se → if → keywordControl
       expect(result.data[8]).toBe(2);  // publico → public → keywordModifier
-      expect(result.data[13]).toBe(4); // classe → class → keywordOther
+      expect(result.data[13]).toBe(1); // classe → class → keywordType
     });
 
     it('should classify return as control keyword', () => {
