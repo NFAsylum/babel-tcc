@@ -18,36 +18,16 @@ export const SEMANTIC_TOKENS_LEGEND = new vscode.SemanticTokensLegend(TOKEN_TYPE
 /** Token type index for identifiers traduzidos. */
 const TOKEN_VARIABLE = 5;
 
-/**
- * Maps original keyword text to its token type index.
- * Covers C# (89 keywords) and Python (35 keywords).
- * Keywords not in this map fall back to keywordOther (4).
- */
-export const KEYWORD_CATEGORIES: Record<string, number> = {
-  // --- control (0) ---
-  'if': 0, 'else': 0, 'elif': 0, 'for': 0, 'foreach': 0, 'while': 0,
-  'do': 0, 'switch': 0, 'case': 0, 'default': 0, 'return': 0, 'break': 0,
-  'continue': 0, 'throw': 0, 'try': 0, 'catch': 0, 'except': 0,
-  'finally': 0, 'goto': 0, 'yield': 0, 'pass': 0, 'raise': 0, 'with': 0,
-  'await': 0,
-
-  // --- type (1) ---
-  'void': 1, 'int': 1, 'string': 1, 'bool': 1, 'decimal': 1, 'float': 1,
-  'double': 1, 'long': 1, 'short': 1, 'byte': 1, 'sbyte': 1, 'char': 1,
-  'object': 1, 'dynamic': 1, 'var': 1, 'uint': 1, 'ulong': 1, 'ushort': 1,
-  'class': 1, 'struct': 1, 'interface': 1, 'enum': 1, 'delegate': 1,
-  'record': 1, 'def': 1,
-
-  // --- modifier (2) ---
-  'public': 2, 'protected': 2, 'private': 2, 'internal': 2, 'static': 2,
-  'const': 2, 'readonly': 2, 'virtual': 2, 'override': 2, 'abstract': 2,
-  'sealed': 2, 'async': 2, 'partial': 2, 'extern': 2, 'volatile': 2,
-  'unsafe': 2, 'fixed': 2, 'required': 2,
-
-  // --- literal (3) ---
-  'true': 3, 'false': 3, 'null': 3,
-  'True': 3, 'False': 3, 'None': 3,
+/** Maps category string from keyword-categories.json to token type index. */
+const CATEGORY_TO_TOKEN: Record<string, number> = {
+  'control': 0,
+  'type': 1,
+  'modifier': 2,
+  'literal': 3,
 };
+
+/** Fallback token type for keywords without a category. */
+const TOKEN_OTHER = 4;
 
 /**
  * Scans a line tracking string/comment state. Returns the state after the line ends
@@ -220,6 +200,7 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
 
     const keywordMap: Record<string, string> = this.keywordMapService.getMap(document.uri.path);
     const translatedKeywords: Set<string> = new Set(Object.keys(keywordMap));
+    const categories: Record<string, string> = this.keywordMapService.getCategories(document.uri.path);
 
     const identifierMap: Record<string, string> = this.keywordMapService.getIdentifierMap(document.uri.path);
     const translatedIdentifiers: Set<string> = new Set(Object.keys(identifierMap));
@@ -254,7 +235,8 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
         const lowerWord: string = word.toLowerCase();
         if (translatedKeywords.has(lowerWord)) {
           const original: string = keywordMap[lowerWord];
-          const tokenType: number = KEYWORD_CATEGORIES[original] ?? 4;
+          const category: string | undefined = categories[original];
+          const tokenType: number = category ? (CATEGORY_TO_TOKEN[category] ?? TOKEN_OTHER) : TOKEN_OTHER;
           builder.push(line, col, word.length, tokenType);
         } else if (translatedIdentifiers.has(word)) {
           builder.push(line, col, word.length, TOKEN_VARIABLE);

@@ -1,0 +1,29 @@
+{
+  "categories": {
+    "if": "control",
+    "elif": "control",
+    "else": "control",
+    "for": "control",
+    "while": "control",
+    "break": "control",
+    "continue": "control",
+    "return": "control",
+    "pass": "control",
+    "raise": "control",
+    "try": "control",
+    "except": "control",
+    "finally": "control",
+    "with": "control",
+    "yield": "control",
+    "await": "control",
+
+    "class": "type",
+    "def": "type",
+
+    "async": "modifier",
+
+    "True": "literal",
+    "False": "literal",
+    "None": "literal"
+  }
+}

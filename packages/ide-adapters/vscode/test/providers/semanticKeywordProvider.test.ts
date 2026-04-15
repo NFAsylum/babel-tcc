@@ -7,10 +7,15 @@ describe('SemanticKeywordProvider', () => {
   let provider: SemanticKeywordProvider;
   const mockKeywordMap = { publico: 'public', classe: 'class', se: 'if', retornar: 'return' };
 
+  const mockCategories: Record<string, string> = {
+    'public': 'modifier', 'class': 'type', 'if': 'control', 'return': 'control',
+  };
+
   const mockIdentifierMap = { calcularTotal: 'calculateTotal', nomeUsuario: 'userName' };
 
   const mockKeywordMapService = {
     getMap: vi.fn(() => mockKeywordMap),
+    getCategories: vi.fn(() => mockCategories),
     getIdentifierMap: vi.fn(() => mockIdentifierMap),
     dispose: vi.fn(),
   };

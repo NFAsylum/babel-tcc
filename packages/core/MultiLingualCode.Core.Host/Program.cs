@@ -166,6 +166,16 @@ public class Program
 
             case "GetSupportedLanguages":
                 return HandleGetSupportedLanguages(translationsPath);
+
+            case "GetKeywordCategories":
+                {
+                    OperationResultGeneric<GetKeywordCategoriesRequest> parseResult = JsonFileReader.ReadFromString<GetKeywordCategoriesRequest>(paramsJson, JsonOptions);
+                    if (!parseResult.IsSuccess)
+                    {
+                        return new CoreResponse { Success = false, Error = parseResult.ErrorMessage };
+                    }
+                    return HandleGetKeywordCategories(parseResult.Value, registry, translationsPath);
+                }
         }
 
         // Level 2: methods that need an orchestrator (created on demand)
@@ -466,6 +476,38 @@ public class Program
             Success = true,
             Result = JsonSerializer.Serialize(languages, JsonOptions)
         };
+    }
+
+    /// <summary>
+    /// Returns the keyword category map (keyword -> category) for a programming language.
+    /// Reads from keyword-categories.json in the translations directory.
+    /// </summary>
+    public static CoreResponse HandleGetKeywordCategories(
+        GetKeywordCategoriesRequest request, LanguageRegistry registry, string translationsPath)
+    {
+        OperationResultGeneric<ILanguageAdapter> adapterResult = registry.GetAdapter(request.FileExtension);
+        if (!adapterResult.IsSuccess)
+        {
+            return new CoreResponse { Success = false, Error = adapterResult.ErrorMessage };
+        }
+
+        string langName = adapterResult.Value.LanguageName.ToLowerInvariant();
+        string categoriesPath = Path.Combine(
+            translationsPath, "programming-languages", langName, "keyword-categories.json");
+
+        if (!File.Exists(categoriesPath))
+        {
+            return new CoreResponse { Success = true, Result = "{}" };
+        }
+
+        OperationResultGeneric<KeywordCategoryFile> readResult = JsonFileReader.ReadFromFile<KeywordCategoryFile>(categoriesPath, JsonOptions);
+        if (!readResult.IsSuccess)
+        {
+            return new CoreResponse { Success = false, Error = readResult.ErrorMessage };
+        }
+
+        string mapJson = JsonSerializer.Serialize(readResult.Value.Categories, JsonOptions);
+        return new CoreResponse { Success = true, Result = mapJson };
     }
 
     /// <summary>

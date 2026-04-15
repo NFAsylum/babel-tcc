@@ -14,6 +14,7 @@ export class KeywordMapService {
   public languageDetector: LanguageDetector;
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, Record<string, string>> = new Map<string, Record<string, string>>();
+  public categoryCache: Map<string, Record<string, string>> = new Map<string, Record<string, string>>();
   public identifierCache: Map<string, Record<string, string>> = new Map<string, Record<string, string>>();
   public configSubscription: { dispose(): void };
 
@@ -29,6 +30,7 @@ export class KeywordMapService {
     this.outputChannel = outputChannel;
     this.configSubscription = configService.onDidChangeConfiguration((): void => {
       this.cache.clear();
+      this.categoryCache.clear();
       this.identifierCache.clear();
       this.warmCache();
     });
@@ -49,6 +51,26 @@ export class KeywordMapService {
     const cacheKey: string = `${language}::${programmingLanguage}`;
 
     const cached: Record<string, string> | undefined = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    return {};
+  }
+
+  /**
+   * Returns a map of original keywords to their semantic categories.
+   * Synchronous — returns from cache. Call warmCache() first to populate.
+   * @param filePath - The file path used to detect the programming language.
+   */
+  public getCategories(filePath: string): Record<string, string> {
+    const programmingLanguage: string | undefined = this.languageDetector.detectLanguage(filePath);
+    if (!programmingLanguage) {
+      return {};
+    }
+
+    const cacheKey: string = `categories::${programmingLanguage}`;
+    const cached: Record<string, string> | undefined = this.categoryCache.get(cacheKey);
     if (cached) {
       return cached;
     }
@@ -100,6 +122,18 @@ export class KeywordMapService {
         const message: string = err instanceof Error ? err.message : String(err);
         this.outputChannel.appendLine(`KeywordMapService: failed to load keywords for ${programmingLanguage}/${language} - ${message}`);
         vscode.window.showWarningMessage('Babel TCC: Failed to load translations. Completion and highlighting may not work.');
+      }
+
+      const categoryCacheKey: string = `categories::${programmingLanguage}`;
+      if (!this.categoryCache.has(categoryCacheKey)) {
+        try {
+          const categories: Record<string, string> = await this.coreBridge.getKeywordCategories(ext);
+          this.categoryCache.set(categoryCacheKey, categories);
+          this.outputChannel.appendLine(`KeywordMapService: loaded ${Object.keys(categories).length} categories for ${programmingLanguage}`);
+        } catch (err: unknown) {
+          const message: string = err instanceof Error ? err.message : String(err);
+          this.outputChannel.appendLine(`KeywordMapService: failed to load categories for ${programmingLanguage} - ${message}`);
+        }
       }
     }
 

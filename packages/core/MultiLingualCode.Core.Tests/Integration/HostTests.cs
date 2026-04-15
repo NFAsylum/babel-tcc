@@ -612,6 +612,56 @@ public class HostTests : IDisposable
     }
 
     [Fact]
+    public async Task RouteRequest_GetKeywordCategories_ReturnsCategoryMap()
+    {
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            fileExtension = ".cs"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Route("GetKeywordCategories", paramsJson);
+
+        Assert.True(result.Success, result.Error);
+        Dictionary<string, string> map = JsonSerializer.Deserialize<Dictionary<string, string>>(result.Result, Host.Program.JsonOptions)!;
+        Assert.NotEmpty(map);
+        Assert.Equal("control", map["if"]);
+        Assert.Equal("type", map["class"]);
+        Assert.Equal("modifier", map["public"]);
+        Assert.Equal("literal", map["true"]);
+    }
+
+    [Fact]
+    public async Task RouteRequest_GetKeywordCategories_Python_ReturnsCategoryMap()
+    {
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            fileExtension = ".py"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Route("GetKeywordCategories", paramsJson);
+
+        Assert.True(result.Success, result.Error);
+        Dictionary<string, string> map = JsonSerializer.Deserialize<Dictionary<string, string>>(result.Result, Host.Program.JsonOptions)!;
+        Assert.NotEmpty(map);
+        Assert.Equal("control", map["if"]);
+        Assert.Equal("type", map["def"]);
+        Assert.Equal("literal", map["True"]);
+    }
+
+    [Fact]
+    public async Task RouteRequest_GetKeywordCategories_InvalidExtension_ReturnsError()
+    {
+        string paramsJson = JsonSerializer.Serialize(new
+        {
+            fileExtension = ".xyz"
+        }, Host.Program.JsonOptions);
+
+        Host.CoreResponse result = await Route("GetKeywordCategories", paramsJson);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
     public async Task RouteRequest_GetIdentifierMap_MalformedJson_ReturnsError()
     {
         Host.CoreResponse result = await Route("GetIdentifierMap", "not json{{{");
