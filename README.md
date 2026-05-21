@@ -70,6 +70,7 @@ O arquivo no disco permanece **sempre no codigo original**. A traducao e apenas 
 - VS Code 1.85 ou superior
 - .NET 8.0 Runtime
 - Python 3.8+ (para suporte a arquivos Python)
+- Nada adicional para VisuAlg / Portugol Studio (operam pelo Text Scan, sem parser externo)
 
 ### A partir do codigo-fonte
 
@@ -84,10 +85,12 @@ Para gerar o `.vsix`: `npm run package` (requer [vsce](https://github.com/micros
 
 ## Linguagens Suportadas
 
-| Linguagem de Programacao | Status |
-|--------------------------|--------|
-| C# (89 keywords) | Suportado |
-| Python (35 keywords) | Suportado |
+| Linguagem de Programacao | Extensao | Keywords | Modo |
+|--------------------------|----------|----------|------|
+| C# | `.cs` | 89 | Roslyn + Text Scan, suporta tradu |
+| Python | `.py` | 35 | CPython subprocess + Text Scan, suporta tradu |
+| VisuAlg (Claudio Morgado) | `.alg` | 48 | Text Scan keyword-only, case-insensitive |
+| Portugol Studio (UNIVALI) | `.por` | 26 | Text Scan keyword-only, case-sensitive |
 
 ## Idiomas Disponiveis
 

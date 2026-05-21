@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { LanguageDetector } from '../../src/services/languageDetector';
+import { SUPPORTED_LANGUAGES } from '../../src/config/languages';
 
 describe('LanguageDetector', () => {
   let detector: LanguageDetector;
@@ -71,11 +72,15 @@ describe('LanguageDetector', () => {
   });
 
   describe('getSupportedExtensions', () => {
-    it('should return all registered extensions', () => {
+    it('should return all registered extensions from SUPPORTED_LANGUAGES', () => {
       const extensions = detector.getSupportedExtensions();
+      const expected: string[] = SUPPORTED_LANGUAGES.flatMap((l) => l.extensions);
       expect(extensions).toContain('.cs');
       expect(extensions).toContain('.py');
-      expect(extensions.length).toBe(2);
+      expect(extensions.length).toBe(expected.length);
+      for (const ext of expected) {
+        expect(extensions).toContain(ext);
+      }
     });
   });
 });

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Babel TCC - Portugol Studio Traduzido",
+  "scopeName": "source.mlc-portugol-studio",
+  "comment": "Keyword highlighting is not included because translated keywords vary by natural language and cannot be hardcoded in a static TextMate grammar. Highlighting covers line and block comments, strings, char literals and numbers.",
+  "patterns": [
+    { "include": "#comments-block" },
+    { "include": "#comments-line" },
+    { "include": "#strings" },
+    { "include": "#chars" },
+    { "include": "#numbers" }
+  ],
+  "repository": {
+    "comments-line": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.mlc-portugol-studio",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "comments-block": {
+      "patterns": [
+        {
+          "name": "comment.block.mlc-portugol-studio",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.mlc-portugol-studio",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-portugol-studio",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "chars": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.mlc-portugol-studio",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mlc-portugol-studio",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.mlc-portugol-studio",
+          "match": "\\b(0[xX][0-9a-fA-F]+|[0-9]+(\\.[0-9]+)?)\\b"
+        }
+      ]
+    }
+  }
+}

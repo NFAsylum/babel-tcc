@@ -169,11 +169,24 @@ public class TextScanTranslator
 
     /// <summary>
     /// Builds a translation map (keyword → translated keyword) from a keyword map and provider.
+    /// Uses ordinal comparison by default.
     /// </summary>
     public static Dictionary<string, string> BuildTranslationMap(
         Dictionary<string, int> keywordMap, INaturalLanguageProvider provider)
     {
-        Dictionary<string, string> map = new();
+        return BuildTranslationMap(keywordMap, provider, caseInsensitive: false);
+    }
+
+    /// <summary>
+    /// Builds a translation map (keyword → translated keyword) from a keyword map and provider.
+    /// When caseInsensitive is true, the map uses OrdinalIgnoreCase comparison so the
+    /// scanner matches keywords regardless of source casing (e.g. VisuAlg accepts SE, Se, se).
+    /// </summary>
+    public static Dictionary<string, string> BuildTranslationMap(
+        Dictionary<string, int> keywordMap, INaturalLanguageProvider provider, bool caseInsensitive)
+    {
+        StringComparer comparer = caseInsensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        Dictionary<string, string> map = new Dictionary<string, string>(comparer);
         if (keywordMap == null)
         {
             return map;

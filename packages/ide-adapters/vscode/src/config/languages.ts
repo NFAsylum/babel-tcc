@@ -16,6 +16,8 @@ export interface LanguageConfig {
 export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
   { name: 'CSharp', extensions: ['.cs'], vscodeLangId: 'csharp' },
   { name: 'Python', extensions: ['.py'], vscodeLangId: 'python' },
+  { name: 'VisuAlg', extensions: ['.alg'], vscodeLangId: 'visualg' },
+  { name: 'PortugolStudio', extensions: ['.por'], vscodeLangId: 'portugol-studio' },
 ];
 
 /** Builds extension-to-language-name map from the central registry. */

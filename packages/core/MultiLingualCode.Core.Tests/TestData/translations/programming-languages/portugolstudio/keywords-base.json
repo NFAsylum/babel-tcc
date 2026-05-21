@@ -1,0 +1,30 @@
+{
+  "keywords": {
+    "inteiro": 0,
+    "real": 1,
+    "caracter": 2,
+    "cadeia": 3,
+    "logico": 4,
+    "vazio": 5,
+    "se": 6,
+    "senao": 7,
+    "enquanto": 8,
+    "faca": 9,
+    "para": 10,
+    "escolha": 11,
+    "caso": 12,
+    "contrario": 13,
+    "pare": 14,
+    "retorne": 15,
+    "programa": 16,
+    "funcao": 17,
+    "const": 18,
+    "inclua": 19,
+    "biblioteca": 20,
+    "e": 21,
+    "ou": 22,
+    "nao": 23,
+    "verdadeiro": 24,
+    "falso": 25
+  }
+}

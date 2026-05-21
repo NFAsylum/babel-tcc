@@ -38,6 +38,8 @@
   "activationEvents": [
     "onLanguage:csharp",
     "onLanguage:python",
+    "onLanguage:visualg",
+    "onLanguage:portugol-studio",
     "onFileSystem:babel-tcc-translated",
     "onFileSystem:babel-tcc-readonly"
   ],
@@ -94,7 +96,9 @@
           "description": "Override target language per programming language. Keys are programming language names (e.g. 'CSharp', 'Python'), values are language codes (e.g. 'pt-br', 'es-es'). Falls back to babel-tcc.language if no override is set.",
           "properties": {
             "CSharp": { "type": "string", "description": "Target language for C# files" },
-            "Python": { "type": "string", "description": "Target language for Python files" }
+            "Python": { "type": "string", "description": "Target language for Python files" },
+            "VisuAlg": { "type": "string", "description": "Target language for VisuAlg files" },
+            "PortugolStudio": { "type": "string", "description": "Target language for Portugol Studio files" }
           },
           "additionalProperties": false
         }
@@ -121,6 +125,16 @@
         "language": "mlc-python",
         "scopeName": "source.mlc-python",
         "path": "./syntaxes/mlc-python.tmLanguage.json"
+      },
+      {
+        "language": "mlc-visualg",
+        "scopeName": "source.mlc-visualg",
+        "path": "./syntaxes/mlc-visualg.tmLanguage.json"
+      },
+      {
+        "language": "mlc-portugol-studio",
+        "scopeName": "source.mlc-portugol-studio",
+        "path": "./syntaxes/mlc-portugol-studio.tmLanguage.json"
       }
     ],
     "languages": [
@@ -137,6 +151,42 @@
         "aliases": [
           "Python Traduzido",
           "mlc-python"
+        ],
+        "extensions": []
+      },
+      {
+        "id": "visualg",
+        "aliases": [
+          "VisuAlg",
+          "visualg"
+        ],
+        "extensions": [
+          ".alg"
+        ]
+      },
+      {
+        "id": "mlc-visualg",
+        "aliases": [
+          "VisuAlg Traduzido",
+          "mlc-visualg"
+        ],
+        "extensions": []
+      },
+      {
+        "id": "portugol-studio",
+        "aliases": [
+          "Portugol Studio",
+          "portugol-studio"
+        ],
+        "extensions": [
+          ".por"
+        ]
+      },
+      {
+        "id": "mlc-portugol-studio",
+        "aliases": [
+          "Portugol Studio Traduzido",
+          "mlc-portugol-studio"
         ],
         "extensions": []
       }

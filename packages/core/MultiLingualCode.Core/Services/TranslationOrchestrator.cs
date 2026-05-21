@@ -96,7 +96,7 @@ public class TranslationOrchestrator
             if (keywordMap != null && keywordMap.Count > 0)
             {
                 Dictionary<string, string> translationMap = TextScanTranslator.BuildTranslationMap(
-                    keywordMap, Provider);
+                    keywordMap, Provider, scanRules.CaseInsensitiveKeywords);
                 if (translationMap.Count > 0)
                 {
                     string scanned = TextScanTranslator.Translate(sourceCode, translationMap, scanRules);

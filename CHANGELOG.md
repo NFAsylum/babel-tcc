@@ -6,6 +6,14 @@ Este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Added
+- Suporte aos dialetos VisuAlg (`.alg`) e Portugol Studio (`.por`)
+  - VisuAlgAdapter cobrindo 48 palavras reservadas (algoritmo, fimalgoritmo, se, entao, enquanto, escreva, escreval, leia, procedimento, funcao, retorne, escolha, caso, outrocaso, ...)
+  - PortugolStudioAdapter cobrindo 26 palavras reservadas (programa, funcao, inteiro, cadeia, se, senao, enquanto, faca, para, escolha, caso, contrario, pare, retorne, inclua, biblioteca, ...)
+  - Caminho rapido Text Scan (sem parser real) com helper compartilhado `PortugolScanner` para skip de strings/comentarios
+  - Suporte a keywords case-insensitive via flag `LanguageScanRules.CaseInsensitiveKeywords` (VisuAlg aceita SE/Se/se)
+  - Traducoes para os 10 idiomas naturais ja suportados (pt-br, pt-br-ascii, en-us, es-es, fr-fr, de-de, it-it, ja-jp-romaji, zh-cn, ar-sa)
+  - Registro na extensao VS Code: tmLanguage para destaque de comentarios/strings/numeros, ativacao em `onLanguage:visualg` e `onLanguage:portugol-studio`, languageOverrides por linguagem
+  - 77 testes novos (keyword maps, adapters, scanner, scan rules, text scan, integration round-trip)
 - Suporte a Python como segunda linguagem de programacao (tarefas 052-060)
   - PythonAdapter com tokenizador nativo CPython via subprocesso persistente
   - PythonKeywordMap com 35 hard keywords do Python 3
@@ -18,7 +26,7 @@ Este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Keywords contextuais C# (var, async, await, yield, etc.) - tarefa 048
 - Processo persistente CoreBridge para melhor performance - tarefa 050
 - KeywordMapService dinamico (carrega traducoes por linguagem automaticamente)
-- 631 testes (494 C#, 137 TypeScript)
+- 848 testes (667 C#, 181 TypeScript)
 
 ### Fixed
 - ApplyTraduAnnotations nao salva mais no disco (evita destruir mapeamentos de outros arquivos)

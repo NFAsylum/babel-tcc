@@ -26,6 +26,9 @@ public class LanguageScanRules
     /// <summary>Whether single-quoted strings/chars are supported.</summary>
     public bool HasSingleQuoteStrings = true;
 
+    /// <summary>Whether keyword matching is case-insensitive (e.g. VisuAlg accepts SE, Se, se).</summary>
+    public bool CaseInsensitiveKeywords = false;
+
     /// <summary>Pre-defined rules for C#.</summary>
     public static LanguageScanRules CSharp = new LanguageScanRules
     {
@@ -36,6 +39,7 @@ public class LanguageScanRules
         HasEscapedIdentifiers = true,
         HasTripleQuoteStrings = true,
         HasSingleQuoteStrings = true,
+        CaseInsensitiveKeywords = false,
     };
 
     /// <summary>Pre-defined rules for Python.</summary>
@@ -48,5 +52,32 @@ public class LanguageScanRules
         HasEscapedIdentifiers = false,
         HasTripleQuoteStrings = true,
         HasSingleQuoteStrings = true,
+        CaseInsensitiveKeywords = false,
+    };
+
+    /// <summary>Pre-defined rules for VisuAlg (Pascal-like, line comments only, case-insensitive).</summary>
+    public static LanguageScanRules VisuAlg = new LanguageScanRules
+    {
+        LineComment = "//",
+        BlockCommentStart = "",
+        BlockCommentEnd = "",
+        HasPreprocessor = false,
+        HasEscapedIdentifiers = false,
+        HasTripleQuoteStrings = false,
+        HasSingleQuoteStrings = false,
+        CaseInsensitiveKeywords = true,
+    };
+
+    /// <summary>Pre-defined rules for Portugol Studio (C-like blocks, both comment styles, case-sensitive).</summary>
+    public static LanguageScanRules PortugolStudio = new LanguageScanRules
+    {
+        LineComment = "//",
+        BlockCommentStart = "/*",
+        BlockCommentEnd = "*/",
+        HasPreprocessor = false,
+        HasEscapedIdentifiers = false,
+        HasTripleQuoteStrings = false,
+        HasSingleQuoteStrings = true,
+        CaseInsensitiveKeywords = false,
     };
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MultiLingualCode.Core.Interfaces;
 using MultiLingualCode.Core.LanguageAdapters;
+using MultiLingualCode.Core.LanguageAdapters.Portugol;
 using MultiLingualCode.Core.LanguageAdapters.Python;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Services;
@@ -302,6 +303,8 @@ public class Program
         LanguageRegistry registry = new LanguageRegistry();
         registry.RegisterAdapter(new CSharpAdapter());
         registry.RegisterAdapter(new PythonAdapter());
+        registry.RegisterAdapter(new VisuAlgAdapter());
+        registry.RegisterAdapter(new PortugolStudioAdapter());
         return registry;
     }
 
