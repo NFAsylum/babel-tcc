@@ -32,27 +32,20 @@ programa
    {
       real x = 10.5
       real y = 3.0
-      inteiro operacao
-
-      escreva("1) Somar\n")
-      escreva("2) Subtrair\n")
-      escreva("3) Multiplicar\n")
-      escreva("4) Dividir\n\n")
-      escreva("Escolha uma operacao: ")
-      leia(operacao)
+      cadeia operacao = "soma"
 
       escolha (operacao)
       {
-         caso 1:
+         caso "soma":
             escreva("Resultado: ", somar(x, y), "\n")
             pare
-         caso 2:
+         caso "subtracao":
             escreva("Resultado: ", subtrair(x, y), "\n")
             pare
-         caso 3:
+         caso "multiplicacao":
             escreva("Resultado: ", multiplicar(x, y), "\n")
             pare
-         caso 4:
+         caso "divisao":
             escreva("Resultado: ", dividir(x, y), "\n")
             pare
          caso contrario:
