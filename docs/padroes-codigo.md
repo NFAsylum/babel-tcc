@@ -190,3 +190,18 @@ refactor: aplicar padroes de codigo ao core
 - Titulo curto e descritivo
 - Descricao com: o que mudou, por que, como testar
 - Referenciar tarefa relacionada
+
+### Historico append-only
+
+O historico do Git e append-only. Sao **proibidos**:
+
+| Operacao | Motivo |
+|---|---|
+| `git commit --amend` | Reescreve commit existente, mesmo antes de push |
+| `git rebase` (interativo ou nao) | Reescreve sequencia de commits |
+| `git push --force` / `--force-with-lease` | Sobrescreve historico remoto, pode clobbar trabalho de colaboradores |
+| `git reset --hard` para descartar commits | Apaga commits do historico local |
+
+Quando algo precisa ser corrigido apos um commit (mesmo antes do push), criar **novo commit**: `fix:`, `revert:`, `refactor:` conforme apropriado. A trilha de "fiz -> desfiz" e mais transparente em code review do que historia reescrita, e mostra explicitamente o raciocinio que levou a decisao final.
+
+Se houver situacao real de recuperacao (ex: commit acidental de segredo), parar e alinhar antes de qualquer acao destrutiva — nunca aplicar reescrita de historico unilateralmente.
