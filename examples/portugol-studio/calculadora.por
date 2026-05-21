@@ -1,47 +1,61 @@
 // Exemplo Portugol Studio: calculadora simples
-// Demonstra: estrutura programa/funcao, tipos, condicionais, operadores
+// Demonstra: estrutura programa/funcao, tipos, condicionais, escolha-caso
 
-programa {
-
-   funcao real somar(real a, real b) {
+programa
+{
+   funcao real somar(real a, real b)
+   {
       retorne a + b
    }
 
-   funcao real subtrair(real a, real b) {
+   funcao real subtrair(real a, real b)
+   {
       retorne a - b
    }
 
-   funcao real multiplicar(real a, real b) {
+   funcao real multiplicar(real a, real b)
+   {
       retorne a * b
    }
 
-   funcao real dividir(real a, real b) {
-      se (b == 0) {
+   funcao real dividir(real a, real b)
+   {
+      se (b == 0)
+      {
          escreva("Divisao por zero nao permitida\n")
          retorne 0
       }
       retorne a / b
    }
 
-   funcao inicio() {
+   funcao inicio()
+   {
       real x = 10.5
       real y = 3.0
-      cadeia operacao = "soma"
+      inteiro operacao
 
-      escolha (operacao) {
-         caso "soma":
+      escreva("1) Somar\n")
+      escreva("2) Subtrair\n")
+      escreva("3) Multiplicar\n")
+      escreva("4) Dividir\n\n")
+      escreva("Escolha uma operacao: ")
+      leia(operacao)
+
+      escolha (operacao)
+      {
+         caso 1:
             escreva("Resultado: ", somar(x, y), "\n")
             pare
-         caso "subtracao":
+         caso 2:
             escreva("Resultado: ", subtrair(x, y), "\n")
             pare
-         caso "multiplicacao":
+         caso 3:
             escreva("Resultado: ", multiplicar(x, y), "\n")
             pare
-         caso "divisao":
+         caso 4:
             escreva("Resultado: ", dividir(x, y), "\n")
             pare
-         contrario:
+         caso contrario:
             escreva("Operacao desconhecida\n")
       }
    }
