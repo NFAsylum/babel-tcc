@@ -129,7 +129,7 @@ public class VisuAlgAdapterTests
             ["algorithm"] = 0,  // algoritmo
         };
         string translated = "algorithm \"x\"\nbegin\n   if x > 0 then\n      write(\"ok\")\n   endif\nendalgorithm";
-        string original = Adapter.ReverseSubstituteKeywords(translated, w => reverseMap.TryGetValue(w, out int id) ? id : -1);
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("algoritmo", original);
         Assert.Contains("inicio", original);
         Assert.Contains("se ", original);
@@ -149,7 +149,7 @@ public class VisuAlgAdapterTests
             ["write"] = -1,
         };
         string translated = "write(\"if you see this it stays\")";
-        string original = Adapter.ReverseSubstituteKeywords(translated, w => reverseMap.TryGetValue(w, out int id) ? id : -1);
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("if you see this it stays", original);
     }
 
@@ -162,7 +162,7 @@ public class VisuAlgAdapterTests
             ["then"] = 13,
         };
         string translated = "// if then\nvar x";
-        string original = Adapter.ReverseSubstituteKeywords(translated, w => reverseMap.TryGetValue(w, out int id) ? id : -1);
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("// if then", original);
     }
 }

@@ -37,6 +37,12 @@ public class VisuAlgAdapter : ILanguageAdapter, ITextScannable
     /// </summary>
     public ASTNode Parse(string sourceCode)
     {
+        int endLine = 0;
+        if (sourceCode.Length > 0)
+        {
+            endLine = sourceCode.Split('\n').Length - 1;
+        }
+
         return new StatementNode
         {
             StatementKind = "VisuAlgUnit",
@@ -44,7 +50,7 @@ public class VisuAlgAdapter : ILanguageAdapter, ITextScannable
             StartPosition = 0,
             EndPosition = sourceCode.Length,
             StartLine = 0,
-            EndLine = sourceCode.Length == 0 ? 0 : sourceCode.Split('\n').Length - 1
+            EndLine = endLine
         };
     }
 

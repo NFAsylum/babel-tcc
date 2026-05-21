@@ -116,7 +116,7 @@ public class PortugolStudioAdapterTests
             ["else"] = 7,        // senao
         };
         string translated = "program {\n  function start() {\n    integer x = 5\n    if (x > 0) {} else {}\n  }\n}";
-        string original = Adapter.ReverseSubstituteKeywords(translated, w => reverseMap.TryGetValue(w, out int id) ? id : -1);
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("programa", original);
         Assert.Contains("funcao", original);
         Assert.Contains("inteiro", original);
@@ -132,7 +132,7 @@ public class PortugolStudioAdapterTests
             ["if"] = 6,
         };
         string translated = "/* if appears here but should stay */\nx = 1";
-        string original = Adapter.ReverseSubstituteKeywords(translated, w => reverseMap.TryGetValue(w, out int id) ? id : -1);
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("/* if appears here but should stay */", original);
     }
 
@@ -144,7 +144,7 @@ public class PortugolStudioAdapterTests
             ["if"] = 6,
         };
         string translated = "// if comment\nx = 1";
-        string original = Adapter.ReverseSubstituteKeywords(translated, w => reverseMap.TryGetValue(w, out int id) ? id : -1);
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("// if comment", original);
     }
 
@@ -156,7 +156,7 @@ public class PortugolStudioAdapterTests
             ["if"] = 6,
         };
         string translated = "caracter c = 'i'";
-        string original = Adapter.ReverseSubstituteKeywords(translated, w => reverseMap.TryGetValue(w, out int id) ? id : -1);
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("'i'", original);
     }
 }
