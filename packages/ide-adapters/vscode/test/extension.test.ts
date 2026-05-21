@@ -5,6 +5,7 @@ import { commands, workspace, window, languages, Uri } from './__mocks__/vscode'
 vi.mock('fs');
 
 import { activate, deactivate, buildScopeItems } from '../src/extension';
+import { SUPPORTED_LANGUAGES, buildFileWatcherPattern } from '../src/config/languages';
 
 function makeContext(): { extensionPath: string; subscriptions: { dispose(): void }[] } {
   return {
@@ -64,10 +65,10 @@ describe('extension', () => {
       expect(context.subscriptions.length).toBe(20);
     });
 
-    it('should create file watcher for .cs and .py files', () => {
+    it('should create file watcher covering all supported extensions', () => {
       const context = makeContext();
       activate(context as any);
-      expect(workspace.createFileSystemWatcher).toHaveBeenCalledWith('**/*.{cs,py}');
+      expect(workspace.createFileSystemWatcher).toHaveBeenCalledWith(buildFileWatcherPattern());
     });
   });
 
@@ -147,7 +148,8 @@ describe('extension', () => {
 
     it('should list all languages without active file', () => {
       const items = buildScopeItems(undefined);
-      expect(items.length).toBe(3); // global + CSharp + Python
+      // global scope + one item per supported language
+      expect(items.length).toBe(1 + SUPPORTED_LANGUAGES.length);
       for (const item of items) {
         expect(item.label).not.toContain('(active)');
       }

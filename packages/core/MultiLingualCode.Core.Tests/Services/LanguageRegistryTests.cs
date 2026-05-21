@@ -297,7 +297,7 @@ public class LanguageRegistryTests
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
-        string[] expected = new[] { ".cs", ".py" };
+        string[] expected = new[] { ".alg", ".cs", ".por", ".py" };
         string[] actual = registry.GetSupportedExtensions();
 
         Array.Sort(expected);
@@ -342,9 +342,9 @@ public class LanguageRegistryTests
         string[] coreExtensions = registry.GetSupportedExtensions();
         Array.Sort(coreExtensions);
 
-        // These must match SUPPORTED_EXTENSIONS in languageDetector.ts
-        // If you add a new adapter, update both CreateRegistry AND languageDetector.ts
-        string[] vsCodeExtensions = new[] { ".cs", ".py" };
+        // These must match SUPPORTED_LANGUAGES in src/config/languages.ts
+        // If you add a new adapter, update both CreateRegistry AND languages.ts
+        string[] vsCodeExtensions = new[] { ".alg", ".cs", ".por", ".py" };
         Array.Sort(vsCodeExtensions);
 
         Assert.Equal(vsCodeExtensions, coreExtensions);

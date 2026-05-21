@@ -152,3 +152,45 @@ bool needsRoslyn = sourceCode.Contains("tradu");
 ```
 Se o arquivo contem "tradu", usa Roslyn (AST completo para identifiers).
 Caso contrario, usa Text Scan (O(n) linear, 0-1ms).
+
+---
+
+## DT-009: Suporte a dois dialetos Portugol (VisuAlg + Portugol Studio)
+
+**Decisao:** Adicionar dois adapters distintos para a familia Portugol:
+- `VisuAlgAdapter` (`.alg`, 48 keywords, dialeto de Claudio Morgado, case-insensitive)
+- `PortugolStudioAdapter` (`.por`, 26 keywords, dialeto UNIVALI, case-sensitive)
+
+**Alternativas consideradas:**
+- Suportar apenas VisuAlg (maior alcance no ensino medio brasileiro)
+- Suportar apenas Portugol Studio (mais usado em graduacao)
+- Suportar Portugol "didatico" generico (sem implementacao canonica — inviavel)
+
+**Justificativa:**
+- VisuAlg domina ensino medio/tecnico; Portugol Studio domina graduacao — atender ambos cobre
+  toda a pipeline brasileira de ensino de algoritmos
+- As duas variantes sao do mesmo conceito mas com sintaxes divergentes (`inicio`/`fim` vs `{`/`}`),
+  o que evidencia a generalidade da arquitetura de adapters: o mesmo engine traduz dois dialetos
+  proximos sem ambiguidade
+- Extensoes de arquivo distintas (`.alg`, `.por`) evitam colisao na resolucao via `LanguageRegistry`
+- Ambos sao implementados em modo "keyword-only" (sem tradu): a interface `ITextScannable` +
+  `LanguageScanRules` permite operar pelo fast path do Text Scan, sem necessidade de parser real
+- Reuso do helper `PortugolScanner` para reverse substitution evita duplicar a maquina de estados
+  de skip de strings/comentarios entre os dois adapters
+
+**Impactos:**
+- Adicionado campo `LanguageScanRules.CaseInsensitiveKeywords` (default `false`) para suportar
+  VisuAlg sem regressao em C#/Python
+- `TextScanTranslator.BuildTranslationMap` agora aceita o flag e cria o mapa com
+  `StringComparer.OrdinalIgnoreCase` quando solicitado
+- IDs numericos sao por-PL (cada dialeto comeca em 0). Nao ha alinhamento intencional de IDs
+  semanticamente equivalentes entre dialetos: a infraestrutura de traducao trata cada PL como
+  namespace independente, e tentativas de compartilhar IDs entre dialetos com sintaxes divergentes
+  agregam complexidade sem beneficio operacional
+
+**Tradeoffs:**
+- Sem suporte a tradu annotations para esses dialetos. Aceitavel: o publico-alvo (alunos
+  iniciantes) raramente usa identifier renaming, e a ausencia de um parser real torna esse recurso
+  desproporcional
+- Diretorio de keywords-base usa `portugolstudio/` (sem hifen) por conta de `Path.Combine` com
+  `LanguageName.ToLowerInvariant()`. Decisao deliberada para nao refatorar o `NaturalLanguageProvider`
