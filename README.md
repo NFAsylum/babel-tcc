@@ -165,7 +165,7 @@ publico classe Calculadora
 
 - **Core:** C# / .NET 8, Microsoft.CodeAnalysis (Roslyn)
 - **Extension:** TypeScript, VS Code Extension API
-- **Testes:** xUnit (C#) + Vitest (TypeScript), 500+ testes
+- **Testes:** xUnit (C#) + Vitest (TypeScript), 848 testes (667 C#, 181 TS)
 - **CI/CD:** GitHub Actions (matrix Ubuntu + Windows)
 - **Traducoes:** JSON
 
