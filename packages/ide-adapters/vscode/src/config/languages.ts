@@ -11,13 +11,20 @@ export interface LanguageConfig {
   extensions: string[];
   /** VS Code language identifier for syntax highlighting (e.g., 'csharp', 'python'). */
   vscodeLangId: string;
+  /**
+   * Whether babel-tcc registers a tmLanguage grammar and language configuration for this
+   * language in package.json. False for languages already covered by an official extension
+   * (C#, Python — Microsoft owns those grammars), true for languages VS Code does not
+   * know natively (VisuAlg, Portugol Studio).
+   */
+  registersGrammar: boolean;
 }
 
 export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
-  { name: 'CSharp', extensions: ['.cs'], vscodeLangId: 'csharp' },
-  { name: 'Python', extensions: ['.py'], vscodeLangId: 'python' },
-  { name: 'VisuAlg', extensions: ['.alg'], vscodeLangId: 'visualg' },
-  { name: 'PortugolStudio', extensions: ['.por'], vscodeLangId: 'portugol-studio' },
+  { name: 'CSharp', extensions: ['.cs'], vscodeLangId: 'csharp', registersGrammar: false },
+  { name: 'Python', extensions: ['.py'], vscodeLangId: 'python', registersGrammar: false },
+  { name: 'VisuAlg', extensions: ['.alg'], vscodeLangId: 'visualg', registersGrammar: true },
+  { name: 'PortugolStudio', extensions: ['.por'], vscodeLangId: 'portugol-studio', registersGrammar: true },
 ];
 
 /** Builds extension-to-language-name map from the central registry. */

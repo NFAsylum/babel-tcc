@@ -49,29 +49,45 @@ describe('languages config', () => {
       }
     });
 
-    it('should have mlc-language registered for each language', () => {
+    it('should have language entry registered in package.json only for languages that register a grammar', () => {
       const contributes: Record<string, unknown[]> = (packageJson as Record<string, Record<string, unknown[]>>)['contributes'];
       const languages: Record<string, string>[] = (contributes['languages'] || []) as Record<string, string>[];
       const registeredIds: string[] = languages.map((l) => l['id']);
       for (const lang of SUPPORTED_LANGUAGES) {
-        expect(registeredIds).toContain(`mlc-${lang.vscodeLangId}`);
+        if (lang.registersGrammar) {
+          expect(registeredIds).toContain(lang.vscodeLangId);
+        }
       }
     });
 
-    it('should have grammar for each language', () => {
+    it('should have grammar entry in package.json for each language that registers a grammar', () => {
       const contributes: Record<string, unknown[]> = (packageJson as Record<string, Record<string, unknown[]>>)['contributes'];
       const grammars: Record<string, string>[] = (contributes['grammars'] || []) as Record<string, string>[];
       const grammarLanguages: string[] = grammars.map((g) => g['language']);
       for (const lang of SUPPORTED_LANGUAGES) {
-        expect(grammarLanguages).toContain(`mlc-${lang.vscodeLangId}`);
+        if (lang.registersGrammar) {
+          expect(grammarLanguages).toContain(lang.vscodeLangId);
+        }
       }
     });
 
-    it('should have tmLanguage.json file for each language', () => {
+    it('should have tmLanguage.json file for each language that registers a grammar', () => {
       const syntaxesDir: string = path.join(__dirname, '../../syntaxes');
       for (const lang of SUPPORTED_LANGUAGES) {
-        const grammarFile: string = path.join(syntaxesDir, `mlc-${lang.vscodeLangId}.tmLanguage.json`);
-        expect(fs.existsSync(grammarFile)).toBe(true);
+        if (lang.registersGrammar) {
+          const grammarFile: string = path.join(syntaxesDir, `${lang.vscodeLangId}.tmLanguage.json`);
+          expect(fs.existsSync(grammarFile)).toBe(true);
+        }
+      }
+    });
+
+    it('should have language-configuration.json file for each language that registers a grammar', () => {
+      const syntaxesDir: string = path.join(__dirname, '../../syntaxes');
+      for (const lang of SUPPORTED_LANGUAGES) {
+        if (lang.registersGrammar) {
+          const configFile: string = path.join(syntaxesDir, `${lang.vscodeLangId}.language-configuration.json`);
+          expect(fs.existsSync(configFile)).toBe(true);
+        }
       }
     });
 
