@@ -24,7 +24,7 @@ public class OptimizationResearchTests : IDisposable
 
     public OptimizationResearchTests()
     {
-        TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        TranslationsPath = TranslationsPathResolver.Resolve();
         TempDir = Path.Combine(Path.GetTempPath(), $"optim_research_{Guid.NewGuid()}");
         Directory.CreateDirectory(TempDir);
     }
@@ -591,7 +591,7 @@ public class OptimizationResearchTests : IDisposable
     {
         Dictionary<string, string> translations = new()
         {
-            ["public"] = "publico",
+            ["public"] = "público",
             ["class"] = "classe",
             ["if"] = "se",
             ["return"] = "retornar",
@@ -605,7 +605,7 @@ public class OptimizationResearchTests : IDisposable
         // Edge case 1: keyword inside identifier
         string code1 = "public class publicKey {}";
         string result1 = TextScanTranslate(code1, translations);
-        bool case1Pass = result1.Contains("publicKey") && result1.Contains("publico");
+        bool case1Pass = result1.Contains("publicKey") && result1.Contains("público");
         results.AppendLine($"- keyword in identifier (publicKey): {(case1Pass ? "PASS" : "FAIL")} — `{result1.Trim()}`");
 
         // Edge case 2: keyword inside string
@@ -649,7 +649,7 @@ public class OptimizationResearchTests : IDisposable
     {
         Dictionary<string, string> translations = new()
         {
-            ["public"] = "publico",
+            ["public"] = "público",
             ["class"] = "classe",
             ["if"] = "se",
             ["int"] = "inteiro",
@@ -663,11 +663,11 @@ public class OptimizationResearchTests : IDisposable
         {
             // Verbatim strings
             ("verbatim string", @"string s = @""public class"";",
-                @"@""public class""", "publico"),
+                @"@""public class""", "público"),
 
             // Interpolated strings
             ("interpolated string", "string s = $\"o {x} public\";",
-                "$\"o {x} public\"", "publico"),
+                "$\"o {x} public\"", "público"),
 
             // Block comments
             ("block comment", "/* public class */ return;",
@@ -675,11 +675,11 @@ public class OptimizationResearchTests : IDisposable
 
             // Block comment with keyword after
             ("keyword after block comment", "/* comment */ public class Foo {}",
-                "publico", ""),
+                "público", ""),
 
             // Preprocessor directives (# is not a comment in C#)
             ("preprocessor directive", "#region public\npublic class Foo {}",
-                "publico classe", ""),
+                "público classe", ""),
 
             // Generic types (int as keyword inside List<int>)
             ("generic type", "List<int> items = new List<int>();",
@@ -687,7 +687,7 @@ public class OptimizationResearchTests : IDisposable
 
             // Multiple keywords on same line
             ("multiple keywords", "public static int Main() { return 0; }",
-                "publico", ""),
+                "público", ""),
 
             // Empty string literal
             ("empty string", "string s = \"\";",
@@ -695,7 +695,7 @@ public class OptimizationResearchTests : IDisposable
 
             // Escaped quote in string
             ("escaped quote", "string s = \"he said \\\"public\\\"\";",
-                "\\\"public\\\"", "publico classe"),
+                "\\\"public\\\"", "público classe"),
 
             // Keyword at start of file
             ("keyword at file start", "class Foo {}",
@@ -711,7 +711,7 @@ public class OptimizationResearchTests : IDisposable
 
             // Tab-separated keywords
             ("tab separated", "public\tclass\tFoo",
-                "publico", ""),
+                "público", ""),
 
             // Unicode identifier that contains keyword substring
             ("unicode identifier", "int públicoNome = 1;",
@@ -759,7 +759,7 @@ public class OptimizationResearchTests : IDisposable
     {
         Dictionary<string, string> translations = new()
         {
-            ["public"] = "publico",
+            ["public"] = "público",
             ["class"] = "classe",
             ["if"] = "se",
             ["int"] = "inteiro",
@@ -768,8 +768,8 @@ public class OptimizationResearchTests : IDisposable
             ["var"] = "var_t",
             ["new"] = "novo",
             ["void"] = "vazio",
-            ["static"] = "estatico",
-            ["namespace"] = "espaconome"
+            ["static"] = "estático",
+            ["namespace"] = "espaçonome"
         };
 
         List<(string Name, string Input, Func<string, bool> Verify)> cases = new()
@@ -807,17 +807,17 @@ public class OptimizationResearchTests : IDisposable
                 // $@ starts with $, then @, then " — scanner sees $ as non-letter,
                 // then @ as non-letter, then " opens a string.
                 // Keywords inside the string should NOT be translated.
-                o => !o.Contains("publico")),
+                o => !o.Contains("público")),
 
             // === Multiline comments ===
             ("multiline comment spans keywords",
                 "public /* class\nif\nreturn */ void Main() {}",
-                o => o.Contains("publico") && o.Contains("vazio") && o.Contains("/* class\nse\nretornar */") == false),
+                o => o.Contains("público") && o.Contains("vazio") && o.Contains("/* class\nse\nretornar */") == false),
 
             // === Pragma and preprocessor ===
             ("pragma warning",
                 "#pragma warning disable\npublic class Foo {}",
-                o => o.Contains("#pragma") && o.Contains("publico")),
+                o => o.Contains("#pragma") && o.Contains("público")),
 
             ("pragma restore",
                 "#pragma warning restore\nreturn;",
@@ -825,38 +825,38 @@ public class OptimizationResearchTests : IDisposable
 
             ("#if directive",
                 "#if DEBUG\npublic class Foo {}\n#endif",
-                o => o.Contains("#if DEBUG") && o.Contains("publico") && !o.Contains("#se")),
+                o => o.Contains("#if DEBUG") && o.Contains("público") && !o.Contains("#se")),
 
             ("#region with keyword",
                 "#region public API\npublic void Foo() {}\n#endregion",
-                o => o.Contains("publico")),
+                o => o.Contains("público")),
 
             ("#define",
                 "#define PUBLIC_API\npublic class Foo {}",
-                o => o.Contains("publico")),
+                o => o.Contains("público")),
 
             // === Broken/incomplete code ===
             ("unclosed string",
                 "string s = \"public class",
                 // Scanner enters string at " and never exits — keywords inside are protected
-                o => !o.Contains("publico")),
+                o => !o.Contains("público")),
 
             ("unclosed char literal",
                 "char c = 'public",
                 // Scanner enters char literal at ' and never exits
-                o => !o.Contains("publico")),
+                o => !o.Contains("público")),
 
             ("unclosed block comment at EOF",
                 "public /* class if",
-                o => o.Contains("publico")),
+                o => o.Contains("público")),
 
             ("missing semicolons",
                 "public class Foo { int x = 1 return x }",
-                o => o.Contains("publico") && o.Contains("retornar")),
+                o => o.Contains("público") && o.Contains("retornar")),
 
             ("double open braces (syntax error)",
                 "public class Foo {{ int x = 1; }}",
-                o => o.Contains("publico") && o.Contains("classe")),
+                o => o.Contains("público") && o.Contains("classe")),
 
             ("empty input",
                 "",
@@ -879,7 +879,7 @@ public class OptimizationResearchTests : IDisposable
                 "string s = \"path\\\\public\\\\\";",
                 // \\\\ is two escaped backslashes, then public, then \\\\, then "
                 // "public" is inside the string — should NOT be translated
-                o => !o.Contains("publico")),
+                o => !o.Contains("público")),
 
             ("char containing backslash",
                 "char c = '\\\\';",
@@ -1340,7 +1340,7 @@ public class OptimizationResearchTests : IDisposable
     {
         Dictionary<string, string> translations = new()
         {
-            ["public"] = "publico",
+            ["public"] = "público",
             ["class"] = "classe",
             ["return"] = "retornar",
             ["string"] = "texto",
@@ -1356,11 +1356,11 @@ public class OptimizationResearchTests : IDisposable
 
             ("raw string multiline",
                 "var x = \"\"\"\npublic\nclass\n\"\"\";",
-                o => o.Contains("var_t") && !o.Contains("publico")),
+                o => o.Contains("var_t") && !o.Contains("público")),
 
             ("raw string then code after",
                 "var x = \"\"\"text\"\"\";\npublic class Foo {}",
-                o => o.Contains("publico") && o.Contains("classe")),
+                o => o.Contains("público") && o.Contains("classe")),
 
             ("raw string with triple quote inside content",
                 "var x = \"\"\"has no triple inside\"\"\";\nreturn;",
@@ -1372,15 +1372,15 @@ public class OptimizationResearchTests : IDisposable
 
             ("multiple raw strings in file",
                 "var a = \"\"\"public\"\"\";\nvar b = \"\"\"class\"\"\";\nreturn;",
-                o => o.Contains("retornar") && !o.Contains("publico") && !o.Contains("classe")),
+                o => o.Contains("retornar") && !o.Contains("público") && !o.Contains("classe")),
 
             ("raw string with tradu-like content",
                 "var x = \"\"\"// tradu[pt-br]:Something\"\"\";\npublic class Foo {}",
-                o => o.Contains("publico") && o.Contains("classe")),
+                o => o.Contains("público") && o.Contains("classe")),
 
             ("code between raw strings",
                 "var a = \"\"\"x\"\"\";\npublic class Foo {}\nvar b = \"\"\"y\"\"\";",
-                o => o.Contains("publico") && o.Contains("classe")),
+                o => o.Contains("público") && o.Contains("classe")),
         };
 
         StringBuilder results = new StringBuilder();
@@ -1998,7 +1998,7 @@ public class OptimizationResearchTests : IDisposable
                 sw.Stop();
                 Assert.True(result.IsSuccess);
                 // Verify Text Scan actually ran (output has translated keywords)
-                Assert.Contains("publico", result.Value);
+                Assert.Contains("público", result.Value);
                 plainTimes[r] = sw.ElapsedMilliseconds;
             }
 

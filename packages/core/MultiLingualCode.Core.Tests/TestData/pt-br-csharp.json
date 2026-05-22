@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "languageCode": "pt-br",
-  "languageName": "Portugues Brasileiro",
+  "languageName": "Português (Brasil)",
   "programmingLanguage": "CSharp",
   "translations": {
     "0": "abstrato",
@@ -13,12 +13,12 @@
     "7": "capturar",
     "10": "classe",
     "11": "constante",
-    "18": "senao",
+    "18": "senão",
     "27": "para",
     "28": "paracada",
     "30": "se",
     "33": "inteiro",
-    "39": "espaconome",
+    "39": "espaçonome",
     "47": "privado",
     "49": "publico",
     "52": "retornar",

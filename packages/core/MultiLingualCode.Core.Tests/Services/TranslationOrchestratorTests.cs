@@ -15,7 +15,7 @@ public class TranslationOrchestratorTests
 
     public TranslationOrchestratorTests()
     {
-        TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        TranslationsPath = TranslationsPathResolver.Resolve();
     }
 
     public NaturalLanguageProvider CreateProvider()
@@ -59,12 +59,12 @@ public class TranslationOrchestratorTests
                 ["int"] = 33,
                 // PT-BR translated keywords (for reverse parsing)
                 ["se"] = 30,
-                ["senao"] = 18,
+                ["senão"] = 18,
                 ["classe"] = 10,
                 ["vazio"] = 75,
                 ["retornar"] = 52,
-                ["publico"] = 49,
-                ["estatico"] = 58,
+                ["público"] = 49,
+                ["estático"] = 58,
                 ["inteiro"] = 33
             };
 
@@ -141,7 +141,7 @@ public class TranslationOrchestratorTests
             "public class Program", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
-        Assert.Contains("publico", result.Value);
+        Assert.Contains("público", result.Value);
         Assert.Contains("classe", result.Value);
     }
 
@@ -171,7 +171,7 @@ public class TranslationOrchestratorTests
 
             Assert.True(result.IsSuccess);
             Assert.Contains("Calculadora", result.Value);
-            Assert.Contains("publico", result.Value);
+            Assert.Contains("público", result.Value);
             Assert.Contains("classe", result.Value);
         }
         finally
@@ -190,7 +190,7 @@ public class TranslationOrchestratorTests
         TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = Registry, Provider = provider, IdentifierMapperService = Mapper };
 
         OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
-            "publico classe Programa", ".cs", "pt-br");
+            "público classe Programa", ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
         Assert.Contains("public", result.Value);
@@ -214,7 +214,7 @@ public class TranslationOrchestratorTests
             TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = Registry, Provider = provider, IdentifierMapperService = Mapper };
 
             OperationResultGeneric<string> result = await orchestrator.TranslateFromNaturalLanguageAsync(
-                "publico classe Calculadora", ".cs", "pt-br");
+                "público classe Calculadora", ".cs", "pt-br");
 
             Assert.True(result.IsSuccess);
             Assert.Contains("public", result.Value);
@@ -288,7 +288,7 @@ public class TranslationOrchestratorTests
             original, ".cs", "pt-br");
 
         Assert.True(translatedResult.IsSuccess);
-        Assert.Contains("publico", translatedResult.Value);
+        Assert.Contains("público", translatedResult.Value);
         Assert.Contains("vazio", translatedResult.Value);
 
         OperationResultGeneric<string> reversedResult = await orchestrator.TranslateFromNaturalLanguageAsync(
@@ -438,9 +438,9 @@ public class TranslationOrchestratorTests
 
             TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
 
-            string translatedCode = @"publico classe Calculadora // tradu[pt-br]:Calculadora
+            string translatedCode = @"público classe Calculadora // tradu[pt-br]:Calculadora
 {
-    publico inteiro Somar(inteiro a, inteiro b) // tradu[pt-br]:Somar,a:primeiro,b:segundo
+    público inteiro Somar(inteiro a, inteiro b) // tradu[pt-br]:Somar,a:primeiro,b:segundo
     {
         retornar a + b;
     }
@@ -878,8 +878,8 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
 
             string original = "public class Foo\n{\n    public int x;\n}";
-            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
-            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // no changes
+            string translated = "público classe Foo\n{\n    público inteiro x;\n}";
+            string edited = "público classe Foo\n{\n    público inteiro x;\n}"; // no changes
 
             OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
                 original, translated, edited, ".cs", "pt-br");
@@ -911,8 +911,8 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
 
             string original = "public class Foo\n{\n}";
-            string translated = "publico classe Foo\n{\n}";
-            string edited = "publico classe Bar\n{\n}"; // changed Foo to Bar
+            string translated = "público classe Foo\n{\n}";
+            string edited = "público classe Bar\n{\n}"; // changed Foo to Bar
 
             OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
                 original, translated, edited, ".cs", "pt-br");
@@ -944,8 +944,8 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
 
             string original = "public class Foo\n{\n}";
-            string translated = "publico classe Foo\n{\n}";
-            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // added line
+            string translated = "público classe Foo\n{\n}";
+            string edited = "público classe Foo\n{\n    público inteiro x;\n}"; // added line
 
             OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
                 original, translated, edited, ".cs", "pt-br");
@@ -977,8 +977,8 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
             TranslationOrchestrator orchestrator = new TranslationOrchestrator { Registry = registry, Provider = provider, IdentifierMapperService = mapper };
 
             string original = "public class Foo\n{\n    public int x;\n}";
-            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
-            string edited = "publico classe Foo\n{\n}"; // removed line
+            string translated = "público classe Foo\n{\n    público inteiro x;\n}";
+            string edited = "público classe Foo\n{\n}"; // removed line
 
             OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
                 original, translated, edited, ".cs", "pt-br");
@@ -1050,7 +1050,7 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
 
             string original = ""; // new file
             string translated = ""; // no previous translation
-            string edited = "publico classe Foo\n{\n}"; // user wrote from scratch
+            string edited = "público classe Foo\n{\n}"; // user wrote from scratch
 
             OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
                 original, translated, edited, ".cs", "pt-br");
@@ -1141,12 +1141,12 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
     [Fact]
     public void TokenizeLine_SeparatesWordsAndOperators()
     {
-        List<string> tokens = TranslationOrchestrator.TokenizeLine("publico classe Foo { }");
-        Assert.Contains("publico", tokens);
+        List<string> tokens = TranslationOrchestrator.TokenizeLine("público classe Foo { }");
+        Assert.Contains("público", tokens);
         Assert.Contains("classe", tokens);
         Assert.Contains("Foo", tokens);
         string joined = string.Join("", tokens);
-        Assert.Equal("publico classe Foo { }", joined);
+        Assert.Equal("público classe Foo { }", joined);
     }
 
     [Fact]
@@ -1227,8 +1227,8 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
 
             // 3 lines, user inserts a new line in the middle
             string original = "public class Foo\n{\n}";
-            string translated = "publico classe Foo\n{\n}";
-            string edited = "publico classe Foo\n{\n    publico inteiro x;\n}"; // inserted line 3
+            string translated = "público classe Foo\n{\n}";
+            string edited = "público classe Foo\n{\n    público inteiro x;\n}"; // inserted line 3
 
             OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
                 original, translated, edited, ".cs", "pt-br");
@@ -1266,8 +1266,8 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
 
             // 4 lines, user deletes line 3
             string original = "public class Foo\n{\n    public int x;\n}";
-            string translated = "publico classe Foo\n{\n    publico inteiro x;\n}";
-            string edited = "publico classe Foo\n{\n}"; // deleted line 3
+            string translated = "público classe Foo\n{\n    público inteiro x;\n}";
+            string edited = "público classe Foo\n{\n}"; // deleted line 3
 
             OperationResultGeneric<string> result = await orchestrator.ApplyTranslatedEditsAsync(
                 original, translated, edited, ".cs", "pt-br");

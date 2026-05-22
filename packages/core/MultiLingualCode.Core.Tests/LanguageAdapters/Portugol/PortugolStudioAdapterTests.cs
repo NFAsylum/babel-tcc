@@ -113,7 +113,7 @@ public class PortugolStudioAdapterTests
             ["function"] = 17,   // funcao
             ["integer"] = 0,     // inteiro
             ["if"] = 6,          // se
-            ["else"] = 7,        // senao
+            ["else"] = 7,        // senão
         };
         string translated = "program {\n  function start() {\n    integer x = 5\n    if (x > 0) {} else {}\n  }\n}";
         string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));

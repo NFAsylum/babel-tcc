@@ -15,7 +15,7 @@ public class PerformanceBenchmarkTests : IDisposable
 
     public PerformanceBenchmarkTests()
     {
-        TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        TranslationsPath = TranslationsPathResolver.Resolve();
         TempDir = Path.Combine(Path.GetTempPath(), $"perf_bench_{Guid.NewGuid()}");
         Directory.CreateDirectory(TempDir);
         Orchestrator = CreateOrchestrator();

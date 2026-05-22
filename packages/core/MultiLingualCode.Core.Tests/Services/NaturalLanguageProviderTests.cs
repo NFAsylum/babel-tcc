@@ -7,7 +7,7 @@ namespace MultiLingualCode.Core.Tests.Services;
 public class NaturalLanguageProviderTests
 {
     public static string TranslationsPath =>
-        Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        TranslationsPathResolver.Resolve();
 
     public static async Task<NaturalLanguageProvider> CreateLoadedProvider()
     {
@@ -45,7 +45,7 @@ public class NaturalLanguageProviderTests
     {
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
-        Assert.Equal("Portugues Brasileiro", provider.LanguageName);
+        Assert.Equal("Português (Brasil)", provider.LanguageName);
         Assert.True(provider.IsLoaded("csharp"));
     }
 
@@ -88,7 +88,7 @@ public class NaturalLanguageProviderTests
         Assert.True(ifResult.IsSuccess);
         Assert.Equal("se", ifResult.Value);
         Assert.True(elseResult.IsSuccess);
-        Assert.Equal("senao", elseResult.Value);
+        Assert.Equal("senão", elseResult.Value);
         Assert.True(classResult.IsSuccess);
         Assert.Equal("classe", classResult.Value);
         Assert.True(voidResult.IsSuccess);
@@ -121,7 +121,7 @@ public class NaturalLanguageProviderTests
         NaturalLanguageProvider provider = await CreateLoadedProvider();
 
         Assert.Equal(30, provider.ReverseTranslateKeyword("se"));
-        Assert.Equal(18, provider.ReverseTranslateKeyword("senao"));
+        Assert.Equal(18, provider.ReverseTranslateKeyword("senão"));
         Assert.Equal(10, provider.ReverseTranslateKeyword("classe"));
     }
 

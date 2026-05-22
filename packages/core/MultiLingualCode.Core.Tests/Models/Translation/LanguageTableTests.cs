@@ -17,7 +17,7 @@ public class LanguageTableTests
         LanguageTable table = result.Value;
         Assert.Equal("1.0.0", table.Version);
         Assert.Equal("pt-br", table.LanguageCode);
-        Assert.Equal("Portugues Brasileiro", table.LanguageName);
+        Assert.Equal("Português (Brasil)", table.LanguageName);
         Assert.Equal("CSharp", table.ProgrammingLanguage);
         Assert.True(table.Count > 0);
     }
@@ -52,9 +52,9 @@ public class LanguageTableTests
         Assert.True(ifResult.IsSuccess);
         Assert.Equal("se", ifResult.Value);
 
-        OperationResultGeneric<string> elseResult = table.GetTranslation(18);     // else -> senao
+        OperationResultGeneric<string> elseResult = table.GetTranslation(18);     // else -> senão
         Assert.True(elseResult.IsSuccess);
-        Assert.Equal("senao", elseResult.Value);
+        Assert.Equal("senão", elseResult.Value);
 
         OperationResultGeneric<string> classResult = table.GetTranslation(10);    // class -> classe
         Assert.True(classResult.IsSuccess);
@@ -87,7 +87,7 @@ public class LanguageTableTests
         LanguageTable table = loadResult.Value;
 
         Assert.Equal(30, table.GetKeywordId("se"));
-        Assert.Equal(18, table.GetKeywordId("senao"));
+        Assert.Equal(18, table.GetKeywordId("senão"));
         Assert.Equal(10, table.GetKeywordId("classe"));
     }
 
