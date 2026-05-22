@@ -5,6 +5,11 @@ Este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.9.0-beta.1] - 2026-05-22
+
+Primeira release beta publicada via GitHub Releases como `.vsix` (nao publicada no
+VS Code Marketplace). Distribuida para coleta de feedback antes da v1.0.0.
+
 ### Added
 - Suporte aos dialetos VisuAlg (`.alg`) e Portugol Studio (`.por`)
   - VisuAlgAdapter cobrindo 48 palavras reservadas (algoritmo, fimalgoritmo, se, entao, enquanto, escreva, escreval, leia, procedimento, funcao, retorne, escolha, caso, outrocaso, ...)
