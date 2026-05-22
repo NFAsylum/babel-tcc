@@ -2,7 +2,7 @@
   "name": "multilingual-code",
   "displayName": "Babel TCC - MultiLingual Code",
   "description": "Visualize source code translated to your natural language. Keywords and identifiers are translated in real-time.",
-  "version": "0.1.0",
+  "version": "0.9.0-beta.1",
   "publisher": "NFAsylum",
   "license": "MIT",
   "repository": {
