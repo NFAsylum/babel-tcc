@@ -93,6 +93,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Checkout translations repo
+        uses: actions/checkout@v4
+        with:
+          repository: NFAsylum/babel-tcc-translations
+          path: babel-tcc-translations
+
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
@@ -119,6 +125,8 @@ jobs:
 
       - name: Copy translations
         working-directory: packages/ide-adapters/vscode
+        env:
+          BABEL_TCC_TRANSLATIONS_PATH: ${{ github.workspace }}/babel-tcc-translations
         run: npm run copy-translations
 
       - name: Build extension
