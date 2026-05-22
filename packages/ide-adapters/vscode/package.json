@@ -117,45 +117,17 @@
     ],
     "grammars": [
       {
-        "language": "mlc-csharp",
-        "scopeName": "source.mlc-csharp",
-        "path": "./syntaxes/mlc-csharp.tmLanguage.json"
+        "language": "visualg",
+        "scopeName": "source.visualg",
+        "path": "./syntaxes/visualg.tmLanguage.json"
       },
       {
-        "language": "mlc-python",
-        "scopeName": "source.mlc-python",
-        "path": "./syntaxes/mlc-python.tmLanguage.json"
-      },
-      {
-        "language": "mlc-visualg",
-        "scopeName": "source.mlc-visualg",
-        "path": "./syntaxes/mlc-visualg.tmLanguage.json"
-      },
-      {
-        "language": "mlc-portugol-studio",
-        "scopeName": "source.mlc-portugol-studio",
-        "path": "./syntaxes/mlc-portugol-studio.tmLanguage.json"
+        "language": "portugol-studio",
+        "scopeName": "source.portugol-studio",
+        "path": "./syntaxes/portugol-studio.tmLanguage.json"
       }
     ],
     "languages": [
-      {
-        "id": "mlc-csharp",
-        "aliases": [
-          "C# Traduzido",
-          "mlc-csharp"
-        ],
-        "extensions": [],
-        "configuration": "./syntaxes/mlc-csharp.language-configuration.json"
-      },
-      {
-        "id": "mlc-python",
-        "aliases": [
-          "Python Traduzido",
-          "mlc-python"
-        ],
-        "extensions": [],
-        "configuration": "./syntaxes/mlc-python.language-configuration.json"
-      },
       {
         "id": "visualg",
         "aliases": [
@@ -168,15 +140,6 @@
         "configuration": "./syntaxes/visualg.language-configuration.json"
       },
       {
-        "id": "mlc-visualg",
-        "aliases": [
-          "VisuAlg Traduzido",
-          "mlc-visualg"
-        ],
-        "extensions": [],
-        "configuration": "./syntaxes/mlc-visualg.language-configuration.json"
-      },
-      {
         "id": "portugol-studio",
         "aliases": [
           "Portugol Studio",
@@ -186,15 +149,6 @@
           ".por"
         ],
         "configuration": "./syntaxes/portugol-studio.language-configuration.json"
-      },
-      {
-        "id": "mlc-portugol-studio",
-        "aliases": [
-          "Portugol Studio Traduzido",
-          "mlc-portugol-studio"
-        ],
-        "configuration": "./syntaxes/mlc-portugol-studio.language-configuration.json",
-        "extensions": []
       }
     ]
   },
