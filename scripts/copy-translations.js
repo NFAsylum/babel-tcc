@@ -3,13 +3,16 @@ const path = require('path');
 
 const VSCODE_DIR = path.resolve(__dirname, '..', 'packages', 'ide-adapters', 'vscode');
 const DEST = path.join(VSCODE_DIR, 'translations');
-const TEST_DATA = path.resolve(__dirname, '..', 'packages', 'core', 'MultiLingualCode.Core.Tests', 'TestData', 'translations');
 
 // Candidate locations for the full babel-tcc-translations repo, in priority order:
 // 1. Explicit override via env var (used by release.yml in CI)
 // 2. Sibling of the babel-tcc repo (typical for local development)
 // 3. Inside the babel-tcc workspace at top level (used by CI when actions/checkout
 //    places the translations repo alongside the source tree)
+//
+// No fallback to TestData: translations are core to the extension. Empacotar
+// um .vsix sem todos os idiomas e silently shipping um produto quebrado —
+// melhor falhar alto e forcar o caller a apontar para o repo real.
 const FULL_REPO_CANDIDATES = [
     process.env.BABEL_TCC_TRANSLATIONS_PATH,
     path.resolve(__dirname, '..', '..', 'babel-tcc-translations'),
@@ -54,17 +57,16 @@ for (const candidate of FULL_REPO_CANDIDATES) {
 }
 
 if (!src) {
-    if (fs.existsSync(TEST_DATA) && validate(TEST_DATA)) {
-        src = TEST_DATA;
-        console.log(`Full repo not found, using TestData fallback: ${src}`);
-    } else {
-        console.error('ERROR: No translations source found.');
-        for (const candidate of FULL_REPO_CANDIDATES) {
-            console.error(`  Looked for: ${candidate}`);
-        }
-        console.error(`  Fallback:   ${TEST_DATA}`);
-        process.exit(1);
+    console.error('ERROR: babel-tcc-translations repo not found.');
+    console.error('Translations are required to package the extension.');
+    console.error('Looked in:');
+    for (const candidate of FULL_REPO_CANDIDATES) {
+        console.error(`  ${candidate}`);
     }
+    console.error('');
+    console.error('Fix: clone NFAsylum/babel-tcc-translations as a sibling of this repo,');
+    console.error('or set BABEL_TCC_TRANSLATIONS_PATH env var to its absolute path.');
+    process.exit(1);
 }
 
 const langCount = fs.readdirSync(path.join(src, 'natural-languages')).length;
