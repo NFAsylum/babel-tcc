@@ -683,9 +683,6 @@ public class TranslationOrchestrator
                 return;
             }
 
-            // Detect string prefix and type
-            int prefixStart = i;
-
             // Check for $@" or @$" (C# interpolated verbatim)
             if (i + 2 < line.Length
                 && ((line[i] == '$' && line[i + 1] == '@' && line[i + 2] == '"')

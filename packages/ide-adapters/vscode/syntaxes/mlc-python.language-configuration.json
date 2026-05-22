@@ -24,8 +24,7 @@
     ["'", "'"]
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*.*:\\s*(#.*)?$",
-    "decreaseIndentPattern": "^\\s*(elif|else|except|finally).*:\\s*(#.*)?$"
+    "increaseIndentPattern": "^\\s*.*:\\s*(#.*)?$"
   },
   "wordPattern": "[a-zA-Z_][a-zA-Z0-9_]*"
 }
