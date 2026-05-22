@@ -144,7 +144,8 @@
           "C# Traduzido",
           "mlc-csharp"
         ],
-        "extensions": []
+        "extensions": [],
+        "configuration": "./syntaxes/mlc-csharp.language-configuration.json"
       },
       {
         "id": "mlc-python",
@@ -152,7 +153,8 @@
           "Python Traduzido",
           "mlc-python"
         ],
-        "extensions": []
+        "extensions": [],
+        "configuration": "./syntaxes/mlc-python.language-configuration.json"
       },
       {
         "id": "visualg",
@@ -162,7 +164,8 @@
         ],
         "extensions": [
           ".alg"
-        ]
+        ],
+        "configuration": "./syntaxes/visualg.language-configuration.json"
       },
       {
         "id": "mlc-visualg",
@@ -170,7 +173,8 @@
           "VisuAlg Traduzido",
           "mlc-visualg"
         ],
-        "extensions": []
+        "extensions": [],
+        "configuration": "./syntaxes/mlc-visualg.language-configuration.json"
       },
       {
         "id": "portugol-studio",
@@ -180,7 +184,8 @@
         ],
         "extensions": [
           ".por"
-        ]
+        ],
+        "configuration": "./syntaxes/portugol-studio.language-configuration.json"
       },
       {
         "id": "mlc-portugol-studio",
@@ -188,6 +193,7 @@
           "Portugol Studio Traduzido",
           "mlc-portugol-studio"
         ],
+        "configuration": "./syntaxes/mlc-portugol-studio.language-configuration.json",
         "extensions": []
       }
     ]

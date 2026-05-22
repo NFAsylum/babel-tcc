@@ -408,7 +408,7 @@ public class OptimizationResearchTests : IDisposable
                 string word = code.Substring(start, i - start);
 
                 // Only replace if it's an exact keyword match (not part of identifier)
-                if (translations.TryGetValue(word, out string translated))
+                if (translations.TryGetValue(word, out string? translated) && translated != null)
                 {
                     result.Append(translated);
                 }

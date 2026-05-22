@@ -683,16 +683,11 @@ public class TranslationOrchestrator
                 return;
             }
 
-            // Detect string prefix and type
-            bool isInterpolated = false;
-            int prefixStart = i;
-
             // Check for $@" or @$" (C# interpolated verbatim)
             if (i + 2 < line.Length
                 && ((line[i] == '$' && line[i + 1] == '@' && line[i + 2] == '"')
                  || (line[i] == '@' && line[i + 1] == '$' && line[i + 2] == '"')))
             {
-                isInterpolated = true;
                 TokenizeInterpolatedString(line, ref i, tokens, '"', 2);
                 continue;
             }
@@ -700,7 +695,6 @@ public class TranslationOrchestrator
             // Check for $" (C# interpolated)
             if (line[i] == '$' && i + 1 < line.Length && line[i + 1] == '"')
             {
-                isInterpolated = true;
                 TokenizeInterpolatedString(line, ref i, tokens, '"', 1);
                 continue;
             }
