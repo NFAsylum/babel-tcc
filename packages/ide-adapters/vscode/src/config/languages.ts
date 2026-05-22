@@ -47,3 +47,20 @@ export function buildFileWatcherPattern(): string {
   );
   return '**/*.{' + exts.join(',') + '}';
 }
+
+/**
+ * Returns the babel-tcc-exclusive language ID used for translated views of a programming language.
+ * Translated views must be assigned this ID via vscode.languages.setTextDocumentLanguage so that
+ * the mlc-* tmLanguage and language-configuration files apply, instead of inheriting whichever
+ * extension wins the original file extension association. Returns an empty string if the
+ * programming language is not registered.
+ */
+export function getMlcLanguageId(programmingLanguageName: string): string {
+  const lang: LanguageConfig | undefined = SUPPORTED_LANGUAGES.find(
+    (l: LanguageConfig): boolean => l.name === programmingLanguageName
+  );
+  if (lang === undefined) {
+    return '';
+  }
+  return `mlc-${lang.vscodeLangId}`;
+}

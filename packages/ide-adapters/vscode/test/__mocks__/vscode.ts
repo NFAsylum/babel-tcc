@@ -276,6 +276,7 @@ export const languages = {
   registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
   registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
   registerDocumentSemanticTokensProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  setTextDocumentLanguage: vi.fn((doc: { languageId: string }, _langId: string) => Promise.resolve(doc)),
 };
 
 // --- Helper to set config values in tests ---

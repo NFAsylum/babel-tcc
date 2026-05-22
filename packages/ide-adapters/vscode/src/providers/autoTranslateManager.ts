@@ -3,6 +3,7 @@ import { ConfigurationService } from '../services/configurationService';
 import { LanguageDetector } from '../services/languageDetector';
 import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './translatedContentProvider';
 import { SUPPORTED_LANGUAGES } from '../config/languages';
+import { bindTranslatedLanguage } from '../services/translatedLanguageBinder';
 
 /** Manages automatic translation of .cs tabs based on the enabled/language configuration. */
 export class AutoTranslateManager implements vscode.Disposable {
@@ -101,6 +102,7 @@ export class AutoTranslateManager implements vscode.Disposable {
       const viewColumn: vscode.ViewColumn = editor.viewColumn ?? vscode.ViewColumn.One;
 
       const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
+      await bindTranslatedLanguage(doc, editor.document.uri.fsPath, this.languageDetector, this.outputChannel);
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
       await this.closeTab(editor.document.uri);
 
@@ -166,6 +168,7 @@ export class AutoTranslateManager implements vscode.Disposable {
       try {
         const newUri: vscode.Uri = vscode.Uri.parse(`${newScheme}:${path}`);
         const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(newUri);
+        await bindTranslatedLanguage(doc, path, this.languageDetector, this.outputChannel);
         await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
         await vscode.window.tabGroups.close(tab);
       } catch (error: unknown) {
@@ -218,6 +221,7 @@ export class AutoTranslateManager implements vscode.Disposable {
             `${activeScheme}:${path}`
           );
           const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
+          await bindTranslatedLanguage(doc, path, this.languageDetector, this.outputChannel);
           await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
           await vscode.window.tabGroups.close(tab);
         } catch (error: unknown) {
@@ -289,6 +293,7 @@ export class AutoTranslateManager implements vscode.Disposable {
         this.contentProvider.invalidateCache(uri);
 
         const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(uri);
+        await bindTranslatedLanguage(doc, path, this.languageDetector, this.outputChannel);
         await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
       } catch (error: unknown) {
         const message: string = error instanceof Error ? error.message : String(error);

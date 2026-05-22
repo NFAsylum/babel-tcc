@@ -14,6 +14,7 @@ describe('AutoTranslateManager', () => {
   };
   let mockLanguageDetector: {
     isSupported: ReturnType<typeof vi.fn>;
+    detectLanguage: ReturnType<typeof vi.fn>;
   };
   let mockContentProvider: {
     invalidateAll: ReturnType<typeof vi.fn>;
@@ -37,6 +38,7 @@ describe('AutoTranslateManager', () => {
     };
     mockLanguageDetector = {
       isSupported: vi.fn().mockReturnValue(true),
+      detectLanguage: vi.fn().mockReturnValue('CSharp'),
     };
     mockContentProvider = {
       invalidateAll: vi.fn(),
