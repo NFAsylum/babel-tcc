@@ -129,19 +129,6 @@ Adicionar ao `settings.json`:
 }
 ```
 
-### Coexistencia com outras extensoes Portugol
-
-Se voce usa outras extensoes que tambem registram `.alg` ou `.por` (ex: Design Liquido, Portugol VisuAlg), o VS Code escolhe uma delas para fornecer destaque de sintaxe e configuracao basica. A view traduzida do babel-tcc ja se isola automaticamente (usa language IDs `mlc-*` exclusivos), mas o arquivo original pode ficar com a configuracao da outra extensao. Para forcar o babel-tcc como handler primario, adicione ao `settings.json`:
-
-```json
-{
-  "files.associations": {
-    "*.alg": "visualg",
-    "*.por": "portugol-studio"
-  }
-}
-```
-
 ### Sistema "tradu"
 
 Desenvolvedores anotam identificadores customizados no codigo:

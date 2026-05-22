@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SUPPORTED_LANGUAGES, buildExtensionMap, buildVSCodeLanguageMap, buildFileWatcherPattern, getMlcLanguageId } from '../../src/config/languages';
+import { SUPPORTED_LANGUAGES, buildExtensionMap, buildVSCodeLanguageMap, buildFileWatcherPattern } from '../../src/config/languages';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -28,30 +28,6 @@ describe('languages config', () => {
       const map: Record<string, string> = buildVSCodeLanguageMap();
       expect(map['CSharp']).toBe('csharp');
       expect(map['Python']).toBe('python');
-    });
-  });
-
-  describe('getMlcLanguageId', () => {
-    it('should return mlc-{vscodeLangId} for known programming languages', () => {
-      expect(getMlcLanguageId('CSharp')).toBe('mlc-csharp');
-      expect(getMlcLanguageId('Python')).toBe('mlc-python');
-      expect(getMlcLanguageId('VisuAlg')).toBe('mlc-visualg');
-      expect(getMlcLanguageId('PortugolStudio')).toBe('mlc-portugol-studio');
-    });
-
-    it('should return empty string for unknown programming language', () => {
-      expect(getMlcLanguageId('Unknown')).toBe('');
-      expect(getMlcLanguageId('')).toBe('');
-    });
-
-    it('should match an mlc-* language registered in package.json for every supported language', () => {
-      const contributes: Record<string, unknown[]> = (packageJson as Record<string, Record<string, unknown[]>>)['contributes'];
-      const languages: Record<string, string>[] = (contributes['languages'] || []) as Record<string, string>[];
-      const registeredIds: string[] = languages.map((l) => l['id']);
-      for (const lang of SUPPORTED_LANGUAGES) {
-        const mlcId: string = getMlcLanguageId(lang.name);
-        expect(registeredIds).toContain(mlcId);
-      }
     });
   });
 

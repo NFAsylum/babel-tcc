@@ -13,7 +13,6 @@ import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
 import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/semanticKeywordProvider';
 import { buildFileWatcherPattern, SUPPORTED_LANGUAGES } from './config/languages';
-import { bindTranslatedLanguage } from './services/translatedLanguageBinder';
 import { COMMANDS } from './config/constants';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
@@ -283,7 +282,6 @@ export function activate(context: vscode.ExtensionContext): void {
       );
 
       const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
-      await bindTranslatedLanguage(doc, originalUri.fsPath, languageDetector, outputChannel);
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
       outputChannel.appendLine(`Opened editable translated view for: ${originalUri.fsPath}`);
     }
@@ -310,7 +308,6 @@ export function activate(context: vscode.ExtensionContext): void {
       );
 
       const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
-      await bindTranslatedLanguage(doc, originalUri.fsPath, languageDetector, outputChannel);
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
       outputChannel.appendLine(`Opened readonly translated view for: ${originalUri.fsPath}`);
     }
