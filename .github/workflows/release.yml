@@ -85,6 +85,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
     steps:
       - uses: actions/checkout@v4
@@ -131,11 +133,9 @@ jobs:
         run: vsce package --out multilingual-code-${{ github.ref_name }}.vsix
 
       - name: Publish to Marketplace
-        if: secrets.VSCE_PAT != ''
+        if: env.VSCE_PAT != ''
         working-directory: packages/ide-adapters/vscode
         run: vsce publish
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
