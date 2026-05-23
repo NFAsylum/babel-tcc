@@ -18,6 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout translations repo
+        uses: actions/checkout@v4
+        with:
+          repository: NFAsylum/babel-tcc-translations
+          path: babel-tcc-translations
+
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
@@ -34,6 +40,8 @@ jobs:
         run: dotnet format --verify-no-changes --verbosity diagnostic
 
       - name: Test with coverage
+        env:
+          BABEL_TCC_TRANSLATIONS_PATH: ${{ github.workspace }}/babel-tcc-translations
         run: >
           dotnet test --no-build --configuration Release
           --collect:"XPlat Code Coverage"

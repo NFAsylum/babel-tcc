@@ -235,7 +235,7 @@ finally { }";
             {
                 kw.Text = kw.KeywordId switch
                 {
-                    49 => "publico",  // public
+                    49 => "público",  // public
                     10 => "classe",   // class
                     _ => kw.Text
                 };
@@ -244,7 +244,7 @@ finally { }";
 
         string result = Adapter.Generate(ast);
 
-        Assert.Equal("publico classe Program { }", result);
+        Assert.Equal("público classe Program { }", result);
     }
 
     [Fact]
@@ -278,13 +278,13 @@ finally { }";
         {
             if (child is KeywordNode kw && kw.Text == "public")
             {
-                kw.Text = "publico";
+                kw.Text = "público";
             }
         }
 
         string result = Adapter.Generate(ast);
 
-        Assert.StartsWith("publico", result);
+        Assert.StartsWith("público", result);
         Assert.Contains("class Program", result);
         Assert.Contains("static void Main()", result);
     }
@@ -594,7 +594,7 @@ public enum Direction
             {
                 kw.Text = kw.KeywordId switch
                 {
-                    49 => "publico",
+                    49 => "público",
                     10 => "classe",
                     33 => "inteiro",
                     52 => "retornar",
@@ -615,7 +615,7 @@ public enum Direction
 
         string result = Adapter.Generate(ast);
 
-        Assert.Contains("publico", result);
+        Assert.Contains("público", result);
         Assert.Contains("classe", result);
         Assert.Contains("Calculadora", result);
         Assert.Contains("inteiro", result);
@@ -984,14 +984,14 @@ class C
     {
         Dictionary<string, int> ptBrKeywords = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["publico"] = 49,
+            ["público"] = 49,
             ["classe"] = 10,
-            ["estatico"] = 58,
+            ["estático"] = 58,
             ["vazio"] = 75,
             ["texto"] = 59,
             ["usando"] = 72,
             ["se"] = 30,
-            ["senao"] = 18,
+            ["senão"] = 18,
             ["retornar"] = 52,
             ["para"] = 27,
             ["enquanto"] = 77,
@@ -1004,10 +1004,10 @@ class C
             ["privado"] = 47,
             ["somenteleitura"] = 50,
             ["booleano"] = 3,
-            ["espaconome"] = 39,
+            ["espaçonome"] = 39,
             ["paracada"] = 28,
             ["em"] = 32,
-            ["saida"] = 44,
+            ["saída"] = 44,
         };
 
         if (ptBrKeywords.TryGetValue(word, out int id))
@@ -1024,7 +1024,7 @@ class C
 
 espaco_de_nomes MeuProjeto
 {
-    publico classe Programa { }
+    público classe Programa { }
 }";
         string result = Adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
@@ -1034,7 +1034,7 @@ espaco_de_nomes MeuProjeto
         Assert.Contains("class", result);
         Assert.DoesNotContain("usando", result);
         Assert.DoesNotContain("espaco_de_nomes", result);
-        Assert.DoesNotContain("publico", result);
+        Assert.DoesNotContain("público", result);
         Assert.DoesNotContain("classe", result);
     }
 
@@ -1045,12 +1045,12 @@ espaco_de_nomes MeuProjeto
 
 espaco_de_nomes MeuProjeto
 {
-    publico classe Programa
+    público classe Programa
     {
-        publico estatico vazio Principal()
+        público estático vazio Principal()
         {
         }
-        publico estatico texto teste = ""oi"";
+        público estático texto teste = ""oi"";
     }
 }";
 
@@ -1061,9 +1061,9 @@ espaco_de_nomes MeuProjeto
         Assert.Contains("static", result);
         Assert.Contains("void", result);
         Assert.Contains("string", result);
-        Assert.DoesNotContain("publico", result);
+        Assert.DoesNotContain("público", result);
         Assert.DoesNotContain("classe", result);
-        Assert.DoesNotContain("estatico", result);
+        Assert.DoesNotContain("estático", result);
         Assert.DoesNotContain("vazio", result);
         Assert.DoesNotContain("texto", result);
     }
@@ -1075,9 +1075,9 @@ espaco_de_nomes MeuProjeto
 
 espaco_de_nomes MeuProjeto
 {
-    publico classe Programa
+    público classe Programa
     {
-        publico texto nome = ""publico estatico"";
+        público texto nome = ""público estático"";
     }
 }";
 
@@ -1086,7 +1086,7 @@ espaco_de_nomes MeuProjeto
         Assert.Contains("public", result);
         Assert.Contains("class", result);
         Assert.Contains("string", result);
-        Assert.Contains("\"publico estatico\"", result);
+        Assert.Contains("\"público estático\"", result);
     }
 
     [Fact]
@@ -1096,11 +1096,11 @@ espaco_de_nomes MeuProjeto
 
 espaco_de_nomes MeuProjeto
 {
-    publico classe Programa
+    público classe Programa
     {
-        // publico estatico vazio
-        /* publico estatico */
-        publico vazio Metodo() { }
+        // público estático vazio
+        /* público estático */
+        público vazio Metodo() { }
     }
 }";
 
@@ -1108,8 +1108,8 @@ espaco_de_nomes MeuProjeto
 
         Assert.Contains("public", result);
         Assert.Contains("class", result);
-        Assert.Contains("// publico estatico vazio", result);
-        Assert.Contains("/* publico estatico */", result);
+        Assert.Contains("// público estático vazio", result);
+        Assert.Contains("/* público estático */", result);
     }
 
     [Fact]
@@ -1135,14 +1135,14 @@ espaco_de_nomes MeuProjeto
 
 espaco_de_nomes MeuProjeto
 {
-    publico classe MinhaClasse
+    público classe MinhaClasse
     {
-        publico estatico vazio Principal()
+        público estático vazio Principal()
         {
             Console.WriteLine(""Ola"");
         }
-        publico estatico inteiro valor = 42;
-        publico texto nome = ""teste"";
+        público estático inteiro valor = 42;
+        público texto nome = ""teste"";
     }
 }";
 
@@ -1158,8 +1158,8 @@ espaco_de_nomes MeuProjeto
         Assert.Contains("string", result);
         Assert.DoesNotContain("usando", result);
         Assert.DoesNotContain("espaco_de_nomes", result);
-        Assert.DoesNotContain("publico", result);
-        Assert.DoesNotContain("estatico", result);
+        Assert.DoesNotContain("público", result);
+        Assert.DoesNotContain("estático", result);
         Assert.DoesNotContain("inteiro", result);
         Assert.DoesNotContain("texto", result);
     }
@@ -1167,20 +1167,20 @@ espaco_de_nomes MeuProjeto
     [Fact]
     public void ReverseSubstituteKeywords_ComplexFile_ReplacesAllKeywords()
     {
-        string translatedCode = @"espaconome MultiLingualCode.Core.LanguageAdapters;
+        string translatedCode = @"espaçonome MultiLingualCode.Core.LanguageAdapters;
 
-publico estatico classe CSharpKeywordMap
+público estático classe CSharpKeywordMap
 {
-    publico estatico somenteleitura Dictionary<texto, inteiro> TextToId = novo(StringComparer.OrdinalIgnoreCase)
+    público estático somenteleitura Dictionary<texto, inteiro> TextToId = novo(StringComparer.OrdinalIgnoreCase)
     {
         [""abstract""] = 0,
         [""class""] = 10,
         [""int""] = 33,
     };
 
-    publico estatico somenteleitura Dictionary<inteiro, texto> IdToText;
+    público estático somenteleitura Dictionary<inteiro, texto> IdToText;
 
-    estatico CSharpKeywordMap()
+    estático CSharpKeywordMap()
     {
         IdToText = novo Dictionary<inteiro, texto>(TextToId.Count);
         paracada (KeyValuePair<texto, inteiro> kvp em TextToId)
@@ -1189,16 +1189,16 @@ publico estatico classe CSharpKeywordMap
         }
     }
 
-    publico estatico inteiro GetId(texto keywordText)
+    público estático inteiro GetId(texto keywordText)
     {
-        se (TextToId.TryGetValue(keywordText, saida inteiro id))
+        se (TextToId.TryGetValue(keywordText, saída inteiro id))
         {
             retornar id;
         }
         retornar -1;
     }
 
-    publico estatico booleano IsKeyword(Microsoft.CodeAnalysis.CSharp.SyntaxKind kind)
+    público estático booleano IsKeyword(Microsoft.CodeAnalysis.CSharp.SyntaxKind kind)
     {
         retornar RoslynWrapper.IsKeywordKind(kind);
     }
@@ -1206,16 +1206,16 @@ publico estatico classe CSharpKeywordMap
 
         string result = Adapter.ReverseSubstituteKeywords(translatedCode, MockLookupPtBr);
 
-        Assert.DoesNotContain("espaconome", result);
-        Assert.DoesNotContain("publico", result);
-        Assert.DoesNotContain("estatico", result);
+        Assert.DoesNotContain("espaçonome", result);
+        Assert.DoesNotContain("público", result);
+        Assert.DoesNotContain("estático", result);
         Assert.DoesNotContain("classe", result);
         Assert.DoesNotContain("somenteleitura", result);
         Assert.DoesNotContain("texto", result);
         Assert.DoesNotContain("inteiro", result);
         Assert.DoesNotContain("novo", result);
         Assert.DoesNotContain("paracada", result);
-        Assert.DoesNotContain("saida", result);
+        Assert.DoesNotContain("saída", result);
         Assert.DoesNotContain("retornar", result);
         Assert.DoesNotContain("booleano", result);
 
@@ -1243,11 +1243,11 @@ publico estatico classe CSharpKeywordMap
     {
         string translatedCode = @"usando Sistema;
 
-espaconome MeuProjeto
+espaçonome MeuProjeto
 {
-    publico classe Programa
+    público classe Programa
     {
-        publico texto s = @""publico classe"";
+        público texto s = @""público classe"";
     }
 }";
 
@@ -1255,7 +1255,7 @@ espaconome MeuProjeto
 
         Assert.Contains("public", result);
         Assert.Contains("string", result);
-        Assert.Contains("@\"publico classe\"", result);
+        Assert.Contains("@\"público classe\"", result);
     }
 
     // --- Helper methods ---

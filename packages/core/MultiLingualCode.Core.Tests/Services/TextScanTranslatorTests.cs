@@ -27,7 +27,7 @@ public class TextScanTranslatorTests
     public void BuildTranslationMap_DefaultOverload_IsCaseSensitive()
     {
         Dictionary<string, int> keywords = new() { ["if"] = 0, ["else"] = 1 };
-        INaturalLanguageProvider provider = MakeProviderFor(new() { [0] = "se", [1] = "senao" });
+        INaturalLanguageProvider provider = MakeProviderFor(new() { [0] = "se", [1] = "senão" });
 
         Dictionary<string, string> map = TextScanTranslator.BuildTranslationMap(keywords, provider);
 

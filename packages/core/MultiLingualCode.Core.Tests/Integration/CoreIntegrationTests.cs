@@ -14,7 +14,7 @@ public class CoreIntegrationTests : IDisposable
 
     public CoreIntegrationTests()
     {
-        TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        TranslationsPath = TranslationsPathResolver.Resolve();
         TempDir = Path.Combine(Path.GetTempPath(), $"core_integ_{Guid.NewGuid()}");
         Directory.CreateDirectory(TempDir);
     }
@@ -63,9 +63,9 @@ namespace HelloWorld
         string translated = translationResult.Value;
 
         Assert.Contains("usando", translated);
-        Assert.Contains("espaconome", translated);
+        Assert.Contains("espaçonome", translated);
         Assert.Contains("classe", translated);
-        Assert.Contains("estatico", translated);
+        Assert.Contains("estático", translated);
         Assert.Contains("vazio", translated);
     }
 
@@ -135,7 +135,7 @@ namespace HelloWorld
         string translated = translationResult.Value;
 
         // Keywords translated
-        Assert.Contains("publico", translated);
+        Assert.Contains("público", translated);
         Assert.Contains("classe", translated);
         Assert.Contains("inteiro", translated);
         Assert.Contains("retornar", translated);
@@ -212,10 +212,10 @@ namespace MyApp
         string translated = translationResult.Value;
 
         Assert.Contains("usando", translated);
-        Assert.Contains("espaconome", translated);
-        Assert.Contains("publico", translated);
+        Assert.Contains("espaçonome", translated);
+        Assert.Contains("público", translated);
         Assert.Contains("classe", translated);
-        Assert.Contains("estatico", translated);
+        Assert.Contains("estático", translated);
         Assert.Contains("inteiro", translated);
         Assert.Contains("se", translated);
         Assert.Contains("retornar", translated);
@@ -292,7 +292,7 @@ namespace MyApp
         string translated = translationResult.Value;
 
         Assert.Contains("se", translated);
-        Assert.Contains("senao", translated);
+        Assert.Contains("senão", translated);
         Assert.Contains("enquanto", translated);
         Assert.Contains("para", translated);
         Assert.Contains("retornar", translated);
@@ -442,7 +442,7 @@ namespace Performance.Test
         Assert.True(forwardResult.IsSuccess);
 
         Assert.Contains("classe", forwardResult.Value);
-        Assert.Contains("estatico", forwardResult.Value);
+        Assert.Contains("estático", forwardResult.Value);
         Assert.Contains("vazio", forwardResult.Value);
         Assert.Contains("inteiro", forwardResult.Value);
         Assert.Contains("se", forwardResult.Value);
@@ -473,7 +473,7 @@ class Program
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
-        Assert.Contains("espaconome", result.Value);
+        Assert.Contains("espaçonome", result.Value);
         Assert.Contains("classe", result.Value);
     }
 
@@ -495,8 +495,8 @@ class Program
             sourceCode, ".cs", "pt-br");
 
         Assert.True(result.IsSuccess);
-        Assert.Contains("publico", result.Value);
-        Assert.Contains("enumeracao", result.Value);
+        Assert.Contains("público", result.Value);
+        Assert.Contains("enumeração", result.Value);
     }
 
     [Fact]
@@ -601,7 +601,7 @@ class Program
         Assert.True(result.IsSuccess);
         Assert.Contains("escolha", result.Value);
         Assert.Contains("caso", result.Value);
-        Assert.Contains("padrao", result.Value);
+        Assert.Contains("padrão", result.Value);
     }
 
     [Fact]
@@ -613,11 +613,11 @@ class Program
 
         string translatedCode = @"usando System;
 
-espaconome HelloWorld
+espaçonome HelloWorld
 {
-    publico classe Program
+    público classe Program
     {
-        publico estatico vazio Main()
+        público estático vazio Main()
         {
         }
     }
@@ -634,8 +634,8 @@ espaconome HelloWorld
         Assert.Contains("static", result.Value);
         Assert.Contains("void", result.Value);
         Assert.DoesNotContain("usando", result.Value);
-        Assert.DoesNotContain("espaconome", result.Value);
-        Assert.DoesNotContain("publico", result.Value);
+        Assert.DoesNotContain("espaçonome", result.Value);
+        Assert.DoesNotContain("público", result.Value);
         Assert.DoesNotContain("classe", result.Value);
     }
 

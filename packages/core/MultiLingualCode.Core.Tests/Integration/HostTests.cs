@@ -12,7 +12,7 @@ public class HostTests : IDisposable
 
     public HostTests()
     {
-        TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        TranslationsPath = TranslationsPathResolver.Resolve();
         TempDir = Path.Combine(Path.GetTempPath(), $"host_test_{Guid.NewGuid()}");
         Directory.CreateDirectory(TempDir);
         Registry = Host.Program.CreateRegistry();
@@ -60,7 +60,7 @@ public class HostTests : IDisposable
     {
         string paramsJson = JsonSerializer.Serialize(new
         {
-            translatedCode = "publico classe Foo {}",
+            translatedCode = "público classe Foo {}",
             fileExtension = ".cs",
             sourceLanguage = "pt-br"
         }, Host.Program.JsonOptions);
@@ -274,7 +274,7 @@ public class HostTests : IDisposable
         Dictionary<string, TranslationOrchestrator> cache = new();
         string paramsJson = JsonSerializer.Serialize(new
         {
-            translatedCode = "publico classe Foo {}",
+            translatedCode = "público classe Foo {}",
             fileExtension = ".cs",
             sourceLanguage = "pt-br"
         }, Host.Program.JsonOptions);

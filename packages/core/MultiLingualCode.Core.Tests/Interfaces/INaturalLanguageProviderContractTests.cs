@@ -11,7 +11,7 @@ public class INaturalLanguageProviderContractTests
     public void Properties_WhenAccessed_ReturnExpectedValues()
     {
         Assert.Equal("pt-br", ProviderInstance.LanguageCode);
-        Assert.Equal("Portugues Brasileiro", ProviderInstance.LanguageName);
+        Assert.Equal("Português (Brasil)", ProviderInstance.LanguageName);
     }
 
     [Fact]
@@ -67,12 +67,12 @@ public class INaturalLanguageProviderContractTests
         public Dictionary<int, string> Keywords = new()
         {
             { 30, "se" },
-            { 18, "senao" },
+            { 18, "senão" },
             { 10, "classe" }
         };
 
         public string LanguageCode => "pt-br";
-        public string LanguageName => "Portugues Brasileiro";
+        public string LanguageName => "Português (Brasil)";
 
         public Task<OperationResult> LoadTranslationTableAsync(string programmingLanguage) =>
             Task.FromResult(OperationResult.Ok());

@@ -6,7 +6,7 @@ namespace MultiLingualCode.Core.Tests.Integration;
 
 public class PortugolIntegrationTests
 {
-    public string TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+    public string TranslationsPath = TranslationsPathResolver.Resolve();
 
     public TranslationOrchestrator CreateOrchestrator(string languageCode)
     {
@@ -94,7 +94,7 @@ public class PortugolIntegrationTests
     public async Task PortugolStudio_TranslateToPtBr_IsIdentity()
     {
         TranslationOrchestrator orchestrator = CreateOrchestrator("pt-br");
-        string source = "programa {\n  funcao inicio() {\n    inteiro x = 5\n    se (x > 0) {\n      escreva(\"oi\")\n    } senao {\n      escreva(\"nao\")\n    }\n  }\n}";
+        string source = "programa {\n  funcao inicio() {\n    inteiro x = 5\n    se (x > 0) {\n      escreva(\"oi\")\n    } senão {\n      escreva(\"nao\")\n    }\n  }\n}";
 
         OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(source, ".por", "pt-br");
 

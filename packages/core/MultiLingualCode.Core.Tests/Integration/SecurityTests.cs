@@ -13,7 +13,7 @@ public class SecurityTests : IDisposable
 
     public SecurityTests()
     {
-        TranslationsPath = Path.Combine(AppContext.BaseDirectory, "TestData", "translations");
+        TranslationsPath = TranslationsPathResolver.Resolve();
         TempDir = Path.Combine(Path.GetTempPath(), $"sec_test_{Guid.NewGuid()}");
         Directory.CreateDirectory(TempDir);
     }

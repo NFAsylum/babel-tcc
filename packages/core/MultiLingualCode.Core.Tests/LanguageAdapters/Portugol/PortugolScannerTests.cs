@@ -8,7 +8,7 @@ public class PortugolScannerTests
     public Dictionary<int, string> IdToOriginal = new()
     {
         [0] = "se",
-        [1] = "senao",
+        [1] = "senão",
         [2] = "enquanto",
     };
 
@@ -33,7 +33,7 @@ public class PortugolScannerTests
     {
         string translated = "if (x > 0) else while";
         string result = PortugolScanner.ReverseSubstitute(translated, LanguageScanRules.VisuAlg, Lookup, id => IdToOriginal.GetValueOrDefault(id, ""));
-        Assert.Equal("se (x > 0) senao enquanto", result);
+        Assert.Equal("se (x > 0) senão enquanto", result);
     }
 
     [Fact]
