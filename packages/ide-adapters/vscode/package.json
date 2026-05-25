@@ -2,9 +2,10 @@
   "name": "multilingual-code",
   "displayName": "Babel TCC - MultiLingual Code",
   "description": "Visualize source code translated to your natural language. Keywords and identifiers are translated in real-time.",
-  "version": "0.9.0-beta.1",
+  "version": "0.9.0",
   "publisher": "NFAsylum",
   "license": "MIT",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/NFAsylum/babel-tcc"
@@ -161,8 +162,9 @@
     "test:coverage": "vitest run --coverage",
     "package": "npm run build && vsce package",
     "publish-core": "dotnet publish ../../core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj -c Release -o bin",
-    "prepackage": "npm run publish-core && npm run copy-translations",
-    "copy-translations": "node ../../../scripts/copy-translations.js"
+    "prepackage": "npm run publish-core && npm run copy-translations && npm run copy-readme",
+    "copy-translations": "node ../../../scripts/copy-translations.js",
+    "copy-readme": "node ../../../scripts/copy-readme.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
