@@ -8,6 +8,12 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <NoWarn>xUnit1013</NoWarn>
+
+    <!-- Audit only direct dependencies. The transitive System.* 4.3.0 packages
+         pulled in by the test infrastructure are reference packages that are not
+         used at runtime on net8.0 (the framework provides the implementations),
+         so the NU190x advisories they raise are false positives for this target. -->
+    <NuGetAuditMode>direct</NuGetAuditMode>
   </PropertyGroup>
 
   <ItemGroup>
