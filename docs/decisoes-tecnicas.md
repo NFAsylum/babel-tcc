@@ -90,7 +90,7 @@ Registro das decisoes tecnicas tomadas no projeto e suas justificativas.
 
 ## DT-006: Anotacao "tradu" para identificadores customizados
 
-**Decisao:** Desenvolvedores anotam identificadores com `// tradu:nomeTraduzido` no proprio codigo.
+**Decisao:** Desenvolvedores anotam identificadores com `// tradu[lang]:nomeTraduzido` no proprio codigo (ex.: `// tradu[pt-br]:Calculadora`). Mapeamento de parametros usa virgula (`// tradu[pt-br]:Somar,a:primeiro,b:segundo`).
 
 **Alternativas consideradas:**
 - Arquivo de mapeamento externo apenas
@@ -101,7 +101,10 @@ Registro das decisoes tecnicas tomadas no projeto e suas justificativas.
 - Traducao fica proxima do codigo (facil de manter)
 - Desenvolvedor controla a traducao exata
 - Funciona como documentacao inline
-- Mapeamento externo (identifier-map.json) complementa para persistencia
+
+**Atualizacao (2026-05):** Dois ajustes em relacao ao design original:
+- A sintaxe ganhou o prefixo de idioma `[lang]`, permitindo varios idiomas no mesmo arquivo (ex.: `// tradu[pt-br]:Calculadora|[es]:Calculadora`). O prefixo antigo `// tradu:` (sem idioma) nao e mais usado.
+- A persistencia em disco do `identifier-map.json` durante a traducao automatica foi removida (tarefa 078) por ser destrutiva: `ApplyTraduAnnotations` fazia `Clear()` + `SaveMap()`, entao traduzir um segundo arquivo apagava do disco os mapeamentos do primeiro. Hoje o mapa e reconstruido em memoria a partir das anotacoes do arquivo atual a cada traducao (annotation-driven). A traducao de identificadores so ocorre quando o arquivo contem `tradu` (caso contrario usa Text Scan, keyword-only); nao ha mapa de identificadores global ou persistente sem `tradu`.
 
 ---
 
