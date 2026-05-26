@@ -10,15 +10,15 @@ Extensao VS Code que traduz codigo de programacao visualmente em tempo real, man
 
 Desenvolvedores escrevem codigo em C# ou Python, e a extensao exibe as keywords e identificadores traduzidos para o idioma configurado (PT-BR, ES-ES, etc.). Ao salvar, o codigo volta automaticamente para a linguagem de programacao original.
 
-**Antes (C# original no disco):**
+**Antes (C# original no disco, com anotacoes `// tradu` nos identificadores):**
 ```csharp
 using System;
 
-namespace HelloWorld
+namespace HelloWorld // tradu[pt-br]:OlaMundo
 {
-    class Program
+    class Program // tradu[pt-br]:Programa
     {
-        static void Main(string[] args)
+        static void Main(string[] args) // tradu[pt-br]:Principal,args:argumentos
         {
             Console.WriteLine("Hello, World!");
         }
@@ -26,15 +26,15 @@ namespace HelloWorld
 }
 ```
 
-**Depois (o que o dev PT-BR ve no editor):**
+**Depois (o que o dev PT-BR ve no editor; os comentarios `// tradu` continuam visiveis):**
 ```csharp
 usando System;
 
-espaçonome OlaMundo
+espaçonome OlaMundo // tradu[pt-br]:OlaMundo
 {
-    classe Programa
+    classe Programa // tradu[pt-br]:Programa
     {
-        estático vazio Principal(texto[] argumentos)
+        estático vazio Principal(texto[] argumentos) // tradu[pt-br]:Principal,args:argumentos
         {
             Console.WriteLine("Hello, World!");
         }

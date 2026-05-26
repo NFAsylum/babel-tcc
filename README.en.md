@@ -10,15 +10,15 @@ VS Code extension that visually translates programming code in real time, keepin
 
 Developers write code in C# or Python, and the extension displays the keywords and identifiers translated into the configured language (PT-BR, ES-ES, etc.). On save, the code automatically reverts to the original programming language.
 
-**Before (original C# on disk):**
+**Before (original C# on disk, with `// tradu` annotations on the identifiers):**
 ```csharp
 using System;
 
-namespace HelloWorld
+namespace HelloWorld // tradu[pt-br]:OlaMundo
 {
-    class Program
+    class Program // tradu[pt-br]:Programa
     {
-        static void Main(string[] args)
+        static void Main(string[] args) // tradu[pt-br]:Principal,args:argumentos
         {
             Console.WriteLine("Hello, World!");
         }
@@ -26,15 +26,15 @@ namespace HelloWorld
 }
 ```
 
-**After (what a PT-BR developer sees in the editor):**
+**After (what a PT-BR developer sees in the editor; the `// tradu` comments stay visible):**
 ```csharp
 usando System;
 
-espaçonome OlaMundo
+espaçonome OlaMundo // tradu[pt-br]:OlaMundo
 {
-    classe Programa
+    classe Programa // tradu[pt-br]:Programa
     {
-        estático vazio Principal(texto[] argumentos)
+        estático vazio Principal(texto[] argumentos) // tradu[pt-br]:Principal,args:argumentos
         {
             Console.WriteLine("Hello, World!");
         }
