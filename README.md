@@ -2,15 +2,15 @@
 
 [![CI](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml)
 
-**Portugues** | [English](README.en.md) | [Espanol](README.es.md)
+**Português** | [English](README.en.md) | [Español](README.es.md)
 
-Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
+Extensão VS Code que traduz código de programação visualmente em tempo real, mantendo os arquivos originais intactos no disco.
 
 ## O que faz?
 
-Desenvolvedores escrevem codigo em C# ou Python, e a extensao exibe as keywords e identificadores traduzidos para o idioma configurado (PT-BR, ES-ES, etc.). Ao salvar, o codigo volta automaticamente para a linguagem de programacao original.
+Desenvolvedores escrevem código em C# ou Python, e a extensão exibe as keywords e identificadores traduzidos para o idioma configurado (PT-BR, ES-ES, etc.). Ao salvar, o código volta automaticamente para a linguagem de programação original.
 
-**Antes (C# original no disco, com anotacoes `// tradu` nos identificadores):**
+**Antes (C# original no disco, com anotações `// tradu` nos identificadores):**
 ```csharp
 using System;
 
@@ -26,7 +26,7 @@ namespace HelloWorld // tradu[pt-br]:OlaMundo
 }
 ```
 
-**Depois (o que o dev PT-BR ve no editor; os comentarios `// tradu` continuam visiveis):**
+**Depois (o que o dev PT-BR vê no editor; os comentários `// tradu` continuam visíveis):**
 ```csharp
 usando System;
 
@@ -42,39 +42,39 @@ espaçonome OlaMundo // tradu[pt-br]:OlaMundo
 }
 ```
 
-O arquivo no disco permanece **sempre no codigo original**. A traducao e apenas visual.
+O arquivo no disco permanece **sempre no código original**. A tradução é apenas visual.
 
 ## Features
 
-- **Traducao visual de keywords** - Keywords C# e Python traduzidas (if->se, class->classe, def->definir, etc.)
-- **Traducao de identificadores** - Nomes de variaveis, metodos e classes via anotacao `// tradu[lang]:`
-- **Traducao reversa ao salvar** - Ao salvar, o codigo traduzido volta para o original no disco
-- **Autocomplete traduzido** - Sugestoes de keywords e identificadores no idioma configurado
+- **Tradução visual de keywords** - Keywords C# e Python traduzidas (if->se, class->classe, def->definir, etc.)
+- **Tradução de identificadores** - Nomes de variáveis, métodos e classes via anotação `// tradu[lang]:`
+- **Tradução reversa ao salvar** - Ao salvar, o código traduzido volta para o original no disco
+- **Autocomplete traduzido** - Sugestões de keywords e identificadores no idioma configurado
 - **Hover com original** - Passar o mouse sobre keyword traduzida mostra a keyword original
-- **Status bar** - Indicador do idioma ativo com seletor rapido
-- **Syntax highlighting** - Gramatica TextMate customizada para keywords traduzidas
-- **Colaboracao multilingue** - Multiplos devs no mesmo repo, cada um ve seu idioma
+- **Status bar** - Indicador do idioma ativo com seletor rápido
+- **Syntax highlighting** - Gramática TextMate customizada para keywords traduzidas
+- **Colaboração multilíngue** - Múltiplos devs no mesmo repo, cada um vê seu idioma
 - **Zero impacto** - Compiladores, CI/CD, Git e IntelliSense funcionam normalmente
-- **Processo persistente** - Motor de traducao roda como processo longo, sem cold start por request
+- **Processo persistente** - Motor de tradução roda como processo longo, sem cold start por request
 
 ## Quick Start
 
-1. Instalar a extensao no VS Code
+1. Instalar a extensão no VS Code
 2. Abrir um arquivo `.cs` ou `.py`
 3. Pressionar `Ctrl+Shift+P` e executar `Babel TCC: Select Language`
 4. Escolher `pt-br`
-5. A traducao aparece automaticamente
+5. A tradução aparece automaticamente
 
-## Instalacao
+## Instalação
 
-### Pre-requisitos
+### Pré-requisitos
 
 - VS Code 1.85 ou superior
 - .NET 8.0 Runtime
 - Python 3.8+ (para suporte a arquivos Python)
 - Nada adicional para VisuAlg / Portugol Studio (operam pelo Text Scan, sem parser externo)
 
-### A partir do codigo-fonte
+### A partir do código-fonte
 
 ```bash
 git clone https://github.com/NFAsylum/babel-tcc.git
@@ -87,16 +87,16 @@ Para gerar o `.vsix`: `npm run package` (requer [vsce](https://github.com/micros
 
 ## Linguagens Suportadas
 
-| Linguagem de Programacao | Extensao | Keywords | Modo |
+| Linguagem de Programação | Extensão | Keywords | Modo |
 |--------------------------|----------|----------|------|
 | C# | `.cs` | 89 | Roslyn + Text Scan, suporta tradu |
 | Python | `.py` | 35 | CPython subprocess + Text Scan, suporta tradu |
 | VisuAlg (Claudio Morgado) | `.alg` | 48 | Text Scan keyword-only, case-insensitive |
 | Portugol Studio (UNIVALI) | `.por` | 26 | Text Scan keyword-only, case-sensitive |
 
-## Idiomas Disponiveis
+## Idiomas Disponíveis
 
-Portugues (PT-BR), Portugues ASCII, Ingles, Espanhol, Frances, Alemao, Italiano, Japones (Romaji), Chines, Arabe.
+Português (PT-BR), Português ASCII, Inglês, Espanhol, Francês, Alemão, Italiano, Japonês (Romaji), Chinês, Árabe.
 
 ## Arquitetura
 
@@ -113,14 +113,14 @@ CSharpAdapter   PythonAdapter
 Translation Tables (JSON)
 ```
 
-| Camada | Tecnologia | Funcao |
+| Camada | Tecnologia | Função |
 |--------|-----------|--------|
-| Core Engine | C# / .NET 8 | Motor de traducao, parsing via Roslyn e tokenizer Python |
+| Core Engine | C# / .NET 8 | Motor de tradução, parsing via Roslyn e tokenizer Python |
 | Extension | TypeScript / VS Code API | Interface com o editor |
-| Traducoes | JSON | Tabelas de keywords e mapeamentos |
-| Comunicacao | JSON Lines via stdin/stdout | Bridge persistente entre TS e C# |
+| Traduções | JSON | Tabelas de keywords e mapeamentos |
+| Comunicação | JSON Lines via stdin/stdout | Bridge persistente entre TS e C# |
 
-## Configuracao
+## Configuração
 
 Adicionar ao `settings.json`:
 
@@ -133,7 +133,7 @@ Adicionar ao `settings.json`:
 
 ### Sistema "tradu"
 
-Desenvolvedores anotam identificadores customizados no codigo:
+Desenvolvedores anotam identificadores customizados no código:
 
 ```csharp
 public class Calculator // tradu[pt-br]:Calculadora
@@ -148,7 +148,7 @@ public class Calculator // tradu[pt-br]:Calculadora
 }
 ```
 
-O dev PT-BR ve (as anotacoes `// tradu` continuam visiveis):
+O dev PT-BR vê (as anotações `// tradu` continuam visíveis):
 
 ```csharp
 público classe Calculadora // tradu[pt-br]:Calculadora
@@ -169,7 +169,7 @@ público classe Calculadora // tradu[pt-br]:Calculadora
 - **Extension:** TypeScript, VS Code Extension API
 - **Testes:** xUnit (C#) + Vitest (TypeScript), 849 testes (667 C#, 182 TS)
 - **CI/CD:** GitHub Actions (matrix Ubuntu + Windows)
-- **Traducoes:** JSON
+- **Traduções:** JSON
 
 ## Estrutura do Projeto
 
@@ -177,34 +177,34 @@ público classe Calculadora // tradu[pt-br]:Calculadora
 babel-tcc/
   packages/
     core/
-      MultiLingualCode.Core/        # Motor de traducao
+      MultiLingualCode.Core/        # Motor de tradução
       MultiLingualCode.Core.Host/   # Host persistente (stdin/stdout)
       MultiLingualCode.Core.Tests/  # Testes xUnit
     ide-adapters/
-      vscode/                       # Extensao VS Code
+      vscode/                       # Extensão VS Code
         src/
           extension.ts              # Entry point
           services/                 # CoreBridge, Config, LanguageDetector
           providers/                # Content, Edit, Save, Completion, Hover
           ui/                       # StatusBar
         test/                       # Testes Vitest
-        syntaxes/                   # Gramaticas TextMate
-  scripts/                          # Validacao de traducoes
+        syntaxes/                   # Gramáticas TextMate
+  scripts/                          # Validação de traduções
   tarefas/                          # Rastreamento de tarefas
 ```
 
-## Documentacao
+## Documentação
 
-- [Arquitetura](docs/developer-guide/architecture.md) - Visao geral da arquitetura e fluxos
-- [Convencoes de Codigo](CONTRIBUTING.md#convencoes-de-codigo) - Nomenclatura e estilo
-- [Decisoes Tecnicas](docs/decisoes-tecnicas.md) - Registro de decisoes e justificativas
-- [Guia do Usuario](docs/user-guide/) - Instalacao, uso e configuracao
+- [Arquitetura](docs/developer-guide/architecture.md) - Visão geral da arquitetura e fluxos
+- [Convenções de Código](CONTRIBUTING.md#convencoes-de-codigo) - Nomenclatura e estilo
+- [Decisões Técnicas](docs/decisoes-tecnicas.md) - Registro de decisões e justificativas
+- [Guia do Usuário](docs/user-guide/) - Instalação, uso e configuração
 - [Guia do Desenvolvedor](docs/developer-guide/) - Como estender o projeto
 
-## Contribuicao
+## Contribuição
 
-Contribuicoes sao bem-vindas! Veja [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes.
+Contribuições são bem-vindas! Veja [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes.
 
-## Licenca
+## Licença
 
 [MIT](LICENSE)
