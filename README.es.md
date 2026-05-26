@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml)
 
-[Portugues](https://github.com/NFAsylum/babel-tcc/blob/main/README.md) | [English](https://github.com/NFAsylum/babel-tcc/blob/main/README.en.md) | **Espanol**
+[Portugues](README.md) | [English](README.en.md) | **Espanol**
 
 Extensión de VS Code que traduce código de programación visualmente en tiempo real, manteniendo los archivos originales intactos en el disco.
 
