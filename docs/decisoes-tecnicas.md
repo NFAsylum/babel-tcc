@@ -194,3 +194,53 @@ Caso contrario, usa Text Scan (O(n) linear, 0-1ms).
   desproporcional
 - Diretorio de keywords-base usa `portugolstudio/` (sem hifen) por conta de `Path.Combine` com
   `LanguageName.ToLowerInvariant()`. Decisao deliberada para nao refatorar o `NaturalLanguageProvider`
+
+---
+
+## DT-010: Distribuicao dual-track (self-contained por plataforma + universal)
+
+**Decisao:** Distribuir a extensao em dois formatos simultaneos, deixando o cliente VS Code
+escolher o pacote certo:
+- Um `.vsix` **self-contained por plataforma** (`vsce package --target <rid>`), com o runtime
+  .NET embutido. Sem necessidade de instalar .NET.
+- Um `.vsix` **universal** (sem `--target`, framework-dependent), que depende do .NET 8 instalado.
+
+O VS Code instala automaticamente o pacote da plataforma do usuario quando existe; caso contrario,
+cai no universal. O runtime Python continua sendo dependencia externa **apenas** para arquivos
+`.py` (resolucao lazy, ver Impactos).
+
+**Alternativas consideradas:**
+- Manter so framework-dependent (atual): menor `.vsix` (~5 MB), mas exige instalar .NET 8 — barreira
+  alta para o publico educacional (iniciantes, maquinas de laboratorio sem permissao de instalacao)
+- So self-contained por plataforma: zero barreira, mas perde portabilidade para RIDs nao cobertos
+- NativeAOT: menor binario nativo, mas o Roslyn nao e AOT-friendly (reflection pesada) — inviavel
+- WebAssembly: eliminaria o runtime, mas ja rejeitado em DT-002 e Roslyn-on-WASM e impraticavel
+
+**Justificativa:**
+- A barreira de instalacao do .NET e o gargalo universal: o core engine e C#, entao C#, Python,
+  VisuAlg e Portugol todos dependem do runtime .NET. Reduzir essa barreira beneficia todos os
+  usuarios e ataca diretamente o paradoxo da ferramenta educacional (quem mais ganha e quem menos
+  tem ambiente pronto)
+- O dual-track e o melhor dos dois mundos: zero barreira nas plataformas comuns (Win/Mac/Linux,
+  x64 e arm64) e portabilidade preservada via fallback universal
+- E padrao estabelecido para extensoes que embutem binario nativo (ex.: a extensao oficial de C#
+  da Microsoft)
+
+**Numeros medidos (spike, .NET 8, projeto Host):**
+- Framework-dependent: 16 MB descompactado, ~5,0 MB comprimido (`.vsix` atual ~5,1 MB)
+- Self-contained linux-x64: 87 MB descompactado, ~35,6 MB comprimido (~36 MB por plataforma)
+- O usuario baixa apenas o pacote da sua plataforma
+
+**Impactos:**
+- `release.yml` passa de 1 pacote para uma matrix (~6 alvos self-contained + 1 universal por release)
+- `publish-core` precisa de variante self-contained com `-r <rid> --self-contained true`
+- Armazenamento/upload maior no registry (download por usuario continua sendo um so)
+- Cada bump de versao gera N pacotes
+- Python: nenhuma mudanca de codigo necessaria. A resolucao do Python ja e lazy — so e disparada ao
+  tokenizar um `.py` (`PythonTokenizerService` so resolve/spawna dentro de `Tokenize()`), e a falta
+  de Python retorna `OperationResult.Fail` com mensagem util, sem crashar. C#/VisuAlg/Portugol nunca
+  tocam o Python. Falta apenas comunicar isso no README ("Python opcional, so para `.py`")
+
+**Tradeoffs:**
+- Pipeline de release mais complexo (matrix de plataformas) em troca de zero barreira de instalacao
+- `.vsix` por plataforma ~7x maior, aceitavel porque o download por usuario continua unico
