@@ -30,11 +30,11 @@ namespace HelloWorld
 ```csharp
 usando System;
 
-espaconome OlaMundo
+espaçonome OlaMundo
 {
     classe Programa
     {
-        estatico vazio Principal(texto[] argumentos)
+        estático vazio Principal(texto[] argumentos)
         {
             Console.WriteLine("Hello, World!");
         }
@@ -148,14 +148,14 @@ public class Calculator // tradu[pt-br]:Calculadora
 }
 ```
 
-O dev PT-BR ve:
+O dev PT-BR ve (as anotacoes `// tradu` continuam visiveis):
 
 ```csharp
-publico classe Calculadora
+público classe Calculadora // tradu[pt-br]:Calculadora
 {
-    publico inteiro contagemOperacoes;
+    público inteiro contagemOperacoes; // tradu[pt-br]:contagemOperacoes
 
-    publico inteiro Somar(inteiro primeiroNumero, inteiro segundoNumero)
+    público inteiro Somar(inteiro primeiroNumero, inteiro segundoNumero) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
     {
         contagemOperacoes++;
         retornar primeiroNumero + segundoNumero;
@@ -167,7 +167,7 @@ publico classe Calculadora
 
 - **Core:** C# / .NET 8, Microsoft.CodeAnalysis (Roslyn)
 - **Extension:** TypeScript, VS Code Extension API
-- **Testes:** xUnit (C#) + Vitest (TypeScript), 848 testes (667 C#, 181 TS)
+- **Testes:** xUnit (C#) + Vitest (TypeScript), 849 testes (667 C#, 182 TS)
 - **CI/CD:** GitHub Actions (matrix Ubuntu + Windows)
 - **Traducoes:** JSON
 
