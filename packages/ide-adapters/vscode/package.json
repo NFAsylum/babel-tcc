@@ -1,7 +1,7 @@
 {
   "name": "multilingual-code",
   "displayName": "Babel TCC - MultiLingual Code",
-  "description": "Visualize C#, Python, VisuAlg and Portugol Studio code translated to your natural language. Keywords and identifiers are translated in real-time.",
+  "description": "%description%",
   "version": "0.9.0",
   "publisher": "NFAsylum",
   "license": "MIT",
@@ -49,57 +49,57 @@
     "commands": [
       {
         "command": "babel-tcc.toggle",
-        "title": "Babel TCC: Toggle Translation"
+        "title": "%command.toggle.title%"
       },
       {
         "command": "babel-tcc.selectLanguage",
-        "title": "Babel TCC: Select Language"
+        "title": "%command.selectLanguage.title%"
       },
       {
         "command": "babel-tcc.openTranslatedEditable",
-        "title": "Babel TCC: Open Translated View (Editable)"
+        "title": "%command.openTranslatedEditable.title%"
       },
       {
         "command": "babel-tcc.openTranslatedReadonly",
-        "title": "Babel TCC: Open Translated View (Readonly)"
+        "title": "%command.openTranslatedReadonly.title%"
       },
       {
         "command": "babel-tcc.showOriginal",
-        "title": "Babel TCC: Show Original Code"
+        "title": "%command.showOriginal.title%"
       }
     ],
     "configuration": {
-      "title": "Babel TCC",
+      "title": "%configuration.title%",
       "properties": {
         "babel-tcc.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable or disable real-time translation."
+          "description": "%config.enabled.description%"
         },
         "babel-tcc.language": {
           "type": "string",
           "default": "pt-br",
-          "description": "Target natural language for translation."
+          "description": "%config.language.description%"
         },
         "babel-tcc.translationsPath": {
           "type": "string",
           "default": "",
-          "description": "Absolute path to the babel-tcc-translations repository. If empty, auto-detects as sibling folder of the workspace or uses embedded translations."
+          "description": "%config.translationsPath.description%"
         },
         "babel-tcc.readonly": {
           "type": "boolean",
           "default": false,
-          "description": "Open translated views in readonly mode (prevents accidental edits to the original file)."
+          "description": "%config.readonly.description%"
         },
         "babel-tcc.languageOverrides": {
           "type": "object",
           "default": {},
-          "description": "Override target language per programming language. Keys are programming language names (e.g. 'CSharp', 'Python'), values are language codes (e.g. 'pt-br', 'es-es'). Falls back to babel-tcc.language if no override is set.",
+          "description": "%config.languageOverrides.description%",
           "properties": {
-            "CSharp": { "type": "string", "description": "Target language for C# files" },
-            "Python": { "type": "string", "description": "Target language for Python files" },
-            "VisuAlg": { "type": "string", "description": "Target language for VisuAlg files" },
-            "PortugolStudio": { "type": "string", "description": "Target language for Portugol Studio files" }
+            "CSharp": { "type": "string", "description": "%config.languageOverrides.csharp.description%" },
+            "Python": { "type": "string", "description": "%config.languageOverrides.python.description%" },
+            "VisuAlg": { "type": "string", "description": "%config.languageOverrides.visualg.description%" },
+            "PortugolStudio": { "type": "string", "description": "%config.languageOverrides.portugolStudio.description%" }
           },
           "additionalProperties": false
         }
