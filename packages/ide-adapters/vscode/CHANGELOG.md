@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Automatic publishing to the Open VSX Registry, so the extension is
   installable from VS Code Marketplace and Open VSX-based clients alike.
+- Localized extension manifest (English, Brazilian Portuguese, Spanish):
+  command titles and setting descriptions now follow the editor's display
+  language.
 
 ## [0.9.0] - 2026-05-25
 
