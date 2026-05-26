@@ -6,33 +6,33 @@ Obrigado pelo interesse em contribuir! Este documento explica como participar no
 
 ### Reportar bugs
 
-1. Verifique se o bug ja foi reportado nas [Issues](https://github.com/NFAsylum/babel-tcc/issues)
-2. Se nao, crie uma nova issue usando o template de bug report
+1. Verifique se o bug já foi reportado nas [Issues](https://github.com/NFAsylum/babel-tcc/issues)
+2. Se não, crie uma nova issue usando o template de bug report
 3. Inclua passos para reproduzir, comportamento esperado e atual
 
 ### Sugerir funcionalidades
 
 1. Abra uma issue usando o template de feature request
 2. Descreva o problema que a funcionalidade resolve
-3. Inclua exemplos de uso se possivel
+3. Inclua exemplos de uso se possível
 
-### Submeter codigo
+### Submeter código
 
-1. Fork o repositorio
+1. Fork o repositório
 2. Crie uma branch a partir de `main`: `git checkout -b minha-feature`
-3. Faca as alteracoes seguindo as convencoes de codigo
+3. Faça as alterações seguindo as convenções de código
 4. Adicione testes para novas funcionalidades
 5. Certifique-se que todos os testes passam
 6. Abra um Pull Request
 
 ## Configurar ambiente de desenvolvimento
 
-### Pre-requisitos
+### Pré-requisitos
 
 - .NET 8 SDK
 - Node.js 20+
 - Python 3.8+ (para suporte a Python)
-- VS Code (para testar a extensao)
+- VS Code (para testar a extensão)
 
 ### Build
 
@@ -53,18 +53,18 @@ npm run build
 # Testes do Core
 dotnet test packages/core/MultiLingualCode.Core.Tests
 
-# Testes da extensao
+# Testes da extensão
 cd packages/ide-adapters/vscode
 npm test
 ```
 
-## Convencoes de codigo
+## Convenções de código
 
 ### C# (Core)
 
-- Nao usar `var` - tipos explicitos sempre
-- Nao usar `private` ou `internal` - tudo `public`
-- Nao usar `throw` - usar `OperationResult` para erros
+- Não usar `var` - tipos explícitos sempre
+- Não usar `private` ou `internal` - tudo `public`
+- Não usar `throw` - usar `OperationResult` para erros
 - Evitar nullable (`?`, `??`) — permitido em boundaries com APIs .NET que retornam null (ex: `Environment.GetEnvironmentVariable`, `Path.GetDirectoryName`, `Version.TryParse`)
 - Uma classe por ficheiro
 - Nomes de testes: `MetodoTestado_Cenario_ResultadoEsperado`
@@ -72,9 +72,9 @@ npm test
 ### TypeScript (VS Code Extension)
 
 - Strict mode habilitado
-- Usar `const` em vez de `let` quando possivel
+- Usar `const` em vez de `let` quando possível
 - Nunca usar `var`
-- Tipos explicitos em parametros e retornos
+- Tipos explícitos em parâmetros e retornos
 - Aspas simples
 - Ficheiros em camelCase, classes em PascalCase
 
@@ -83,31 +83,31 @@ npm test
 ```
 babel-tcc/
   packages/
-    core/                          # Motor de traducao (C#/.NET 8)
+    core/                          # Motor de tradução (C#/.NET 8)
       MultiLingualCode.Core/       # Biblioteca principal (C# + Python)
       MultiLingualCode.Core.Host/  # CLI persistente (stdin/stdout JSON)
-      MultiLingualCode.Core.Tests/ # Testes unitarios e integracao
+      MultiLingualCode.Core.Tests/ # Testes unitários e integração
     ide-adapters/
-      vscode/                      # Extensao VS Code (TypeScript)
-  scripts/                         # Scripts de validacao e build
-  tarefas/                         # Gestao de tarefas (.pendente/.finalizada)
+      vscode/                      # Extensão VS Code (TypeScript)
+  scripts/                         # Scripts de validação e build
+  tarefas/                         # Gestão de tarefas (.pendente/.finalizada)
   examples/                        # Exemplos de uso (C# e Python)
-  docs/                            # Documentacao tecnica e do usuario
+  docs/                            # Documentação técnica e do usuário
 ```
 
 ## Adicionar novas funcionalidades
 
-- **Nova linguagem de programacao**: Ver [docs/developer-guide/adding-new-language.md](docs/developer-guide/adding-new-language.md)
+- **Nova linguagem de programação**: Ver [docs/developer-guide/adding-new-language.md](docs/developer-guide/adding-new-language.md)
 - **Novo IDE**: Ver [docs/developer-guide/adding-new-ide.md](docs/developer-guide/adding-new-ide.md)
-- **Novas traducoes**: Ver [docs/developer-guide/creating-translations.md](docs/developer-guide/creating-translations.md)
+- **Novas traduções**: Ver [docs/developer-guide/creating-translations.md](docs/developer-guide/creating-translations.md)
 
 ## Processo de review
 
-1. PRs devem ter descricao clara do que foi alterado
+1. PRs devem ter descrição clara do que foi alterado
 2. Todos os testes devem passar
 3. Novas funcionalidades devem incluir testes
-4. Codigo deve seguir as convencoes documentadas
+4. Código deve seguir as convenções documentadas
 
-## Licenca
+## Licença
 
-Ao contribuir, voce concorda que suas contribuicoes serao licenciadas sob a mesma licenca do projeto.
+Ao contribuir, você concorda que suas contribuições serão licenciadas sob a mesma licença do projeto.
