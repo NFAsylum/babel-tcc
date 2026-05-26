@@ -5,6 +5,19 @@ All notable changes to the Babel TCC extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-05-26
+
+### Fixed
+
+- README was missing from the published Visual Studio Code Marketplace
+  listing, leaving the overview page blank. The release pipeline now copies
+  the README into the extension before packaging.
+
+### Added
+
+- Automatic publishing to the Open VSX Registry, so the extension is
+  installable from VS Code Marketplace and Open VSX-based clients alike.
+
 ## [0.9.0] - 2026-05-25
 
 First public release on the Visual Studio Code Marketplace.

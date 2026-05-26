@@ -95,6 +95,7 @@ jobs:
       contents: write
     env:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
     steps:
       - uses: actions/checkout@v4
@@ -137,12 +138,16 @@ jobs:
           BABEL_TCC_TRANSLATIONS_PATH: ${{ github.workspace }}/babel-tcc-translations
         run: npm run copy-translations
 
+      - name: Copy README
+        working-directory: packages/ide-adapters/vscode
+        run: npm run copy-readme
+
       - name: Build extension
         working-directory: packages/ide-adapters/vscode
         run: npm run build
 
-      - name: Install vsce
-        run: npm install -g @vscode/vsce
+      - name: Install vsce and ovsx
+        run: npm install -g @vscode/vsce ovsx
 
       - name: Package extension
         working-directory: packages/ide-adapters/vscode
@@ -152,6 +157,11 @@ jobs:
         if: env.VSCE_PAT != ''
         working-directory: packages/ide-adapters/vscode
         run: vsce publish
+
+      - name: Publish to Open VSX
+        if: env.OVSX_PAT != ''
+        working-directory: packages/ide-adapters/vscode
+        run: ovsx publish multilingual-code-${{ github.ref_name }}.vsix -p "$OVSX_PAT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
