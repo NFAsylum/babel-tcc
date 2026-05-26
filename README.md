@@ -2,21 +2,23 @@
 
 [![CI](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml/badge.svg)](https://github.com/NFAsylum/babel-tcc/actions/workflows/ci.yml)
 
+**Portugues** | [English](README.en.md) | [Espanol](README.es.md)
+
 Extensao VS Code que traduz codigo de programacao visualmente em tempo real, mantendo os arquivos originais intactos no disco.
 
 ## O que faz?
 
 Desenvolvedores escrevem codigo em C# ou Python, e a extensao exibe as keywords e identificadores traduzidos para o idioma configurado (PT-BR, ES-ES, etc.). Ao salvar, o codigo volta automaticamente para a linguagem de programacao original.
 
-**Antes (C# original no disco):**
+**Antes (C# original no disco, com anotacoes `// tradu` nos identificadores):**
 ```csharp
 using System;
 
-namespace HelloWorld
+namespace HelloWorld // tradu[pt-br]:OlaMundo
 {
-    class Program
+    class Program // tradu[pt-br]:Programa
     {
-        static void Main(string[] args)
+        static void Main(string[] args) // tradu[pt-br]:Principal,args:argumentos
         {
             Console.WriteLine("Hello, World!");
         }
@@ -24,15 +26,15 @@ namespace HelloWorld
 }
 ```
 
-**Depois (o que o dev PT-BR ve no editor):**
+**Depois (o que o dev PT-BR ve no editor; os comentarios `// tradu` continuam visiveis):**
 ```csharp
 usando System;
 
-espaconome OlaMundo
+espaçonome OlaMundo // tradu[pt-br]:OlaMundo
 {
-    classe Programa
+    classe Programa // tradu[pt-br]:Programa
     {
-        estatico vazio Principal(texto[] argumentos)
+        estático vazio Principal(texto[] argumentos) // tradu[pt-br]:Principal,args:argumentos
         {
             Console.WriteLine("Hello, World!");
         }
@@ -45,7 +47,7 @@ O arquivo no disco permanece **sempre no codigo original**. A traducao e apenas 
 ## Features
 
 - **Traducao visual de keywords** - Keywords C# e Python traduzidas (if->se, class->classe, def->definir, etc.)
-- **Traducao de identificadores** - Nomes de variaveis, metodos e classes via anotacao `// tradu:`
+- **Traducao de identificadores** - Nomes de variaveis, metodos e classes via anotacao `// tradu[lang]:`
 - **Traducao reversa ao salvar** - Ao salvar, o codigo traduzido volta para o original no disco
 - **Autocomplete traduzido** - Sugestoes de keywords e identificadores no idioma configurado
 - **Hover com original** - Passar o mouse sobre keyword traduzida mostra a keyword original
@@ -146,14 +148,14 @@ public class Calculator // tradu[pt-br]:Calculadora
 }
 ```
 
-O dev PT-BR ve:
+O dev PT-BR ve (as anotacoes `// tradu` continuam visiveis):
 
 ```csharp
-publico classe Calculadora
+público classe Calculadora // tradu[pt-br]:Calculadora
 {
-    publico inteiro contagemOperacoes;
+    público inteiro contagemOperacoes; // tradu[pt-br]:contagemOperacoes
 
-    publico inteiro Somar(inteiro primeiroNumero, inteiro segundoNumero)
+    público inteiro Somar(inteiro primeiroNumero, inteiro segundoNumero) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
     {
         contagemOperacoes++;
         retornar primeiroNumero + segundoNumero;
@@ -165,7 +167,7 @@ publico classe Calculadora
 
 - **Core:** C# / .NET 8, Microsoft.CodeAnalysis (Roslyn)
 - **Extension:** TypeScript, VS Code Extension API
-- **Testes:** xUnit (C#) + Vitest (TypeScript), 848 testes (667 C#, 181 TS)
+- **Testes:** xUnit (C#) + Vitest (TypeScript), 849 testes (667 C#, 182 TS)
 - **CI/CD:** GitHub Actions (matrix Ubuntu + Windows)
 - **Traducoes:** JSON
 
