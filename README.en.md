@@ -47,7 +47,7 @@ The file on disk always stays in the **original code**. The translation is purel
 ## Features
 
 - **Visual keyword translation** - C# and Python keywords translated (if->se, class->classe, def->definir, etc.)
-- **Identifier translation** - Variable, method and class names via the `// tradu:` annotation
+- **Identifier translation** - Variable, method and class names via the `// tradu[lang]:` annotation
 - **Reverse translation on save** - On save, the translated code reverts to the original on disk
 - **Translated autocomplete** - Keyword and identifier suggestions in the configured language
 - **Hover with original** - Hovering over a translated keyword shows the original keyword

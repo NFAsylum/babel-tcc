@@ -47,7 +47,7 @@ El archivo en el disco permanece **siempre en el código original**. La traducci
 ## Características
 
 - **Traducción visual de palabras clave** - Palabras clave de C# y Python traducidas (if->se, class->classe, def->definir, etc.)
-- **Traducción de identificadores** - Nombres de variables, métodos y clases mediante la anotación `// tradu:`
+- **Traducción de identificadores** - Nombres de variables, métodos y clases mediante la anotación `// tradu[lang]:`
 - **Traducción inversa al guardar** - Al guardar, el código traducido vuelve al original en el disco
 - **Autocompletado traducido** - Sugerencias de palabras clave e identificadores en el idioma configurado
 - **Hover con el original** - Al pasar el ratón sobre una palabra clave traducida se muestra la original

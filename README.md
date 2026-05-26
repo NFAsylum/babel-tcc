@@ -47,7 +47,7 @@ O arquivo no disco permanece **sempre no codigo original**. A traducao e apenas 
 ## Features
 
 - **Traducao visual de keywords** - Keywords C# e Python traduzidas (if->se, class->classe, def->definir, etc.)
-- **Traducao de identificadores** - Nomes de variaveis, metodos e classes via anotacao `// tradu:`
+- **Traducao de identificadores** - Nomes de variaveis, metodos e classes via anotacao `// tradu[lang]:`
 - **Traducao reversa ao salvar** - Ao salvar, o codigo traduzido volta para o original no disco
 - **Autocomplete traduzido** - Sugestoes de keywords e identificadores no idioma configurado
 - **Hover com original** - Passar o mouse sobre keyword traduzida mostra a keyword original
