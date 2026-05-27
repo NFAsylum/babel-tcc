@@ -196,7 +196,7 @@ babel-tcc/
 ## Documentación
 
 - [Arquitectura](docs/developer-guide/architecture.md) - Visión general de la arquitectura y los flujos
-- [Convenciones de código](CONTRIBUTING.md#convencoes-de-codigo) - Nomenclatura y estilo
+- [Convenciones de código](CONTRIBUTING.md#convenções-de-código) - Nomenclatura y estilo
 - [Decisiones técnicas](docs/decisoes-tecnicas.md) - Registro de decisiones y justificaciones
 - [Guía del usuario](docs/user-guide/) - Instalación, uso y configuración
 - [Guía del desarrollador](docs/developer-guide/) - Cómo extender el proyecto
