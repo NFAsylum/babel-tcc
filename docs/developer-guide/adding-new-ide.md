@@ -1,15 +1,15 @@
 # Adicionar Novo IDE
 
-## Indice
+## Índice
 
 - [Arquitetura Core <-> IDE](#arquitetura-core---ide)
 - [Protocolo JSON stdin/stdout](#protocolo-json-stdinstdout)
-- [Metodos disponiveis](#metodos-disponiveis)
+- [Métodos disponíveis](#métodos-disponíveis)
 - [Criar novo IDE adapter](#criar-novo-ide-adapter)
 
 ## Arquitetura Core <-> IDE
 
-O Core Engine e independente do IDE. A comunicacao acontece via processo .NET que recebe requests JSON:
+O Core Engine é independente do IDE. A comunicação acontece via processo .NET que recebe requests JSON:
 
 ```
 IDE Adapter (qualquer linguagem)
@@ -56,13 +56,13 @@ dotnet MultiLingualCode.Core.Host.dll \
 }
 ```
 
-## Metodos disponiveis
+## Métodos disponíveis
 
-| Metodo | Params | Descricao |
+| Método | Params | Descrição |
 |--------|--------|-----------|
-| `TranslateToNaturalLanguage` | sourceCode, fileExtension, targetLanguage | Traduz codigo para idioma natural |
-| `TranslateFromNaturalLanguage` | translatedCode, fileExtension, sourceLanguage | Traduz de volta para linguagem de programacao |
-| `ValidateSyntax` | sourceCode, fileExtension | Valida sintaxe do codigo |
+| `TranslateToNaturalLanguage` | sourceCode, fileExtension, targetLanguage | Traduz código para idioma natural |
+| `TranslateFromNaturalLanguage` | translatedCode, fileExtension, sourceLanguage | Traduz de volta para linguagem de programação |
+| `ValidateSyntax` | sourceCode, fileExtension | Valida sintaxe do código |
 | `GetSupportedLanguages` | (nenhum) | Retorna lista de idiomas suportados |
 
 ## Criar novo IDE adapter
@@ -76,8 +76,8 @@ Para criar um adapter para outro IDE (IntelliJ, Sublime Text, Neovim, etc.):
 
 2. **Parsear a resposta JSON do stdout**
 
-3. **Implementar as features basicas:**
-   - Abrir view com codigo traduzido
+3. **Implementar as features básicas:**
+   - Abrir view com código traduzido
    - Interceptar save para traduzir de volta
    - Toggle on/off
    - Seletor de idioma
@@ -87,4 +87,4 @@ Para criar um adapter para outro IDE (IntelliJ, Sublime Text, Neovim, etc.):
    - Hover com keyword original
    - Syntax highlighting
 
-A referencia completa e a implementacao VS Code em `packages/ide-adapters/vscode/`.
+A referência completa é a implementação VS Code em `packages/ide-adapters/vscode/`.

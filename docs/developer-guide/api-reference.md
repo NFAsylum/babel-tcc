@@ -1,17 +1,17 @@
-# Referencia da API
+# Referência da API
 
-## Indice
+## Índice
 
 - [Interfaces](#interfaces)
 - [Modelos AST](#modelos-ast)
-- [Servicos](#servicos)
+- [Serviços](#serviços)
 - [Fluxo de dados](#fluxo-de-dados)
 
 ## Interfaces
 
 ### ILanguageAdapter
 
-Interface para adaptadores de linguagens de programacao.
+Interface para adaptadores de linguagens de programação.
 
 ```csharp
 public interface ILanguageAdapter
@@ -35,11 +35,11 @@ public interface ILanguageAdapter
 }
 ```
 
-Implementacoes disponiveis: `CSharpAdapter` (Roslyn) e `PythonAdapter` (subprocesso CPython).
+Implementações disponíveis: `CSharpAdapter` (Roslyn) e `PythonAdapter` (subprocesso CPython).
 
 ### INaturalLanguageProvider
 
-Interface para provedores de traducao de idiomas naturais.
+Interface para provedores de tradução de idiomas naturais.
 
 ```csharp
 public interface INaturalLanguageProvider
@@ -57,7 +57,7 @@ public interface INaturalLanguageProvider
 
 ### IIDEAdapter
 
-Interface para integracao com IDEs (contrato interno).
+Interface para integração com IDEs (contrato interno).
 
 ```csharp
 public interface IIDEAdapter
@@ -144,11 +144,11 @@ public class StatementNode : ASTNode
 }
 ```
 
-## Servicos
+## Serviços
 
 ### TranslationOrchestrator
 
-Coordena o fluxo completo de traducao.
+Coordena o fluxo completo de tradução.
 
 ```csharp
 public class TranslationOrchestrator
@@ -195,7 +195,7 @@ public class IdentifierMapper
 
 ### LanguageRegistry
 
-Regista e obtem adaptadores de linguagens.
+Registra e obtém adaptadores de linguagens.
 
 ```csharp
 public class LanguageRegistry
@@ -224,7 +224,7 @@ graph TD
 
 ### OperationResult Pattern
 
-Todas as operacoes usam `OperationResultGeneric<T>` em vez de exceptions:
+Todas as operações usam `OperationResultGeneric<T>` em vez de exceptions:
 
 ```csharp
 OperationResultGeneric<string> result = await orchestrator.TranslateToNaturalLanguageAsync(...);

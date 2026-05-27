@@ -1,79 +1,79 @@
-# Resolucao de Problemas
+# Resolução de Problemas
 
-## Indice
+## Índice
 
-- [Extensao nao ativa](#extensao-nao-ativa)
-- [Traducao nao aparece](#traducao-nao-aparece)
-- [Keywords nao traduzidas](#keywords-nao-traduzidas)
-- [Identificadores nao traduzidos](#identificadores-nao-traduzidos)
+- [Extensão não ativa](#extensão-não-ativa)
+- [Tradução não aparece](#tradução-não-aparece)
+- [Keywords não traduzidas](#keywords-não-traduzidas)
+- [Identificadores não traduzidos](#identificadores-não-traduzidos)
 - [Erro ao salvar](#erro-ao-salvar)
 - [Performance lenta](#performance-lenta)
 - [Reportar um bug](#reportar-um-bug)
 
-## Extensao nao ativa
+## Extensão não ativa
 
-**Sintomas:** Nenhuma opcao "Babel TCC" no Command Palette, sem icone na barra de status.
+**Sintomas:** Nenhuma opção "Babel TCC" no Command Palette, sem ícone na barra de status.
 
-**Solucoes:**
-1. Verificar que o ficheiro aberto tem extensao `.cs` ou `.py`
-2. Verificar que a extensao esta instalada: Extensions > procurar "Babel TCC"
+**Soluções:**
+1. Verificar que o arquivo aberto tem extensão `.cs`, `.py`, `.alg` ou `.por`
+2. Verificar que a extensão está instalada: Extensions > procurar "Babel TCC"
 3. Verificar o Output Channel: `View > Output` > selecionar "Babel TCC"
 4. Reiniciar VS Code
 
-## Traducao nao aparece
+## Tradução não aparece
 
-**Sintomas:** Painel traduzido mostra codigo original sem traducao.
+**Sintomas:** A visualização traduzida mostra o código original sem tradução.
 
-**Solucoes:**
-1. Verificar que `babel-tcc.enabled` esta `true` nas settings
-2. Verificar que .NET 8.0 Runtime esta instalado: `dotnet --version`
+**Soluções:**
+1. Verificar que `babel-tcc.enabled` está `true` nas settings
+2. Verificar que .NET 8.0 Runtime está instalado: `dotnet --version`
 3. Verificar o Output Channel para erros do CoreBridge
-4. Verificar que os binarios Core existem em `<extensao>/bin/`
+4. Verificar que os binários Core existem em `<extensão>/bin/`
 
-## Keywords nao traduzidas
+## Keywords não traduzidas
 
-**Sintomas:** Algumas keywords aparecem em ingles no painel traduzido.
+**Sintomas:** Algumas keywords aparecem em inglês na visualização traduzida.
 
-**Solucoes:**
-1. A keyword pode nao ter traducao na tabela do idioma selecionado
+**Soluções:**
+1. A keyword pode não ter tradução na tabela do idioma selecionado
 2. Verificar o idioma ativo na barra de status
 3. Reportar keyword faltante como issue no GitHub
 
-## Identificadores nao traduzidos
+## Identificadores não traduzidos
 
-**Sintomas:** Nomes de classes/metodos aparecem em ingles.
+**Sintomas:** Nomes de classes/métodos aparecem em inglês.
 
-**Solucoes:**
-1. Identificadores so sao traduzidos se mapeados via `// tradu:` ou `identifier-map.json`
-2. Verificar a sintaxe da anotacao: `// tradu:NomeTraduzido`
-3. Verificar que o ficheiro `.multilingual/identifier-map.json` existe e e valido
+**Soluções:**
+1. Identificadores só são traduzidos se anotados com `// tradu[lang]:` no próprio código
+2. Verificar a sintaxe da anotação: `// tradu[pt-br]:NomeTraduzido`
+3. Lembrar que a anotação precisa estar no arquivo — não há mapa de identificadores global ou persistente
 
 ## Erro ao salvar
 
 **Sintomas:** Mensagem de erro ao salvar documento traduzido.
 
-**Solucoes:**
-1. O TranslatedContentProvider protege o ficheiro original - se a traducao reversa falhar, o ficheiro nao e sobrescrito
+**Soluções:**
+1. A extensão protege o arquivo original — se a tradução reversa falhar, o arquivo não é sobrescrito
 2. Verificar o Output Channel para detalhes do erro
-3. Verificar que o Core esta acessivel
+3. Verificar que o Core está acessível
 
 ## Performance lenta
 
-**Sintomas:** Traducao demora mais de 2 segundos.
+**Sintomas:** A tradução demora mais de 2 segundos.
 
-**Solucoes:**
-1. Ficheiros muito grandes (> 2000 linhas) podem demorar mais
-2. Verificar que nao ha processos Core pendurados: fechar e reabrir VS Code
-3. O cache de traducoes evita retraduzir sem mudancas
+**Soluções:**
+1. Arquivos muito grandes (> 2000 linhas) podem demorar mais
+2. Verificar que não há processos Core pendurados: fechar e reabrir VS Code
+3. O cache de traduções evita retraduzir sem mudanças
 
 ## Reportar um bug
 
 Ao reportar um bug, incluir:
 
-1. **Versao do VS Code:** `Help > About`
-2. **Versao da extensao:** Extensions > Babel TCC
-3. **Versao do .NET:** `dotnet --version`
-4. **Sistema operativo:** Windows/macOS/Linux
+1. **Versão do VS Code:** `Help > About`
+2. **Versão da extensão:** Extensions > Babel TCC
+3. **Versão do .NET:** `dotnet --version`
+4. **Sistema operacional:** Windows/macOS/Linux
 5. **Passos para reproduzir:** O que fez exatamente
 6. **Resultado esperado:** O que devia acontecer
 7. **Resultado obtido:** O que aconteceu

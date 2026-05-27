@@ -1,30 +1,33 @@
-# Adicionar Nova Linguagem de Programacao
+# Adicionar Nova Linguagem de Programação
 
-## Indice
+## Índice
 
-- [Visao geral](#visao-geral)
+- [Visão geral](#visão-geral)
 - [1. Criar o Adapter](#1-criar-o-adapter)
 - [2. Criar o KeywordMap](#2-criar-o-keywordmap)
 - [3. Registrar no LanguageRegistry](#3-registrar-no-languageregistry)
-- [4. Criar tabelas de traducao](#4-criar-tabelas-de-traducao)
+- [4. Criar tabelas de tradução](#4-criar-tabelas-de-tradução)
+- [4b. Configurar scripts de subprocesso no .csproj](#4b-configurar-scripts-de-subprocesso-no-csproj)
 - [5. Criar testes](#5-criar-testes)
-- [Exemplo completo: PythonAdapter](#exemplo-completo-pythonadapter)
+- [6. Configurar extensão VS Code](#6-configurar-extensão-vs-code)
+- [Caminho rápido: Text Scan (sem parser)](#caminho-rápido-text-scan-sem-parser)
+- [Implementações existentes](#implementações-existentes)
 
-## Visao geral
+## Visão geral
 
-Para adicionar suporte a uma nova linguagem de programacao, e necessario:
+Para adicionar suporte a uma nova linguagem de programação, é necessário:
 
 1. Implementar a interface `ILanguageAdapter`
 2. Criar um mapa de keywords
 3. Registrar o adapter no `LanguageRegistry`
-4. Criar tabelas de traducao JSON
+4. Criar tabelas de tradução JSON
 5. Criar testes
 
 ## 1. Criar o Adapter
 
-Criar ficheiro implementando `ILanguageAdapter`. Ver `PythonAdapter.cs` como exemplo real de implementacao completa, ou `CSharpAdapter.cs` como referencia Roslyn.
+Criar arquivo implementando `ILanguageAdapter`. Ver `PythonAdapter.cs` como exemplo real de implementação completa, ou `CSharpAdapter.cs` como referência Roslyn.
 
-A interface requer os seguintes metodos:
+A interface requer os seguintes métodos:
 
 ```csharp
 public class NovaLinguagemAdapter : ILanguageAdapter
@@ -33,51 +36,51 @@ public class NovaLinguagemAdapter : ILanguageAdapter
     public string[] FileExtensions => [".ext"];
     public string Version => "1.0.0";
 
-    public ASTNode Parse(string sourceCode) { /* Parsear codigo em AST */ }
-    public string Generate(ASTNode ast) { /* Reconstruir codigo */ }
+    public ASTNode Parse(string sourceCode) { /* Parsear código em AST */ }
+    public string Generate(ASTNode ast) { /* Reconstruir código */ }
     public Dictionary<string, int> GetKeywordMap() { /* Mapa keyword -> ID */ }
     public string ReverseSubstituteKeywords(string translatedCode, Func<string, int> lookup) { /* Reverter keywords traduzidas */ }
     public ValidationResult ValidateSyntax(string sourceCode) { /* Validar sintaxe */ }
     public List<string> ExtractIdentifiers(string sourceCode) { /* Extrair identificadores */ }
 
-    // Metodos de suporte a anotacoes tradu
-    public List<TrailingComment> ExtractTrailingComments(string sourceCode) { /* Extrair comentarios */ }
+    // Métodos de suporte a anotações tradu
+    public List<TrailingComment> ExtractTrailingComments(string sourceCode) { /* Extrair comentários */ }
     public List<string> GetIdentifierNamesOnLine(string sourceCode, int line) { /* Identifiers na linha */ }
     public string GetFirstStringLiteralOnLine(string sourceCode, int line) { /* String literal na linha */ }
-    public (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line) { /* Escopo do metodo */ }
+    public (int StartLine, int EndLine) GetContainingMethodRange(string sourceCode, int line) { /* Escopo do método */ }
 }
 ```
 
 ## 2. Criar o KeywordMap
 
-Criar ficheiro `LanguageAdapters/Python/PythonKeywordMap.cs` com mapeamento keyword -> ID numerico:
+Criar arquivo `LanguageAdapters/Python/PythonKeywordMap.cs` com mapeamento keyword -> ID numérico. Os IDs são por linguagem de programação (cada linguagem começa em 0); os valores abaixo são os reais do Python:
 
 ```csharp
 public class PythonKeywordMap
 {
     public static Dictionary<string, int> Map = new()
     {
-        ["if"] = 30,
-        ["else"] = 18,
-        ["elif"] = 100,
-        ["for"] = 22,
-        ["while"] = 78,
-        ["def"] = 101,
-        ["class"] = 10,
-        ["return"] = 52,
-        ["import"] = 102,
-        ["from"] = 103
+        ["class"] = 9,
+        ["def"] = 11,
+        ["elif"] = 13,
+        ["else"] = 14,
+        ["for"] = 17,
+        ["from"] = 18,
+        ["if"] = 20,
+        ["import"] = 21,
+        ["return"] = 30,
+        ["while"] = 32
     };
 
     public static int GetId(string keyword) => Map.GetValueOrDefault(keyword, -1);
 }
 ```
 
-Os IDs numericos devem ser unicos e consistentes com o sistema de IDs (ver `docs/decisoes-tecnicas.md` DT-005).
+Os IDs numéricos devem ser únicos por linguagem e consistentes com o keywords-base.json (ver `docs/decisoes-tecnicas.md` DT-005).
 
 ## 3. Registrar no LanguageRegistry
 
-No codigo que inicializa o sistema:
+No código que inicializa o sistema:
 
 ```csharp
 LanguageRegistry registry = new LanguageRegistry();
@@ -85,9 +88,9 @@ registry.RegisterAdapter(new CSharpAdapter());
 registry.RegisterAdapter(new PythonAdapter()); // Novo adapter
 ```
 
-## 4. Criar tabelas de traducao
+## 4. Criar tabelas de tradução
 
-Criar ficheiros JSON no repositorio `babel-tcc-translations`:
+Criar arquivos JSON no repositório `babel-tcc-translations`:
 
 ```
 programming-languages/
@@ -95,41 +98,41 @@ programming-languages/
     keywords-base.json    # Keywords originais -> IDs
 natural-languages/
   pt-br/
-    python.json           # Traducoes PT-BR
+    python.json           # Traduções PT-BR
 ```
 
 **keywords-base.json** (formato: keyword -> ID):
 ```json
 {
   "keywords": {
-    "if": 30,
-    "else": 18,
-    "elif": 100,
-    "for": 22,
-    "while": 78,
-    "def": 101,
-    "class": 10,
-    "return": 52
+    "class": 9,
+    "def": 11,
+    "elif": 13,
+    "else": 14,
+    "for": 17,
+    "if": 20,
+    "return": 30,
+    "while": 32
   }
 }
 ```
 
-**pt-br/python.json** (formato: ID -> traducao):
+**pt-br/python.json** (formato: ID -> tradução):
 ```json
 {
   "version": "1.0.0",
   "languageCode": "pt-br",
-  "languageName": "Portugues Brasileiro",
+  "languageName": "Português (Brasil)",
   "programmingLanguage": "Python",
   "translations": {
-    "30": "se",
-    "18": "senao",
-    "100": "senaose",
-    "22": "para",
-    "78": "enquanto",
-    "101": "definir",
-    "10": "classe",
-    "52": "retornar"
+    "9": "classe",
+    "11": "definir",
+    "13": "senãose",
+    "14": "senão",
+    "17": "para",
+    "20": "se",
+    "30": "retornar",
+    "32": "enquanto"
   }
 }
 ```
@@ -149,48 +152,52 @@ Adicionar ao `MultiLingualCode.Core.csproj`:
 </ItemGroup>
 ```
 
-**Importante**: Sem essa configuracao, o adapter funciona nos testes unitarios
+**Importante**: Sem essa configuração, o adapter funciona nos testes unitários
 (que instanciam diretamente) mas falha em runtime no VS Code com "script not found".
 O teste `AllNonCSharpSourceFiles_CopiedToOutput` em `BuildDeployTests.cs` detecta
-essa omissao automaticamente.
+essa omissão automaticamente.
 
 ## 5. Criar testes
 
-Criar ficheiro `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.cs` com testes para:
+Criar arquivo `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.cs` com testes para:
 
 - `Parse_SimpleFunction_ExtractsKeywords`
 - `Parse_ClassDeclaration_ExtractsAll`
 - `Generate_TranslatedAst_ProducesCorrectOutput`
 - `RoundTrip_SimpleCode_PreservesStructure`
 
-## 6. Configurar extensao VS Code
+## 6. Configurar extensão VS Code
 
 Adicionar a nova linguagem ao registro central em `packages/ide-adapters/vscode/src/config/languages.ts`:
 
 ```typescript
 export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
-  { name: 'CSharp', extensions: ['.cs'], vscodeLangId: 'csharp' },
-  { name: 'Python', extensions: ['.py'], vscodeLangId: 'python' },
-  { name: 'NovaLinguagem', extensions: ['.ext'], vscodeLangId: 'novalinguagem' },
+  { name: 'CSharp', extensions: ['.cs'], vscodeLangId: 'csharp', registersGrammar: false },
+  { name: 'Python', extensions: ['.py'], vscodeLangId: 'python', registersGrammar: false },
+  { name: 'VisuAlg', extensions: ['.alg'], vscodeLangId: 'visualg', registersGrammar: true },
+  { name: 'PortugolStudio', extensions: ['.por'], vscodeLangId: 'portugol-studio', registersGrammar: true },
+  { name: 'NovaLinguagem', extensions: ['.ext'], vscodeLangId: 'novalinguagem', registersGrammar: true },
 ];
 ```
 
-Atualizar manualmente o `package.json` (lido estaticamente pelo VS Code):
+O campo `registersGrammar` é `false` para linguagens que o VS Code já conhece nativamente (C#, Python — a Microsoft mantém as gramáticas) e `true` para linguagens novas (VisuAlg, Portugol Studio).
+
+Se `registersGrammar` for `true`, atualizar manualmente o `package.json` (lido estaticamente pelo VS Code):
 - `activationEvents`: adicionar `onLanguage:novalinguagem`
-- `languages`: adicionar `{ "id": "mlc-novalinguagem" }`
-- `grammars`: adicionar entrada para `mlc-novalinguagem`
+- `languages`: adicionar `{ "id": "novalinguagem", "extensions": [".ext"], ... }`
+- `grammars`: adicionar entrada apontando para `syntaxes/novalinguagem.tmLanguage.json`
 
-Criar `syntaxes/mlc-novalinguagem.tmLanguage.json` para syntax highlighting.
+Criar `syntaxes/novalinguagem.tmLanguage.json` para syntax highlighting.
 
-O teste de consistencia em `test/config/languages.test.ts` verifica automaticamente que o registro TypeScript esta alinhado com o package.json.
+O teste de consistência em `test/config/languages.test.ts` verifica automaticamente que o registro TypeScript está alinhado com o package.json.
 
-## Caminho rapido: Text Scan (sem parser)
+## Caminho rápido: Text Scan (sem parser)
 
-Para linguagens que precisam apenas de traducao de keywords (sem tradu
+Para linguagens que precisam apenas de tradução de keywords (sem tradu
 annotations), o TextScanTranslator pode ser usado em vez de um parser
 completo. Isso elimina a necessidade de subprocess ou parser externo.
 
-1. Criar `LanguageScanRules` para a linguagem (comentarios, strings):
+1. Criar `LanguageScanRules` para a linguagem (comentários, strings):
 
 ```csharp
 public static LanguageScanRules MinhaLinguagem = new LanguageScanRules
@@ -219,14 +226,16 @@ Para arquivos com tradu, cai para o parser completo.
 
 Performance: 0-1ms para qualquer tamanho de arquivo (vs 2-4s com parser).
 
-## Implementacoes existentes
+## Implementações existentes
 
 - **CSharpAdapter** (`LanguageAdapters/CSharpAdapter.cs`): Usa Roslyn para parsing + Text Scan para keyword-only. Implementa ITextScannable.
 - **PythonAdapter** (`LanguageAdapters/Python/PythonAdapter.cs`): Usa subprocesso CPython + Text Scan para keyword-only. Implementa ITextScannable.
+- **VisuAlgAdapter** e **PortugolStudioAdapter** (`LanguageAdapters/Portugol/`): Keyword-only via Text Scan, sem parser.
 
-O padrao geral e:
+O padrão geral é:
 
-1. Parsear o codigo em tokens (via parser nativo, subprocesso, ou Text Scan)
+1. Parsear o código em tokens (via parser nativo, subprocesso, ou Text Scan)
 2. Classificar cada token como keyword, identifier ou literal
-3. Criar nos AST com posicoes (start/end) para reconstrucao
-4. `Generate()` aplica substituicoes na ordem reversa das posicoes
+3. Criar nós AST com posições (start/end) para reconstrução
+4. `Generate()` aplica substituições na ordem reversa das posições
+```
