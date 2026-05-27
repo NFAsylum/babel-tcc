@@ -43,6 +43,31 @@ describe('SemanticKeywordProvider', () => {
       expect(result.data.length).toBeGreaterThan(0);
     });
 
+    it('should highlight keywords in non-Latin scripts (Chinese)', () => {
+      mockKeywordMapService.getMap.mockReturnValueOnce({ '抽象': 'abstract', '类': 'class' });
+      mockKeywordMapService.getCategories.mockReturnValueOnce({ 'abstract': 'modifier', 'class': 'type' });
+      const doc = makeDocument(TRANSLATED_SCHEME, '抽象 类 Foo {}');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should highlight keywords in non-Latin scripts (Arabic)', () => {
+      mockKeywordMapService.getMap.mockReturnValueOnce({ 'مجرد': 'abstract' });
+      mockKeywordMapService.getCategories.mockReturnValueOnce({ 'abstract': 'modifier' });
+      const doc = makeDocument(TRANSLATED_SCHEME, 'مجرد Foo {}');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('should include the leading accented letter in the token length', () => {
+      mockKeywordMapService.getMap.mockReturnValueOnce({ 'öffentlich': 'public' });
+      mockKeywordMapService.getCategories.mockReturnValueOnce({ 'public': 'modifier' });
+      const doc = makeDocument(TRANSLATED_SCHEME, 'öffentlich Foo {}');
+      const result = provider.provideDocumentSemanticTokens(doc as any);
+      // data = [deltaLine, deltaStart, length, tokenType, tokenModifiers]
+      expect(result.data[2]).toBe('öffentlich'.length);
+    });
+
     it('should return empty tokens for file scheme', () => {
       const doc = makeDocument('file', 'publico classe Foo {}');
       const result = provider.provideDocumentSemanticTokens(doc as any);

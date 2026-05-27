@@ -221,7 +221,10 @@ export class SemanticKeywordProvider implements vscode.DocumentSemanticTokensPro
       inBlockString = scan.outBlockString;
       blockStringDelimiter = scan.outBlockStringDelimiter;
 
-      const wordRegex: RegExp = /\b[a-zA-ZÀ-ÿ_][a-zA-ZÀ-ÿ0-9_]*\b/g;
+      // Unicode-aware: \p{L} cobre qualquer escrita (chinês, árabe, etc.), não só latim.
+      // O \b ASCII anterior descartava a 1ª letra acentuada (öffentlich -> ffentlich) e o
+      // intervalo [a-zA-ZÀ-ÿ] ignorava escritas não-latinas, deixando-as sem cor.
+      const wordRegex: RegExp = /[\p{L}_][\p{L}\p{N}_]*/gu;
       let match: RegExpExecArray | null;
 
       while ((match = wordRegex.exec(text)) !== null) {
