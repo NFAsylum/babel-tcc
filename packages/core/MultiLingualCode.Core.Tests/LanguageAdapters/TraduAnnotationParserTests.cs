@@ -449,4 +449,39 @@ public class Calculator // tradu[pt-br]:Calculadora
         Assert.Equal("Calculator", annotations[0].OriginalIdentifier);
         Assert.Equal("Calculadora", annotations[0].TranslatedIdentifier);
     }
+
+    [Theory]
+    [InlineData("ja-jp-romaji", "Keisanki")]
+    [InlineData("pt-br-ascii", "Calculadora")]
+    public void ExtractAnnotations_MultiSegmentLocale_ExtractsWithTargetLanguage(
+        string languageCode, string translated)
+    {
+        string sourceCode = $@"
+public class Calculator // tradu[{languageCode}]:{translated}
+{{
+}}";
+
+        List<TraduAnnotation> annotations = Parser.ExtractAnnotations(sourceCode, Adapter);
+
+        Assert.Single(annotations);
+        Assert.Equal(languageCode, annotations[0].TargetLanguage);
+        Assert.Equal("Calculator", annotations[0].OriginalIdentifier);
+        Assert.Equal(translated, annotations[0].TranslatedIdentifier);
+    }
+
+    [Fact]
+    public void ExtractAnnotations_MultiLanguageWithMultiSegmentLocale_ExtractsAllSegments()
+    {
+        string sourceCode = @"
+public class Calculator // tradu[pt-br]:Calculadora|[ja-jp-romaji]:Keisanki|[pt-br-ascii]:Calculadora
+{
+}";
+
+        List<TraduAnnotation> annotations = Parser.ExtractAnnotations(sourceCode, Adapter);
+
+        Assert.Equal(3, annotations.Count);
+        Assert.Equal("Calculadora", annotations.First(a => a.TargetLanguage == "pt-br").TranslatedIdentifier);
+        Assert.Equal("Keisanki", annotations.First(a => a.TargetLanguage == "ja-jp-romaji").TranslatedIdentifier);
+        Assert.Equal("Calculadora", annotations.First(a => a.TargetLanguage == "pt-br-ascii").TranslatedIdentifier);
+    }
 }
