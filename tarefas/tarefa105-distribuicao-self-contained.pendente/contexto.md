@@ -7,6 +7,7 @@
 Nenhuma estrita. Reforca o objetivo da Tarefa 045 (deploy) ao reduzir a barreira de instalacao.
 
 ## Arquivos relevantes
+- packages/ide-adapters/vscode/src/services/coreBridge.ts (spawn do Core — MUDANCA CRITICA)
 - .github/workflows/release.yml (passa a usar matrix de plataformas)
 - packages/ide-adapters/vscode/package.json (scripts publish-core / package)
 - packages/ide-adapters/vscode/.vscodeignore
@@ -20,3 +21,6 @@ Nenhuma estrita. Reforca o objetivo da Tarefa 045 (deploy) ao reduzir a barreira
 - O VS Code/Marketplace/Open VSX escolhem o pacote por plataforma e caem no universal quando nao ha alvo.
 - Python NAO precisa de mudanca de codigo: resolucao ja e lazy (so para `.py`) e degrada com OperationResult.Fail. Falta so o texto no README.
 - AOT e WASM estao fora (Roslyn nao e AOT-friendly; WASM ja rejeitado em DT-002).
+- PONTO CRITICO: self-contained gera executavel nativo, nao `.dll`. O CoreBridge hoje faz
+  `spawn('dotnet', ['...Host.dll'])`; precisa detectar e lancar o exe nativo direto (por SO),
+  com fallback para o universal. Essa e a maior parte do esforco, nao o YAML.
