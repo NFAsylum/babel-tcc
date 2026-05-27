@@ -10,7 +10,7 @@
 ## Geral
 
 ### O que é o Babel TCC?
-Uma extensão VS Code que traduz código de programação visualmente para o seu idioma natural. O ficheiro no disco permanece sempre na linguagem original.
+Uma extensão VS Code que traduz código de programação visualmente para o seu idioma natural. O arquivo no disco permanece sempre na linguagem original.
 
 ### Que linguagens de programação são suportadas?
 **C#**, **Python**, **VisuAlg** (`.alg`) e **Portugol Studio** (`.por`). A arquitetura permite adicionar novas linguagens.
@@ -19,10 +19,10 @@ Uma extensão VS Code que traduz código de programação visualmente para o seu
 10 idiomas: Português (Brasil), Português (ASCII), English, Español, Français, Deutsch, Italiano, Nihongo (Romaji), Zhongwen, Arabiyyah.
 
 ### O código compilado é afetado?
-Não. O ficheiro no disco permanece sempre na linguagem original. Compiladores, linters, CI/CD e Git funcionam normalmente.
+Não. O arquivo no disco permanece sempre na linguagem original. Compiladores, linters, CI/CD e Git funcionam normalmente.
 
 ### Posso usar em projetos reais?
-Sim. A extensão é segura para usar em projetos reais porque não altera os ficheiros no disco.
+Sim. A extensão é segura para usar em projetos reais porque não altera os arquivos no disco.
 
 ## Funcionalidade
 

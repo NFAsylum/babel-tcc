@@ -66,7 +66,7 @@ npm test
 - Não usar `private` ou `internal` - tudo `public`
 - Não usar `throw` - usar `OperationResult` para erros
 - Evitar nullable (`?`, `??`) — permitido em boundaries com APIs .NET que retornam null (ex: `Environment.GetEnvironmentVariable`, `Path.GetDirectoryName`, `Version.TryParse`)
-- Uma classe por ficheiro
+- Uma classe por arquivo
 - Nomes de testes: `MetodoTestado_Cenario_ResultadoEsperado`
 
 ### TypeScript (VS Code Extension)
@@ -76,7 +76,7 @@ npm test
 - Nunca usar `var`
 - Tipos explícitos em parâmetros e retornos
 - Aspas simples
-- Ficheiros em camelCase, classes em PascalCase
+- Arquivos em camelCase, classes em PascalCase
 
 ## Estrutura do projeto
 

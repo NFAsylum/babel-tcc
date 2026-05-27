@@ -26,9 +26,9 @@
 
 ## Via .vsix manual
 
-1. Obter o ficheiro `.vsix` (releases do GitHub ou build local)
+1. Obter o arquivo `.vsix` (releases do GitHub ou build local)
 2. No VS Code: Extensions (`Ctrl+Shift+X`) > `...` > `Install from VSIX...`
-3. Selecionar o ficheiro `.vsix`
+3. Selecionar o arquivo `.vsix`
 4. Reiniciar VS Code quando solicitado
 
 ## Build a partir do código-fonte
@@ -48,13 +48,13 @@ npm run build
 npm run package
 ```
 
-O ficheiro `.vsix` será gerado na pasta `packages/ide-adapters/vscode/`.
+O arquivo `.vsix` será gerado na pasta `packages/ide-adapters/vscode/`.
 
 ## Verificação
 
 Após instalar, verificar que a extensão está funcional:
 
-1. Abrir um ficheiro `.cs` no VS Code
+1. Abrir um arquivo `.cs` no VS Code
 2. Verificar que "Babel TCC" aparece no Output Channel (`View > Output` e selecionar "Babel TCC")
 3. A mensagem "Babel TCC extension activated." deve aparecer
 4. Na barra de status (canto inferior direito) deve aparecer o idioma ativo (ex: `PT-BR`)

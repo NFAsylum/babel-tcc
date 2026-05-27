@@ -11,12 +11,12 @@
 ## Abrir um projeto
 
 1. Abrir VS Code
-2. Abrir uma pasta que contenha ficheiros `.cs` ou `.py` (`File > Open Folder`)
-3. A extensão Babel TCC ativa automaticamente ao detectar ficheiros C# ou Python
+2. Abrir uma pasta que contenha arquivos `.cs` ou `.py` (`File > Open Folder`)
+3. A extensão Babel TCC ativa automaticamente ao detectar arquivos C# ou Python
 
 ## Ativar a tradução
 
-1. Abrir um ficheiro `.cs` ou `.py`
+1. Abrir um arquivo `.cs` ou `.py`
 2. Pressionar `Ctrl+Shift+P` para abrir o Command Palette
 3. Executar `Babel TCC: Abrir Visualização Traduzida (Editável)` ou `Babel TCC: Abrir Visualização Traduzida (Somente Leitura)`
 4. O código traduzido abre num editor ao lado (`ViewColumn.Beside`)
@@ -32,7 +32,7 @@ Alternativamente:
 No canto inferior direito aparece o idioma ativo (ex: `PT-BR`). Clicar abre o seletor de idioma.
 
 ### Visualização Traduzida
-O editor ao lado mostra o código com keywords traduzidas. O ficheiro original (no disco) não é alterado.
+O editor ao lado mostra o código com keywords traduzidas. O arquivo original (no disco) não é alterado.
 
 ### Hover
 Ao passar o mouse sobre uma keyword traduzida (ex: `classe`), um tooltip mostra a keyword original (`class`).
@@ -42,10 +42,10 @@ Ao digitar no painel traduzido, sugestões de keywords traduzidas aparecem autom
 
 ## Workflow básico
 
-1. **Ler:** Abrir ficheiro `.cs` ou `.py` e usar `Babel TCC: Abrir Visualização Traduzida (Editável)` para ver em PT-BR
+1. **Ler:** Abrir arquivo `.cs` ou `.py` e usar `Babel TCC: Abrir Visualização Traduzida (Editável)` para ver em PT-BR
 2. **Editar:** Editar no painel traduzido usando keywords PT-BR
 3. **Salvar:** Ao salvar, o código é automaticamente traduzido de volta para a linguagem original e gravado no disco
-4. **Compilar/Executar:** O ficheiro no disco é código válido da linguagem original — compilar ou executar normalmente
+4. **Compilar/Executar:** O arquivo no disco é código válido da linguagem original — compilar ou executar normalmente
 
 ## Usando anotações tradu
 

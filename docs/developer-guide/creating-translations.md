@@ -10,7 +10,7 @@
 
 ## Formato JSON
 
-As traduções são armazenadas em ficheiros JSON com a seguinte estrutura:
+As traduções são armazenadas em arquivos JSON com a seguinte estrutura:
 
 ### keywords-base.json (por linguagem de programação)
 

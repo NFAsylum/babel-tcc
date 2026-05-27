@@ -25,7 +25,7 @@ Para adicionar suporte a uma nova linguagem de programação, é necessário:
 
 ## 1. Criar o Adapter
 
-Criar ficheiro implementando `ILanguageAdapter`. Ver `PythonAdapter.cs` como exemplo real de implementação completa, ou `CSharpAdapter.cs` como referência Roslyn.
+Criar arquivo implementando `ILanguageAdapter`. Ver `PythonAdapter.cs` como exemplo real de implementação completa, ou `CSharpAdapter.cs` como referência Roslyn.
 
 A interface requer os seguintes métodos:
 
@@ -53,7 +53,7 @@ public class NovaLinguagemAdapter : ILanguageAdapter
 
 ## 2. Criar o KeywordMap
 
-Criar ficheiro `LanguageAdapters/Python/PythonKeywordMap.cs` com mapeamento keyword -> ID numérico. Os IDs são por linguagem de programação (cada linguagem começa em 0); os valores abaixo são os reais do Python:
+Criar arquivo `LanguageAdapters/Python/PythonKeywordMap.cs` com mapeamento keyword -> ID numérico. Os IDs são por linguagem de programação (cada linguagem começa em 0); os valores abaixo são os reais do Python:
 
 ```csharp
 public class PythonKeywordMap
@@ -90,7 +90,7 @@ registry.RegisterAdapter(new PythonAdapter()); // Novo adapter
 
 ## 4. Criar tabelas de tradução
 
-Criar ficheiros JSON no repositório `babel-tcc-translations`:
+Criar arquivos JSON no repositório `babel-tcc-translations`:
 
 ```
 programming-languages/
@@ -159,7 +159,7 @@ essa omissão automaticamente.
 
 ## 5. Criar testes
 
-Criar ficheiro `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.cs` com testes para:
+Criar arquivo `MultiLingualCode.Core.Tests/LanguageAdapters/PythonAdapterTests.cs` com testes para:
 
 - `Parse_SimpleFunction_ExtractsKeywords`
 - `Parse_ClassDeclaration_ExtractsAll`

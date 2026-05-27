@@ -195,7 +195,7 @@ public class IdentifierMapper
 
 ### LanguageRegistry
 
-Regista e obtém adaptadores de linguagens.
+Registra e obtém adaptadores de linguagens.
 
 ```csharp
 public class LanguageRegistry
