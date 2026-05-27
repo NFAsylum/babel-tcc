@@ -247,3 +247,21 @@ cai no universal. O runtime Python continua sendo dependência externa **apenas*
 **Tradeoffs:**
 - Pipeline de release mais complexo (matrix de plataformas) em troca de zero barreira de instalação
 - `.vsix` por plataforma ~7x maior, aceitável porque o download por usuário continua único
+
+**Implementação (tarefa 105):**
+- O ponto crítico não é o YAML, e sim o launch do Core. O `CoreBridge.resolveLaunch()` detecta o
+  formato: se o executável nativo (`MultiLingualCode.Core.Host`, ou `.exe` no Windows) existe em
+  `bin/`, roda-o direto; senão, cai para `dotnet MultiLingualCode.Core.Host.dll` (universal). No
+  Linux/Mac reforça o bit de execução (`chmod 0o755`), pois o empacotamento `.vsix` pode descartá-lo.
+- Para a distinção ficar inequívoca, o pacote universal é publicado com `-p:UseAppHost=false` (gera
+  só a `.dll`, sem apphost nativo), forçando o caminho `dotnet`. O self-contained sempre gera o
+  apphost nativo, que tem precedência na detecção.
+- O `release.yml` cross-publica todos os RIDs a partir de um único runner Linux (o `dotnet publish`
+  faz cross-compile self-contained), então a matrix não precisa de runners Windows/macOS.
+- Validação automatizada: o job `smoke-self-contained` roda o binário linux-x64 dentro de um
+  container `ubuntu:22.04` **sem .NET** e confirma que ele traduz, provando a independência do
+  runtime. Cobre só linux-x64 (os demais RIDs não têm container/runner trivial), mas é o sinal que
+  o CI antes não pegava.
+- **macOS Gatekeeper:** o binário nativo não é assinado/notarizado; no macOS o usuário pode precisar
+  liberar a execução na primeira vez (Ajustes > Privacidade e Segurança). Assinatura fica fora do
+  escopo desta tarefa.

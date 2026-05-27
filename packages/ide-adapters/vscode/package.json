@@ -162,7 +162,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "package": "npm run build && vsce package",
-    "publish-core": "dotnet publish ../../core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj -c Release -o bin",
+    "publish-core": "dotnet publish ../../core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj -c Release -p:UseAppHost=false -o bin",
+    "publish-core:self-contained": "dotnet publish ../../core/MultiLingualCode.Core.Host/MultiLingualCode.Core.Host.csproj -c Release -r \"$DOTNET_RID\" --self-contained true -o bin",
     "prepackage": "npm run publish-core && npm run copy-translations && npm run copy-readme",
     "copy-translations": "node ../../../scripts/copy-translations.js",
     "copy-readme": "node ../../../scripts/copy-readme.js"

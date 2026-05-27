@@ -13,3 +13,4 @@ vitest.config.ts
 **/*.ts
 **/*.map
 **/*.test.*
+bin/**/*.pdb
