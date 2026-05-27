@@ -46,10 +46,10 @@ export class StatusBar implements vscode.Disposable {
 
     if (enabled) {
       this.statusBarItem.text = `$(globe) ${language}`;
-      this.statusBarItem.tooltip = `Babel TCC: Translation active (${language}). Click to change language.`;
+      this.statusBarItem.tooltip = vscode.l10n.t('Babel TCC: Translation active ({0}). Click to change language.', language);
     } else {
       this.statusBarItem.text = '$(globe) OFF';
-      this.statusBarItem.tooltip = 'Babel TCC: Translation disabled. Click to change language.';
+      this.statusBarItem.tooltip = vscode.l10n.t('Babel TCC: Translation disabled. Click to change language.');
     }
   }
 

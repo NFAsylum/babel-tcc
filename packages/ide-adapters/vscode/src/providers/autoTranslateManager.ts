@@ -248,21 +248,24 @@ export class AutoTranslateManager implements vscode.Disposable {
     );
 
     if (dirtyDocs.length > 0) {
+      const saveLabel: string = vscode.l10n.t('Save and switch');
+      const discardLabel: string = vscode.l10n.t('Discard and switch');
+      const cancelLabel: string = vscode.l10n.t('Cancel');
       const choice: string | undefined = await vscode.window.showWarningMessage(
-        `Babel TCC: ${dirtyDocs.length} translated file(s) have unsaved changes. What would you like to do before switching languages?`,
-        'Save and switch',
-        'Discard and switch',
-        'Cancel'
+        vscode.l10n.t('Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?', dirtyDocs.length),
+        saveLabel,
+        discardLabel,
+        cancelLabel
       );
 
-      if (choice === 'Cancel' || choice === undefined) {
+      if (choice === cancelLabel || choice === undefined) {
         // Revert language config to previous
         await this.configService.setLanguage(oldLanguage);
         this.outputChannel.appendLine('AutoTranslate: language switch cancelled by user');
         return;
       }
 
-      if (choice === 'Save and switch') {
+      if (choice === saveLabel) {
         for (const doc of dirtyDocs) {
           try {
             await doc.save();

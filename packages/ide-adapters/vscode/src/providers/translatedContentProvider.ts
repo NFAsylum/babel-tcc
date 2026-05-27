@@ -145,12 +145,12 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       }, 100);
 
       this.outputChannel.appendLine(`TranslatedContentProvider: saved original code to ${originalPath}`);
-      vscode.window.showInformationMessage('Babel TCC: File saved successfully.');
+      vscode.window.showInformationMessage(vscode.l10n.t('Babel TCC: File saved successfully.'));
     } catch (error: unknown) {
       const message: string = error instanceof Error ? error.message : String(error);
       this.outputChannel.appendLine(`TranslatedContentProvider: reverse translation failed - ${message}`);
       vscode.window.showErrorMessage(
-        'Babel TCC: Failed to reverse translate. Original file was NOT overwritten.'
+        vscode.l10n.t('Babel TCC: Failed to reverse translate. Original file was NOT overwritten.')
       );
     }
   }
@@ -219,7 +219,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       const message: string = error instanceof Error ? error.message : String(error);
       this.outputChannel.appendLine(`TranslatedContentProvider: translation failed - ${message}`);
       vscode.window.showWarningMessage(
-        'Babel TCC: Translation failed. Showing original code. Check Output panel for details.'
+        vscode.l10n.t('Babel TCC: Translation failed. Showing original code. Check Output panel for details.')
       );
       return sourceCode;
     }

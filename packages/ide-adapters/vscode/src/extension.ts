@@ -26,12 +26,14 @@ export type ScopeItem = vscode.QuickPickItem & { scope: 'global' | 'language'; l
  */
 export function buildScopeItems(activeProgrammingLanguage: string | undefined): ScopeItem[] {
   const items: ScopeItem[] = [
-    { label: '$(globe) All languages (global)', scope: 'global', language: undefined },
+    { label: vscode.l10n.t('$(globe) All languages (global)'), scope: 'global', language: undefined },
   ];
   for (const lang of SUPPORTED_LANGUAGES) {
     const isActive: boolean = lang.name === activeProgrammingLanguage;
     items.push({
-      label: `$(file-code) ${lang.name} only${isActive ? ' (active)' : ''}`,
+      label: isActive
+        ? vscode.l10n.t('$(file-code) {0} only (active)', lang.name)
+        : vscode.l10n.t('$(file-code) {0} only', lang.name),
       scope: 'language',
       language: lang.name,
     });
@@ -88,12 +90,12 @@ function checkDotnetInstalled(channel: vscode.OutputChannel): void {
     const hasNet8Runtime: boolean = !error && /^Microsoft\.NETCore\.App 8\./m.test(stdout);
     if (!hasNet8Runtime) {
       channel.appendLine('Babel TCC: .NET 8 runtime not found in PATH.');
+      const downloadLabel: string = vscode.l10n.t('Open Download Page');
       vscode.window.showErrorMessage(
-        'Babel TCC: .NET 8 Runtime is required but was not found. ' +
-        '[Install .NET](https://dotnet.microsoft.com/download/dotnet/8.0)',
-        'Open Download Page'
+        vscode.l10n.t('Babel TCC: .NET 8 Runtime is required but was not found. [Install .NET](https://dotnet.microsoft.com/download/dotnet/8.0)'),
+        downloadLabel
       ).then((selection: string | undefined): void => {
-        if (selection === 'Open Download Page') {
+        if (selection === downloadLabel) {
           vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/download/dotnet/8.0'));
         }
       });
@@ -191,7 +193,11 @@ export function activate(context: vscode.ExtensionContext): void {
       await configService.setEnabled(!currentEnabled);
       const status: string = !currentEnabled ? 'enabled' : 'disabled';
       outputChannel.appendLine(`Translation ${status}.`);
-      vscode.window.showInformationMessage(`Babel TCC: Translation ${status}.`);
+      vscode.window.showInformationMessage(
+        !currentEnabled
+          ? vscode.l10n.t('Babel TCC: Translation enabled.')
+          : vscode.l10n.t('Babel TCC: Translation disabled.')
+      );
 
       if (!currentEnabled) {
         translatedContentProvider.invalidateAll();
@@ -218,14 +224,14 @@ export function activate(context: vscode.ExtensionContext): void {
       const scopeItems: ScopeItem[] = buildScopeItems(activeProgrammingLanguage);
 
       const scopeChoice: ScopeItem | undefined = await vscode.window.showQuickPick(scopeItems, {
-        placeHolder: 'Apply language change to...'
+        placeHolder: vscode.l10n.t('Apply language change to...')
       });
       if (!scopeChoice) {
         return;
       }
 
       const selected: string | undefined = await vscode.window.showQuickPick(languages, {
-        placeHolder: 'Select target language for translation'
+        placeHolder: vscode.l10n.t('Select target language for translation')
       });
       if (!selected) {
         return;
@@ -234,7 +240,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (scopeChoice.scope === 'language' && scopeChoice.language) {
         await configService.setLanguageOverride(scopeChoice.language, selected);
         outputChannel.appendLine(`Language for ${scopeChoice.language} set to: ${selected}`);
-        vscode.window.showInformationMessage(`Babel TCC: Language for ${scopeChoice.language} set to ${selected}.`);
+        vscode.window.showInformationMessage(vscode.l10n.t('Babel TCC: Language for {0} set to {1}.', scopeChoice.language, selected));
       } else {
         const overrides: Record<string, string> = configService.getLanguageOverrides();
         const activeOverrides: string[] = Object.entries(overrides)
@@ -242,18 +248,21 @@ export function activate(context: vscode.ExtensionContext): void {
           .map(([key, value]: [string, string]): string => `${key}: ${value}`);
 
         if (activeOverrides.length > 0) {
+          const removeLabel: string = vscode.l10n.t('Remove overrides and apply');
+          const keepLabel: string = vscode.l10n.t('Keep overrides');
+          const cancelLabel: string = vscode.l10n.t('Cancel');
           const overrideChoice: string | undefined = await vscode.window.showWarningMessage(
-            `Babel TCC: ${activeOverrides.length} language override(s) will block this change: ${activeOverrides.join(', ')}`,
-            'Remove overrides and apply',
-            'Keep overrides',
-            'Cancel'
+            vscode.l10n.t('Babel TCC: {0} language override(s) will block this change: {1}', activeOverrides.length, activeOverrides.join(', ')),
+            removeLabel,
+            keepLabel,
+            cancelLabel
           );
 
-          if (overrideChoice === 'Cancel' || overrideChoice === undefined) {
+          if (overrideChoice === cancelLabel || overrideChoice === undefined) {
             return;
           }
 
-          if (overrideChoice === 'Remove overrides and apply') {
+          if (overrideChoice === removeLabel) {
             await configService.clearLanguageOverrides();
             outputChannel.appendLine('Cleared all language overrides.');
           }
@@ -261,7 +270,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
         await configService.setLanguage(selected);
         outputChannel.appendLine(`Language set to: ${selected}`);
-        vscode.window.showInformationMessage(`Babel TCC: Language set to ${selected}.`);
+        vscode.window.showInformationMessage(vscode.l10n.t('Babel TCC: Language set to {0}.', selected));
       }
     }
   );
@@ -271,13 +280,13 @@ export function activate(context: vscode.ExtensionContext): void {
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showWarningMessage('Babel TCC: No active editor.');
+        vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: No active editor.'));
         return;
       }
 
       const originalUri: vscode.Uri = editor.document.uri;
       if (!languageDetector.isSupported(originalUri.fsPath)) {
-        vscode.window.showWarningMessage('Babel TCC: File type not supported for translation.');
+        vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: File type not supported for translation.'));
         return;
       }
 
@@ -297,13 +306,13 @@ export function activate(context: vscode.ExtensionContext): void {
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showWarningMessage('Babel TCC: No active editor.');
+        vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: No active editor.'));
         return;
       }
 
       const originalUri: vscode.Uri = editor.document.uri;
       if (!languageDetector.isSupported(originalUri.fsPath)) {
-        vscode.window.showWarningMessage('Babel TCC: File type not supported for translation.');
+        vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: File type not supported for translation.'));
         return;
       }
 
@@ -323,7 +332,7 @@ export function activate(context: vscode.ExtensionContext): void {
     async (): Promise<void> => {
       const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showWarningMessage('Babel TCC: No active editor.');
+        vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: No active editor.'));
         return;
       }
 
@@ -334,7 +343,7 @@ export function activate(context: vscode.ExtensionContext): void {
         await vscode.window.showTextDocument(doc);
         outputChannel.appendLine(`Showing original for: ${uri.path}`);
       } else {
-        vscode.window.showInformationMessage('Babel TCC: Already viewing original code.');
+        vscode.window.showInformationMessage(vscode.l10n.t('Babel TCC: Already viewing original code.'));
       }
     }
   );

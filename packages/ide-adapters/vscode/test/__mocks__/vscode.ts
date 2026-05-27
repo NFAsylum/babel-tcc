@@ -267,6 +267,12 @@ export const window = {
   },
 };
 
+export const l10n = {
+  // Mirrors vscode.l10n.t: returns the source string with {0}/{1}... substituted.
+  t: (message: string, ...args: unknown[]): string =>
+    message.replace(/\{(\d+)\}/g, (_match: string, index: string): string => String(args[Number(index)])),
+};
+
 export const commands = {
   registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
   executeCommand: vi.fn(),
