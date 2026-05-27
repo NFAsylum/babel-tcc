@@ -1,0 +1,18 @@
+{
+  "description": "C#、Python、VisuAlg、Portugol Studio のコードを自然言語に翻訳して表示します。キーワードと識別子をリアルタイムで翻訳します。",
+  "command.toggle.title": "Babel TCC: 翻訳の切り替え",
+  "command.selectLanguage.title": "Babel TCC: 言語を選択",
+  "command.openTranslatedEditable.title": "Babel TCC: 翻訳ビューを開く (編集可能)",
+  "command.openTranslatedReadonly.title": "Babel TCC: 翻訳ビューを開く (読み取り専用)",
+  "command.showOriginal.title": "Babel TCC: 元のコードを表示",
+  "configuration.title": "Babel TCC",
+  "config.enabled.description": "リアルタイム翻訳を有効または無効にします。",
+  "config.language.description": "翻訳の対象となる自然言語。",
+  "config.translationsPath.description": "babel-tcc-translations リポジトリへの絶対パス。空の場合、ワークスペースの兄弟フォルダーとして自動検出するか、埋め込みの翻訳を使用します。",
+  "config.readonly.description": "翻訳ビューを読み取り専用で開きます (元のファイルへの誤った編集を防ぎます)。",
+  "config.languageOverrides.description": "プログラミング言語ごとに対象言語を上書きします。キーは言語名 (例: 'CSharp'、'Python')、値は言語コード (例: 'pt-br'、'es-es')。上書きが設定されていない場合は babel-tcc.language を使用します。",
+  "config.languageOverrides.csharp.description": "C# ファイルの対象言語",
+  "config.languageOverrides.python.description": "Python ファイルの対象言語",
+  "config.languageOverrides.visualg.description": "VisuAlg ファイルの対象言語",
+  "config.languageOverrides.portugolStudio.description": "Portugol Studio ファイルの対象言語"
+}
