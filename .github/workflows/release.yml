@@ -153,15 +153,57 @@ jobs:
         working-directory: packages/ide-adapters/vscode
         run: vsce package --out multilingual-code-${{ github.ref_name }}.vsix
 
+      # Fail-fast + retry + idempotencia (tarefa 106): retry cura falhas transitorias;
+      # idempotencia evita conflito de "versao ja existe" num rerun; sem decoupling.
       - name: Publish to Marketplace
         if: env.VSCE_PAT != ''
         working-directory: packages/ide-adapters/vscode
-        run: vsce publish
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Idempotencia: se a versao ja esta no Marketplace, nao republicar.
+          if vsce show NFAsylum.multilingual-code --json 2>/dev/null \
+               | node -e "let d={};try{d=JSON.parse(require('fs').readFileSync(0,'utf8'))}catch(e){}; process.exit((d.versions||[]).some(v=>v.version===process.argv[1])?0:1)" "$VERSION"; then
+            echo "Marketplace ja esta em $VERSION - pulando (idempotente)."
+            exit 0
+          fi
+          for attempt in 1 2 3; do
+            if OUT=$(vsce publish 2>&1); then
+              echo "$OUT"; echo "Publicado no Marketplace (tentativa $attempt)."; exit 0
+            fi
+            echo "$OUT"
+            if echo "$OUT" | grep -qiE "already (exists|published)"; then
+              echo "Versao ja presente no Marketplace - tratando como sucesso (idempotente)."; exit 0
+            fi
+            echo "Tentativa $attempt falhou; novo retry em $((attempt * 20))s..."
+            sleep $((attempt * 20))
+          done
+          echo "::error::Falha ao publicar no Marketplace apos 3 tentativas."
+          exit 1
 
       - name: Publish to Open VSX
         if: env.OVSX_PAT != ''
         working-directory: packages/ide-adapters/vscode
-        run: ovsx publish multilingual-code-${{ github.ref_name }}.vsix -p "$OVSX_PAT"
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          VSIX="multilingual-code-${GITHUB_REF_NAME}.vsix"
+          # Idempotencia: se a versao ja esta no Open VSX, nao republicar.
+          if [ "$(curl -s -o /dev/null -w '%{http_code}' "https://open-vsx.org/api/NFAsylum/multilingual-code/$VERSION")" = "200" ]; then
+            echo "Open VSX ja esta em $VERSION - pulando (idempotente)."
+            exit 0
+          fi
+          for attempt in 1 2 3; do
+            if OUT=$(ovsx publish "$VSIX" -p "$OVSX_PAT" 2>&1); then
+              echo "$OUT"; echo "Publicado no Open VSX (tentativa $attempt)."; exit 0
+            fi
+            echo "$OUT"
+            if echo "$OUT" | grep -qiE "already (exists|published)"; then
+              echo "Versao ja presente no Open VSX - tratando como sucesso (idempotente)."; exit 0
+            fi
+            echo "Tentativa $attempt falhou; novo retry em $((attempt * 20))s..."
+            sleep $((attempt * 20))
+          done
+          echo "::error::Falha ao publicar no Open VSX apos 3 tentativas."
+          exit 1
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
