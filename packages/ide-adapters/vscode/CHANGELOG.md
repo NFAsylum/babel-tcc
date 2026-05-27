@@ -5,6 +5,25 @@ All notable changes to the Babel TCC extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-05-27
+
+### Added
+
+- Per-platform self-contained packages (Windows, Linux and macOS, x64 and arm64) that bundle the
+  .NET runtime — **no .NET installation required**. A universal package (requires the .NET 8
+  Runtime) remains as a fallback for any platform without a dedicated build.
+- UI localization in French, German, Italian and Japanese (in addition to the existing languages).
+- C# property accessor keywords `get` and `set` are now translated (only in accessor context, so
+  identifiers named `get`/`set` are left untouched).
+- Demo GIF and per-language screenshots on the README / Marketplace page.
+
+### Fixed
+
+- `// tradu[lang]:` identifier annotations now work for language codes with more than two segments,
+  such as `ja-jp-romaji` and `pt-br-ascii` (previously these were silently ignored).
+- Syntax highlighting of translated keywords and identifiers now works for non-Latin scripts
+  (Chinese, Arabic) and for words starting with an accented letter.
+
 ## [0.9.2] - 2026-05-27
 
 ### Fixed
