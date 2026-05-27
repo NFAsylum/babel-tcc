@@ -1,0 +1,18 @@
+{
+  "description": "Visualizza codice C#, Python, VisuAlg e Portugol Studio tradotto nella tua lingua naturale. Le parole chiave e gli identificatori vengono tradotti in tempo reale.",
+  "command.toggle.title": "Babel TCC: Attiva/disattiva traduzione",
+  "command.selectLanguage.title": "Babel TCC: Seleziona lingua",
+  "command.openTranslatedEditable.title": "Babel TCC: Apri vista tradotta (modificabile)",
+  "command.openTranslatedReadonly.title": "Babel TCC: Apri vista tradotta (sola lettura)",
+  "command.showOriginal.title": "Babel TCC: Mostra codice originale",
+  "configuration.title": "Babel TCC",
+  "config.enabled.description": "Abilita o disabilita la traduzione in tempo reale.",
+  "config.language.description": "Lingua naturale di destinazione per la traduzione.",
+  "config.translationsPath.description": "Percorso assoluto del repository babel-tcc-translations. Se vuoto, viene rilevato automaticamente come cartella adiacente all'area di lavoro o usa le traduzioni incorporate.",
+  "config.readonly.description": "Apri le viste tradotte in sola lettura (impedisce modifiche accidentali al file originale).",
+  "config.languageOverrides.description": "Sostituisci la lingua di destinazione per linguaggio di programmazione. Le chiavi sono nomi di linguaggi (es. 'CSharp', 'Python'), i valori sono codici lingua (es. 'pt-br', 'es-es'). Usa babel-tcc.language se non è impostata alcuna sostituzione.",
+  "config.languageOverrides.csharp.description": "Lingua di destinazione per i file C#",
+  "config.languageOverrides.python.description": "Lingua di destinazione per i file Python",
+  "config.languageOverrides.visualg.description": "Lingua di destinazione per i file VisuAlg",
+  "config.languageOverrides.portugolStudio.description": "Lingua di destinazione per i file Portugol Studio"
+}
