@@ -6,6 +6,8 @@
 
 Extensão VS Code que traduz código de programação visualmente em tempo real, mantendo os arquivos originais intactos no disco.
 
+![Demonstração: o mesmo código C# alternando entre idiomas em tempo real](images/babel-tcc-demo.gif)
+
 ## O que faz?
 
 Desenvolvedores escrevem código em C# ou Python, e a extensão exibe as keywords e identificadores traduzidos para o idioma configurado (PT-BR, ES-ES, etc.). Ao salvar, o código volta automaticamente para a linguagem de programação original.

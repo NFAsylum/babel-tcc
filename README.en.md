@@ -6,6 +6,8 @@
 
 VS Code extension that visually translates programming code in real time, keeping the original files untouched on disk.
 
+![Demo: the same C# code switching between languages in real time](images/babel-tcc-demo.gif)
+
 ## What does it do?
 
 Developers write code in C# or Python, and the extension displays the keywords and identifiers translated into the configured language (PT-BR, ES-ES, etc.). On save, the code automatically reverts to the original programming language.
