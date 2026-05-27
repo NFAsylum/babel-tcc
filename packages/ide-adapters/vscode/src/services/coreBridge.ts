@@ -101,8 +101,8 @@ export class CoreBridge {
   }
 
   /**
-   * Garante o bit de execucao no binario nativo (Linux/Mac). O empacotamento `.vsix` pode nao
-   * preservar a permissao de execucao, entao reforcamos antes de lancar.
+   * Garante o bit de execucao no binario nativo (Linux/Mac). O `.vsix` preserva a permissao, mas a
+   * extracao do VS Code ao instalar nem sempre a mantem; reforcamos antes de lancar por seguranca.
    */
   private ensureExecutable(filePath: string): void {
     if (process.platform === 'win32') {

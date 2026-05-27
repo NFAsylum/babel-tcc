@@ -252,7 +252,8 @@ cai no universal. O runtime Python continua sendo dependência externa **apenas*
 - O ponto crítico não é o YAML, e sim o launch do Core. O `CoreBridge.resolveLaunch()` detecta o
   formato: se o executável nativo (`MultiLingualCode.Core.Host`, ou `.exe` no Windows) existe em
   `bin/`, roda-o direto; senão, cai para `dotnet MultiLingualCode.Core.Host.dll` (universal). No
-  Linux/Mac reforça o bit de execução (`chmod 0o755`), pois o empacotamento `.vsix` pode descartá-lo.
+  Linux/Mac reforça o bit de execução (`chmod 0o755`): o `.vsix` preserva a permissão, mas a
+  extração do VS Code ao instalar nem sempre a mantém.
 - Para a distinção ficar inequívoca, o pacote universal é publicado com `-p:UseAppHost=false` (gera
   só a `.dll`, sem apphost nativo), forçando o caminho `dotnet`. O self-contained sempre gera o
   apphost nativo, que tem precedência na detecção.
