@@ -99,6 +99,8 @@ public static class CSharpKeywordMap
         ["init"] = 86,
         ["required"] = 87,
         ["global"] = 88,
+        ["get"] = 89,
+        ["set"] = 90,
     };
 
     /// <summary>

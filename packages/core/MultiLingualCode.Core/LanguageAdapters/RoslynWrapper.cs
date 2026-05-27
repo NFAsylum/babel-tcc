@@ -67,7 +67,8 @@ public class RoslynWrapper
             SyntaxKind.VolatileKeyword or SyntaxKind.WhileKeyword or
             SyntaxKind.AsyncKeyword or SyntaxKind.AwaitKeyword or SyntaxKind.YieldKeyword or
             SyntaxKind.WhereKeyword or SyntaxKind.GlobalKeyword or SyntaxKind.RecordKeyword or
-            SyntaxKind.PartialKeyword or SyntaxKind.RequiredKeyword or SyntaxKind.InitKeyword => true,
+            SyntaxKind.PartialKeyword or SyntaxKind.RequiredKeyword or SyntaxKind.InitKeyword or
+            SyntaxKind.GetKeyword or SyntaxKind.SetKeyword => true,
             _ => false
         };
     }

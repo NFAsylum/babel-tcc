@@ -957,6 +957,35 @@ class C
     }
 
     [Fact]
+    public void Parse_GetSetAccessors_CreateKeywordNodes()
+    {
+        string code = "class C { public int X { get; set; } }";
+
+        ASTNode ast = Adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+
+        Assert.Contains(keywords, k => k.Text == "get" && k.KeywordId == 89);
+        Assert.Contains(keywords, k => k.Text == "set" && k.KeywordId == 90);
+    }
+
+    [Fact]
+    public void Parse_GetSetAsIdentifiers_DoNotCreateKeywordNodes()
+    {
+        // get/set fora de acessador sao identificadores; Roslyn os emite como IdentifierToken,
+        // entao nao devem virar KeywordNode (context-awareness).
+        string code = "class C { void M() { int get = 5; var set = get; } }";
+
+        ASTNode ast = Adapter.Parse(code);
+        List<KeywordNode> keywords = GetNodesOfType<KeywordNode>(ast);
+        List<IdentifierNode> identifiers = GetNodesOfType<IdentifierNode>(ast);
+
+        Assert.DoesNotContain(keywords, k => k.Text == "get");
+        Assert.DoesNotContain(keywords, k => k.Text == "set");
+        Assert.Contains(identifiers, i => i.Name == "get");
+        Assert.Contains(identifiers, i => i.Name == "set");
+    }
+
+    [Fact]
     public void RoundTrip_ContextualKeywords_PreservesCode()
     {
         string code = @"using System.Threading.Tasks;
