@@ -16,9 +16,11 @@ public class TraduAnnotationParser
     public const string TraduPrefix = "tradu";
 
     /// <summary>
-    /// Regex to detect a language prefix in a segment (e.g. "[pt-br]:" or "[es]:").
+    /// Regex to detect a language prefix in a segment (e.g. "[pt-br]:", "[es]:" or "[ja-jp-romaji]:").
+    /// Aceita códigos de idioma com múltiplos segmentos separados por hífen, cobrindo variantes
+    /// como "ja-jp-romaji" e "pt-br-ascii" além do formato ISO "xx-yy".
     /// </summary>
-    public static readonly Regex LanguagePrefixRegex = new Regex(@"^\[([a-z]{2}(-[a-z]+)?)\]:(.+)$", RegexOptions.Compiled);
+    public static readonly Regex LanguagePrefixRegex = new Regex(@"^\[([a-z]{2}(-[a-z]+)*)\]:(.+)$", RegexOptions.Compiled);
 
     /// <summary>
     /// Extracts all "tradu[lang]:" annotations from the source code and associates them with their target tokens.

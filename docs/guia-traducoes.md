@@ -72,7 +72,11 @@ Exemplos de codigos:
 - `fr-fr` - Frances (Franca)
 - `de-de` - Alemao (Alemanha)
 - `it-it` - Italiano (Italia)
-- `ja-jp` - Japones (Japao)
+- `ja-jp-romaji` - Japones romanizado
+
+Variantes podem acrescentar sufixos ao codigo base (ex.: `pt-br-ascii` sem acentos,
+`ja-jp-romaji` romanizado). As anotacoes `// tradu[lang]:` aceitam esses codigos com
+multiplos segmentos do mesmo modo que o formato `xx-yy`.
 
 ### 3. Criar arquivo de traducao
 
