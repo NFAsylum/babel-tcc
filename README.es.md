@@ -6,6 +6,8 @@
 
 Extensión de VS Code que traduce código de programación visualmente en tiempo real, manteniendo los archivos originales intactos en el disco.
 
+![Demostración: el mismo código C# cambiando de idioma en tiempo real](images/babel-tcc-demo.gif)
+
 ## ¿Qué hace?
 
 Los desarrolladores escriben código en C# o Python, y la extensión muestra las palabras clave e identificadores traducidos al idioma configurado (PT-BR, ES-ES, etc.). Al guardar, el código vuelve automáticamente al lenguaje de programación original.
@@ -113,6 +115,14 @@ Para generar el `.vsix`: `npm run package` (requiere [vsce](https://github.com/m
 ## Idiomas disponibles
 
 Portugués (PT-BR), Portugués ASCII, Inglés, Español, Francés, Alemán, Italiano, Japonés (Romaji), Chino, Árabe.
+
+El mismo `Calculator.cs` mostrado en cuatro idiomas — los archivos en disco permanecen en el código original:
+
+| Portugués (PT-BR) | Chino (zh-cn) |
+|:---:|:---:|
+| ![Calculator.cs en portugués](images/babel-tcc-pt-br.png) | ![Calculator.cs en chino](images/babel-tcc-zh-cn.png) |
+| **Alemán (de-de)** | **Japonés — Romaji (ja-jp-romaji)** |
+| ![Calculator.cs en alemán](images/babel-tcc-de-de.png) | ![Calculator.cs en japonés romanizado](images/babel-tcc-ja-jp-romaji.png) |
 
 ## Arquitectura
 

@@ -14,7 +14,10 @@ Preparar todos os assets e metadata necessarios para publicacao profissional no 
   - Configurar publisher ID no package.json
 - Criar assets visuais:
   - Icone da extensao: 128x128 pixels, PNG, fundo transparente
-  - Banner do Marketplace: 1280x640 pixels, cores consistentes com marca
+  - Banner do Marketplace: N/A. O VS Code Marketplace nao tem upload de banner 1280x640; o que
+    existe e o `galleryBanner` (cor/tema), ja configurado no package.json (color #1e1e1e, theme
+    dark). A "capa" visual fica coberta pelo icone + GIF hero no README. Item considerado nao
+    aplicavel.
   - Screenshots da extensao em uso (minimo 3):
     - Screenshot mostrando traducao ativa
     - Screenshot mostrando hover/completions traduzidos
