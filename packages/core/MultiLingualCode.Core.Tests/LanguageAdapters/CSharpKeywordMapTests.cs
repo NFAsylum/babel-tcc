@@ -5,15 +5,15 @@ namespace MultiLingualCode.Core.Tests.LanguageAdapters;
 public class CSharpKeywordMapTests
 {
     [Fact]
-    public void TextToId_WhenAccessed_Contains89Keywords()
+    public void TextToId_WhenAccessed_Contains91Keywords()
     {
-        Assert.Equal(89, CSharpKeywordMap.TextToId.Count);
+        Assert.Equal(91, CSharpKeywordMap.TextToId.Count);
     }
 
     [Fact]
-    public void IdToText_WhenAccessed_Contains89Keywords()
+    public void IdToText_WhenAccessed_Contains91Keywords()
     {
-        Assert.Equal(89, CSharpKeywordMap.IdToText.Count);
+        Assert.Equal(91, CSharpKeywordMap.IdToText.Count);
     }
 
     [Fact]
@@ -101,6 +101,8 @@ public class CSharpKeywordMapTests
     [InlineData("init", 86)]
     [InlineData("required", 87)]
     [InlineData("global", 88)]
+    [InlineData("get", 89)]
+    [InlineData("set", 90)]
     public void GetId_SpecificKeywords_ReturnsExpectedId(string keyword, int expectedId)
     {
         Assert.Equal(expectedId, CSharpKeywordMap.GetId(keyword));
