@@ -1,14 +1,14 @@
 # Arquitetura
 
-## Indice
+## Índice
 
-- [Visao geral](#visao-geral)
+- [Visão geral](#visão-geral)
 - [Camadas](#camadas)
-- [Fluxo de traducao](#fluxo-de-traducao)
+- [Fluxo de tradução](#fluxo-de-tradução)
 - [Fluxo reverso](#fluxo-reverso)
-- [Decisoes de design](#decisoes-de-design)
+- [Decisões de design](#decisões-de-design)
 
-## Visao geral
+## Visão geral
 
 ```
 +------------------------------------------+
@@ -52,18 +52,22 @@
 |  +-- PythonTokenizerService              |
 |  +-- PythonKeywordMap                    |
 |  +-- tokenizer_service.py               |
+|                                          |
+|  VisuAlgAdapter / PortugolStudioAdapter  |
+|  +-- Text Scan (ITextScannable)          |
 +------------------+-----------------------+
                    |
 +------------------+-----------------------+
 |          Data Layer                      |
 |                                          |
 |  programming-languages/                  |
-|    csharp/keywords-base.json             |
-|    python/keywords-base.json             |
+|    csharp/, python/,                     |
+|    visualg/, portugolstudio/             |
+|      keywords-base.json                  |
 |  natural-languages/                      |
-|    pt-br/csharp.json, python.json        |
-|    (10 idiomas x 2 linguagens)           |
-|  identifier-map.json                     |
+|    pt-br/csharp.json, python.json,       |
+|      visualg.json, portugolstudio.json   |
+|    (10 idiomas x 4 linguagens)           |
 +------------------------------------------+
 ```
 
@@ -73,19 +77,19 @@
 |--------|-----------------|------------|
 | Presentation | UI, commands, status bar | TypeScript / VS Code API |
 | Providers | Content, auto-translate, completion, hover, keyword map | TypeScript |
-| CoreBridge | Comunicacao TS <-> C# | JSON via stdin/stdout |
-| Orchestration | Coordenar traducao | C# |
-| Adapters | Parsear/gerar codigo | C# / Roslyn (C#), subprocesso CPython (Python) |
-| Data | Tabelas de traducao | JSON |
+| CoreBridge | Comunicação TS <-> C# | JSON via stdin/stdout |
+| Orchestration | Coordenar tradução | C# |
+| Adapters | Parsear/gerar código | Roslyn (C#), subprocesso CPython (Python), Text Scan (VisuAlg/Portugol) |
+| Data | Tabelas de tradução | JSON |
 
-## Fluxo de traducao
+## Fluxo de tradução
 
-O Orchestrator tem dois caminhos de traducao:
+O Orchestrator tem dois caminhos de tradução:
 
 ### Fast path: Text Scan (arquivos sem tradu)
 
-Para a maioria dos arquivos (sem anotacoes `// tradu`), o Text Scan faz
-traducao linear de keywords em 0-1ms para qualquer tamanho de arquivo.
+Para a maioria dos arquivos (sem anotações `// tradu`), o Text Scan faz
+tradução linear de keywords em 0-1ms para qualquer tamanho de arquivo.
 
 ```
 User opens .cs/.py → Extension → CoreBridge → Orchestrator
@@ -99,8 +103,8 @@ User opens .cs/.py → Extension → CoreBridge → Orchestrator
 
 ### Full path: Roslyn AST (arquivos com tradu)
 
-Para arquivos com anotacoes tradu, o Roslyn parseia a AST completa
-para encontrar e traduzir identifiers alem de keywords.
+Para arquivos com anotações tradu, o Roslyn parseia a AST completa
+para encontrar e traduzir identifiers além de keywords.
 
 ```
 User opens .cs/.py → Extension → CoreBridge → Orchestrator
@@ -146,15 +150,15 @@ sequenceDiagram
     TCP-->>U: "File saved successfully"
 ```
 
-## Decisoes de design
+## Decisões de design
 
-1. **Arquivo no disco sempre original** (DT-003): Traducao e puramente visual
-2. **Comunicacao via processo** (DT-002): stdin/stdout JSON, sem portas de rede
-3. **IDs numericos para keywords** (DT-005): Desacopla linguagem de programacao da traducao
-4. **Anotacoes tradu** (DT-006): Traducao de identificadores definida pelo desenvolvedor
+1. **Arquivo no disco sempre original** (DT-003): Tradução é puramente visual
+2. **Comunicação via processo** (DT-002): stdin/stdout JSON, sem portas de rede
+3. **IDs numéricos para keywords** (DT-005): Desacopla linguagem de programação da tradução
+4. **Anotações tradu** (DT-006): Tradução de identificadores definida pelo desenvolvedor
 5. **Roslyn para C#** (DT-001): Parser oficial da Microsoft
 6. **Subprocesso CPython para Python**: Tokenizador nativo garante 100% compatibilidade
-7. **OperationResult pattern**: Sem exceptions, tratamento explicito de erros
-8. **TraduAnnotationParser agnostico**: Desacoplado do Roslyn, funciona com qualquer adapter
+7. **OperationResult pattern**: Sem exceptions, tratamento explícito de erros
+8. **TraduAnnotationParser agnóstico**: Desacoplado do Roslyn, funciona com qualquer adapter
 
-Ver detalhes completos em [Decisoes Tecnicas](../decisoes-tecnicas.md).
+Ver detalhes completos em [Decisões Técnicas](../decisoes-tecnicas.md).

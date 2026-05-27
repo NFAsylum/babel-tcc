@@ -1,18 +1,18 @@
-# Criar Traducoes
+# Criar Traduções
 
-## Indice
+## Índice
 
 - [Formato JSON](#formato-json)
 - [Adicionar novo idioma](#adicionar-novo-idioma)
-- [Categorias de traducao](#categorias-de-traducao)
-- [Validacao](#validacao)
+- [Categorias de tradução](#categorias-de-tradução)
+- [Validação](#validação)
 - [Testar](#testar)
 
 ## Formato JSON
 
-As traducoes sao armazenadas em ficheiros JSON com a seguinte estrutura:
+As traduções são armazenadas em ficheiros JSON com a seguinte estrutura:
 
-### keywords-base.json (por linguagem de programacao)
+### keywords-base.json (por linguagem de programação)
 
 ```json
 {
@@ -27,18 +27,18 @@ As traducoes sao armazenadas em ficheiros JSON com a seguinte estrutura:
 }
 ```
 
-### Traducao (por idioma natural)
+### Tradução (por idioma natural)
 
 ```json
 {
   "version": "1.0.0",
   "languageCode": "pt-br",
-  "languageName": "Portugues Brasileiro",
+  "languageName": "Português (Brasil)",
   "programmingLanguage": "CSharp",
   "translations": {
     "10": "classe",
     "30": "se",
-    "18": "senao",
+    "18": "senão",
     "75": "vazio",
     "33": "inteiro",
     "52": "retornar"
@@ -48,9 +48,9 @@ As traducoes sao armazenadas em ficheiros JSON com a seguinte estrutura:
 
 ## Adicionar novo idioma
 
-1. No repositorio `babel-tcc-translations`, criar directorio `natural-languages/<codigo-idioma>/`
-2. Copiar um arquivo existente da mesma linguagem de programacao como base (ex: `pt-br/python.json`)
-3. Atualizar `languageCode`, `languageName` e todas as traducoes
+1. No repositório `babel-tcc-translations`, criar diretório `natural-languages/<codigo-idioma>/`
+2. Copiar um arquivo existente da mesma linguagem de programação como base (ex: `pt-br/python.json`)
+3. Atualizar `languageCode`, `languageName` e todas as traduções
 4. Testar com o Core
 
 Exemplo para Espanhol (ES-ES):
@@ -63,40 +63,40 @@ natural-languages/es-es/csharp.json
 {
   "version": "1.0.0",
   "languageCode": "es-es",
-  "languageName": "Espanol",
+  "languageName": "Español",
   "programmingLanguage": "CSharp",
   "translations": {
     "10": "clase",
     "30": "si",
     "18": "sino",
-    "75": "vacio",
+    "75": "vacío",
     "33": "entero",
     "52": "retornar"
   }
 }
 ```
 
-## Categorias de traducao
+## Categorias de tradução
 
-As keywords C# estao organizadas por categoria:
+As keywords C# estão organizadas por categoria:
 
 | Categoria | Exemplos (EN) | Exemplos (PT-BR) |
 |-----------|--------------|-------------------|
 | Tipos | int, string, bool, void | inteiro, texto, booleano, vazio |
-| Controle | if, else, for, while, return | se, senao, para, enquanto, retornar |
-| Modificadores | public, static, abstract | publico, estatico, abstrato |
-| Declaracao | class, struct, enum, namespace | classe, estrutura, enumeracao, espaconome |
+| Controle | if, else, for, while, return | se, senão, para, enquanto, retornar |
+| Modificadores | public, static, abstract | público, estático, abstrato |
+| Declaração | class, struct, enum, namespace | classe, estrutura, enumeração, espaçonome |
 | Literais | true, false, null | verdadeiro, falso, nulo |
-| Operadores | new, typeof, sizeof, as, is | novo, tipode, tamanhode, como, e |
+| Operadores | new, typeof, sizeof, as, is | novo, tipode, tamanhode, como, igual |
 
-## Validacao
+## Validação
 
 Verificar que:
-- Todas as 89 keywords C# tem traducao
-- IDs numericos correspondem ao keywords-base.json
-- JSON e valido (sem erros de parsing)
-- Nenhuma traducao esta vazia
-- Traducoes sao palavras unicas (sem espacos) quando possivel
+- Todas as 89 keywords C# têm tradução
+- IDs numéricos correspondem ao keywords-base.json
+- JSON é válido (sem erros de parsing)
+- Nenhuma tradução está vazia
+- Traduções são palavras únicas (sem espaços) quando possível
 
 ## Testar
 
@@ -105,7 +105,7 @@ cd babel-tcc
 dotnet run --project packages/core/MultiLingualCode.Core.Host -- \
   --method TranslateToNaturalLanguage \
   --params '{"sourceCode":"class Program { }","fileExtension":".cs","targetLanguage":"<codigo-idioma>"}' \
-  --translations packages/core/MultiLingualCode.Core.Tests/TestData/translations
+  --translations ../babel-tcc-translations
 ```
 
 Resultado esperado: keywords traduzidas no idioma escolhido.
