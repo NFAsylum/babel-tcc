@@ -3,7 +3,7 @@
 - [ ] Conta de publisher criada no VS Code Marketplace
 - [ ] Personal Access Token (PAT) gerado e armazenado como secret no GitHub
 - [ ] Icone 128x128 criado e referenciado no package.json
-- [ ] Banner 1280x640 criado com cores consistentes
+- [ ] Banner 1280x640 criado com cores consistentes (N/A: Marketplace nao tem esse upload; coberto por galleryBanner cor/tema + GIF hero no README)
 - [ ] Pelo menos 3 screenshots reais da extensao capturados
 - [ ] package.json contem displayName, description, categories e tags
 - [ ] package.json contem publisher, repository, bugs e homepage URLs
