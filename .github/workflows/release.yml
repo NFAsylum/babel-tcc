@@ -87,15 +87,90 @@ jobs:
       - name: Test
         run: npm test
 
-  package-and-release:
-    name: Package & Release
-    needs: [core-test, vscode-test]
+  # Smoke test do pacote self-contained (DT-010): prova que o executavel nativo sobe e traduz
+  # numa maquina SEM .NET instalado. Roda o binario linux-x64 dentro de um container ubuntu limpo
+  # (sem runtime .NET); a unica dependencia instalada e a ICU, exigida pela globalizacao do .NET.
+  smoke-self-contained:
+    name: Smoke (self-contained, sem .NET)
+    needs: validate
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout translations repo
+        uses: actions/checkout@v4
+        with:
+          repository: NFAsylum/babel-tcc-translations
+          path: babel-tcc-translations
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install extension dependencies
+        working-directory: packages/ide-adapters/vscode
+        run: npm install
+
+      - name: Publish Core (self-contained linux-x64)
+        working-directory: packages/ide-adapters/vscode
+        env:
+          DOTNET_RID: linux-x64
+        run: npm run publish-core:self-contained
+
+      - name: Copy translations
+        working-directory: packages/ide-adapters/vscode
+        env:
+          BABEL_TCC_TRANSLATIONS_PATH: ${{ github.workspace }}/babel-tcc-translations
+        run: npm run copy-translations
+
+      # Imagem oficial runtime-deps: traz as dependencias nativas de um app .NET self-contained
+      # (incluindo ICU) SEM o runtime .NET, e sem depender de `apt-get` (sem rede, deterministico).
+      # E o baseline canonico para validar self-contained: se rodar aqui, roda sem .NET instalado.
+      - name: Run native binary in a clean container (no .NET runtime)
+        run: |
+          BIN="$PWD/packages/ide-adapters/vscode/bin"
+          TR="$PWD/packages/ide-adapters/vscode/translations"
+          test -f "$BIN/MultiLingualCode.Core.Host" || { echo "::error::executavel nativo ausente"; exit 1; }
+          OUT=$(docker run --rm \
+            -v "$BIN:/app/bin:ro" \
+            -v "$TR:/app/translations:ro" \
+            mcr.microsoft.com/dotnet/runtime-deps:8.0 \
+            /app/bin/MultiLingualCode.Core.Host \
+              --method TranslateToNaturalLanguage \
+              --params '{"sourceCode":"public class Foo {}","fileExtension":".cs","targetLanguage":"pt-br"}' \
+              --translations /app/translations)
+          echo "Saida do Core: $OUT"
+          echo "$OUT" | grep -q '"success":true' \
+            || { echo "::error::smoke self-contained falhou (Core nao traduziu sem .NET)"; exit 1; }
+          echo "OK: binario self-contained traduziu sem .NET instalado."
+
+  package:
+    name: Package (${{ matrix.vsce_target }})
+    needs: [core-test, vscode-test, smoke-self-contained]
+    runs-on: ubuntu-latest
     env:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Pacotes self-contained por plataforma: target (vsce) <-> RID (.NET).
+          - { vsce_target: win32-x64,    dotnet_rid: win-x64 }
+          - { vsce_target: win32-arm64,  dotnet_rid: win-arm64 }
+          - { vsce_target: linux-x64,    dotnet_rid: linux-x64 }
+          - { vsce_target: linux-arm64,  dotnet_rid: linux-arm64 }
+          - { vsce_target: darwin-x64,   dotnet_rid: osx-x64 }
+          - { vsce_target: darwin-arm64, dotnet_rid: osx-arm64 }
+          # Pacote universal (fallback): framework-dependent, exige .NET 8 no usuario.
+          - { vsce_target: universal,    dotnet_rid: '' }
 
     steps:
       - uses: actions/checkout@v4
@@ -118,19 +193,25 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: packages/ide-adapters/vscode/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('packages/ide-adapters/vscode/package-lock.json') }}
-
       - name: Install extension dependencies
         working-directory: packages/ide-adapters/vscode
         run: npm install
 
+      # Cada job parte de um checkout limpo e publica num bin recem-criado, entao nao ha como
+      # vazar binario de outra plataforma para o pacote (item 5 da tarefa 105).
       - name: Publish Core
         working-directory: packages/ide-adapters/vscode
-        run: npm run publish-core
+        env:
+          DOTNET_RID: ${{ matrix.dotnet_rid }}
+        run: |
+          rm -rf bin
+          if [ -z "$DOTNET_RID" ]; then
+            echo "Pacote universal: publish framework-dependent (so a .dll, roda via dotnet)."
+            npm run publish-core
+          else
+            echo "Pacote self-contained para $DOTNET_RID (executavel nativo)."
+            npm run publish-core:self-contained
+          fi
 
       - name: Copy translations
         working-directory: packages/ide-adapters/vscode
@@ -151,33 +232,42 @@ jobs:
 
       - name: Package extension
         working-directory: packages/ide-adapters/vscode
-        run: vsce package --out multilingual-code-${{ github.ref_name }}.vsix
+        run: |
+          REF="${GITHUB_REF_NAME}"
+          if [ "${{ matrix.vsce_target }}" = "universal" ]; then
+            VSIX="multilingual-code-${REF}.vsix"
+            vsce package --out "$VSIX"
+          else
+            VSIX="multilingual-code-${{ matrix.vsce_target }}-${REF}.vsix"
+            vsce package --target ${{ matrix.vsce_target }} --out "$VSIX"
+          fi
+          echo "VSIX=$VSIX" >> "$GITHUB_ENV"
 
-      # Fail-fast + retry + idempotencia (tarefa 106): retry cura falhas transitorias;
-      # idempotencia evita conflito de "versao ja existe" num rerun; sem decoupling.
+      # Fail-fast + retry + idempotencia (tarefa 106), agora por alvo: a idempotencia compara
+      # versao E targetPlatform, para nao confundir um alvo ja publicado com outro pendente.
       - name: Publish to Marketplace
         if: env.VSCE_PAT != ''
         working-directory: packages/ide-adapters/vscode
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          # Idempotencia: se a versao ja esta no Marketplace, nao republicar.
+          PLATFORM="${{ matrix.vsce_target }}"
           if vsce show NFAsylum.multilingual-code --json 2>/dev/null \
-               | node -e "let d={};try{d=JSON.parse(require('fs').readFileSync(0,'utf8'))}catch(e){}; process.exit((d.versions||[]).some(v=>v.version===process.argv[1])?0:1)" "$VERSION"; then
-            echo "Marketplace ja esta em $VERSION - pulando (idempotente)."
+               | node -e "let d={};try{d=JSON.parse(require('fs').readFileSync(0,'utf8'))}catch(e){}; const ver=process.argv[1],plat=process.argv[2]; process.exit((d.versions||[]).some(v=>v.version===ver&&(v.targetPlatform||'universal')===plat)?0:1)" "$VERSION" "$PLATFORM"; then
+            echo "Marketplace ja tem $VERSION ($PLATFORM) - pulando (idempotente)."
             exit 0
           fi
           for attempt in 1 2 3; do
-            if OUT=$(vsce publish 2>&1); then
-              echo "$OUT"; echo "Publicado no Marketplace (tentativa $attempt)."; exit 0
+            if OUT=$(vsce publish --packagePath "$VSIX" 2>&1); then
+              echo "$OUT"; echo "Publicado no Marketplace ($PLATFORM, tentativa $attempt)."; exit 0
             fi
             echo "$OUT"
             if echo "$OUT" | grep -qiE "already (exists|published)"; then
-              echo "Versao ja presente no Marketplace - tratando como sucesso (idempotente)."; exit 0
+              echo "Alvo $PLATFORM ja presente no Marketplace - sucesso (idempotente)."; exit 0
             fi
             echo "Tentativa $attempt falhou; novo retry em $((attempt * 20))s..."
             sleep $((attempt * 20))
           done
-          echo "::error::Falha ao publicar no Marketplace apos 3 tentativas."
+          echo "::error::Falha ao publicar $PLATFORM no Marketplace apos 3 tentativas."
           exit 1
 
       - name: Publish to Open VSX
@@ -185,30 +275,52 @@ jobs:
         working-directory: packages/ide-adapters/vscode
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          VSIX="multilingual-code-${GITHUB_REF_NAME}.vsix"
-          # Idempotencia: se a versao ja esta no Open VSX, nao republicar.
-          if [ "$(curl -s -o /dev/null -w '%{http_code}' "https://open-vsx.org/api/NFAsylum/multilingual-code/$VERSION")" = "200" ]; then
-            echo "Open VSX ja esta em $VERSION - pulando (idempotente)."
+          PLATFORM="${{ matrix.vsce_target }}"
+          URL="https://open-vsx.org/api/NFAsylum/multilingual-code/${PLATFORM}/${VERSION}"
+          if [ "$(curl -s -o /dev/null -w '%{http_code}' "$URL")" = "200" ]; then
+            echo "Open VSX ja tem $VERSION ($PLATFORM) - pulando (idempotente)."
             exit 0
           fi
           for attempt in 1 2 3; do
             if OUT=$(ovsx publish "$VSIX" -p "$OVSX_PAT" 2>&1); then
-              echo "$OUT"; echo "Publicado no Open VSX (tentativa $attempt)."; exit 0
+              echo "$OUT"; echo "Publicado no Open VSX ($PLATFORM, tentativa $attempt)."; exit 0
             fi
             echo "$OUT"
             if echo "$OUT" | grep -qiE "already (exists|published)"; then
-              echo "Versao ja presente no Open VSX - tratando como sucesso (idempotente)."; exit 0
+              echo "Alvo $PLATFORM ja presente no Open VSX - sucesso (idempotente)."; exit 0
             fi
             echo "Tentativa $attempt falhou; novo retry em $((attempt * 20))s..."
             sleep $((attempt * 20))
           done
-          echo "::error::Falha ao publicar no Open VSX apos 3 tentativas."
+          echo "::error::Falha ao publicar $PLATFORM no Open VSX apos 3 tentativas."
           exit 1
+
+      - name: Upload .vsix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.vsce_target }}
+          path: packages/ide-adapters/vscode/${{ env.VSIX }}
+          retention-days: 7
+
+  github-release:
+    name: GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all .vsix artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vsix-*
+          path: vsix
+          merge-multiple: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: packages/ide-adapters/vscode/multilingual-code-${{ github.ref_name }}.vsix
+          files: vsix/*.vsix
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

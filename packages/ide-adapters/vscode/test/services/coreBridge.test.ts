@@ -171,6 +171,50 @@ describe('CoreBridge', () => {
     });
   });
 
+  describe('resolveLaunch (dual-track)', () => {
+    it('should run dotnet with the dll when no native executable is present', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      const launch = bridge.resolveLaunch();
+      expect(launch.command).toBe('dotnet');
+      expect(launch.args[0]).toBe(bridge.coreDllPath);
+    });
+
+    it('should run the native executable directly when present (self-contained)', () => {
+      vi.mocked(fs.existsSync).mockImplementation((p) => String(p) === bridge.coreExePath);
+      const launch = bridge.resolveLaunch();
+      expect(launch.command).toBe(bridge.coreExePath);
+      expect(launch.args).not.toContain(bridge.coreDllPath);
+    });
+
+    it('should chmod the native executable on non-win32 before launching', () => {
+      if (process.platform === 'win32') {
+        return;
+      }
+      vi.mocked(fs.existsSync).mockImplementation((p) => String(p) === bridge.coreExePath);
+      bridge.resolveLaunch();
+      expect(fs.chmodSync).toHaveBeenCalledWith(bridge.coreExePath, 0o755);
+    });
+
+    it('should pass translations/project args in both modes', () => {
+      vi.mocked(fs.existsSync).mockImplementation((p) => String(p) === bridge.coreExePath);
+      const native = bridge.resolveLaunch();
+      expect(native.args).toContain('--translations');
+
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      const universal = bridge.resolveLaunch();
+      expect(universal.args).toContain('--translations');
+    });
+  });
+
+  describe('startProcess (self-contained)', () => {
+    it('should spawn the native executable when present', () => {
+      vi.mocked(fs.existsSync).mockImplementation((p) => String(p) === bridge.coreExePath);
+      bridge.startProcess();
+      expect(spawn).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(spawn).mock.calls[0][0]).toBe(bridge.coreExePath);
+    });
+  });
+
   describe('invokeCore', () => {
     it('should start process and send request on stdin', async () => {
       rl.setNextResponse(JSON.stringify({ success: true, result: '"hello"', error: '' }));

@@ -70,9 +70,25 @@ The file on disk always stays in the **original code**. The translation is purel
 ### Prerequisites
 
 - VS Code 1.85 or higher
-- .NET 8.0 Runtime
-- Python 3.8+ (for Python file support)
+- **.NET 8.0 Runtime** — required **only** by the universal package. The per-platform packages
+  (Windows/Linux/macOS) bundle the runtime and **do not require .NET to be installed** (see
+  [Distribution packages](#distribution-packages)).
+- Python 3.8+ — **optional**, needed only to translate `.py` files
 - Nothing extra for VisuAlg / Portugol Studio (they operate via Text Scan, with no external parser)
+
+### Distribution packages
+
+The extension is published in two variants (decision DT-010); VS Code, the Marketplace and
+Open VSX automatically pick the right package for your system:
+
+| Variant | Who gets it | Needs .NET? | Size |
+|---------|-------------|-------------|------|
+| Per-platform (self-contained) | Windows, Linux and macOS (x64 and arm64) | No — runtime bundled | larger (~36 MB) |
+| Universal (fallback) | Any other platform | Yes — .NET 8.0 Runtime | smaller (~5 MB) |
+
+> The per-platform package needs no **.NET**, but still uses the system's **ICU** library (present by
+> default on Windows 10+, macOS and most Linux distros; only minimal environments need to install it,
+> e.g. `libicu`).
 
 ### From source
 

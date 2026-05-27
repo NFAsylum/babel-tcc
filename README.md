@@ -70,9 +70,25 @@ O arquivo no disco permanece **sempre no código original**. A tradução é ape
 ### Pré-requisitos
 
 - VS Code 1.85 ou superior
-- .NET 8.0 Runtime
-- Python 3.8+ (para suporte a arquivos Python)
+- **.NET 8.0 Runtime** — necessário **apenas** no pacote universal. Os pacotes por plataforma
+  (Windows/Linux/macOS) já embutem o runtime e **não exigem .NET instalado** (ver
+  [Pacotes de distribuição](#pacotes-de-distribuição)).
+- Python 3.8+ — **opcional**, necessário somente para traduzir arquivos `.py`
 - Nada adicional para VisuAlg / Portugol Studio (operam pelo Text Scan, sem parser externo)
+
+### Pacotes de distribuição
+
+A extensão é publicada em duas variantes (decisão DT-010); o VS Code, o Marketplace e o
+Open VSX escolhem automaticamente o pacote certo para o seu sistema:
+
+| Variante | Quem recebe | Exige .NET? | Tamanho |
+|----------|-------------|-------------|---------|
+| Por plataforma (self-contained) | Windows, Linux e macOS (x64 e arm64) | Não — runtime embutido | maior (~36 MB) |
+| Universal (fallback) | Qualquer outra plataforma | Sim — .NET 8.0 Runtime | menor (~5 MB) |
+
+> O pacote por plataforma dispensa o **.NET**, mas ainda usa a biblioteca **ICU** do sistema (presente
+> por padrão no Windows 10+, macOS e na maioria das distros Linux; só ambientes minimalistas precisam
+> instalá-la, ex.: `libicu`).
 
 ### A partir do código-fonte
 

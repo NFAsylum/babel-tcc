@@ -33,6 +33,7 @@ export interface DiagnosticEntry {
 /** Bridge to the .NET Core translation engine using a persistent long-lived process. */
 export class CoreBridge {
   public coreDllPath: string;
+  public coreExePath: string;
   public translationsPath: string;
   public projectPath: string;
   public outputChannel: vscode.OutputChannel;
@@ -56,6 +57,12 @@ export class CoreBridge {
       'bin',
       'MultiLingualCode.Core.Host.dll'
     );
+    // Pacote self-contained por plataforma: executavel nativo (Host.exe no Windows, Host no Linux/Mac).
+    const exeName: string =
+      process.platform === 'win32'
+        ? 'MultiLingualCode.Core.Host.exe'
+        : 'MultiLingualCode.Core.Host';
+    this.coreExePath = path.join(context.extensionPath, 'bin', exeName);
     this.projectPath = '';
     this.outputChannel = outputChannel;
     this.timeoutMs = timeoutMs;
@@ -69,23 +76,60 @@ export class CoreBridge {
     this.translationsPath = this.resolveTranslationsPath(context);
   }
 
+  /**
+   * Resolves how to launch the Core engine (distribuicao dual-track, DT-010):
+   * - Pacote self-contained por plataforma: existe o executavel nativo em `bin/`; roda direto,
+   *   sem depender do runtime .NET do sistema.
+   * - Pacote universal (fallback): so a `.dll` framework-dependent; roda via `dotnet Host.dll`,
+   *   exigindo o runtime .NET 8 instalado.
+   */
+  public resolveLaunch(): { command: string; args: string[] } {
+    const extraArgs: string[] = [];
+    if (this.translationsPath) {
+      extraArgs.push('--translations', this.translationsPath);
+    }
+    if (this.projectPath) {
+      extraArgs.push('--project', this.projectPath);
+    }
+
+    if (fs.existsSync(this.coreExePath)) {
+      this.ensureExecutable(this.coreExePath);
+      return { command: this.coreExePath, args: extraArgs };
+    }
+
+    return { command: 'dotnet', args: [this.coreDllPath, ...extraArgs] };
+  }
+
+  /**
+   * Garante o bit de execucao no binario nativo (Linux/Mac). O `.vsix` preserva a permissao, mas a
+   * extracao do VS Code ao instalar nem sempre a mantem; reforcamos antes de lancar por seguranca.
+   */
+  private ensureExecutable(filePath: string): void {
+    if (process.platform === 'win32') {
+      return;
+    }
+    try {
+      fs.chmodSync(filePath, 0o755);
+    } catch (err: unknown) {
+      const message: string = err instanceof Error ? err.message : String(err);
+      this.outputChannel.appendLine(
+        `CoreBridge: could not set executable bit on ${filePath} - ${message}`
+      );
+    }
+  }
+
   /** Starts the persistent .NET Core process if not already running. */
   public startProcess(): void {
     if (this.process) {
       return;
     }
 
-    const args: string[] = [this.coreDllPath];
+    const launch: { command: string; args: string[] } = this.resolveLaunch();
 
-    if (this.translationsPath) {
-      args.push('--translations', this.translationsPath);
-    }
-    if (this.projectPath) {
-      args.push('--project', this.projectPath);
-    }
-
-    this.outputChannel.appendLine('CoreBridge: starting persistent process');
-    const coreProcess: ChildProcess = spawn('dotnet', args);
+    this.outputChannel.appendLine(
+      `CoreBridge: starting persistent process (${launch.command})`
+    );
+    const coreProcess: ChildProcess = spawn(launch.command, launch.args);
 
     coreProcess.on('exit', (code: number | null): void => {
       this.outputChannel.appendLine(`CoreBridge: process exited with code ${code}`);
