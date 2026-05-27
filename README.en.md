@@ -116,6 +116,14 @@ To build the `.vsix`: `npm run package` (requires [vsce](https://github.com/micr
 
 Portuguese (PT-BR), ASCII Portuguese, English, Spanish, French, German, Italian, Japanese (Romaji), Chinese, Arabic.
 
+The same `Calculator.cs` shown in four languages — the files on disk stay in the original code:
+
+| Portuguese (PT-BR) | Chinese (zh-cn) |
+|:---:|:---:|
+| ![Calculator.cs in Portuguese](images/babel-tcc-pt-br.png) | ![Calculator.cs in Chinese](images/babel-tcc-zh-cn.png) |
+| **German (de-de)** | **Japanese — Romaji (ja-jp-romaji)** |
+| ![Calculator.cs in German](images/babel-tcc-de-de.png) | ![Calculator.cs in romanized Japanese](images/babel-tcc-ja-jp-romaji.png) |
+
 ## Architecture
 
 ```

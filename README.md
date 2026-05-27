@@ -116,6 +116,14 @@ Para gerar o `.vsix`: `npm run package` (requer [vsce](https://github.com/micros
 
 Português (PT-BR), Português ASCII, Inglês, Espanhol, Francês, Alemão, Italiano, Japonês (Romaji), Chinês, Árabe.
 
+O mesmo `Calculator.cs` exibido em quatro idiomas — os arquivos no disco continuam no código original:
+
+| Português (PT-BR) | Chinês (zh-cn) |
+|:---:|:---:|
+| ![Calculator.cs em português](images/babel-tcc-pt-br.png) | ![Calculator.cs em chinês](images/babel-tcc-zh-cn.png) |
+| **Alemão (de-de)** | **Japonês — Romaji (ja-jp-romaji)** |
+| ![Calculator.cs em alemão](images/babel-tcc-de-de.png) | ![Calculator.cs em japonês romanizado](images/babel-tcc-ja-jp-romaji.png) |
+
 ## Arquitetura
 
 ```
