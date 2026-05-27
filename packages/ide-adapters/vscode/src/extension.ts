@@ -75,16 +75,21 @@ function cleanMultilingualCache(channel: vscode.OutputChannel): void {
 }
 
 /**
- * Checks if the .NET SDK is installed and accessible in the PATH.
+ * Checks if the .NET 8 runtime is installed and accessible in the PATH.
  * Shows an error message with installation link if not found.
+ *
+ * The extension ships a framework-dependent build run via `dotnet Host.dll`, so only the
+ * .NET 8 runtime is required (not the SDK). We probe with `dotnet --list-runtimes` because
+ * `dotnet --version` reports the SDK version and fails on runtime-only installs.
  * @param channel - The output channel for logging.
  */
 function checkDotnetInstalled(channel: vscode.OutputChannel): void {
-  execFile('dotnet', ['--version'], (error: Error | null, stdout: string): void => {
-    if (error) {
-      channel.appendLine('Babel TCC: .NET SDK not found in PATH.');
+  execFile('dotnet', ['--list-runtimes'], (error: Error | null, stdout: string): void => {
+    const hasNet8Runtime: boolean = !error && /^Microsoft\.NETCore\.App 8\./m.test(stdout);
+    if (!hasNet8Runtime) {
+      channel.appendLine('Babel TCC: .NET 8 runtime not found in PATH.');
       vscode.window.showErrorMessage(
-        'Babel TCC: .NET 8 SDK is required but was not found. ' +
+        'Babel TCC: .NET 8 Runtime is required but was not found. ' +
         '[Install .NET](https://dotnet.microsoft.com/download/dotnet/8.0)',
         'Open Download Page'
       ).then((selection: string | undefined): void => {
@@ -94,7 +99,7 @@ function checkDotnetInstalled(channel: vscode.OutputChannel): void {
       });
       return;
     }
-    channel.appendLine(`Babel TCC: .NET SDK found: ${stdout.trim()}`);
+    channel.appendLine('Babel TCC: .NET 8 runtime found.');
   });
 }
 
