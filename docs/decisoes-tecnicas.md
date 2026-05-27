@@ -259,10 +259,19 @@ cai no universal. O runtime Python continua sendo dependência externa **apenas*
   apphost nativo, que tem precedência na detecção.
 - O `release.yml` cross-publica todos os RIDs a partir de um único runner Linux (o `dotnet publish`
   faz cross-compile self-contained), então a matrix não precisa de runners Windows/macOS.
-- Validação automatizada: o job `smoke-self-contained` roda o binário linux-x64 dentro de um
-  container `ubuntu:22.04` **sem .NET** e confirma que ele traduz, provando a independência do
-  runtime. Cobre só linux-x64 (os demais RIDs não têm container/runner trivial), mas é o sinal que
-  o CI antes não pegava.
+- Validação automatizada: o job `smoke-self-contained` roda o binário linux-x64 dentro do container
+  `mcr.microsoft.com/dotnet/runtime-deps:8.0` **sem .NET** e confirma que ele traduz, provando a
+  independência do runtime. Essa imagem traz as dependências nativas de um app self-contained (ICU
+  inclusa) **sem** o runtime .NET e sem depender de `apt-get`, então é determinística (sem rede) e é
+  o baseline canônico do alvo. Cobre só linux-x64 (os demais RIDs não têm container/runner trivial),
+  mas é o sinal que o CI antes não pegava.
+- **Dependência de ICU:** "self-contained" elimina a dependência do **runtime .NET**, não de toda
+  biblioteca nativa — o binário ainda exige a **ICU** do sistema (sem ela, falha com
+  `Couldn't find a valid ICU package`). Na prática isso é transparente: Windows (10 1903+), macOS e a
+  maioria das distros Linux já trazem ICU; só ambientes minimalistas (containers slim, alguns
+  servidores headless) precisariam instalá-la. Tornar o pacote 100% sem ICU exigiria
+  `InvariantGlobalization=true`, que altera o comportamento de cultura (casing/ordenação) e fica fora
+  do escopo desta tarefa.
 - **macOS Gatekeeper:** o binário nativo não é assinado/notarizado; no macOS o usuário pode precisar
   liberar a execução na primeira vez (Ajustes > Privacidade e Segurança). Assinatura fica fora do
   escopo desta tarefa.

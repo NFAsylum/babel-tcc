@@ -130,6 +130,9 @@ jobs:
           BABEL_TCC_TRANSLATIONS_PATH: ${{ github.workspace }}/babel-tcc-translations
         run: npm run copy-translations
 
+      # Imagem oficial runtime-deps: traz as dependencias nativas de um app .NET self-contained
+      # (incluindo ICU) SEM o runtime .NET, e sem depender de `apt-get` (sem rede, deterministico).
+      # E o baseline canonico para validar self-contained: se rodar aqui, roda sem .NET instalado.
       - name: Run native binary in a clean container (no .NET runtime)
         run: |
           BIN="$PWD/packages/ide-adapters/vscode/bin"
@@ -138,12 +141,11 @@ jobs:
           OUT=$(docker run --rm \
             -v "$BIN:/app/bin:ro" \
             -v "$TR:/app/translations:ro" \
-            ubuntu:22.04 bash -c '
-              apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq libicu70 >/dev/null 2>&1;
-              /app/bin/MultiLingualCode.Core.Host \
-                --method TranslateToNaturalLanguage \
-                --params "{\"sourceCode\":\"public class Foo {}\",\"fileExtension\":\".cs\",\"targetLanguage\":\"pt-br\"}" \
-                --translations /app/translations')
+            mcr.microsoft.com/dotnet/runtime-deps:8.0 \
+            /app/bin/MultiLingualCode.Core.Host \
+              --method TranslateToNaturalLanguage \
+              --params '{"sourceCode":"public class Foo {}","fileExtension":".cs","targetLanguage":"pt-br"}' \
+              --translations /app/translations)
           echo "Saida do Core: $OUT"
           echo "$OUT" | grep -q '"success":true' \
             || { echo "::error::smoke self-contained falhou (Core nao traduziu sem .NET)"; exit 1; }

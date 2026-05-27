@@ -86,6 +86,10 @@ Open VSX escolhem automaticamente o pacote certo para o seu sistema:
 | Por plataforma (self-contained) | Windows, Linux e macOS (x64 e arm64) | Não — runtime embutido | maior (~36 MB) |
 | Universal (fallback) | Qualquer outra plataforma | Sim — .NET 8.0 Runtime | menor (~5 MB) |
 
+> O pacote por plataforma dispensa o **.NET**, mas ainda usa a biblioteca **ICU** do sistema (presente
+> por padrão no Windows 10+, macOS e na maioria das distros Linux; só ambientes minimalistas precisam
+> instalá-la, ex.: `libicu`).
+
 ### A partir do código-fonte
 
 ```bash
