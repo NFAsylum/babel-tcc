@@ -1,24 +1,24 @@
-# Instalacao
+# Instalação
 
-## Indice
+## Índice
 
-- [Pre-requisitos](#pre-requisitos)
+- [Pré-requisitos](#pré-requisitos)
 - [Via VS Code Marketplace](#via-vs-code-marketplace)
 - [Via .vsix manual](#via-vsix-manual)
-- [Build a partir do codigo-fonte](#build-a-partir-do-codigo-fonte)
-- [Verificacao](#verificacao)
-- [Atualizacao](#atualizacao)
+- [Build a partir do código-fonte](#build-a-partir-do-código-fonte)
+- [Verificação](#verificação)
+- [Atualização](#atualização)
 
-## Pre-requisitos
+## Pré-requisitos
 
 - **VS Code** 1.85 ou superior
-- **.NET 8.0 Runtime** - necessario para o motor de traducao C#
+- **.NET 8.0 Runtime** - necessário para o motor de tradução C#
   - Download: https://dotnet.microsoft.com/download/dotnet/8.0
   - Verificar: `dotnet --version`
+- **Python 3.8+** (opcional) - necessário apenas para traduzir arquivos `.py`
 
 ## Via VS Code Marketplace
 
-Quando disponivel no Marketplace:
 1. Abrir VS Code
 2. Ir em Extensions (`Ctrl+Shift+X`)
 3. Pesquisar "Babel TCC"
@@ -31,7 +31,7 @@ Quando disponivel no Marketplace:
 3. Selecionar o ficheiro `.vsix`
 4. Reiniciar VS Code quando solicitado
 
-## Build a partir do codigo-fonte
+## Build a partir do código-fonte
 
 ```bash
 # Clonar repositorio
@@ -48,19 +48,19 @@ npm run build
 npm run package
 ```
 
-O ficheiro `.vsix` sera gerado na pasta `packages/ide-adapters/vscode/`.
+O ficheiro `.vsix` será gerado na pasta `packages/ide-adapters/vscode/`.
 
-## Verificacao
+## Verificação
 
-Apos instalar, verificar que a extensao esta funcional:
+Após instalar, verificar que a extensão está funcional:
 
 1. Abrir um ficheiro `.cs` no VS Code
 2. Verificar que "Babel TCC" aparece no Output Channel (`View > Output` e selecionar "Babel TCC")
 3. A mensagem "Babel TCC extension activated." deve aparecer
 4. Na barra de status (canto inferior direito) deve aparecer o idioma ativo (ex: `PT-BR`)
 
-## Atualizacao
+## Atualização
 
-- **Marketplace:** Atualizacoes automaticas pelo VS Code
-- **Manual:** Repetir o processo de instalacao com a nova versao
-- **Codigo-fonte:** `git pull` e repetir o build
+- **Marketplace:** Atualizações automáticas pelo VS Code
+- **Manual:** Repetir o processo de instalação com a nova versão
+- **Código-fonte:** `git pull` e repetir o build

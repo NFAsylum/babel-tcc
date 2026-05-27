@@ -1,20 +1,21 @@
-# Configuracao
+# Configuração
 
-## Indice
+## Índice
 
-- [Settings disponiveis](#settings-disponiveis)
+- [Settings disponíveis](#settings-disponíveis)
 - [Workspace vs Global](#workspace-vs-global)
-- [Idioma padrao](#idioma-padrao)
+- [Idioma padrão](#idioma-padrão)
 - [Mapeamento customizado](#mapeamento-customizado)
 
-## Settings disponiveis
+## Settings disponíveis
 
-| Setting | Tipo | Padrao | Descricao |
+| Setting | Tipo | Padrão | Descrição |
 |---------|------|--------|-----------|
-| `babel-tcc.enabled` | boolean | `true` | Ativar/desativar traducao |
-| `babel-tcc.language` | string | `"pt-br"` | Idioma alvo para traducao |
-| `babel-tcc.translationsPath` | string | `""` | Caminho absoluto para o repositorio babel-tcc-translations. Se vazio, auto-detecta como pasta irmã do workspace ou usa traduções embarcadas. |
-| `babel-tcc.readonly` | boolean | `false` | Abrir views traduzidas em modo readonly (impede edições acidentais no arquivo original) |
+| `babel-tcc.enabled` | boolean | `true` | Ativar/desativar tradução em tempo real |
+| `babel-tcc.language` | string | `"pt-br"` | Idioma natural alvo para a tradução |
+| `babel-tcc.translationsPath` | string | `""` | Caminho absoluto para o repositório babel-tcc-translations. Se vazio, auto-detecta como pasta irmã do workspace ou usa traduções embarcadas. |
+| `babel-tcc.readonly` | boolean | `false` | Abrir visualizações traduzidas em modo somente leitura (impede edições acidentais no arquivo original) |
+| `babel-tcc.languageOverrides` | object | `{}` | Idioma alvo por linguagem de programação (ex.: `{"CSharp": "pt-br", "Python": "es-es"}`). Usa `babel-tcc.language` quando não há override. |
 
 ### Exemplo settings.json
 
@@ -23,7 +24,8 @@
   "babel-tcc.enabled": true,
   "babel-tcc.language": "pt-br",
   "babel-tcc.translationsPath": "",
-  "babel-tcc.readonly": false
+  "babel-tcc.readonly": false,
+  "babel-tcc.languageOverrides": {}
 }
 ```
 
@@ -32,32 +34,25 @@
 - **Global:** Aplicado a todos os projetos. Usar `Ctrl+Shift+P` > `Preferences: Open User Settings`
 - **Workspace:** Aplicado apenas ao projeto atual. Criar `.vscode/settings.json` na raiz do projeto
 
-Recomendacao: usar workspace settings para definir idioma por projeto.
+Recomendação: usar workspace settings para definir idioma por projeto.
 
-## Idioma padrao
+## Idioma padrão
 
-O idioma padrao e `pt-br` (Portugues Brasileiro). Para mudar:
+O idioma padrão é `pt-br` (Português Brasileiro). Para mudar:
 
-1. `Ctrl+Shift+P` > `Babel TCC: Select Language`
-2. Selecionar o idioma desejado
-3. A selecao persiste na configuracao global
+1. `Ctrl+Shift+P` > `Babel TCC: Selecionar Idioma`
+2. Escolher o escopo: global ou por linguagem de programação (override)
+3. Selecionar o idioma desejado
+
+A mudança é gravada na configuração **global** do usuário — em `babel-tcc.language` (escopo global) ou em `babel-tcc.languageOverrides` (escopo por linguagem). No escopo global, se houver overrides ativos, a extensão avisa que eles bloqueiam a troca e oferece removê-los.
 
 ## Mapeamento customizado
 
-Para projetos que usam identificadores em ingles, criar um ficheiro `.multilingual/identifier-map.json` na raiz do projeto:
+Para traduzir identificadores (nomes de classes, métodos, variáveis), use anotações `// tradu[lang]:` diretamente no código — esse é o mecanismo de mapeamento de identificadores (ver [Primeiros Passos](getting-started.md#usando-anotações-tradu)):
 
-```json
-{
-  "identifiers": {
-    "Calculator": {
-      "pt-br": "Calculadora"
-    },
-    "Add": {
-      "pt-br": "Somar"
-    }
-  },
-  "literals": {}
-}
+```csharp
+public class Calculator // tradu[pt-br]:Calculadora
+public int Add(int a, int b) // tradu[pt-br]:Somar,a:primeiro,b:segundo
 ```
 
-Alternativamente, usar anotacoes `// tradu:` diretamente no codigo (ver [Primeiros Passos](getting-started.md#usando-anotacoes-tradu)).
+As anotações são lidas a cada tradução e valem para todas as ocorrências do identificador no arquivo. Não há arquivo de mapa global ou persistente: a extensão não mantém um `identifier-map.json` entre sessões (o diretório `.multilingual` é limpo na ativação).
