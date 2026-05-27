@@ -2,45 +2,45 @@
 
 ## Resumo
 
-Revisao de seguranca do projeto babel-tcc v0.1.0.
+Revisão de segurança do projeto babel-tcc v0.1.0.
 
-## Areas Verificadas
+## Áreas Verificadas
 
-### 1. Validacao de Input - Codigo Fonte
+### 1. Validação de Input - Código Fonte
 
-- [x] Codigo malicioso nao causa crash ou comportamento inesperado
+- [x] Código malicioso não causa crash ou comportamento inesperado
 - [x] Arquivos extremamente grandes processados sem stack overflow
 - [x] Caracteres de controle e Unicode tratados corretamente
-- [x] Parser Roslyn apenas analisa, nunca executa codigo
-- [x] Identificadores muito longos nao causam crash
+- [x] Parser Roslyn apenas analisa, nunca executa código
+- [x] Identificadores muito longos não causam crash
 
-### 2. Validacao de Input - JSON
+### 2. Validação de Input - JSON
 
 - [x] JSON malformado retorna OperationResult.Fail
 - [x] JSON deeply nested tratado sem stack overflow
-- [x] Ficheiros grandes processados sem crash
+- [x] Arquivos grandes processados sem crash
 - [x] Campos ausentes tratados graciosamente
 
 ### 3. Path Traversal
 
-- [x] Caminhos com `../` nao permitem acesso fora do workspace
-- [x] Paths invalidos retornam erro sem crash
-- [x] Apenas ficheiros dentro dos diretorios configurados sao acessados
+- [x] Caminhos com `../` não permitem acesso fora do workspace
+- [x] Paths inválidos retornam erro sem crash
+- [x] Apenas arquivos dentro dos diretórios configurados são acessados
 
 ### 4. Code Injection
 
-- [x] Valores em identifier-map.json nao sao executados
-- [x] Anotacoes tradu com payloads maliciosos nao executam
-- [x] Output traduzido nao introduz codigo executavel
-- [x] Tags HTML/script em traducoes sao tratadas como texto
+- [x] Valores em identifier-map.json não são executados
+- [x] Anotações tradu com payloads maliciosos não executam
+- [x] Output traduzido não introduz código executável
+- [x] Tags HTML/script em traduções são tratadas como texto
 
-### 5. Comunicacao Core <-> Extension
+### 5. Comunicação Core <-> Extension
 
-- [x] Comunicacao via stdin/stdout (sem portas de rede)
+- [x] Comunicação via stdin/stdout (sem portas de rede)
 - [x] Formato JSON validado antes de processamento
-- [x] Nenhuma informacao sensivel em logs
+- [x] Nenhuma informação sensível em logs
 
-### 6. Dependencias
+### 6. Dependências
 
 Verificar com:
 ```bash
@@ -48,13 +48,13 @@ dotnet list package --vulnerable
 npm audit
 ```
 
-## Testes de Seguranca
+## Testes de Segurança
 
 Os testes automatizados cobrem:
-- Codigo malicioso (SecurityTests.MaliciousCode_DoesNotCrash)
+- Código malicioso (SecurityTests.MaliciousCode_DoesNotCrash)
 - Caracteres de controle (SecurityTests.ControlCharacters_DoNotCrash)
 - Identificadores extremamente longos (SecurityTests.ExtremelyLongIdentifier_DoesNotCrash)
-- Codigo profundamente aninhado (SecurityTests.DeeplyNestedCode_DoesNotStackOverflow)
+- Código profundamente aninhado (SecurityTests.DeeplyNestedCode_DoesNotStackOverflow)
 - JSON malformado (SecurityTests.MalformedJson_LoadFrom_DoesNotCrash)
 - JSON deeply nested (SecurityTests.DeeplyNestedJson_LoadFrom_DoesNotCrash)
 - Path traversal (SecurityTests.PathTraversal_InFilePath_DoesNotEscape)

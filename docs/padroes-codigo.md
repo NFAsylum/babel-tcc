@@ -1,65 +1,65 @@
-# Padroes de Codigo
+# Padrões de Código
 
 ## Geral
 
-- Codigo-fonte e comentarios tecnicos em **ingles**
-- Documentacao de usuario e commits em **portugues**
-- Nomes de arquivo em **ingles** (PascalCase para C#, kebab-case para TS)
+- Código-fonte e comentários técnicos em **inglês**
+- Documentação de usuário e commits em **português**
+- Nomes de arquivo em **inglês** (PascalCase para C#, kebab-case para TS)
 
 ## C# (.NET 8)
 
-### Regras Obrigatorias
+### Regras Obrigatórias
 
-#### Proibicoes absolutas
+#### Proibições absolutas
 
 | Proibido | Motivo | Usar em vez disso |
 |---|---|---|
-| `var` | Tipos devem ser explicitos sempre | Tipo explicito: `List<string> items = new List<string>()` |
-| `?`, `?.`, `??` (nullable) | Null nao deve existir no sistema | Result pattern, valores default, string vazia |
-| `? :` (ternario) | Reduz legibilidade e dificulta debug | Bloco `if/else` explicito |
-| `throw` | Excecoes quebram o fluxo de controle | Return com Result/status de sucesso/falha |
-| `internal` | Tudo deve ser publico e testavel | `public` |
-| `partial` | Fragmenta a classe em multiplos arquivos | Uma classe completa por arquivo |
-| `private` | Tudo deve ser acessivel e testavel | `public` |
-| Constructors | Acoplam inicializacao a instanciacao | Variaveis inicializadas ou static factory method |
+| `var` | Tipos devem ser explícitos sempre | Tipo explícito: `List<string> items = new List<string>()` |
+| `?`, `?.`, `??` (nullable) | Null não deve existir no sistema | Result pattern, valores default, string vazia |
+| `? :` (ternário) | Reduz legibilidade e dificulta debug | Bloco `if/else` explícito |
+| `throw` | Exceções quebram o fluxo de controle | Return com Result/status de sucesso/falha |
+| `internal` | Tudo deve ser público e testável | `public` |
+| `partial` | Fragmenta a classe em múltiplos arquivos | Uma classe completa por arquivo |
+| `private` | Tudo deve ser acessível e testável | `public` |
+| Constructors | Acoplam inicialização à instanciação | Variáveis inicializadas ou static factory method |
 | Function overloading | Cria ambiguidade e dificulta leitura | Nomes descritivos distintos: `LoadFromFile`, `LoadFromStream` |
-| Classes-deus | Violam responsabilidade unica | Dividir em classes coesas |
-| Valores hardcoded | Dificultam manutencao | Constantes nomeadas, configuracao, ou dados estruturados |
-| Nomes genericos | `data`, `info`, `result`, `temp`, `item` | Nomes descritivos: `translatedKeyword`, `keywordLookupTable` |
-| Classes aninhadas | Dificulta leitura e testabilidade | Cada classe em seu proprio arquivo |
+| Classes-deus | Violam responsabilidade única | Dividir em classes coesas |
+| Valores hardcoded | Dificultam manutenção | Constantes nomeadas, configuração, ou dados estruturados |
+| Nomes genéricos | `data`, `info`, `result`, `temp`, `item` | Nomes descritivos: `translatedKeyword`, `keywordLookupTable` |
+| Classes aninhadas | Dificulta leitura e testabilidade | Cada classe em seu próprio arquivo |
 
-#### Praticas a evitar (usar com justificativa explicita)
+#### Práticas a evitar (usar com justificativa explícita)
 
 | Evitar | Quando permitido |
 |---|---|
-| `try/catch` | Apenas em boundaries de I/O (leitura de arquivo, rede) com comentario explicando |
-| `Dictionary<string, string>` | Usar modelos tipados. Permitido apenas em deserializacao de JSON temporaria |
+| `try/catch` | Apenas em boundaries de I/O (leitura de arquivo, rede) com comentário explicando |
+| `Dictionary<string, string>` | Usar modelos tipados. Permitido apenas em desserialização de JSON temporária |
 | `Dictionary<string, object>` | Nunca. Usar modelos tipados sempre |
-| Custom generics (`Service<T>`) | Apenas quando o beneficio e claro e documentado |
-| `async/await` | Apenas em I/O real (disco, rede). Sempre com comentario explicando porque e async |
+| Custom generics (`Service<T>`) | Apenas quando o benefício é claro e documentado |
+| `async/await` | Apenas em I/O real (disco, rede). Sempre com comentário explicando porque é async |
 
-#### Praticas obrigatorias
+#### Práticas obrigatórias
 
 | Regra | Exemplo |
 |---|---|
-| Tipos explicitos sempre | `string name = "value"` nunca `var name = "value"` |
+| Tipos explícitos sempre | `string name = "value"` nunca `var name = "value"` |
 | Nomes descritivos | `keywordTranslationTable` nunca `table` ou `data` |
 | Wrapping de bibliotecas externas | Roslyn deve ser acessado via wrapper, nunca diretamente |
-| Codigo estruturado e data-driven | Mapas de dados, tabelas de configuracao, nao if/else chains |
-| Uma classe por arquivo | Excecao: enums pequenos podem ficar no arquivo da classe que os usa |
+| Código estruturado e data-driven | Mapas de dados, tabelas de configuração, não if/else chains |
+| Uma classe por arquivo | Exceção: enums pequenos podem ficar no arquivo da classe que os usa |
 | Result pattern para erros | `OperationResult` com `Success`, `ErrorMessage` em vez de throw/catch |
 
-### Convencoes de Nomenclatura
+### Convenções de Nomenclatura
 
-| Tipo | Convencao | Exemplo |
+| Tipo | Convenção | Exemplo |
 |---|---|---|
 | Namespace | PascalCase | `MultiLingualCode.Core.Services` |
 | Classe/Interface | PascalCase | `TranslationOrchestrator`, `ILanguageAdapter` |
-| Metodo | PascalCase | `TranslateKeyword()` |
+| Método | PascalCase | `TranslateKeyword()` |
 | Propriedade | PascalCase | `LanguageName` |
 | Campo | PascalCase | `KeywordLookupTable` |
-| Parametro | camelCase | `sourceCode` |
-| Variavel local | camelCase | `translatedKeyword` |
+| Parâmetro | camelCase | `sourceCode` |
+| Variável local | camelCase | `translatedKeyword` |
 | Constante | PascalCase | `MaxFileSize` |
 | Interface | IPascalCase | `ILanguageAdapter` |
 | Static factory | Create/From/With | `OperationResult.Fail("message")` |
@@ -68,7 +68,7 @@
 
 - Nomear testes: `MetodoTestado_Cenario_ResultadoEsperado`
 - Exemplo: `Parse_SimpleIfStatement_ReturnsKeywordNode`
-- Usar padroes Arrange-Act-Assert
+- Usar padrões Arrange-Act-Assert
 - Mocks com NSubstitute
 
 ### Estrutura de Projeto
@@ -77,10 +77,10 @@
 MultiLingualCode.Core/
 ├── Interfaces/          # Contratos
 ├── Models/
-│   ├── AST/             # Hierarquia de nos
+│   ├── AST/             # Hierarquia de nós
 │   ├── Translation/     # Tabelas e mapas
-│   └── Configuration/   # Preferencias
-├── Services/            # Logica de negocio
+│   └── Configuration/   # Preferências
+├── Services/            # Lógica de negócio
 ├── LanguageAdapters/    # Adapters por linguagem
 ├── Utilities/           # Helpers
 └── MultiLingualCode.Core.Tests/
@@ -91,24 +91,24 @@ MultiLingualCode.Core/
 
 ## TypeScript (VS Code Extension)
 
-### Convencoes de Nomenclatura
+### Convenções de Nomenclatura
 
-| Tipo | Convencao | Exemplo |
+| Tipo | Convenção | Exemplo |
 |---|---|---|
 | Arquivo | camelCase | `coreBridge.ts` |
 | Classe | PascalCase | `CoreBridge` |
 | Interface | PascalCase | `ValidationResult` |
-| Metodo | camelCase | `translateToNaturalLanguage()` |
-| Variavel/Parametro | camelCase | `sourceCode` |
+| Método | camelCase | `translateToNaturalLanguage()` |
+| Variável/Parâmetro | camelCase | `sourceCode` |
 | Constante | UPPER_SNAKE_CASE | `MAX_TIMEOUT` |
 
 ### Estilo
 
 - Strict mode habilitado no tsconfig
 - Preferir `const` sobre `let`; nunca usar `var`
-- Tipos explicitos em assinaturas de funcao (parametros e retorno)
+- Tipos explícitos em assinaturas de função (parâmetros e retorno)
 - Strings com aspas simples (`'`) exceto em template literals
-- Mesmas regras de proibicao de null/throw/private aplicam-se
+- Mesmas regras de proibição de null/throw/private aplicam-se
 
 ### Estrutura de Projeto
 
@@ -121,14 +121,14 @@ vscode/src/
 └── ui/                  # StatusBar, LanguageSelector
 ```
 
-## JSON (Tabelas de Traducao)
+## JSON (Tabelas de Tradução)
 
 ### Formato
 
-- Indentacao: 2 espacos
+- Indentação: 2 espaços
 - UTF-8 sem BOM
-- Ordenar keys alfabeticamente (quando aplicavel)
-- Ficheiros de traducao devem incluir campos `version`, `languageCode`, `languageName`, `programmingLanguage`
+- Ordenar keys alfabeticamente (quando aplicável)
+- Arquivos de tradução devem incluir campos `version`, `languageCode`, `languageName`, `programmingLanguage`
 
 ### Schema
 
@@ -143,7 +143,7 @@ Tabela de keywords (`keywords-base.json`):
 }
 ```
 
-Traducao (`pt-br/csharp.json`):
+Tradução (`pt-br/csharp.json`):
 ```json
 {
   "version": "1.0.0",
@@ -162,7 +162,7 @@ Traducao (`pt-br/csharp.json`):
 
 ### Branches
 
-- `main` - versao estavel
+- `main` - versão estável
 - `marco-<tarefa>` - branches de trabalho
 
 ### Commits
@@ -171,11 +171,11 @@ Formato: `tipo: descricao curta`
 
 Tipos:
 - `feat:` nova funcionalidade
-- `fix:` correcao de bug
-- `docs:` documentacao
+- `fix:` correção de bug
+- `docs:` documentação
 - `test:` testes
-- `refactor:` refatoracao sem mudanca de comportamento
-- `chore:` tarefas de manutencao (CI, deps, etc.)
+- `refactor:` refatoração sem mudança de comportamento
+- `chore:` tarefas de manutenção (CI, deps, etc.)
 
 Exemplos:
 ```
@@ -187,21 +187,21 @@ refactor: aplicar padroes de codigo ao core
 
 ### Pull Requests
 
-- Titulo curto e descritivo
-- Descricao com: o que mudou, por que, como testar
+- Título curto e descritivo
+- Descrição com: o que mudou, por que, como testar
 - Referenciar tarefa relacionada
 
-### Historico append-only
+### Histórico append-only
 
-O historico do Git e append-only. Sao **proibidos**:
+O histórico do Git é append-only. São **proibidos**:
 
-| Operacao | Motivo |
+| Operação | Motivo |
 |---|---|
 | `git commit --amend` | Reescreve commit existente, mesmo antes de push |
-| `git rebase` (interativo ou nao) | Reescreve sequencia de commits |
-| `git push --force` / `--force-with-lease` | Sobrescreve historico remoto, pode clobbar trabalho de colaboradores |
-| `git reset --hard` para descartar commits | Apaga commits do historico local |
+| `git rebase` (interativo ou não) | Reescreve sequência de commits |
+| `git push --force` / `--force-with-lease` | Sobrescreve histórico remoto, pode clobbar trabalho de colaboradores |
+| `git reset --hard` para descartar commits | Apaga commits do histórico local |
 
-Quando algo precisa ser corrigido apos um commit (mesmo antes do push), criar **novo commit**: `fix:`, `revert:`, `refactor:` conforme apropriado. A trilha de "fiz -> desfiz" e mais transparente em code review do que historia reescrita, e mostra explicitamente o raciocinio que levou a decisao final.
+Quando algo precisa ser corrigido após um commit (mesmo antes do push), criar **novo commit**: `fix:`, `revert:`, `refactor:` conforme apropriado. A trilha de "fiz -> desfiz" é mais transparente em code review do que história reescrita, e mostra explicitamente o raciocínio que levou à decisão final.
 
-Se houver situacao real de recuperacao (ex: commit acidental de segredo), parar e alinhar antes de qualquer acao destrutiva — nunca aplicar reescrita de historico unilateralmente.
+Se houver situação real de recuperação (ex: commit acidental de segredo), parar e alinhar antes de qualquer ação destrutiva — nunca aplicar reescrita de histórico unilateralmente.
