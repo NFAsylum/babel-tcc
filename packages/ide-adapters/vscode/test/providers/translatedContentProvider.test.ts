@@ -114,6 +114,16 @@ describe('TranslatedContentProvider', () => {
       expect(provider.cache.has('/test/file.cs::pt-br')).toBe(true);
     });
 
+    it('should translate using the language carried by the URI, not the config', async () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=es-es`);
+
+      await provider.provideContent(uri);
+      expect(mockCoreBridge.translateToNaturalLanguage).toHaveBeenCalledWith(
+        'public class Foo {}', '.cs', 'es-es'
+      );
+      expect(provider.cache.has('/test/file.cs::es-es')).toBe(true);
+    });
+
     it('should return original when translation fails', async () => {
       mockCoreBridge.translateToNaturalLanguage.mockRejectedValue(new Error('fail'));
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
@@ -204,8 +214,14 @@ describe('TranslatedContentProvider', () => {
   });
 
   describe('buildCacheKey', () => {
-    it('should combine path and language', () => {
-      expect(provider.buildCacheKey('/test/file.cs')).toBe('/test/file.cs::pt-br');
+    it('should combine path and the language carried by the URI', () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=es-es`);
+      expect(provider.buildCacheKey(uri)).toBe('/test/file.cs::es-es');
+    });
+
+    it('should fall back to the config language when the URI has no lang query', () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      expect(provider.buildCacheKey(uri)).toBe('/test/file.cs::pt-br');
     });
   });
 
@@ -242,6 +258,43 @@ describe('TranslatedContentProvider', () => {
       const schemes = fired.map(e => e.uri.scheme);
       expect(schemes).toContain(TRANSLATED_SCHEME);
       expect(schemes).toContain(READONLY_SCHEME);
+    });
+  });
+
+  describe('invalidatePath', () => {
+    it('should clear every cached language for the path and fire events for open views', () => {
+      provider.cache.set('/test/file.cs::pt-br', 'a');
+      provider.cache.set('/test/file.cs::en', 'b');
+      provider.cache.set('/other/file.cs::pt-br', 'c');
+
+      const openDoc = { uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=pt-br`) };
+      workspace.textDocuments = [openDoc];
+
+      const events: unknown[] = [];
+      provider.onDidChangeFile((e: unknown) => events.push(e));
+
+      provider.invalidatePath('/test/file.cs');
+
+      expect(provider.cache.has('/test/file.cs::pt-br')).toBe(false);
+      expect(provider.cache.has('/test/file.cs::en')).toBe(false);
+      expect(provider.cache.has('/other/file.cs::pt-br')).toBe(true);
+      expect(events.length).toBe(1);
+      const fired = events[0] as Array<{ type: number; uri: { path: string } }>;
+      expect(fired[0].uri.path).toBe('/test/file.cs');
+      expect(fired[0].type).toBe(FileChangeType.Changed);
+    });
+
+    it('should not fire when no open view matches the path', () => {
+      provider.cache.set('/test/file.cs::pt-br', 'a');
+      workspace.textDocuments = [];
+
+      const events: unknown[] = [];
+      provider.onDidChangeFile((e: unknown) => events.push(e));
+
+      provider.invalidatePath('/test/file.cs');
+
+      expect(events.length).toBe(0);
+      expect(provider.cache.has('/test/file.cs::pt-br')).toBe(false);
     });
   });
 

@@ -275,3 +275,58 @@ cai no universal. O runtime Python continua sendo dependência externa **apenas*
 - **macOS Gatekeeper:** o binário nativo não é assinado/notarizado; no macOS o usuário pode precisar
   liberar a execução na primeira vez (Ajustes > Privacidade e Segurança). Assinatura fica fora do
   escopo desta tarefa.
+
+---
+
+## DT-011: URI virtual traduzida codifica o idioma-alvo
+
+**Decisão:** A URI dos documentos virtuais traduzidos passa a codificar o idioma-alvo na query
+(`babel-tcc-translated:/caminho/arquivo.cs?lang=pt-br`), e o provider resolve o idioma **lendo da
+URI** (com fallback para a configuração), não mais só da config. Cada idioma vira um documento
+distinto.
+
+**Problema:** A URI anterior (`babel-tcc-translated:/caminho/arquivo.cs`) era idêntica para todo
+idioma; o alvo era resolvido à parte, da config, dentro de `provideContent`/`buildCacheKey`. O VS Code
+indexa a *working copy* de documentos editáveis de `FileSystemProvider` **pela URI**. Com a URI igual
+entre idiomas, `openTextDocument(mesmaURI)` após `close` devolvia o documento em cache e **não**
+chamava `readFile` de novo — a tradução não atualizava ao trocar de idioma. O workaround anterior
+(close + `invalidateCache` via `changeEmitter`/bump de `mtime` + reopen) é racy: o evento `Changed`
+dispara para uma URI cuja aba acabou de fechar e o VS Code costuma ignorá-lo. Sintomas observados:
+às vezes não re-traduzia, o foco pulava para outro arquivo e sobrava uma aba traduzida anterior para
+fechar à mão.
+
+**Alternativas consideradas:**
+- **`applyEdit` para sobrescrever o conteúdo in-place** (commit 9e03712): comportamento inconsistente
+  com documentos editáveis de `FileSystemProvider`; foi revertido (570d2f4).
+- **Manter a URI única e reforçar a invalidação** (padrão "B" avaliado): conserta o foco de forma
+  confiável, mas o conteúdo velho só é *mitigado* — depende do mesmo re-read do VS Code que já foi
+  trocado duas vezes, pior no esquema editável (que preserva working copy).
+- **Multi-view (várias visões de idioma simultâneas)**: abre espaço para cópias editáveis divergentes
+  do mesmo arquivo (uma única fonte da verdade no disco). Fica como evolução possível, e só com as
+  visões secundárias em readonly.
+
+**Justificativa:** URI distinta por idioma é um documento que o VS Code nunca carregou, então abrir
+**força** a leitura fresca do provider — sem depender de evento/timing. Elimina a classe inteira de
+bug, em vez de remendar o mecanismo de re-read. `Uri.file(uri.path)` continua mapeando para o arquivo
+original (a query não afeta `.path`), então a tradução reversa ao salvar segue acertando o original.
+
+**Padrão seguro (uma visão por arquivo):** o design anterior, por ter URI única, mantinha no máximo
+uma aba traduzida por arquivo. Essa invariante é preservada de propósito: ao trocar de idioma, abre-se
+a URI do idioma novo e **fecha-se a aba do idioma antigo**, restaurando o foco para o arquivo que
+estava ativo. Assim não surgem cópias divergentes "todas válidas".
+
+**Tradeoffs:**
+- O `changeEmitter`/`mtime` continuam necessários para o caso "original mudou no disco"
+  (`invalidatePath` refresca a visão **aberta** — funciona porque a aba está visível); o bug era só o
+  close+reopen da **mesma** URI na troca de idioma.
+- Sem comparação lado a lado de idiomas (fica como evolução possível, em readonly).
+
+**Implementação (tarefa 111):**
+- `translatedContentProvider.ts`: helpers `buildTranslatedUri`/`getLanguageFromUri`; o provider lê o
+  idioma via `getTargetLanguage(uri)` em `provideContent`, `buildCacheKey` e `doWriteFile` (a tradução
+  reversa parte do idioma **da URI**); `invalidateCache` preserva a query (`uri.with({ scheme })`);
+  novo `invalidatePath` refresca todas as visões abertas de um arquivo (qualquer idioma/esquema).
+- `autoTranslateManager.ts`: `refreshTranslatedTabs` abre-novo → fecha-antigo → restaura foco (sem
+  `invalidateAll`); `switchScheme` idem; `handleActiveEditorChange` usa `isAnyTranslatedTabOpenForPath`
+  (uma visão por arquivo); `replaceOriginalsWithTranslated` constrói a URI com idioma.
+- `extension.ts`: comandos `open*` constroem a URI com idioma; o file-watcher chama `invalidatePath`.

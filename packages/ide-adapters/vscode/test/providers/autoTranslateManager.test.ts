@@ -14,6 +14,7 @@ describe('AutoTranslateManager', () => {
   };
   let mockLanguageDetector: {
     isSupported: ReturnType<typeof vi.fn>;
+    detectLanguage: ReturnType<typeof vi.fn>;
   };
   let mockContentProvider: {
     invalidateAll: ReturnType<typeof vi.fn>;
@@ -37,6 +38,7 @@ describe('AutoTranslateManager', () => {
     };
     mockLanguageDetector = {
       isSupported: vi.fn().mockReturnValue(true),
+      detectLanguage: vi.fn().mockReturnValue('CSharp'),
     };
     mockContentProvider = {
       invalidateAll: vi.fn(),
@@ -51,6 +53,8 @@ describe('AutoTranslateManager', () => {
     vi.mocked(workspace.openTextDocument).mockResolvedValue({} as any);
     vi.mocked(window.showTextDocument).mockResolvedValue({} as any);
     window.tabGroups.all = [];
+    workspace.textDocuments = [];
+    window.activeTextEditor = undefined;
     vi.mocked(window.tabGroups.close).mockResolvedValue(undefined as any);
 
     manager = new AutoTranslateManager(
@@ -140,6 +144,20 @@ describe('AutoTranslateManager', () => {
       );
       expect(manager.processingUris.has(uri.toString())).toBe(false);
     });
+
+    it('should do nothing when any translated view for the path is already open', async () => {
+      const editor = {
+        document: { uri: Uri.file('/test/file.cs') },
+        viewColumn: ViewColumn.One,
+      };
+      (editor.document.uri as any).fsPath = '/test/file.cs';
+      // A readonly view in a different language is already open for this path.
+      const openTab = { input: new TabInputText(Uri.parse(`${READONLY_SCHEME}:/test/file.cs?lang=en`)) };
+      window.tabGroups.all = [{ tabs: [openTab], viewColumn: ViewColumn.One }];
+
+      await manager.handleActiveEditorChange(editor as any);
+      expect(workspace.openTextDocument).not.toHaveBeenCalled();
+    });
   });
 
   describe('handleConfigChange', () => {
@@ -170,19 +188,52 @@ describe('AutoTranslateManager', () => {
 
     it('should refresh tabs when language changes', async () => {
       mockConfigService.getLanguage.mockReturnValue('es-es');
-      window.tabGroups.all = [];
+      const tab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
 
       await manager.handleConfigChange();
-      expect(mockContentProvider.invalidateAll).toHaveBeenCalled();
+
+      // New-language view opened, then the old-language tab closed.
+      expect(workspace.openTextDocument).toHaveBeenCalled();
+      expect(window.tabGroups.close).toHaveBeenCalledWith(tab);
     });
 
     it('should refresh tabs when language override changes', async () => {
       // Global language stays the same, but override for CSharp changes
       mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('es-es');
-      window.tabGroups.all = [];
+      const tab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
 
       await manager.handleConfigChange();
-      expect(mockContentProvider.invalidateAll).toHaveBeenCalled();
+
+      expect(workspace.openTextDocument).toHaveBeenCalled();
+      expect(window.tabGroups.close).toHaveBeenCalledWith(tab);
+    });
+
+    it('should open the new-language URI carrying the lang in the query', async () => {
+      mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('es-es');
+      const tab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
+
+      await manager.handleConfigChange();
+
+      const openedUri = vi.mocked(workspace.openTextDocument).mock.calls[0][0] as { query: string; path: string };
+      expect(openedUri.path).toBe('/test/file.cs');
+      expect(openedUri.query).toBe('lang=es-es');
+    });
+
+    it('should restore focus to the active file after a language switch', async () => {
+      mockConfigService.getLanguage.mockReturnValue('es-es');
+      const tab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
+      window.activeTextEditor = {
+        document: { uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=es-es`) },
+      } as any;
+
+      await manager.handleConfigChange();
+
+      // One showTextDocument for the refresh, one extra for the focus restore.
+      expect(vi.mocked(window.showTextDocument).mock.calls.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should switch scheme when readonly changes', async () => {

@@ -14,6 +14,21 @@ export function isTranslatedScheme(scheme: string): boolean {
   return scheme === TRANSLATED_SCHEME || scheme === READONLY_SCHEME;
 }
 
+/**
+ * Builds a translated virtual URI that encodes the target natural language in the query.
+ * Encoding the language in the URI makes each language a distinct document, so VS Code is forced to
+ * re-read fresh content on open instead of returning a cached working copy keyed by a shared URI.
+ */
+export function buildTranslatedUri(scheme: string, path: string, language: string): vscode.Uri {
+  return vscode.Uri.parse(`${scheme}:${path}?lang=${language}`);
+}
+
+/** Extracts the target natural language from a translated URI's `lang` query, if present. */
+export function getLanguageFromUri(uri: vscode.Uri): string | undefined {
+  const match: RegExpExecArray | null = /(?:^|&)lang=([^&]+)/.exec(uri.query);
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
 /** Provides a virtual filesystem for translated documents, supporting read and write operations. */
 export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public coreBridge: CoreBridge;
@@ -84,14 +99,15 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     const originalPath: string = uri.path;
     const translatedContent: string = Buffer.from(content).toString('utf-8');
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
-    const programmingLanguage: string = this.languageDetector.detectLanguage(originalPath) || '';
-    const sourceLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
+    // The translated content is written in the URI's language, so reverse-translate FROM that
+    // language (not from the current config, which may already point elsewhere).
+    const sourceLanguage: string = this.getTargetLanguage(uri);
 
     this.outputChannel.appendLine(`TranslatedContentProvider: reverse translating ${originalPath}`);
 
     try {
       const currentOriginal: string = await this.readOriginalFile(originalPath);
-      const cacheKey: string = this.buildCacheKey(originalPath);
+      const cacheKey: string = this.buildCacheKey(uri);
       const previousTranslated: string = this.cache.get(cacheKey) || '';
 
       const originalCode: string = await this.coreBridge.applyTranslatedEdits(
@@ -111,7 +127,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       await originalDoc.save();
       setTimeout((): void => { this.writingPaths.delete(originalPath); }, 500);
 
-      const targetLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
+      const targetLanguage: string = this.getTargetLanguage(uri);
       const updatedOriginal: string = await this.readOriginalFile(originalPath);
       const freshTranslation: string = await this.translateContent(
         updatedOriginal, fileExtension, targetLanguage
@@ -171,7 +187,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
    */
   public async provideContent(uri: vscode.Uri): Promise<string> {
     const originalPath: string = uri.path;
-    const cacheKey: string = this.buildCacheKey(originalPath);
+    const cacheKey: string = this.buildCacheKey(uri);
 
     const cachedContent: string | undefined = this.cache.get(cacheKey);
     if (cachedContent !== undefined) {
@@ -190,8 +206,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     }
 
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
-    const programmingLanguage: string = this.languageDetector.detectLanguage(originalPath) || '';
-    const targetLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
+    const targetLanguage: string = this.getTargetLanguage(uri);
 
     const translated: string = await this.translateContent(originalContent, fileExtension, targetLanguage);
     this.cache.set(cacheKey, translated);
@@ -229,11 +244,11 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
    * Removes the cached translation for a specific URI and fires a change event to refresh the document.
    */
   public invalidateCache(uri: vscode.Uri): void {
-    const cacheKey: string = this.buildCacheKey(uri.path);
+    const cacheKey: string = this.buildCacheKey(uri);
     this.cache.delete(cacheKey);
 
     const otherScheme: string = uri.scheme === TRANSLATED_SCHEME ? READONLY_SCHEME : TRANSLATED_SCHEME;
-    const otherUri: vscode.Uri = vscode.Uri.parse(`${otherScheme}:${uri.path}`);
+    const otherUri: vscode.Uri = uri.with({ scheme: otherScheme });
 
     const now: number = Date.now();
     this.mtimeMap.set(uri.toString(), now);
@@ -245,6 +260,31 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     ]);
   }
 
+  /**
+   * Invalidates every cached translation for an original file path (all languages and schemes) and
+   * fires change events for any open translated view of that path. Used when the original file
+   * changes on disk so the visible translation refreshes regardless of which language it is in.
+   */
+  public invalidatePath(originalPath: string): void {
+    for (const key of [...this.cache.keys()]) {
+      if (key.startsWith(`${originalPath}::`)) {
+        this.cache.delete(key);
+      }
+    }
+
+    const now: number = Date.now();
+    const events: vscode.FileChangeEvent[] = [];
+    for (const doc of vscode.workspace.textDocuments) {
+      if (isTranslatedScheme(doc.uri.scheme) && doc.uri.path === originalPath) {
+        this.mtimeMap.set(doc.uri.toString(), now);
+        events.push({ type: vscode.FileChangeType.Changed, uri: doc.uri });
+      }
+    }
+    if (events.length > 0) {
+      this.changeEmitter.fire(events);
+    }
+  }
+
   /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */
   public invalidateAll(): void {
     this.cache.clear();
@@ -252,12 +292,23 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   }
 
   /**
-   * Builds a cache key combining the file path and the target language for that file's programming language.
+   * Resolves the target natural language for a translated URI: from the URI's `lang` query when
+   * present, falling back to the configured language for the file's programming language.
    */
-  public buildCacheKey(filePath: string): string {
-    const programmingLanguage: string = this.languageDetector.detectLanguage(filePath) || '';
-    const language: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
-    return `${filePath}::${language}`;
+  public getTargetLanguage(uri: vscode.Uri): string {
+    const fromUri: string | undefined = getLanguageFromUri(uri);
+    if (fromUri !== undefined) {
+      return fromUri;
+    }
+    const programmingLanguage: string = this.languageDetector.detectLanguage(uri.path) || '';
+    return this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
+  }
+
+  /**
+   * Builds a cache key combining the file path and the target language carried by the URI.
+   */
+  public buildCacheKey(uri: vscode.Uri): string {
+    return `${uri.path}::${this.getTargetLanguage(uri)}`;
   }
 
   /**
