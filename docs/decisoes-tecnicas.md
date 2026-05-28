@@ -275,3 +275,120 @@ cai no universal. O runtime Python continua sendo dependência externa **apenas*
 - **macOS Gatekeeper:** o binário nativo não é assinado/notarizado; no macOS o usuário pode precisar
   liberar a execução na primeira vez (Ajustes > Privacidade e Segurança). Assinatura fica fora do
   escopo desta tarefa.
+
+---
+
+## DT-011: Troca de idioma recarrega a visão no lugar (via `revert`)
+
+**Decisão:** Manter **uma única URI** por arquivo (`babel-tcc-translated:/caminho/arquivo.cs`) e, ao
+trocar de idioma, recarregar o conteúdo **no lugar**, sem fechar aba: limpa-se o cache do caminho e
+reverte-se o editor aberto (`workbench.action.files.revert`). O `revert` força o VS Code a reler o
+`readFile` do provider — que devolve o novo idioma — e mantém o documento **limpo**. Nenhuma aba é
+fechada ou reaberta; o foco volta para a visão que estava ativa.
+
+**Problema:** Trocar de idioma não atualizava o arquivo aberto — ele só mudava para o novo idioma após
+um **save manual**, e as **cores quebravam** antes disso (o mapa de palavras-chave já apontava para o
+novo idioma, mas o texto exibido continuava no antigo). A primeira hipótese foi o `stat()`: ele devolvia
+`size: originalStat.size` — o tamanho do **arquivo original**, que não muda entre idiomas e não bate com
+o conteúdo traduzido. Corrigir o `stat()` para devolver `size`/`mtime` do conteúdo traduzido é
+**necessário** (o contrato do `onDidChangeFile` exige metadados corretos), mas **não é suficiente**:
+
+> "It is important that the metadata of the file that changed provides an updated `mtime` that advanced
+> from the previous value in the stat and a correct `size` value. Otherwise there may be optimizations
+> in place that will not show the change in an editor."
+
+O contrato diz apenas que o editor **"pode"** recarregar — e, na prática, um editor aberto sobre um
+`FileSystemProvider` **não recarrega de forma confiável** a partir de um evento `Changed`: a própria
+equipe do VS Code marca esse caminho como não investigado (microsoft/vscode#110854) e o sintoma típico é
+"o editor só atualiza depois que perde e recupera o foco". Por isso o disparo passivo de `onDidChangeFile`
+deixava a visão presa no idioma antigo até um save manual.
+
+**Solução:** Em vez de depender do recarregamento passivo, recarrega-se **explicitamente** com `revert`.
+O `TextFileEditorModel.revert()` chama `forceResolveFromFile()` **independentemente de o documento estar
+sujo** (só `options.soft` pula a releitura) — então até uma visão limpa relê o `readFile` e passa a
+exibir o novo idioma, continuando limpa. Isso resolve os dois sintomas: o texto recarrega e, como a
+versão do documento muda, os tokens semânticos são recalculados sobre o texto novo, com o mapa do novo
+idioma — as cores voltam a casar.
+
+**Alternativas consideradas:**
+- **Confiar no `onDidChangeFile` + `stat` correto** (tentado primeiro): não recarrega de forma confiável
+  o editor aberto (acima). O `stat()` corrigido foi mantido — o `revert` relê via `readFile`/`stat`, e o
+  recarregamento passivo, quando dispara, vira um reforço inofensivo.
+- **Codificar o idioma na query da URI** (`?lang=pt-br`): faz cada idioma ser um documento distinto e
+  **força** fechar a aba antiga e abrir a nova; na prática deixava as duas abas abertas ("multi-view").
+  Rejeitada.
+- **`applyEdit` para sobrescrever o conteúdo**: atualiza a visão de forma confiável, mas deixa o
+  documento **sujo** (indicador de não salvo a cada troca, diálogo de edições na troca seguinte). O
+  `revert` dá a mesma confiabilidade mantendo o documento limpo. Rejeitada.
+- **Fechar e reabrir a aba**: frágil — `tabGroups.close` com referência guardada falha em certos
+  contextos (microsoft/vscode#242867) e reabrir a mesma URI pode reusar o modelo antigo em cache.
+  Rejeitada.
+
+**Justificativa:** Recarregar no lugar via `revert` não fecha aba nenhuma — resolve os sintomas de uma
+vez: o texto recarrega (releitura forçada do `readFile`), as cores casam (re-tokenização sobre o texto
+novo), o documento fica limpo e o foco volta para a visão ativa. `Uri.file(uri.path)` continua mapeando
+para o arquivo original, então a tradução reversa ao salvar segue acertando o original.
+
+**Save linear (anti-corrupção) — "Salvar e trocar" gravava o original no idioma traduzido:** Com
+"Salvar e trocar" e o arquivo modificado, a **1ª vez** funcionava mas a **2ª corrompia** — o `.cs`
+salvo saía no idioma traduzido (código inválido). Duas causas, ambas de trabalho **adiado** (não é
+multi-thread; o extension host é single-thread):
+
+1. O `doWriteFile` re-renderizava o buffer via `setTimeout(100ms)` após salvar. Esse timer disparava
+   **depois** do `revert` da troca e virava o buffer de volta ao idioma antigo, dessincronizando o
+   **conteúdo do buffer** do `displayLanguages`. O save seguinte então revertia com `sourceLanguage`
+   errado: `ApplyTranslatedEdits` (diff de 3 vias, `TranslationOrchestrator.cs`) chama
+   `ReverseTranslateLine`, que só reverte tokens presentes no mapa de `sourceLanguage`; com o idioma
+   errado os tokens ficam **como estão** (traduzidos) → o original recebe o texto traduzido.
+2. O baseline do diff de 3 vias (`previousTranslated`) vinha do `cache`, que a troca **esvazia** — um
+   baseline vazio faz o merge despejar todo o conteúdo traduzido no original.
+
+Correção: o save é **100% linear** (`reverter → escrever original → atualizar estado`, sem nenhum
+`setTimeout`); o buffer fica como o usuário digitou (sem re-render concorrente); e o baseline passa a
+vir de um mapa dedicado **`renderedContent`** (o texto exato que o `readFile` colocou na tela, ou o que
+o save anterior deixou), **imune ao `invalidatePath`**. Assim `sourceLanguage` sempre bate com o idioma
+do buffer e o baseline nunca esvazia. A única re-renderização que existe é o `revert` da troca — um
+único `await`, sem timer.
+
+**Padrão seguro (uma visão por arquivo):** mantida — `handleActiveEditorChange` só abre a visão
+traduzida se nenhuma já estiver aberta para aquele caminho (`isAnyTranslatedTabOpenForPath`).
+
+**Tradeoffs:**
+- O `revert` precisa que a visão esteja em foco (ele age no editor ativo), então uma troca com várias
+  visões abertas pisca o foco entre elas antes de restaurar a ativa. Caso comum (uma visão) é
+  transparente.
+- Uma visão com **edições não salvas** é **pulada** no `revert` (reverter descartaria as edições). Pela
+  via do comando isso não acontece (as edições já foram tratadas antes da troca); pela via do
+  `settings.json` a visão suja mantém o idioma antigo até o próximo save, que reverte pelo idioma exibido.
+- `stat()` chama `provideContent` para medir o tamanho do conteúdo traduzido; é barato porque o resultado
+  fica em cache (e o `readFile` reaproveita o mesmo cache).
+- O toggle **editável ↔ readonly** continua reabrindo a aba, porque o "ser readonly" está atrelado ao
+  esquema da URI (dois providers registrados). É um fluxo separado e raro; mesmo assim ele fecha a aba
+  antiga por **busca fresca** (`closeTab(uri)`), não por referência guardada.
+
+**Implementação (tarefa 111):**
+- `translatedContentProvider.ts`: `stat()` devolve `size` do conteúdo traduzido + `mtime` que avança;
+  `invalidatePath` limpa o cache do arquivo (todos os idiomas) e dispara `onDidChangeFile` para as
+  visões abertas. O `readFile` registra, por caminho, o **idioma exibido** (`displayLanguages`) e o
+  **texto renderizado** (`renderedContent`) — ambos só aqui, não em `provideContent` (que o `stat()`
+  também chama e sobrescreveria). O `doWriteFile` é linear: reverte usando `sourceLanguage =`
+  idioma exibido e `previousTranslated =` `renderedContent` (baseline imune ao cache), escreve o
+  original, descarta os idiomas em cache do arquivo e grava cache/baseline = o texto salvo. **Sem
+  `setTimeout`, sem re-render concorrente, sem `freshTranslation`.**
+- **Edições não salvas são tratadas ANTES da troca**, não depois. O comando `selectLanguage` chama
+  `confirmUnsavedEditsBeforeLanguageChange()` enquanto o idioma atual ainda vale: "Salvar" faz um save
+  normal (reverte no idioma correto), "Descartar" reverte o buffer, "Cancelar" aborta a troca. Salvar
+  *depois* que a config já mudou descartava as edições — por isso salvar primeiro e só então trocar.
+- `autoTranslateManager.ts`: `refreshTranslatedTabs` percorre as visões traduzidas abertas e chama
+  `reloadTranslatedView(uri, caminho)` — que limpa o cache (`invalidatePath`) e, se a visão estiver
+  aberta e **limpa**, dá foco e executa `workbench.action.files.revert`; ao final restaura o foco da
+  visão que estava ativa. `handleActiveEditorChange` mantém uma visão por arquivo; fechamentos de aba
+  (toggle on/off e readonly) usam `closeTab(uri)` por busca fresca.
+- `extension.ts`: o comando `selectLanguage` confirma edições não salvas antes de mudar a config; o
+  file-watcher **consome** o evento da própria escrita (`writingPaths`: deleta e ignora — supressão
+  determinística, sem timer) e, para mudanças externas, chama `invalidatePath`.
+
+**Referências:**
+- [FileSystemProvider.onDidChangeFile — contrato de `mtime`/`size`](https://vshaxe.github.io/vscode-extern/vscode/FileSystemProvider.html)
+- [microsoft/vscode#110854 — recarregamento de editores abertos sobre `FileSystemProvider` (não confiável)](https://github.com/microsoft/vscode/issues/110854)
+- [microsoft/vscode#242867 — `tabGroups.close` ineficaz com referência guardada](https://github.com/microsoft/vscode/issues/242867)

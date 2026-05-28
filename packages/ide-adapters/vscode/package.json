@@ -2,7 +2,7 @@
   "name": "multilingual-code",
   "displayName": "Babel TCC - MultiLingual Code",
   "description": "%description%",
-  "version": "0.9.3",
+  "version": "1.0.0",
   "publisher": "NFAsylum",
   "license": "MIT",
   "icon": "images/icon.png",

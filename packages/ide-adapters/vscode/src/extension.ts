@@ -175,11 +175,14 @@ export function activate(context: vscode.ExtensionContext): void {
   const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(buildFileWatcherPattern());
   const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
     (uri: vscode.Uri): void => {
+      // Our own save writes the original and flags it in writingPaths. Consume that single watcher
+      // event (delete the flag, skip) instead of clearing it on a timer — deterministic, and no timer
+      // racing with the save/switch flow. A genuine external change is not flagged, so it refreshes.
       if (translatedContentProvider.writingPaths.has(uri.path)) {
+        translatedContentProvider.writingPaths.delete(uri.path);
         return;
       }
-      const translatedUri: vscode.Uri = vscode.Uri.parse(`${TRANSLATED_SCHEME}:${uri.path}`);
-      translatedContentProvider.invalidateCache(translatedUri);
+      translatedContentProvider.invalidatePath(uri.path);
       outputChannel.appendLine(`Original file changed, refreshing translation: ${uri.fsPath}`);
     }
   );
@@ -234,6 +237,12 @@ export function activate(context: vscode.ExtensionContext): void {
         placeHolder: vscode.l10n.t('Select target language for translation')
       });
       if (!selected) {
+        return;
+      }
+
+      // Handle unsaved edits BEFORE changing the language, while the current language is still in
+      // effect, so a save reverse-translates the content correctly. Aborts the change on cancel.
+      if (!(await autoTranslateManager.confirmUnsavedEditsBeforeLanguageChange())) {
         return;
       }
 
