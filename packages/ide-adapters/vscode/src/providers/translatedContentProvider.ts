@@ -14,6 +14,15 @@ export function isTranslatedScheme(scheme: string): boolean {
   return scheme === TRANSLATED_SCHEME || scheme === READONLY_SCHEME;
 }
 
+/**
+ * How long (ms) after the extension writes an original file to treat file-watcher events for that
+ * path as our own write and suppress them. A single save can emit several coalesced watcher events,
+ * and a save can also emit none (a no-op or failed write); a time window covers the whole burst and
+ * self-expires, so the marker neither leaks (suppressing a later genuine external change forever) nor
+ * under-suppresses, unlike a consume-once flag.
+ */
+const SELF_WRITE_SUPPRESS_MS = 1000;
+
 /** Provides a virtual filesystem for translated documents, supporting read and write operations. */
 export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public coreBridge: CoreBridge;
@@ -22,10 +31,21 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
   public onTranslationComplete: ((language: string) => void) | null = null;
-  public writingPaths: Set<string> = new Set<string>();
-  public refreshingPaths: Set<string> = new Set<string>();
+  /** Timestamp (ms) of the last time WE wrote each original path, used to suppress our own
+   * file-watcher events for SELF_WRITE_SUPPRESS_MS. Keyed by original file path. */
+  public recentWrites: Map<string, number> = new Map<string, number>();
   public saveQueue: Map<string, Promise<void>> = new Map<string, Promise<void>>();
   public mtimeMap: Map<string, number> = new Map<string, number>();
+  /** The natural language each open translated view is currently displaying, keyed by file path. */
+  public displayLanguages: Map<string, string> = new Map<string, string>();
+  /**
+   * The exact translated text each open view was last rendered with — set in readFile and after a
+   * save — keyed by file path. This is the baseline for the reverse-translation 3-way merge. It is
+   * deliberately SEPARATE from `cache`: a cache invalidation (language switch, file-watcher) must
+   * never blank out the baseline, or the next save would merge against nothing and write the
+   * translated tokens straight into the original (corruption).
+   */
+  public renderedContent: Map<string, string> = new Map<string, string>();
   public changeEmitter: vscode.EventEmitter<vscode.FileChangeEvent[]> =
     new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   public onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = this.changeEmitter.event;
@@ -49,27 +69,36 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
     const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
     const originalStat: vscode.FileStat = await vscode.workspace.fs.stat(originalUri);
+    // The size MUST reflect the translated content that readFile returns (not the original file's
+    // size), and the mtime MUST advance on a change. VS Code skips refreshing an open editor on a
+    // change event unless both hold (FileSystemProvider.onDidChangeFile contract). This is what makes
+    // an in-place language switch — invalidatePath fires the change event — actually re-translate.
+    const content: string = await this.provideContent(uri);
     const virtualMtime: number = this.mtimeMap.get(uri.toString()) || originalStat.mtime;
     return {
       type: originalStat.type,
       ctime: originalStat.ctime,
       mtime: virtualMtime,
-      size: originalStat.size,
+      size: Buffer.byteLength(content, 'utf-8'),
     };
   }
 
   public async readFile(uri: vscode.Uri): Promise<Uint8Array> {
     const content: string = await this.provideContent(uri);
-    const encoder: TextEncoder = new TextEncoder();
+    // Record the displayed language AND the rendered baseline ONLY here, not in provideContent:
+    // readFile is when VS Code loads content into the editor buffer, so both reflect what the buffer
+    // actually holds. provideContent is also called by stat() (frequently, including around save), and
+    // recording there would let a stat after a language switch overwrite this before the buffer
+    // actually reloads. Keeping the baseline keyed here (not via cache) is what makes a save always
+    // reverse-translate from the correct content/language.
+    this.displayLanguages.set(uri.path, this.getTargetLanguage(uri));
+    this.renderedContent.set(uri.path, content);
+    const encoder = new TextEncoder();
     return encoder.encode(content);
   }
 
   public async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
     const originalPath: string = uri.path;
-
-    if (this.refreshingPaths.has(originalPath)) {
-      return;
-    }
 
     // Queue saves per path: if a save is already in progress, the next one
     // waits for it to complete before starting. This prevents the second save
@@ -84,22 +113,29 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     const originalPath: string = uri.path;
     const translatedContent: string = Buffer.from(content).toString('utf-8');
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
-    const programmingLanguage: string = this.languageDetector.detectLanguage(originalPath) || '';
-    const sourceLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
+    // Reverse-translate FROM the language the open view is actually displaying. This can differ from
+    // the current config when the language was just switched while this view had unsaved edits: a
+    // dirty document is not reloaded, so it keeps its old language until saved. Using the config here
+    // would reverse-translate old-language content as if it were the new language and corrupt the
+    // original on disk.
+    const sourceLanguage: string = this.displayLanguageFor(uri);
 
     this.outputChannel.appendLine(`TranslatedContentProvider: reverse translating ${originalPath}`);
 
     try {
       const currentOriginal: string = await this.readOriginalFile(originalPath);
-      const cacheKey: string = this.buildCacheKey(originalPath);
-      const previousTranslated: string = this.cache.get(cacheKey) || '';
+      // Baseline = the exact content readFile last rendered into this buffer (or what the previous
+      // save left it as), taken from renderedContent — never from the cache, which a language switch
+      // or the file-watcher may have cleared. An empty/mismatched baseline makes the 3-way merge
+      // dump the translated text into the original.
+      const previousTranslated: string = this.renderedContent.get(originalPath) ?? '';
 
       const originalCode: string = await this.coreBridge.applyTranslatedEdits(
         currentOriginal, previousTranslated, translatedContent, fileExtension, sourceLanguage
       );
 
       const originalUri: vscode.Uri = vscode.Uri.file(originalPath);
-      this.writingPaths.add(originalPath);
+      this.markSelfWrite(originalPath);
       const originalDoc: vscode.TextDocument = await vscode.workspace.openTextDocument(originalUri);
       const fullRange: vscode.Range = new vscode.Range(
         new vscode.Position(0, 0),
@@ -109,40 +145,19 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       writeEdit.replace(originalUri, fullRange, originalCode);
       await vscode.workspace.applyEdit(writeEdit);
       await originalDoc.save();
-      setTimeout((): void => { this.writingPaths.delete(originalPath); }, 500);
 
-      const targetLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
-      const updatedOriginal: string = await this.readOriginalFile(originalPath);
-      const freshTranslation: string = await this.translateContent(
-        updatedOriginal, fileExtension, targetLanguage
-      );
-
-      this.cache.set(cacheKey, freshTranslation);
-
-      setTimeout(async (): Promise<void> => {
-        try {
-          const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
-            (d: vscode.TextDocument): boolean => d.uri.toString() === uri.toString()
-          );
-          if (doc && doc.getText() !== freshTranslation) {
-            const edit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
-            const lastLine: vscode.TextLine = doc.lineAt(doc.lineCount - 1);
-            edit.replace(
-              uri,
-              new vscode.Range(new vscode.Position(0, 0), lastLine.range.end),
-              freshTranslation
-            );
-            this.refreshingPaths.add(originalPath);
-            try {
-              await vscode.workspace.applyEdit(edit);
-            } finally {
-              this.refreshingPaths.delete(originalPath);
-            }
-          }
-        } catch (err: unknown) {
-          this.outputChannel.appendLine('TranslatedContentProvider: failed to refresh translated view');
+      // The buffer now holds `translatedContent` in `sourceLanguage`. Record it as the new baseline
+      // and as the cache entry for that language; the buffer is left exactly as the user typed it (no
+      // re-render). Other languages' cached translations are stale now that the original changed, so
+      // drop them — a later switch re-translates from the updated source. displayLanguages is NOT
+      // touched: a save does not change the language the buffer is in.
+      for (const key of [...this.cache.keys()]) {
+        if (key.startsWith(`${originalPath}::`)) {
+          this.cache.delete(key);
         }
-      }, 100);
+      }
+      this.cache.set(`${originalPath}::${sourceLanguage}`, translatedContent);
+      this.renderedContent.set(originalPath, translatedContent);
 
       this.outputChannel.appendLine(`TranslatedContentProvider: saved original code to ${originalPath}`);
       vscode.window.showInformationMessage(vscode.l10n.t('Babel TCC: File saved successfully.'));
@@ -171,7 +186,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
    */
   public async provideContent(uri: vscode.Uri): Promise<string> {
     const originalPath: string = uri.path;
-    const cacheKey: string = this.buildCacheKey(originalPath);
+    const cacheKey: string = this.buildCacheKey(uri);
 
     const cachedContent: string | undefined = this.cache.get(cacheKey);
     if (cachedContent !== undefined) {
@@ -190,8 +205,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     }
 
     const fileExtension: string = this.languageDetector.getFileExtension(originalPath);
-    const programmingLanguage: string = this.languageDetector.detectLanguage(originalPath) || '';
-    const targetLanguage: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
+    const targetLanguage: string = this.getTargetLanguage(uri);
 
     const translated: string = await this.translateContent(originalContent, fileExtension, targetLanguage);
     this.cache.set(cacheKey, translated);
@@ -226,23 +240,28 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   }
 
   /**
-   * Removes the cached translation for a specific URI and fires a change event to refresh the document.
+   * Invalidates every cached translation for an original file path (all languages and schemes) and
+   * fires change events for any open translated view of that path. Used when the original file
+   * changes on disk so the visible translation refreshes regardless of which language it is in.
    */
-  public invalidateCache(uri: vscode.Uri): void {
-    const cacheKey: string = this.buildCacheKey(uri.path);
-    this.cache.delete(cacheKey);
-
-    const otherScheme: string = uri.scheme === TRANSLATED_SCHEME ? READONLY_SCHEME : TRANSLATED_SCHEME;
-    const otherUri: vscode.Uri = vscode.Uri.parse(`${otherScheme}:${uri.path}`);
+  public invalidatePath(originalPath: string): void {
+    for (const key of [...this.cache.keys()]) {
+      if (key.startsWith(`${originalPath}::`)) {
+        this.cache.delete(key);
+      }
+    }
 
     const now: number = Date.now();
-    this.mtimeMap.set(uri.toString(), now);
-    this.mtimeMap.set(otherUri.toString(), now);
-
-    this.changeEmitter.fire([
-      { type: vscode.FileChangeType.Changed, uri: uri },
-      { type: vscode.FileChangeType.Changed, uri: otherUri }
-    ]);
+    const events: vscode.FileChangeEvent[] = [];
+    for (const doc of vscode.workspace.textDocuments) {
+      if (isTranslatedScheme(doc.uri.scheme) && doc.uri.path === originalPath) {
+        this.mtimeMap.set(doc.uri.toString(), now);
+        events.push({ type: vscode.FileChangeType.Changed, uri: doc.uri });
+      }
+    }
+    if (events.length > 0) {
+      this.changeEmitter.fire(events);
+    }
   }
 
   /** Clears the entire translation cache, forcing all documents to be re-translated on next access. */
@@ -252,12 +271,39 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   }
 
   /**
-   * Builds a cache key combining the file path and the target language for that file's programming language.
+   * Records that WE just wrote the given original path, so the file-watcher can ignore the resulting
+   * change event(s) for a short window (SELF_WRITE_SUPPRESS_MS). Called from doWriteFile.
    */
-  public buildCacheKey(filePath: string): string {
-    const programmingLanguage: string = this.languageDetector.detectLanguage(filePath) || '';
-    const language: string = this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
-    return `${filePath}::${language}`;
+  public markSelfWrite(originalPath: string): void {
+    this.recentWrites.set(originalPath, Date.now());
+  }
+
+  /** Returns true if the given original path was written by us within the suppression window. */
+  public isRecentSelfWrite(originalPath: string): boolean {
+    const writtenAt: number | undefined = this.recentWrites.get(originalPath);
+    return writtenAt !== undefined && Date.now() - writtenAt < SELF_WRITE_SUPPRESS_MS;
+  }
+
+  /** Resolves the configured target natural language for a file's programming language. */
+  public getTargetLanguage(uri: vscode.Uri): string {
+    const programmingLanguage: string = this.languageDetector.detectLanguage(uri.path) || '';
+    return this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
+  }
+
+  /**
+   * The language the open view is currently displaying for this file, falling back to the configured
+   * language when no view has been rendered yet. Used by reverse translation so a save uses the
+   * language the content is actually in, not the (possibly just-changed) configured one.
+   */
+  public displayLanguageFor(uri: vscode.Uri): string {
+    return this.displayLanguages.get(uri.path) ?? this.getTargetLanguage(uri);
+  }
+
+  /**
+   * Builds a cache key combining the file path and the current target language for that file.
+   */
+  public buildCacheKey(uri: vscode.Uri): string {
+    return `${uri.path}::${this.getTargetLanguage(uri)}`;
   }
 
   /**
@@ -272,6 +318,9 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   /** Disposes of resources by clearing the cache and releasing the change event emitter. */
   public dispose(): void {
     this.cache.clear();
+    this.displayLanguages.clear();
+    this.renderedContent.clear();
+    this.recentWrites.clear();
     this.changeEmitter.dispose();
   }
 }

@@ -5,6 +5,17 @@ All notable changes to the Babel TCC extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-05-28
+
+First stable release.
+
+### Fixed
+
+- Switching the target language now reliably re-translates every open file **in place**: the content
+  updates in the same tab, focus stays on the file you were on, and no duplicate or stale tab is left
+  behind. Previously a language switch could fail to re-translate, move focus to another file, or
+  leave the old translated tab open.
+
 ## [0.9.3] - 2026-05-27
 
 ### Added

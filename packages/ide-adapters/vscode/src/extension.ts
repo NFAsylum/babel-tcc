@@ -175,11 +175,14 @@ export function activate(context: vscode.ExtensionContext): void {
   const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(buildFileWatcherPattern());
   const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
     (uri: vscode.Uri): void => {
-      if (translatedContentProvider.writingPaths.has(uri.path)) {
+      // Our own save writes the original; the provider timestamps it (recentWrites). Suppress watcher
+      // events within that window — a save can emit several coalesced events or none, so a self-
+      // expiring time window is robust where a consume-once flag would leak or under-suppress. A
+      // genuine external change is outside the window, so it still refreshes the translation.
+      if (translatedContentProvider.isRecentSelfWrite(uri.path)) {
         return;
       }
-      const translatedUri: vscode.Uri = vscode.Uri.parse(`${TRANSLATED_SCHEME}:${uri.path}`);
-      translatedContentProvider.invalidateCache(translatedUri);
+      translatedContentProvider.invalidatePath(uri.path);
       outputChannel.appendLine(`Original file changed, refreshing translation: ${uri.fsPath}`);
     }
   );
@@ -234,6 +237,16 @@ export function activate(context: vscode.ExtensionContext): void {
         placeHolder: vscode.l10n.t('Select target language for translation')
       });
       if (!selected) {
+        return;
+      }
+
+      // Handle unsaved edits BEFORE changing the language, while the current language is still in
+      // effect, so a save reverse-translates the content correctly. Aborts the change on cancel.
+      // Scope the prompt to the affected language: a per-language change only concerns that language's
+      // views, while a global change concerns all of them.
+      const affectedLanguage: string | undefined =
+        scopeChoice.scope === 'language' ? scopeChoice.language : undefined;
+      if (!(await autoTranslateManager.confirmUnsavedEditsBeforeLanguageChange(affectedLanguage))) {
         return;
       }
 

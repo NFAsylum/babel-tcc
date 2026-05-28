@@ -58,6 +58,20 @@ export class AutoTranslateManager implements vscode.Disposable {
     return TRANSLATED_SCHEME;
   }
 
+  /** Returns true if any translated tab (any scheme) is open for the given original path. */
+  public isAnyTranslatedTabOpenForPath(path: string): boolean {
+    for (const group of vscode.window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        if (tab.input instanceof vscode.TabInputText) {
+          if (isTranslatedScheme(tab.input.uri.scheme) && tab.input.uri.path === path) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * When a .cs file tab becomes active and translation is ON, replaces it with the translated view.
    * Guards against event loops via processingUris set and scheme check.
@@ -85,14 +99,8 @@ export class AutoTranslateManager implements vscode.Disposable {
       `${activeScheme}:${editor.document.uri.path}`
     );
 
-    const editableUri: vscode.Uri = vscode.Uri.parse(
-      `${TRANSLATED_SCHEME}:${editor.document.uri.path}`
-    );
-    const readonlyUri: vscode.Uri = vscode.Uri.parse(
-      `${READONLY_SCHEME}:${editor.document.uri.path}`
-    );
-
-    if (this.isTabOpen(editableUri) || this.isTabOpen(readonlyUri)) {
+    // Keep one translated view per file: if any scheme's view is already open, do nothing.
+    if (this.isAnyTranslatedTabOpenForPath(editor.document.uri.path)) {
       return;
     }
 
@@ -146,8 +154,7 @@ export class AutoTranslateManager implements vscode.Disposable {
       this.previousLanguageFingerprint = currentFingerprint;
       await this.replaceOriginalsWithTranslated();
     } else if (currentEnabled && currentFingerprint !== previousFingerprint) {
-      const previousGlobalLanguage: string = previousFingerprint.split('|')[0];
-      await this.refreshTranslatedTabs(previousGlobalLanguage);
+      await this.refreshTranslatedTabs();
       this.previousLanguageFingerprint = this.getLanguageFingerprint();
     } else {
       this.previousLanguageFingerprint = currentFingerprint;
@@ -157,24 +164,50 @@ export class AutoTranslateManager implements vscode.Disposable {
     }
   }
 
-  /** Closes all tabs using the old scheme and reopens them with the current active scheme. */
+  /**
+   * Toggles between the editable and readonly schemes. Read-only-ness is bound to the URI scheme
+   * (each scheme is a separately registered provider), so this is the one flow that genuinely needs
+   * to reopen the tab under a different URI. The old tab is closed by a fresh lookup (not a stored
+   * reference, which can go stale after opening the new tab).
+   */
   public async switchScheme(oldScheme: string): Promise<void> {
     const oldTabs: TabInfo[] = this.findTabsByScheme(oldScheme);
     const newScheme: string = this.getActiveScheme();
+    // Only restore focus if a translated view was active; otherwise we would open a translated view
+    // for an unrelated (possibly unsupported) file that just happened to be focused.
+    const activeDoc: vscode.TextDocument | undefined = vscode.window.activeTextEditor?.document;
+    const activePath: string | undefined =
+      activeDoc && isTranslatedScheme(activeDoc.uri.scheme) ? activeDoc.uri.path : undefined;
 
-    for (const { tab, path, viewColumn } of oldTabs) {
+    for (const { uri, path, viewColumn } of oldTabs) {
       try {
         const newUri: vscode.Uri = vscode.Uri.parse(`${newScheme}:${path}`);
         const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(newUri);
         await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
-        await vscode.window.tabGroups.close(tab);
+        await this.closeTab(uri);
       } catch (error: unknown) {
         const message: string = error instanceof Error ? error.message : String(error);
         this.outputChannel.appendLine(`AutoTranslate: failed to switch scheme - ${message}`);
       }
     }
 
+    await this.restoreFocus(newScheme, activePath);
     this.outputChannel.appendLine(`AutoTranslate: switched tabs from ${oldScheme} to ${newScheme}`);
+  }
+
+  /** Re-focuses the translated view of the previously active file after a tab swap, if any. */
+  public async restoreFocus(scheme: string, activePath: string | undefined): Promise<void> {
+    if (activePath === undefined) {
+      return;
+    }
+    try {
+      const focusUri: vscode.Uri = vscode.Uri.parse(`${scheme}:${activePath}`);
+      const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(focusUri);
+      await vscode.window.showTextDocument(doc, { preview: false });
+    } catch (error: unknown) {
+      const message: string = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`AutoTranslate: failed to restore focus - ${message}`);
+    }
   }
 
   /** Replaces all open translated tabs with their original .cs file tabs. */
@@ -184,12 +217,12 @@ export class AutoTranslateManager implements vscode.Disposable {
       ...this.findTabsByScheme(READONLY_SCHEME)
     ];
 
-    for (const { tab, path, viewColumn } of translatedTabs) {
+    for (const { uri, path, viewColumn } of translatedTabs) {
       try {
         const originalUri: vscode.Uri = vscode.Uri.file(path);
         const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(originalUri);
         await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
-        await vscode.window.tabGroups.close(tab);
+        await this.closeTab(uri);
       } catch (error: unknown) {
         const message: string = error instanceof Error ? error.message : String(error);
         this.outputChannel.appendLine(`AutoTranslate: failed to restore original - ${message}`);
@@ -203,23 +236,19 @@ export class AutoTranslateManager implements vscode.Disposable {
   public async replaceOriginalsWithTranslated(): Promise<void> {
     const csTabs: TabInfo[] = this.findSupportedFileTabs();
 
-    const uriStrings: string[] = csTabs.map(
-      ({ path }): string => vscode.Uri.file(path).toString()
-    );
+    const uriStrings: string[] = csTabs.map(({ uri }): string => uri.toString());
     for (const uriString of uriStrings) {
       this.processingUris.add(uriString);
     }
 
     const activeScheme: string = this.getActiveScheme();
     try {
-      for (const { tab, path, viewColumn } of csTabs) {
+      for (const { uri, path, viewColumn } of csTabs) {
         try {
-          const translatedUri: vscode.Uri = vscode.Uri.parse(
-            `${activeScheme}:${path}`
-          );
+          const translatedUri: vscode.Uri = vscode.Uri.parse(`${activeScheme}:${path}`);
           const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
           await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
-          await vscode.window.tabGroups.close(tab);
+          await this.closeTab(uri);
         } catch (error: unknown) {
           const message: string = error instanceof Error ? error.message : String(error);
           this.outputChannel.appendLine(`AutoTranslate: failed to translate tab - ${message}`);
@@ -234,72 +263,131 @@ export class AutoTranslateManager implements vscode.Disposable {
     this.outputChannel.appendLine('AutoTranslate: replaced all .cs tabs with translated views');
   }
 
-  /** Refreshes all translated tabs for a new language, handling unsaved edits. */
-  public async refreshTranslatedTabs(oldLanguage: string): Promise<void> {
+  /**
+   * Confirms what to do with unsaved edits in translated views BEFORE a language change. It must run
+   * while the current language is still in effect, so that saving reverse-translates the content with
+   * the language it is actually written in (a normal save) — saving after the config already changed
+   * is what previously discarded the edits. Returns false if the user cancels (caller must not switch).
+   *
+   * `affectedLanguage` scopes the prompt: when a per-programming-language override is being changed
+   * (e.g. only CSharp), only dirty views of THAT language are considered — a change to CSharp must not
+   * prompt about (and, on "Discard", revert) an unrelated dirty Python view. When undefined (a global
+   * change), every dirty translated view is considered.
+   */
+  public async confirmUnsavedEditsBeforeLanguageChange(affectedLanguage?: string): Promise<boolean> {
+    const dirtyDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(
+      (doc: vscode.TextDocument): boolean =>
+        isTranslatedScheme(doc.uri.scheme) && doc.isDirty &&
+        (affectedLanguage === undefined ||
+          this.languageDetector.detectLanguage(doc.uri.path) === affectedLanguage)
+    );
+    if (dirtyDocs.length === 0) {
+      return true;
+    }
+
+    const saveLabel: string = vscode.l10n.t('Save and switch');
+    const discardLabel: string = vscode.l10n.t('Discard and switch');
+    const cancelLabel: string = vscode.l10n.t('Cancel');
+    const choice: string | undefined = await vscode.window.showWarningMessage(
+      vscode.l10n.t('Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?', dirtyDocs.length),
+      saveLabel,
+      discardLabel,
+      cancelLabel
+    );
+
+    if (choice === cancelLabel || choice === undefined) {
+      this.outputChannel.appendLine('AutoTranslate: language switch cancelled by user');
+      return false;
+    }
+
+    for (const doc of dirtyDocs) {
+      try {
+        if (choice === saveLabel) {
+          await doc.save();
+        } else {
+          // Discard: revert the buffer to its saved content (in the current language) so the view is
+          // clean and the subsequent language change reloads it in the new language.
+          await vscode.window.showTextDocument(doc, { preview: false });
+          await vscode.commands.executeCommand('workbench.action.files.revert');
+        }
+      } catch (error: unknown) {
+        const message: string = error instanceof Error ? error.message : String(error);
+        this.outputChannel.appendLine(`AutoTranslate: failed to handle unsaved edits in ${doc.uri.path} - ${message}`);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Refreshes all open translated tabs for the new language, in place. The target language is read
+   * from configuration, so the URI does not change: each open view is reloaded by reverting it, and
+   * focus is restored to the view that was active. No tab is closed or reopened.
+   *
+   * Reverting (not just firing the provider's change event) is deliberate: an open editor backed by a
+   * FileSystemProvider does not reliably reload from a Changed event — the documented stat mtime/size
+   * contract only hints the editor "may" refresh, and in practice it does not until the editor loses
+   * and regains focus. workbench.action.files.revert force-re-reads the provider (readFile returns the
+   * new language) and keeps the document clean. Unsaved edits from the command are resolved first in
+   * confirmUnsavedEditsBeforeLanguageChange; any view still dirty here (e.g. a settings.json switch) is
+   * skipped so its edits are not discarded.
+   */
+  public async refreshTranslatedTabs(): Promise<void> {
     const translatedTabs: TabInfo[] = [
       ...this.findTabsByScheme(TRANSLATED_SCHEME),
       ...this.findTabsByScheme(READONLY_SCHEME)
     ];
 
-    // Check for unsaved edits in translated documents
-    const dirtyDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(
-      (doc: vscode.TextDocument): boolean =>
-        isTranslatedScheme(doc.uri.scheme) && doc.isDirty
-    );
+    const activeDoc: vscode.TextDocument | undefined = vscode.window.activeTextEditor?.document;
+    const restoreDoc: vscode.TextDocument | undefined =
+      activeDoc && isTranslatedScheme(activeDoc.uri.scheme) ? activeDoc : undefined;
 
-    if (dirtyDocs.length > 0) {
-      const saveLabel: string = vscode.l10n.t('Save and switch');
-      const discardLabel: string = vscode.l10n.t('Discard and switch');
-      const cancelLabel: string = vscode.l10n.t('Cancel');
-      const choice: string | undefined = await vscode.window.showWarningMessage(
-        vscode.l10n.t('Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?', dirtyDocs.length),
-        saveLabel,
-        discardLabel,
-        cancelLabel
-      );
-
-      if (choice === cancelLabel || choice === undefined) {
-        // Revert language config to previous
-        await this.configService.setLanguage(oldLanguage);
-        this.outputChannel.appendLine('AutoTranslate: language switch cancelled by user');
-        return;
+    const seen: Set<string> = new Set<string>();
+    for (const { uri, path } of translatedTabs) {
+      const key: string = uri.toString();
+      if (seen.has(key)) {
+        continue;
       }
-
-      if (choice === saveLabel) {
-        for (const doc of dirtyDocs) {
-          try {
-            await doc.save();
-          } catch (error: unknown) {
-            const message: string = error instanceof Error ? error.message : String(error);
-            this.outputChannel.appendLine(`AutoTranslate: failed to save ${doc.uri.path} - ${message}`);
-          }
-        }
-      }
-      // 'Discard and switch' — just proceed without saving
+      seen.add(key);
+      await this.reloadTranslatedView(uri, path);
     }
 
-    // Close tabs, invalidate per-URI cache (fires changeEmitter to tell VS Code
-    // the virtual file changed), then reopen. Each invalidateCache fires changeEmitter
-    // for both schemes, forcing VS Code to re-read from the provider on next open.
-    this.contentProvider.invalidateAll();
-
-    for (const { tab, path, viewColumn } of translatedTabs) {
+    // Reverting focuses each view in turn, so bring the originally active view back to the front.
+    if (restoreDoc) {
       try {
-        await vscode.window.tabGroups.close(tab);
-
-        const scheme: string = this.getActiveScheme();
-        const uri: vscode.Uri = vscode.Uri.parse(`${scheme}:${path}`);
-        this.contentProvider.invalidateCache(uri);
-
-        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(uri);
-        await vscode.window.showTextDocument(doc, { preview: false, viewColumn });
+        await vscode.window.showTextDocument(restoreDoc, { preview: false });
       } catch (error: unknown) {
         const message: string = error instanceof Error ? error.message : String(error);
-        this.outputChannel.appendLine(`AutoTranslate: failed to refresh tab - ${message}`);
+        this.outputChannel.appendLine(`AutoTranslate: failed to restore focus after refresh - ${message}`);
       }
     }
 
     this.outputChannel.appendLine('AutoTranslate: refreshed all translated tabs for new language');
+  }
+
+  /**
+   * Reloads a single open translated view in place for the current language. Clears the cached
+   * translations for the path, then reverts the editor so VS Code force-re-reads readFile (the new
+   * language) while keeping the document clean — the tab is never closed. A view with unsaved edits is
+   * left untouched so the edits survive; it keeps its language until the next save, which
+   * reverse-translates it from the recorded display language.
+   */
+  public async reloadTranslatedView(uri: vscode.Uri, path: string): Promise<void> {
+    this.contentProvider.invalidatePath(path);
+
+    const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
+      (d: vscode.TextDocument): boolean => d.uri.toString() === uri.toString()
+    );
+    if (!doc || doc.isDirty) {
+      return;
+    }
+
+    try {
+      await vscode.window.showTextDocument(doc, { preview: false });
+      await vscode.commands.executeCommand('workbench.action.files.revert');
+    } catch (error: unknown) {
+      const message: string = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`AutoTranslate: failed to reload translated view ${path} - ${message}`);
+    }
   }
 
   /** Finds all open tabs matching a given URI scheme. */
@@ -310,7 +398,7 @@ export class AutoTranslateManager implements vscode.Disposable {
       for (const tab of group.tabs) {
         if (tab.input instanceof vscode.TabInputText) {
           if (tab.input.uri.scheme === scheme) {
-            results.push({ tab, path: tab.input.uri.path, viewColumn: group.viewColumn });
+            results.push({ uri: tab.input.uri, path: tab.input.uri.path, viewColumn: group.viewColumn });
           }
         }
       }
@@ -330,7 +418,7 @@ export class AutoTranslateManager implements vscode.Disposable {
             tab.input.uri.scheme === 'file' &&
             this.languageDetector.isSupported(tab.input.uri.fsPath)
           ) {
-            results.push({ tab, path: tab.input.uri.path, viewColumn: group.viewColumn });
+            results.push({ uri: tab.input.uri, path: tab.input.uri.path, viewColumn: group.viewColumn });
           }
         }
       }
@@ -339,24 +427,7 @@ export class AutoTranslateManager implements vscode.Disposable {
     return results;
   }
 
-  /** Checks whether a tab with the given URI is already open. */
-  public isTabOpen(uri: vscode.Uri): boolean {
-    const uriString: string = uri.toString();
-
-    for (const group of vscode.window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        if (tab.input instanceof vscode.TabInputText) {
-          if (tab.input.uri.toString() === uriString) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /** Closes the tab matching the given URI. */
+  /** Closes the tab matching the given URI, found by a fresh scan of the current tab model. */
   public async closeTab(uri: vscode.Uri): Promise<void> {
     const uriString: string = uri.toString();
 
@@ -380,7 +451,7 @@ export class AutoTranslateManager implements vscode.Disposable {
 }
 
 interface TabInfo {
-  tab: vscode.Tab;
+  uri: vscode.Uri;
   path: string;
   viewColumn: vscode.ViewColumn;
 }
