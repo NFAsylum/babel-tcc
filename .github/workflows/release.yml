@@ -31,6 +31,29 @@ jobs:
             exit 1
           fi
 
+  validate-translations:
+    name: Validate Translations
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout translations repo
+        uses: actions/checkout@v4
+        with:
+          repository: NFAsylum/babel-tcc-translations
+          path: babel-tcc-translations
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # Garante que as traducoes empacotadas no release sao validas (4 checks).
+      - name: Run translation validation
+        run: python babel-tcc-translations/scripts/validate.py
+
   core-test:
     name: Core Tests
     needs: validate
@@ -153,7 +176,7 @@ jobs:
 
   package:
     name: Package (${{ matrix.vsce_target }})
-    needs: [core-test, vscode-test, smoke-self-contained]
+    needs: [core-test, vscode-test, smoke-self-contained, validate-translations]
     runs-on: ubuntu-latest
     env:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
@@ -276,7 +299,13 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           PLATFORM="${{ matrix.vsce_target }}"
-          URL="https://open-vsx.org/api/NFAsylum/multilingual-code/${PLATFORM}/${VERSION}"
+          # O Open VSX endereca o pacote universal SEM segmento de plataforma na API;
+          # so os alvos especificos usam /{target}/{version}.
+          if [ "$PLATFORM" = "universal" ]; then
+            URL="https://open-vsx.org/api/NFAsylum/multilingual-code/${VERSION}"
+          else
+            URL="https://open-vsx.org/api/NFAsylum/multilingual-code/${PLATFORM}/${VERSION}"
+          fi
           if [ "$(curl -s -o /dev/null -w '%{http_code}' "$URL")" = "200" ]; then
             echo "Open VSX ja tem $VERSION ($PLATFORM) - pulando (idempotente)."
             exit 0
