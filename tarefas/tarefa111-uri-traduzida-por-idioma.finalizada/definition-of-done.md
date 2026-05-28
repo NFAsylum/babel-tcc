@@ -10,5 +10,6 @@
 - [x] Testes da extensao passam (vitest) - 195 passam
 - [x] Build da extensao passa (esbuild + eslint)
 - [x] DT-011 registrado/atualizado em docs/decisoes-tecnicas.md
-- [ ] Validacao manual no editor (trocar idioma com 2+ arquivos abertos) - pendente
+- [x] Validacao manual no editor: trocar idioma com 2+ arquivos abertos atualiza todas as abas no
+      lugar, sem criar aba nova nem deixar aba antiga
 
