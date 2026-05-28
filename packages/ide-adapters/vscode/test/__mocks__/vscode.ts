@@ -71,7 +71,8 @@ export class Uri {
   }
 
   with(change: { scheme?: string; path?: string }): Uri {
-    return new Uri(change.scheme ?? this.scheme, change.path ?? this.path);
+    const u = new Uri(change.scheme ?? this.scheme, change.path ?? this.path);
+    return u;
   }
 }
 
