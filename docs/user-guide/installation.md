@@ -12,9 +12,12 @@
 ## Pré-requisitos
 
 - **VS Code** 1.85 ou superior
-- **.NET 8.0 Runtime** - necessário para o motor de tradução C#
-  - Download: https://dotnet.microsoft.com/download/dotnet/8.0
-  - Verificar: `dotnet --version`
+- **.NET 8.0 Runtime** — necessário **apenas** no pacote universal. Os pacotes por plataforma
+  (Windows/Linux/macOS, x64 e arm64) embutem o runtime e **não exigem .NET instalado**; o VS Code
+  baixa automaticamente o pacote certo para o seu sistema.
+  - Só para o pacote universal: download em https://dotnet.microsoft.com/download/dotnet/8.0
+  - Verificar o **Runtime** (não o SDK): `dotnet --list-runtimes` (procure uma linha
+    `Microsoft.NETCore.App 8.x`)
 - **Python 3.8+** (opcional) - necessário apenas para traduzir arquivos `.py`
 
 ## Via VS Code Marketplace

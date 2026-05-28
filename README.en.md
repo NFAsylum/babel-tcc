@@ -107,7 +107,7 @@ To build the `.vsix`: `npm run package` (requires [vsce](https://github.com/micr
 
 | Programming Language | Extension | Keywords | Mode |
 |--------------------------|----------|----------|------|
-| C# | `.cs` | 89 | Roslyn + Text Scan, supports tradu |
+| C# | `.cs` | 91 | Roslyn + Text Scan, supports tradu |
 | Python | `.py` | 35 | CPython subprocess + Text Scan, supports tradu |
 | VisuAlg (Claudio Morgado) | `.alg` | 48 | Text Scan keyword-only, case-insensitive |
 | Portugol Studio (UNIVALI) | `.por` | 26 | Text Scan keyword-only, case-sensitive |

@@ -107,7 +107,7 @@ Para generar el `.vsix`: `npm run package` (requiere [vsce](https://github.com/m
 
 | Lenguaje de programación | Extensión | Palabras clave | Modo |
 |--------------------------|----------|----------|------|
-| C# | `.cs` | 89 | Roslyn + Text Scan, admite tradu |
+| C# | `.cs` | 91 | Roslyn + Text Scan, admite tradu |
 | Python | `.py` | 35 | Subproceso CPython + Text Scan, admite tradu |
 | VisuAlg (Claudio Morgado) | `.alg` | 48 | Text Scan solo palabras clave, sin distinción de mayúsculas |
 | Portugol Studio (UNIVALI) | `.por` | 26 | Text Scan solo palabras clave, con distinción de mayúsculas |
