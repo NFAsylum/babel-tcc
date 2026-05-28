@@ -1,4 +1,4 @@
-# Tarefa 111 - URI traduzida codifica o idioma-alvo
+# Tarefa 111 - Troca de idioma re-traduz a visao no lugar
 
 ## Fase
 6 - Extensao VS Code
@@ -8,41 +8,35 @@ Corrigir o bug em que trocar de idioma nem sempre re-traduz o arquivo aberto, mu
 foco e deixa uma aba traduzida anterior para fechar manualmente.
 
 ## Contexto
-As visoes traduzidas sao documentos virtuais (FileSystemProvider) cuja URI NAO codificava o
-idioma-alvo: `babel-tcc-translated:/path/file.cs` era a mesma URI para pt-br, en, etc. O idioma era
-resolvido a parte, lendo da config dentro de `provideContent`/`buildCacheKey`.
-
-O VS Code indexa a working copy de documentos editaveis de FileSystemProvider pela URI. Com a URI
-identica entre idiomas, `openTextDocument(mesmaUri)` apos `close` devolve o documento em cache e nao
-chama `readFile` de novo - o conteudo antigo persistia. O workaround anterior (close + invalidateCache
-via changeEmitter + bump de mtime + reopen) e racy: o evento Changed dispara para uma URI cuja aba
-acabou de fechar, entao o VS Code costuma ignora-lo. Daí o "as vezes nao re-traduz". Alem disso o loop
-de refresh reabre as abas em sequencia e nunca restaura o foco original, entao com 2+ arquivos o foco
-ia para a ultima aba reaberta.
-
-Historico: os commits 9e03712 (applyEdit) e 570d2f4 (volta para close+reopen) ja oscilaram nesse
-mecanismo. A raiz e a URI unica por arquivo.
+As visoes traduzidas sao documentos virtuais (FileSystemProvider) com uma unica URI por arquivo. A
+causa real do bug estava no `stat()`: ele devolvia `size` = tamanho do arquivo ORIGINAL, que nao muda
+entre idiomas e nao bate com o conteudo traduzido que o `readFile` devolve. A doc do
+`FileSystemProvider.onDidChangeFile` exige `mtime` que avanca E `size` correto, senao o VS Code aplica
+uma otimizacao que IGNORA o evento de mudanca e nao recarrega o editor. Por isso o
+`changeEmitter`/reopen do codigo anterior era racy, e o time apelou para fechar+reabrir aba, que e
+fragil (tabGroups.close com referencia guardada falha - microsoft/vscode#242867), deixando aba antiga
+aberta.
 
 ## Decisao
-Ver DT-011. Codificar o idioma-alvo na query da URI virtual (`?lang=<idioma>`) e fazer o provider ler
-o idioma DA URI (com fallback para a config). Cada idioma vira um documento distinto -> reabrir e
-sempre uma leitura fresca, sem depender de evento/timing.
+Ver DT-011. Atualizar o conteudo NO LUGAR, sem mexer em aba: corrigir o `stat()` para devolver o
+tamanho real do conteudo traduzido + `mtime` que avanca, e na troca de idioma disparar
+`onDidChangeFile` para a URI aberta. O VS Code recarrega o `readFile` na mesma aba -> re-traduz, foco
+nao muda, nenhuma aba sobra.
 
-Padrao seguro: manter UMA visao traduzida por arquivo. Na troca de idioma, abrir a URI do idioma novo
-e fechar a aba do idioma antigo, restaurando o foco. Sem multiplas copias divergentes.
+(Antes tentou-se codificar o idioma na query da URI - `?lang=` - mas isso FORCA fechar+reabrir aba, a
+operacao fragil; deixava as duas abas abertas. Revertido.)
 
 ## Escopo
-- `translatedContentProvider.ts`: helpers `buildTranslatedUri`/`getLanguageFromUri`; provider le o
-  idioma via `getTargetLanguage(uri)` em `provideContent`, `buildCacheKey`, `doWriteFile`;
-  `invalidateCache` preserva a query; novo `invalidatePath` para refrescar todas as visoes abertas de
-  um arquivo quando o original muda no disco.
-- `autoTranslateManager.ts`: construir URIs com idioma; `refreshTranslatedTabs` abre-novo -> fecha-antigo
-  -> restaura foco (sem `invalidateAll`); `switchScheme` idem; `handleActiveEditorChange` usa
-  `isAnyTranslatedTabOpenForPath` (uma visao por arquivo); `replaceOriginalsWithTranslated` usa URI com
-  idioma.
-- `extension.ts`: comandos open* constroem a URI com idioma; o file-watcher chama `invalidatePath`.
-- Mock do vscode (testes): `Uri` passa a suportar query (`parse`, `from`, `with`, `toString`).
+- `translatedContentProvider.ts`: `stat()` devolve `size` do conteudo traduzido + `mtime` que avanca;
+  `invalidatePath` limpa o cache do arquivo e dispara `onDidChangeFile` para as visoes abertas;
+  `doWriteFile` descarta todos os idiomas em cache do arquivo ao salvar e refresca o atual.
+- `autoTranslateManager.ts`: `refreshTranslatedTabs` so chama `invalidatePath(caminho)` por arquivo
+  aberto (sem abrir/fechar/refocar); `handleActiveEditorChange` mantem uma visao por arquivo via
+  `isAnyTranslatedTabOpenForPath`; fechamentos de aba (toggle on/off e readonly) usam `closeTab(uri)`
+  por busca fresca, nao por referencia guardada.
+- `extension.ts`: o file-watcher chama `invalidatePath` quando o original muda no disco.
 
 ## Fora de escopo
-Comparacao multi-idioma lado a lado (visoes secundarias em readonly). Fica como evolucao possivel
-(monografia §4.9): o padrao seguro mantem uma visao editavel por arquivo.
+- Comparacao multi-idioma lado a lado (visoes secundarias em readonly) - evolucao possivel.
+- O toggle editavel <-> readonly continua reabrindo a aba (o "ser readonly" esta atrelado ao esquema
+  da URI), mas com `closeTab(uri)` por busca fresca.

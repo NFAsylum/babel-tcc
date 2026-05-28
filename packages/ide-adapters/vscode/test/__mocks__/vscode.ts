@@ -45,11 +45,11 @@ export class Uri {
   fragment: string;
   fsPath: string;
 
-  private constructor(scheme: string, path: string, query = '') {
+  private constructor(scheme: string, path: string) {
     this.scheme = scheme;
     this.authority = '';
     this.path = path;
-    this.query = query;
+    this.query = '';
     this.fragment = '';
     this.fsPath = path;
   }
@@ -60,25 +60,18 @@ export class Uri {
 
   static parse(value: string): Uri {
     const colonIdx = value.indexOf(':');
-    let scheme = 'file';
-    let rest = value;
     if (colonIdx >= 0) {
-      scheme = value.substring(0, colonIdx);
-      rest = value.substring(colonIdx + 1);
+      return new Uri(value.substring(0, colonIdx), value.substring(colonIdx + 1));
     }
-    const qIdx = rest.indexOf('?');
-    if (qIdx >= 0) {
-      return new Uri(scheme, rest.substring(0, qIdx), rest.substring(qIdx + 1));
-    }
-    return new Uri(scheme, rest);
+    return new Uri('file', value);
   }
 
   toString(): string {
-    return `${this.scheme}:${this.path}${this.query ? `?${this.query}` : ''}`;
+    return `${this.scheme}:${this.path}`;
   }
 
-  with(change: { scheme?: string; path?: string; query?: string }): Uri {
-    return new Uri(change.scheme ?? this.scheme, change.path ?? this.path, change.query ?? this.query);
+  with(change: { scheme?: string; path?: string }): Uri {
+    return new Uri(change.scheme ?? this.scheme, change.path ?? this.path);
   }
 }
 

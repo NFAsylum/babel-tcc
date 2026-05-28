@@ -114,16 +114,6 @@ describe('TranslatedContentProvider', () => {
       expect(provider.cache.has('/test/file.cs::pt-br')).toBe(true);
     });
 
-    it('should translate using the language carried by the URI, not the config', async () => {
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=es-es`);
-
-      await provider.provideContent(uri);
-      expect(mockCoreBridge.translateToNaturalLanguage).toHaveBeenCalledWith(
-        'public class Foo {}', '.cs', 'es-es'
-      );
-      expect(provider.cache.has('/test/file.cs::es-es')).toBe(true);
-    });
-
     it('should return original when translation fails', async () => {
       mockCoreBridge.translateToNaturalLanguage.mockRejectedValue(new Error('fail'));
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
@@ -163,17 +153,17 @@ describe('TranslatedContentProvider', () => {
     });
 
     it('should drop other-language caches for the path after saving', async () => {
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=en`);
-      provider.cache.set('/test/file.cs::pt-br', 'stale pt-br');
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      provider.cache.set('/test/file.cs::fr', 'stale fr');
       provider.cache.set('/other/file.cs::pt-br', 'keep');
       workspace.textDocuments = [];
 
       await provider.writeFile(uri, new TextEncoder().encode('translated'));
 
       // The original changed on disk, so every cached language for this file is dropped...
-      expect(provider.cache.has('/test/file.cs::pt-br')).toBe(false);
+      expect(provider.cache.has('/test/file.cs::fr')).toBe(false);
       // ...the current language is refreshed, and other files are untouched.
-      expect(provider.cache.get('/test/file.cs::en')).toBe('publico classe Foo {}');
+      expect(provider.cache.get('/test/file.cs::pt-br')).toBe('publico classe Foo {}');
       expect(provider.cache.has('/other/file.cs::pt-br')).toBe(true);
     });
 
@@ -229,24 +219,20 @@ describe('TranslatedContentProvider', () => {
   });
 
   describe('buildCacheKey', () => {
-    it('should combine path and the language carried by the URI', () => {
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=es-es`);
-      expect(provider.buildCacheKey(uri)).toBe('/test/file.cs::es-es');
-    });
-
-    it('should fall back to the config language when the URI has no lang query', () => {
+    it('should combine path and the configured target language', () => {
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
       expect(provider.buildCacheKey(uri)).toBe('/test/file.cs::pt-br');
     });
   });
 
   describe('stat', () => {
-    it('should call workspace.fs.stat with original file uri', async () => {
+    it('should report the translated content size (not the original) and stat the original', async () => {
       vi.mocked(workspace.fs.stat).mockResolvedValue({ type: 1, ctime: 0, mtime: 0, size: 100 } as any);
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
       const stat = await provider.stat(uri);
       expect(workspace.fs.stat).toHaveBeenCalled();
-      expect(stat.size).toBe(100);
+      // size MUST match the translated bytes readFile returns, so the change event refreshes editors.
+      expect(stat.size).toBe(Buffer.byteLength('publico classe Foo {}', 'utf-8'));
     });
   });
 
@@ -264,7 +250,7 @@ describe('TranslatedContentProvider', () => {
       provider.cache.set('/test/file.cs::en', 'b');
       provider.cache.set('/other/file.cs::pt-br', 'c');
 
-      const openDoc = { uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=pt-br`) };
+      const openDoc = { uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`) };
       workspace.textDocuments = [openDoc];
 
       const events: unknown[] = [];

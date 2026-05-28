@@ -5,7 +5,7 @@ import { execFile } from 'child_process';
 import { CoreBridge } from './services/coreBridge';
 import { LanguageDetector } from './services/languageDetector';
 import { ConfigurationService } from './services/configurationService';
-import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme, buildTranslatedUri } from './providers/translatedContentProvider';
+import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './providers/translatedContentProvider';
 import { CompletionProvider } from './providers/completionProvider';
 import { HoverProvider } from './providers/hoverProvider';
 import { KeywordMapService } from './providers/keywordMap';
@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   statusBar = new StatusBar(configService, languageDetector);
   autoTranslateManager = new AutoTranslateManager(
-    configService, languageDetector, outputChannel
+    configService, languageDetector, translatedContentProvider, outputChannel
   );
 
   const providerRegistration: vscode.Disposable = vscode.workspace.registerFileSystemProvider(
@@ -290,10 +290,9 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       await configService.setReadonly(false);
-      const editableLanguage: string = configService.getLanguageForProgrammingLanguage(
-        languageDetector.detectLanguage(originalUri.path) || ''
+      const translatedUri: vscode.Uri = vscode.Uri.parse(
+        `${TRANSLATED_SCHEME}:${originalUri.path}`
       );
-      const translatedUri: vscode.Uri = buildTranslatedUri(TRANSLATED_SCHEME, originalUri.path, editableLanguage);
 
       const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
@@ -317,10 +316,9 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       await configService.setReadonly(true);
-      const readonlyLanguage: string = configService.getLanguageForProgrammingLanguage(
-        languageDetector.detectLanguage(originalUri.path) || ''
+      const translatedUri: vscode.Uri = vscode.Uri.parse(
+        `${READONLY_SCHEME}:${originalUri.path}`
       );
-      const translatedUri: vscode.Uri = buildTranslatedUri(READONLY_SCHEME, originalUri.path, readonlyLanguage);
 
       const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(translatedUri);
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });

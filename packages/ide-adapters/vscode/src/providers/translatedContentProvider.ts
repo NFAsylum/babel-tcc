@@ -14,21 +14,6 @@ export function isTranslatedScheme(scheme: string): boolean {
   return scheme === TRANSLATED_SCHEME || scheme === READONLY_SCHEME;
 }
 
-/**
- * Builds a translated virtual URI that encodes the target natural language in the query.
- * Encoding the language in the URI makes each language a distinct document, so VS Code is forced to
- * re-read fresh content on open instead of returning a cached working copy keyed by a shared URI.
- */
-export function buildTranslatedUri(scheme: string, path: string, language: string): vscode.Uri {
-  return vscode.Uri.parse(`${scheme}:${path}?lang=${language}`);
-}
-
-/** Extracts the target natural language from a translated URI's `lang` query, if present. */
-export function getLanguageFromUri(uri: vscode.Uri): string | undefined {
-  const match: RegExpExecArray | null = /(?:^|&)lang=([^&]+)/.exec(uri.query);
-  return match ? decodeURIComponent(match[1]) : undefined;
-}
-
 /** Provides a virtual filesystem for translated documents, supporting read and write operations. */
 export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public coreBridge: CoreBridge;
@@ -64,12 +49,17 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public async stat(uri: vscode.Uri): Promise<vscode.FileStat> {
     const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
     const originalStat: vscode.FileStat = await vscode.workspace.fs.stat(originalUri);
+    // The size MUST reflect the translated content that readFile returns (not the original file's
+    // size), and the mtime MUST advance on a change. VS Code skips refreshing an open editor on a
+    // change event unless both hold (FileSystemProvider.onDidChangeFile contract). This is what makes
+    // an in-place language switch — invalidatePath fires the change event — actually re-translate.
+    const content: string = await this.provideContent(uri);
     const virtualMtime: number = this.mtimeMap.get(uri.toString()) || originalStat.mtime;
     return {
       type: originalStat.type,
       ctime: originalStat.ctime,
       mtime: virtualMtime,
-      size: originalStat.size,
+      size: Buffer.byteLength(content, 'utf-8'),
     };
   }
 
@@ -279,21 +269,14 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     this.mtimeMap.clear();
   }
 
-  /**
-   * Resolves the target natural language for a translated URI: from the URI's `lang` query when
-   * present, falling back to the configured language for the file's programming language.
-   */
+  /** Resolves the configured target natural language for a file's programming language. */
   public getTargetLanguage(uri: vscode.Uri): string {
-    const fromUri: string | undefined = getLanguageFromUri(uri);
-    if (fromUri !== undefined) {
-      return fromUri;
-    }
     const programmingLanguage: string = this.languageDetector.detectLanguage(uri.path) || '';
     return this.configService.getLanguageForProgrammingLanguage(programmingLanguage);
   }
 
   /**
-   * Builds a cache key combining the file path and the target language carried by the URI.
+   * Builds a cache key combining the file path and the current target language for that file.
    */
   public buildCacheKey(uri: vscode.Uri): string {
     return `${uri.path}::${this.getTargetLanguage(uri)}`;
