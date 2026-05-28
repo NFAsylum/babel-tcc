@@ -152,13 +152,16 @@ describe('TranslatedContentProvider', () => {
       expect(workspace.applyEdit).toHaveBeenCalled();
     });
 
-    it('should reverse-translate FROM the displayed language even when the config changed', async () => {
+    it('should reverse-translate FROM the displayed language even after a config switch + stat', async () => {
+      vi.mocked(workspace.fs.stat).mockResolvedValue({ type: 1, ctime: 0, mtime: 0, size: 100 } as any);
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
-      // Render once (config = pt-br) so the provider records pt-br as the displayed language.
-      await provider.provideContent(uri);
-      // The user then switches the configured language to es-es, but this view still shows pt-br
-      // (it has unsaved edits, so VS Code did not reload it).
+      // readFile loads the buffer in pt-br and records it as the displayed language.
+      await provider.readFile(uri);
+      // The user switches the configured language to es-es (the dirty buffer still shows pt-br)...
       mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('es-es');
+      // ...and a stat() happens (VS Code stats frequently, including around save). It must NOT
+      // overwrite the displayed language — this is the regression that previously corrupted the file.
+      await provider.stat(uri);
       workspace.textDocuments = [];
 
       await provider.writeFile(uri, new TextEncoder().encode('publico classe Foo {}'));

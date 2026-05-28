@@ -1,51 +1,51 @@
-using System;
-using System.Collections.Generic;
+shiyou System;
+shiyou System.Collections.Generic;
 
-namespace Examples
+meimaikuukan Examples
 {
-    public class Calculator // tradu[pt-br]:Calculadora
+    koukai kurasu Calculator // tradu[pt-br]:Calculadora
     {
-        private List<double> history; // tradu[pt-br]:historico
+        shiyuu List<nibai> history; // tradu[pt-br]:historico
 
-        public Calculator() // tradu[pt-br]:Calculadora
+        koukai Calculator() // tradu[pt-br]:Calculadora
         {
-            history = new List<double>();
+            history = atarashii List<nibai>();
         }
 
-        public double Add(double a, double b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
+        koukai nibai Add(nibai a, nibai b) // tradu[pt-br]:Somar,a:primeiroNumero,b:segundoNumero
         {
-            double result = a + b;
+            nibai result = a + b;
             history.Add(result);
-            return result;
+            modoru result;
         }
 
-        public double Subtract(double a, double b) // tradu[pt-br]:Subtrair,a:primeiroNumero,b:segundoNumero
+        koukai nibai Subtract(nibai a, nibai b) // tradu[pt-br]:Subtrair,a:primeiroNumero,b:segundoNumero
         {
-            double result = a - b;
+            nibai result = a - b;
             history.Add(result);
-            return result;
+            modoru result;
         }
 
-        public double Divide(double a, double b) // tradu[pt-br]:Dividir,a:dividendo,b:divisor
+        koukai nibai Divide(nibai a, nibai b) // tradu[pt-br]:Dividir,a:dividendo,b:divisor
         {
-            if (b == 0)
+            moshi (b == 0)
             {
-                throw new DivideByZeroException("Cannot divide by zero");
+                nageru atarashii DivideByZeroException("Cannot divide by zero");
             }
-            double result = a / b;
+            nibai result = a / b;
             history.Add(result);
-            return result;
+            modoru result;
         }
 
-        public void PrintHistory() // tradu[pt-br]:ImprimirHistorico
+        koukai kuuhaku PrintHistory() // tradu[pt-br]:ImprimirHistorico
         {
-            foreach (var item in history)
+            subetekurikaeshi (var item naka history)
             {
                 Console.WriteLine(item);
             }
         }
 
-        public void ClearHistory() // tradu[pt-br]:LimparHistorico
+        koukai kuuhaku ClearHistory() // tradu[pt-br]:LimparHistorico
         {
             history.Clear();
         }

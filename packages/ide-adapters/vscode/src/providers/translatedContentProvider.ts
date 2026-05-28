@@ -67,6 +67,11 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
   public async readFile(uri: vscode.Uri): Promise<Uint8Array> {
     const content: string = await this.provideContent(uri);
+    // Record the language ONLY here, not in provideContent: readFile is when VS Code loads content
+    // into the editor buffer, so it reflects the language the buffer actually holds. provideContent
+    // is also called by stat() (frequently, including around save), and recording there would let a
+    // stat after a language switch overwrite the displayed language before a dirty doc is saved.
+    this.displayLanguages.set(uri.path, this.getTargetLanguage(uri));
     const encoder = new TextEncoder();
     return encoder.encode(content);
   }
@@ -215,7 +220,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
     const translated: string = await this.translateContent(originalContent, fileExtension, targetLanguage);
     this.cache.set(cacheKey, translated);
-    this.displayLanguages.set(originalPath, targetLanguage);
     if (this.onTranslationComplete) {
       this.onTranslationComplete(targetLanguage);
     }
