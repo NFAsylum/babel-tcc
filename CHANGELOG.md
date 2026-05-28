@@ -3,6 +3,13 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 Este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+> **Nota:** o changelog detalhado das releases **publicadas** da extensão (0.9.0 em diante,
+> incluindo as publicações no VS Code Marketplace e no Open VSX) fica em
+> [`packages/ide-adapters/vscode/CHANGELOG.md`](packages/ide-adapters/vscode/CHANGELOG.md), que é o
+> changelog canônico voltado ao usuário. Este arquivo registra marcos do projeto como um todo.
+> A entrada `[0.9.0-beta.1]` abaixo foi um pré-release só por GitHub Releases; a primeira
+> publicação no Marketplace foi a `0.9.0`.
+
 ## [Unreleased]
 
 ## [0.9.0-beta.1] - 2026-05-22
