@@ -33,7 +33,7 @@
 
 | Linguagem | Status | Adaptador | Keywords |
 |-----------|--------|-----------|----------|
-| C# | Suportado | CSharpAdapter (Roslyn) | 89 |
+| C# | Suportado | CSharpAdapter (Roslyn) | 91 |
 | Python | Suportado | PythonAdapter (subprocesso CPython) | 35 |
 
 ## Idiomas Naturais

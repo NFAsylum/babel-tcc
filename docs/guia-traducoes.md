@@ -168,4 +168,4 @@ Abrir Pull Request no GitHub com:
 | 75 | void | Sem retorno |
 | 77 | while | Loop while |
 
-Consultar `programming-languages/csharp/keywords-base.json` para a lista completa de 89 keywords.
+Consultar `programming-languages/csharp/keywords-base.json` para a lista completa de 91 keywords.
