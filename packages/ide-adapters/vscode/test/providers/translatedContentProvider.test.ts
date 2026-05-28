@@ -162,6 +162,21 @@ describe('TranslatedContentProvider', () => {
       expect(workspace.applyEdit).toHaveBeenCalled();
     });
 
+    it('should drop other-language caches for the path after saving', async () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs?lang=en`);
+      provider.cache.set('/test/file.cs::pt-br', 'stale pt-br');
+      provider.cache.set('/other/file.cs::pt-br', 'keep');
+      workspace.textDocuments = [];
+
+      await provider.writeFile(uri, new TextEncoder().encode('translated'));
+
+      // The original changed on disk, so every cached language for this file is dropped...
+      expect(provider.cache.has('/test/file.cs::pt-br')).toBe(false);
+      // ...the current language is refreshed, and other files are untouched.
+      expect(provider.cache.get('/test/file.cs::en')).toBe('publico classe Foo {}');
+      expect(provider.cache.has('/other/file.cs::pt-br')).toBe(true);
+    });
+
     it('should show error when reverse translation fails', async () => {
       mockCoreBridge.applyTranslatedEdits.mockRejectedValue(new Error('fail'));
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
@@ -240,24 +255,6 @@ describe('TranslatedContentProvider', () => {
       const disposable = provider.watch(Uri.file('/test'), 0, []);
       expect(disposable).toBeDefined();
       expect(typeof disposable.dispose).toBe('function');
-    });
-  });
-
-  describe('invalidateCache', () => {
-    it('should fire change events for both schemes', () => {
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
-      provider.cache.set('/test/file.cs::pt-br', 'cached');
-
-      const events: unknown[] = [];
-      provider.onDidChangeFile((e: unknown) => events.push(e));
-
-      provider.invalidateCache(uri);
-
-      expect(events.length).toBe(1);
-      const fired = events[0] as Array<{ type: number; uri: { scheme: string } }>;
-      const schemes = fired.map(e => e.uri.scheme);
-      expect(schemes).toContain(TRANSLATED_SCHEME);
-      expect(schemes).toContain(READONLY_SCHEME);
     });
   });
 

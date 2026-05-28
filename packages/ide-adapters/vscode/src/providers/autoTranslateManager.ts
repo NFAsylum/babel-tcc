@@ -1,14 +1,13 @@
 import * as vscode from 'vscode';
 import { ConfigurationService } from '../services/configurationService';
 import { LanguageDetector } from '../services/languageDetector';
-import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme, buildTranslatedUri } from './translatedContentProvider';
+import { TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme, buildTranslatedUri } from './translatedContentProvider';
 import { SUPPORTED_LANGUAGES } from '../config/languages';
 
 /** Manages automatic translation of .cs tabs based on the enabled/language configuration. */
 export class AutoTranslateManager implements vscode.Disposable {
   public configService: ConfigurationService;
   public languageDetector: LanguageDetector;
-  public contentProvider: TranslatedContentProvider;
   public outputChannel: vscode.OutputChannel;
   public processingUris: Set<string> = new Set<string>();
   public previousEnabled: boolean;
@@ -21,12 +20,10 @@ export class AutoTranslateManager implements vscode.Disposable {
   constructor(
     configService: ConfigurationService,
     languageDetector: LanguageDetector,
-    contentProvider: TranslatedContentProvider,
     outputChannel: vscode.OutputChannel
   ) {
     this.configService = configService;
     this.languageDetector = languageDetector;
-    this.contentProvider = contentProvider;
     this.outputChannel = outputChannel;
     this.previousEnabled = configService.isEnabled();
     this.previousLanguageFingerprint = this.getLanguageFingerprint();
@@ -366,23 +363,6 @@ export class AutoTranslateManager implements vscode.Disposable {
     }
 
     return results;
-  }
-
-  /** Checks whether a tab with the given URI is already open. */
-  public isTabOpen(uri: vscode.Uri): boolean {
-    const uriString: string = uri.toString();
-
-    for (const group of vscode.window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        if (tab.input instanceof vscode.TabInputText) {
-          if (tab.input.uri.toString() === uriString) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
   }
 
   /** Closes the tab matching the given URI. */

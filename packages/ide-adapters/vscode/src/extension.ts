@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   statusBar = new StatusBar(configService, languageDetector);
   autoTranslateManager = new AutoTranslateManager(
-    configService, languageDetector, translatedContentProvider, outputChannel
+    configService, languageDetector, outputChannel
   );
 
   const providerRegistration: vscode.Disposable = vscode.workspace.registerFileSystemProvider(

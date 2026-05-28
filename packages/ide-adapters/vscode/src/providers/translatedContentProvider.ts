@@ -133,6 +133,14 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
         updatedOriginal, fileExtension, targetLanguage
       );
 
+      // This save changed the original on disk, but the file-watcher is suppressed for our own
+      // writes (writingPaths). Drop every cached language for this file so a later switch to another
+      // language re-translates from the updated source, then refresh the current language's cache.
+      for (const key of [...this.cache.keys()]) {
+        if (key.startsWith(`${originalPath}::`)) {
+          this.cache.delete(key);
+        }
+      }
       this.cache.set(cacheKey, freshTranslation);
 
       setTimeout(async (): Promise<void> => {
@@ -238,26 +246,6 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       );
       return sourceCode;
     }
-  }
-
-  /**
-   * Removes the cached translation for a specific URI and fires a change event to refresh the document.
-   */
-  public invalidateCache(uri: vscode.Uri): void {
-    const cacheKey: string = this.buildCacheKey(uri);
-    this.cache.delete(cacheKey);
-
-    const otherScheme: string = uri.scheme === TRANSLATED_SCHEME ? READONLY_SCHEME : TRANSLATED_SCHEME;
-    const otherUri: vscode.Uri = uri.with({ scheme: otherScheme });
-
-    const now: number = Date.now();
-    this.mtimeMap.set(uri.toString(), now);
-    this.mtimeMap.set(otherUri.toString(), now);
-
-    this.changeEmitter.fire([
-      { type: vscode.FileChangeType.Changed, uri: uri },
-      { type: vscode.FileChangeType.Changed, uri: otherUri }
-    ]);
   }
 
   /**

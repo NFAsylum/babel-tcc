@@ -73,10 +73,6 @@ export class Uri {
     return new Uri(scheme, rest);
   }
 
-  static from(components: { scheme: string; authority?: string; path?: string; query?: string; fragment?: string }): Uri {
-    return new Uri(components.scheme, components.path ?? '', components.query ?? '');
-  }
-
   toString(): string {
     return `${this.scheme}:${this.path}${this.query ? `?${this.query}` : ''}`;
   }

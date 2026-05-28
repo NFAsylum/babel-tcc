@@ -16,10 +16,6 @@ describe('AutoTranslateManager', () => {
     isSupported: ReturnType<typeof vi.fn>;
     detectLanguage: ReturnType<typeof vi.fn>;
   };
-  let mockContentProvider: {
-    invalidateAll: ReturnType<typeof vi.fn>;
-    invalidateCache: ReturnType<typeof vi.fn>;
-  };
   let outputChannel: { appendLine: ReturnType<typeof vi.fn> };
   let configChangeListener: () => void;
 
@@ -40,10 +36,6 @@ describe('AutoTranslateManager', () => {
       isSupported: vi.fn().mockReturnValue(true),
       detectLanguage: vi.fn().mockReturnValue('CSharp'),
     };
-    mockContentProvider = {
-      invalidateAll: vi.fn(),
-      invalidateCache: vi.fn(),
-    };
     outputChannel = { appendLine: vi.fn() };
 
     vi.mocked(window.onDidChangeActiveTextEditor).mockImplementation((_cb: any) => ({
@@ -60,7 +52,6 @@ describe('AutoTranslateManager', () => {
     manager = new AutoTranslateManager(
       mockConfigService as any,
       mockLanguageDetector as any,
-      mockContentProvider as any,
       outputChannel as any
     );
   });
@@ -264,19 +255,24 @@ describe('AutoTranslateManager', () => {
     });
   });
 
-  describe('isTabOpen', () => {
-    it('should return true when tab exists', () => {
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
-      const tab = { input: new TabInputText(uri) };
+  describe('isAnyTranslatedTabOpenForPath', () => {
+    it('should return true when a translated tab (any scheme/language) is open for the path', () => {
+      const tab = { input: new TabInputText(Uri.parse(`${READONLY_SCHEME}:/test/file.cs?lang=en`)) };
       window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
 
-      expect(manager.isTabOpen(uri)).toBe(true);
+      expect(manager.isAnyTranslatedTabOpenForPath('/test/file.cs')).toBe(true);
     });
 
-    it('should return false when tab does not exist', () => {
+    it('should return false when only a non-translated tab is open for the path', () => {
+      const tab = { input: new TabInputText(Uri.file('/test/file.cs')) };
+      window.tabGroups.all = [{ tabs: [tab], viewColumn: ViewColumn.One }];
+
+      expect(manager.isAnyTranslatedTabOpenForPath('/test/file.cs')).toBe(false);
+    });
+
+    it('should return false when no tab matches the path', () => {
       window.tabGroups.all = [];
-      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
-      expect(manager.isTabOpen(uri)).toBe(false);
+      expect(manager.isAnyTranslatedTabOpenForPath('/test/file.cs')).toBe(false);
     });
   });
 
