@@ -376,19 +376,33 @@ traduzida se nenhuma já estiver aberta para aquele caminho (`isAnyTranslatedTab
   original, descarta os idiomas em cache do arquivo e grava cache/baseline = o texto salvo. **Sem
   `setTimeout`, sem re-render concorrente, sem `freshTranslation`.**
 - **Edições não salvas são tratadas ANTES da troca**, não depois. O comando `selectLanguage` chama
-  `confirmUnsavedEditsBeforeLanguageChange()` enquanto o idioma atual ainda vale: "Salvar" faz um save
-  normal (reverte no idioma correto), "Descartar" reverte o buffer, "Cancelar" aborta a troca. Salvar
-  *depois* que a config já mudou descartava as edições — por isso salvar primeiro e só então trocar.
+  `confirmUnsavedEditsBeforeLanguageChange(linguagemAfetada?)` enquanto o idioma atual ainda vale:
+  "Salvar" faz um save normal (reverte no idioma correto), "Descartar" reverte o buffer, "Cancelar"
+  aborta a troca. Salvar *depois* que a config já mudou descartava as edições — por isso salvar primeiro
+  e só então trocar. O prompt é **escopado pela linguagem afetada**: numa troca per-language (ex.: só
+  CSharp) só entram visões sujas daquela linguagem — mudar CSharp não promove/descarta uma visão Python
+  suja não relacionada; numa troca global, entram todas.
 - `autoTranslateManager.ts`: `refreshTranslatedTabs` percorre as visões traduzidas abertas e chama
   `reloadTranslatedView(uri, caminho)` — que limpa o cache (`invalidatePath`) e, se a visão estiver
   aberta e **limpa**, dá foco e executa `workbench.action.files.revert`; ao final restaura o foco da
   visão que estava ativa. `handleActiveEditorChange` mantém uma visão por arquivo; fechamentos de aba
   (toggle on/off e readonly) usam `closeTab(uri)` por busca fresca.
-- `extension.ts`: o comando `selectLanguage` confirma edições não salvas antes de mudar a config; o
-  file-watcher **consome** o evento da própria escrita (`writingPaths`: deleta e ignora — supressão
-  determinística, sem timer) e, para mudanças externas, chama `invalidatePath`.
+- `extension.ts`: o comando `selectLanguage` confirma edições não salvas (escopadas) antes de mudar a
+  config; o file-watcher suprime o evento da **própria escrita por janela de timestamp**
+  (`recentWrites` + `isRecentSelfWrite`, ~1s) e, fora da janela (mudança externa), chama
+  `invalidatePath`. A janela substituiu um flag "consome-uma-vez": um save pode emitir vários eventos
+  coalescidos ou nenhum (escrita no-op/falha), e o flag vazava (suprimindo uma mudança externa futura
+  para sempre) ou sub-suprimia; a janela se auto-expira e cobre o burst.
+
+**Limitação conhecida (follow-up):** uma mudança **externa** do arquivo original (git checkout,
+formatador de fora) com a visão traduzida aberta dispara `invalidatePath` (limpa o cache), mas a visão
+só recarrega de forma **confiável** via `revert` — que hoje só roda na troca de idioma, não no
+file-watcher. Acionar `revert` no watcher esbarra no timing do `onDidChangeFile`, que dispara **antes**
+do conteúdo estar atualizado (microsoft/vscode#72831), então o re-`readFile` pode ler conteúdo velho.
+Fica como follow-up; o caso (editar o original por fora com a visão traduzida aberta) é incomum.
 
 **Referências:**
 - [FileSystemProvider.onDidChangeFile — contrato de `mtime`/`size`](https://vshaxe.github.io/vscode-extern/vscode/FileSystemProvider.html)
 - [microsoft/vscode#110854 — recarregamento de editores abertos sobre `FileSystemProvider` (não confiável)](https://github.com/microsoft/vscode/issues/110854)
 - [microsoft/vscode#242867 — `tabGroups.close` ineficaz com referência guardada](https://github.com/microsoft/vscode/issues/242867)
+- [microsoft/vscode#72831 — `FileSystemWatcher.onDidChange` dispara antes do conteúdo estar atualizado](https://github.com/microsoft/vscode/issues/72831)

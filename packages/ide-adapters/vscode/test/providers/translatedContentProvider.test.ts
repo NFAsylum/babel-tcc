@@ -285,6 +285,31 @@ describe('TranslatedContentProvider', () => {
     });
   });
 
+  describe('self-write suppression (recentWrites)', () => {
+    it('isRecentSelfWrite is false for a path we never wrote', () => {
+      expect(provider.isRecentSelfWrite('/test/file.cs')).toBe(false);
+    });
+
+    it('markSelfWrite makes isRecentSelfWrite true within the window', () => {
+      provider.markSelfWrite('/test/file.cs');
+      expect(provider.isRecentSelfWrite('/test/file.cs')).toBe(true);
+    });
+
+    it('isRecentSelfWrite expires after the suppression window (no leak)', () => {
+      // A timestamp older than the window must NOT keep suppressing — this is the leak the old
+      // consume-once flag had (a no-op/failed save left the flag set forever).
+      provider.recentWrites.set('/test/file.cs', Date.now() - 5000);
+      expect(provider.isRecentSelfWrite('/test/file.cs')).toBe(false);
+    });
+
+    it('doWriteFile marks the path as a recent self-write', async () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      workspace.textDocuments = [];
+      await provider.writeFile(uri, new TextEncoder().encode('publico classe Foo {}'));
+      expect(provider.isRecentSelfWrite('/test/file.cs')).toBe(true);
+    });
+  });
+
   describe('dispose', () => {
     it('should clear cache on dispose', () => {
       provider.cache.set('key', 'value');

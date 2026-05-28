@@ -14,6 +14,15 @@ export function isTranslatedScheme(scheme: string): boolean {
   return scheme === TRANSLATED_SCHEME || scheme === READONLY_SCHEME;
 }
 
+/**
+ * How long (ms) after the extension writes an original file to treat file-watcher events for that
+ * path as our own write and suppress them. A single save can emit several coalesced watcher events,
+ * and a save can also emit none (a no-op or failed write); a time window covers the whole burst and
+ * self-expires, so the marker neither leaks (suppressing a later genuine external change forever) nor
+ * under-suppresses, unlike a consume-once flag.
+ */
+const SELF_WRITE_SUPPRESS_MS = 1000;
+
 /** Provides a virtual filesystem for translated documents, supporting read and write operations. */
 export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public coreBridge: CoreBridge;
@@ -22,7 +31,9 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
   public outputChannel: vscode.OutputChannel;
   public cache: Map<string, string> = new Map<string, string>();
   public onTranslationComplete: ((language: string) => void) | null = null;
-  public writingPaths: Set<string> = new Set<string>();
+  /** Timestamp (ms) of the last time WE wrote each original path, used to suppress our own
+   * file-watcher events for SELF_WRITE_SUPPRESS_MS. Keyed by original file path. */
+  public recentWrites: Map<string, number> = new Map<string, number>();
   public saveQueue: Map<string, Promise<void>> = new Map<string, Promise<void>>();
   public mtimeMap: Map<string, number> = new Map<string, number>();
   /** The natural language each open translated view is currently displaying, keyed by file path. */
@@ -124,7 +135,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       );
 
       const originalUri: vscode.Uri = vscode.Uri.file(originalPath);
-      this.writingPaths.add(originalPath);
+      this.markSelfWrite(originalPath);
       const originalDoc: vscode.TextDocument = await vscode.workspace.openTextDocument(originalUri);
       const fullRange: vscode.Range = new vscode.Range(
         new vscode.Position(0, 0),
@@ -259,6 +270,20 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     this.mtimeMap.clear();
   }
 
+  /**
+   * Records that WE just wrote the given original path, so the file-watcher can ignore the resulting
+   * change event(s) for a short window (SELF_WRITE_SUPPRESS_MS). Called from doWriteFile.
+   */
+  public markSelfWrite(originalPath: string): void {
+    this.recentWrites.set(originalPath, Date.now());
+  }
+
+  /** Returns true if the given original path was written by us within the suppression window. */
+  public isRecentSelfWrite(originalPath: string): boolean {
+    const writtenAt: number | undefined = this.recentWrites.get(originalPath);
+    return writtenAt !== undefined && Date.now() - writtenAt < SELF_WRITE_SUPPRESS_MS;
+  }
+
   /** Resolves the configured target natural language for a file's programming language. */
   public getTargetLanguage(uri: vscode.Uri): string {
     const programmingLanguage: string = this.languageDetector.detectLanguage(uri.path) || '';
@@ -295,6 +320,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     this.cache.clear();
     this.displayLanguages.clear();
     this.renderedContent.clear();
+    this.recentWrites.clear();
     this.changeEmitter.dispose();
   }
 }

@@ -268,11 +268,18 @@ export class AutoTranslateManager implements vscode.Disposable {
    * while the current language is still in effect, so that saving reverse-translates the content with
    * the language it is actually written in (a normal save) — saving after the config already changed
    * is what previously discarded the edits. Returns false if the user cancels (caller must not switch).
+   *
+   * `affectedLanguage` scopes the prompt: when a per-programming-language override is being changed
+   * (e.g. only CSharp), only dirty views of THAT language are considered — a change to CSharp must not
+   * prompt about (and, on "Discard", revert) an unrelated dirty Python view. When undefined (a global
+   * change), every dirty translated view is considered.
    */
-  public async confirmUnsavedEditsBeforeLanguageChange(): Promise<boolean> {
+  public async confirmUnsavedEditsBeforeLanguageChange(affectedLanguage?: string): Promise<boolean> {
     const dirtyDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(
       (doc: vscode.TextDocument): boolean =>
-        isTranslatedScheme(doc.uri.scheme) && doc.isDirty
+        isTranslatedScheme(doc.uri.scheme) && doc.isDirty &&
+        (affectedLanguage === undefined ||
+          this.languageDetector.detectLanguage(doc.uri.path) === affectedLanguage)
     );
     if (dirtyDocs.length === 0) {
       return true;

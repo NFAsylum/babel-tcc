@@ -175,11 +175,11 @@ export function activate(context: vscode.ExtensionContext): void {
   const fileWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(buildFileWatcherPattern());
   const fileWatcherChangeHandler: vscode.Disposable = fileWatcher.onDidChange(
     (uri: vscode.Uri): void => {
-      // Our own save writes the original and flags it in writingPaths. Consume that single watcher
-      // event (delete the flag, skip) instead of clearing it on a timer — deterministic, and no timer
-      // racing with the save/switch flow. A genuine external change is not flagged, so it refreshes.
-      if (translatedContentProvider.writingPaths.has(uri.path)) {
-        translatedContentProvider.writingPaths.delete(uri.path);
+      // Our own save writes the original; the provider timestamps it (recentWrites). Suppress watcher
+      // events within that window — a save can emit several coalesced events or none, so a self-
+      // expiring time window is robust where a consume-once flag would leak or under-suppress. A
+      // genuine external change is outside the window, so it still refreshes the translation.
+      if (translatedContentProvider.isRecentSelfWrite(uri.path)) {
         return;
       }
       translatedContentProvider.invalidatePath(uri.path);
@@ -242,7 +242,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
       // Handle unsaved edits BEFORE changing the language, while the current language is still in
       // effect, so a save reverse-translates the content correctly. Aborts the change on cancel.
-      if (!(await autoTranslateManager.confirmUnsavedEditsBeforeLanguageChange())) {
+      // Scope the prompt to the affected language: a per-language change only concerns that language's
+      // views, while a global change concerns all of them.
+      const affectedLanguage: string | undefined =
+        scopeChoice.scope === 'language' ? scopeChoice.language : undefined;
+      if (!(await autoTranslateManager.confirmUnsavedEditsBeforeLanguageChange(affectedLanguage))) {
         return;
       }
 

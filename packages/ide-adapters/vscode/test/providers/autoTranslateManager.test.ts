@@ -14,6 +14,7 @@ describe('AutoTranslateManager', () => {
   };
   let mockLanguageDetector: {
     isSupported: ReturnType<typeof vi.fn>;
+    detectLanguage: ReturnType<typeof vi.fn>;
   };
   let mockContentProvider: {
     invalidatePath: ReturnType<typeof vi.fn>;
@@ -36,6 +37,7 @@ describe('AutoTranslateManager', () => {
     };
     mockLanguageDetector = {
       isSupported: vi.fn().mockReturnValue(true),
+      detectLanguage: vi.fn().mockReturnValue('CSharp'),
     };
     mockContentProvider = {
       invalidatePath: vi.fn(),
@@ -343,6 +345,35 @@ describe('AutoTranslateManager', () => {
 
       expect(doc.save).not.toHaveBeenCalled();
       expect(commands.executeCommand).toHaveBeenCalledWith('workbench.action.files.revert');
+      expect(proceed).toBe(true);
+    });
+
+    it('should IGNORE dirty docs of other languages when a per-language scope is given', async () => {
+      // Changing only CSharp must not prompt about (or revert) an unrelated dirty Python view.
+      const pyDoc = {
+        uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/script.py`),
+        isDirty: true,
+        save: vi.fn().mockResolvedValue(undefined),
+      };
+      workspace.textDocuments = [pyDoc];
+      mockLanguageDetector.detectLanguage.mockReturnValue('Python');
+
+      const proceed = await manager.confirmUnsavedEditsBeforeLanguageChange('CSharp');
+
+      expect(proceed).toBe(true);
+      expect(window.showWarningMessage).not.toHaveBeenCalled();
+      expect(pyDoc.save).not.toHaveBeenCalled();
+    });
+
+    it('should still prompt for dirty docs MATCHING the per-language scope', async () => {
+      const csDoc = dirtyTranslatedDoc();
+      workspace.textDocuments = [csDoc];
+      mockLanguageDetector.detectLanguage.mockReturnValue('CSharp');
+      vi.mocked(window.showWarningMessage).mockResolvedValue('Save and switch' as any);
+
+      const proceed = await manager.confirmUnsavedEditsBeforeLanguageChange('CSharp');
+
+      expect(csDoc.save).toHaveBeenCalled();
       expect(proceed).toBe(true);
     });
   });
