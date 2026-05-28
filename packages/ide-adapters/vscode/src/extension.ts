@@ -236,6 +236,12 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
+      // Handle unsaved edits BEFORE changing the language, while the current language is still in
+      // effect, so a save reverse-translates the content correctly. Aborts the change on cancel.
+      if (!(await autoTranslateManager.confirmUnsavedEditsBeforeLanguageChange())) {
+        return;
+      }
+
       if (scopeChoice.scope === 'language' && scopeChoice.language) {
         await configService.setLanguageOverride(scopeChoice.language, selected);
         outputChannel.appendLine(`Language for ${scopeChoice.language} set to: ${selected}`);

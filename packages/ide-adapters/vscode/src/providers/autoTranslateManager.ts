@@ -154,8 +154,7 @@ export class AutoTranslateManager implements vscode.Disposable {
       this.previousLanguageFingerprint = currentFingerprint;
       await this.replaceOriginalsWithTranslated();
     } else if (currentEnabled && currentFingerprint !== previousFingerprint) {
-      const previousGlobalLanguage: string = previousFingerprint.split('|')[0];
-      await this.refreshTranslatedTabs(previousGlobalLanguage);
+      await this.refreshTranslatedTabs();
       this.previousLanguageFingerprint = this.getLanguageFingerprint();
     } else {
       this.previousLanguageFingerprint = currentFingerprint;
@@ -265,54 +264,66 @@ export class AutoTranslateManager implements vscode.Disposable {
   }
 
   /**
-   * Refreshes all open translated tabs for a new language, in place. The target language is read
-   * from configuration, so the URI does not change: we notify the provider that each open file
-   * changed and VS Code reloads the content in the SAME editor (the provider's stat now reports the
-   * new translated size plus an advanced mtime). No tab is closed or reopened, so focus never moves
-   * and no stale tab is left behind. Unsaved edits are handled first.
+   * Confirms what to do with unsaved edits in translated views BEFORE a language change. It must run
+   * while the current language is still in effect, so that saving reverse-translates the content with
+   * the language it is actually written in (a normal save) — saving after the config already changed
+   * is what previously discarded the edits. Returns false if the user cancels (caller must not switch).
    */
-  public async refreshTranslatedTabs(oldLanguage: string): Promise<void> {
-    const translatedTabs: TabInfo[] = [
-      ...this.findTabsByScheme(TRANSLATED_SCHEME),
-      ...this.findTabsByScheme(READONLY_SCHEME)
-    ];
-
-    // Check for unsaved edits in translated documents
+  public async confirmUnsavedEditsBeforeLanguageChange(): Promise<boolean> {
     const dirtyDocs: vscode.TextDocument[] = vscode.workspace.textDocuments.filter(
       (doc: vscode.TextDocument): boolean =>
         isTranslatedScheme(doc.uri.scheme) && doc.isDirty
     );
-
-    if (dirtyDocs.length > 0) {
-      const saveLabel: string = vscode.l10n.t('Save and switch');
-      const discardLabel: string = vscode.l10n.t('Discard and switch');
-      const cancelLabel: string = vscode.l10n.t('Cancel');
-      const choice: string | undefined = await vscode.window.showWarningMessage(
-        vscode.l10n.t('Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?', dirtyDocs.length),
-        saveLabel,
-        discardLabel,
-        cancelLabel
-      );
-
-      if (choice === cancelLabel || choice === undefined) {
-        // Revert language config to previous
-        await this.configService.setLanguage(oldLanguage);
-        this.outputChannel.appendLine('AutoTranslate: language switch cancelled by user');
-        return;
-      }
-
-      if (choice === saveLabel) {
-        for (const doc of dirtyDocs) {
-          try {
-            await doc.save();
-          } catch (error: unknown) {
-            const message: string = error instanceof Error ? error.message : String(error);
-            this.outputChannel.appendLine(`AutoTranslate: failed to save ${doc.uri.path} - ${message}`);
-          }
-        }
-      }
-      // 'Discard and switch' — just proceed without saving
+    if (dirtyDocs.length === 0) {
+      return true;
     }
+
+    const saveLabel: string = vscode.l10n.t('Save and switch');
+    const discardLabel: string = vscode.l10n.t('Discard and switch');
+    const cancelLabel: string = vscode.l10n.t('Cancel');
+    const choice: string | undefined = await vscode.window.showWarningMessage(
+      vscode.l10n.t('Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?', dirtyDocs.length),
+      saveLabel,
+      discardLabel,
+      cancelLabel
+    );
+
+    if (choice === cancelLabel || choice === undefined) {
+      this.outputChannel.appendLine('AutoTranslate: language switch cancelled by user');
+      return false;
+    }
+
+    for (const doc of dirtyDocs) {
+      try {
+        if (choice === saveLabel) {
+          await doc.save();
+        } else {
+          // Discard: revert the buffer to its saved content (in the current language) so the view is
+          // clean and the subsequent language change reloads it in the new language.
+          await vscode.window.showTextDocument(doc, { preview: false });
+          await vscode.commands.executeCommand('workbench.action.files.revert');
+        }
+      } catch (error: unknown) {
+        const message: string = error instanceof Error ? error.message : String(error);
+        this.outputChannel.appendLine(`AutoTranslate: failed to handle unsaved edits in ${doc.uri.path} - ${message}`);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Refreshes all open translated tabs for a new language, in place. The target language is read
+   * from configuration, so the URI does not change: we notify the provider that each open file
+   * changed and VS Code reloads the content in the SAME editor (the provider's stat reports the new
+   * translated size plus an advanced mtime). No tab is closed or reopened, so focus never moves and no
+   * stale tab is left behind. Unsaved edits are handled before the change, in
+   * confirmUnsavedEditsBeforeLanguageChange (a dirty view simply is not reloaded by the change event).
+   */
+  public async refreshTranslatedTabs(): Promise<void> {
+    const translatedTabs: TabInfo[] = [
+      ...this.findTabsByScheme(TRANSLATED_SCHEME),
+      ...this.findTabsByScheme(READONLY_SCHEME)
+    ];
 
     const seen: Set<string> = new Set<string>();
     for (const { path } of translatedTabs) {

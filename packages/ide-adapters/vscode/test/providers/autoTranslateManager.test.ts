@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Uri, TabInputText, ViewColumn, window, workspace } from '../__mocks__/vscode';
+import { Uri, TabInputText, ViewColumn, window, workspace, commands } from '../__mocks__/vscode';
 import { AutoTranslateManager } from '../../src/providers/autoTranslateManager';
 import { TRANSLATED_SCHEME, READONLY_SCHEME } from '../../src/providers/translatedContentProvider';
 
@@ -274,6 +274,57 @@ describe('AutoTranslateManager', () => {
     it('should return false when no tab matches the path', () => {
       window.tabGroups.all = [];
       expect(manager.isAnyTranslatedTabOpenForPath('/test/file.cs')).toBe(false);
+    });
+  });
+
+  describe('confirmUnsavedEditsBeforeLanguageChange', () => {
+    function dirtyTranslatedDoc() {
+      return {
+        uri: Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`),
+        isDirty: true,
+        save: vi.fn().mockResolvedValue(undefined),
+      };
+    }
+
+    it('should return true without prompting when there are no unsaved edits', async () => {
+      workspace.textDocuments = [];
+      const proceed = await manager.confirmUnsavedEditsBeforeLanguageChange();
+      expect(proceed).toBe(true);
+      expect(window.showWarningMessage).not.toHaveBeenCalled();
+    });
+
+    it('should save dirty docs and proceed on "Save and switch"', async () => {
+      const doc = dirtyTranslatedDoc();
+      workspace.textDocuments = [doc];
+      vi.mocked(window.showWarningMessage).mockResolvedValue('Save and switch' as any);
+
+      const proceed = await manager.confirmUnsavedEditsBeforeLanguageChange();
+
+      expect(doc.save).toHaveBeenCalled();
+      expect(proceed).toBe(true);
+    });
+
+    it('should abort (return false) on Cancel', async () => {
+      const doc = dirtyTranslatedDoc();
+      workspace.textDocuments = [doc];
+      vi.mocked(window.showWarningMessage).mockResolvedValue('Cancel' as any);
+
+      const proceed = await manager.confirmUnsavedEditsBeforeLanguageChange();
+
+      expect(doc.save).not.toHaveBeenCalled();
+      expect(proceed).toBe(false);
+    });
+
+    it('should revert dirty docs and proceed on "Discard and switch"', async () => {
+      const doc = dirtyTranslatedDoc();
+      workspace.textDocuments = [doc];
+      vi.mocked(window.showWarningMessage).mockResolvedValue('Discard and switch' as any);
+
+      const proceed = await manager.confirmUnsavedEditsBeforeLanguageChange();
+
+      expect(doc.save).not.toHaveBeenCalled();
+      expect(commands.executeCommand).toHaveBeenCalledWith('workbench.action.files.revert');
+      expect(proceed).toBe(true);
     });
   });
 

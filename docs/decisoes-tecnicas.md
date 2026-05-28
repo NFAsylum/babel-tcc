@@ -335,14 +335,21 @@ traduzida se nenhuma já estiver aberta para aquele caminho (`isAnyTranslatedTab
   `invalidatePath` limpa o cache do arquivo (todos os idiomas) e dispara `onDidChangeFile` para as
   visões abertas daquele caminho; idioma resolvido da config (`getTargetLanguage`); ao salvar,
   `doWriteFile` descarta todos os idiomas em cache do arquivo e refresca o atual.
-- Tradução reversa parte do **idioma exibido** (`displayLanguages`, rastreado por arquivo em
-  `provideContent`), não da config: ao trocar de idioma com edições não salvas, o doc sujo não
-  recarrega e segue no idioma antigo; salvar usando a config nova reverteria o conteúdo antigo com o
-  mapa errado e corromperia o original no disco.
+- **Edições não salvas são tratadas ANTES da troca**, não depois. O comando `selectLanguage` chama
+  `confirmUnsavedEditsBeforeLanguageChange()` enquanto o idioma atual ainda vale: "Salvar" faz um save
+  normal (reverte no idioma correto), "Descartar" reverte o buffer, "Cancelar" aborta a troca. Salvar
+  *depois* que a config já mudou descartava as edições — por isso a decisão de salvar primeiro e só
+  então trocar.
+- Como rede de segurança (troca de idioma direto no `settings.json`, fora do comando), a tradução
+  reversa parte do **idioma exibido** (`displayLanguages`, rastreado por arquivo **em `readFile`** — não
+  em `provideContent`, que o `stat()` também chama e sobrescreveria o idioma). Assim, salvar um doc que
+  ficou no idioma antigo nunca usa o mapa errado.
 - `autoTranslateManager.ts`: `refreshTranslatedTabs` só chama `contentProvider.invalidatePath(caminho)`
-  por arquivo aberto (sem abrir/fechar/refocar); `handleActiveEditorChange` mantém uma visão por arquivo;
-  fechamentos de aba (toggle on/off e readonly) usam `closeTab(uri)` por busca fresca.
-- `extension.ts`: o file-watcher chama `invalidatePath` quando o original muda no disco.
+  por arquivo aberto (sem abrir/fechar/refocar, sem diálogo de edições); `handleActiveEditorChange`
+  mantém uma visão por arquivo; fechamentos de aba (toggle on/off e readonly) usam `closeTab(uri)` por
+  busca fresca.
+- `extension.ts`: o comando `selectLanguage` confirma edições não salvas antes de mudar a config; o
+  file-watcher chama `invalidatePath` quando o original muda no disco.
 
 **Referências:**
 - [FileSystemProvider.onDidChangeFile — contrato de `mtime`/`size`](https://vshaxe.github.io/vscode-extern/vscode/FileSystemProvider.html)
