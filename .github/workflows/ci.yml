@@ -156,7 +156,7 @@ jobs:
           python-version: '3.x'
 
       # Valida as traducoes canonicas (o validate.py do repo de traducoes faz 4 checks:
-      # sintaxe, schema, completude, unicidade). O validate_translations.py local era no-op
-      # no CI: procurava TestData/translations (nao commitado) e um repo-irmao inexistente.
+      # sintaxe, schema, completude, unicidade). Substitui o antigo scripts/validate_translations.py
+      # (removido), que era no-op no CI: procurava arquivos inexistentes no runner.
       - name: Run translation validation
         run: python babel-tcc-translations/scripts/validate.py
