@@ -26,7 +26,7 @@
 
 **Soluções:**
 1. Verificar que `babel-tcc.enabled` está `true` nas settings
-2. Verificar que .NET 8.0 Runtime está instalado: `dotnet --version`
+2. Se estiver no pacote universal, verificar que o .NET 8.0 **Runtime** está instalado: `dotnet --list-runtimes` (procure `Microsoft.NETCore.App 8.x`). Os pacotes por plataforma embutem o runtime e dispensam isso.
 3. Verificar o Output Channel para erros do CoreBridge
 4. Verificar que os binários Core existem em `<extensão>/bin/`
 
@@ -72,7 +72,7 @@ Ao reportar um bug, incluir:
 
 1. **Versão do VS Code:** `Help > About`
 2. **Versão da extensão:** Extensions > Babel TCC
-3. **Versão do .NET:** `dotnet --version`
+3. **Runtime .NET:** `dotnet --list-runtimes` (ou "nenhum", se estiver usando um pacote por plataforma)
 4. **Sistema operacional:** Windows/macOS/Linux
 5. **Passos para reproduzir:** O que fez exatamente
 6. **Resultado esperado:** O que devia acontecer

@@ -43,14 +43,14 @@ Comentários no formato `// tradu[lang]:nomeTraduzido` que definem como identifi
 
 ## Técnico
 
-### Porque preciso do .NET 8.0?
-O motor de tradução é escrito em C# e roda sobre o .NET 8. Ele usa Roslyn para C# e um subprocesso Python para arquivos `.py`; o Host .NET coordena ambos.
+### Preciso do .NET 8.0?
+Depende do pacote. Os **pacotes por plataforma** (Windows/Linux/macOS, x64 e arm64) embutem o runtime .NET — **não precisa instalar nada**. Só o **pacote universal** (fallback para plataformas sem build dedicado) exige o .NET 8.0 Runtime instalado. O motor de tradução é escrito em C# (Roslyn para C#, subprocesso Python para `.py`); o Host .NET coordena ambos.
 
 ### A extensão funciona offline?
 Sim. Toda a tradução é feita localmente. Nenhuma conexão à internet é necessária.
 
 ### Quanto espaço ocupa?
-A extensão com os binários do Core ocupa aproximadamente 16 MB, devido à dependência do Roslyn.
+Depende da variante: o **pacote por plataforma** (self-contained, com o runtime .NET embutido) ocupa ~87 MB descompactado (~36 MB de download); o **pacote universal** (requer .NET 8 instalado) ocupa ~16 MB descompactado (~5 MB de download). O tamanho maior do self-contained é o preço de não precisar instalar o .NET.
 
 ### Posso usar com outras extensões C#?
 Sim. A extensão funciona de forma independente e não interfere com o OmniSharp ou outras extensões C#.
