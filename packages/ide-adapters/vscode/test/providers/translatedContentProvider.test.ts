@@ -152,6 +152,22 @@ describe('TranslatedContentProvider', () => {
       expect(workspace.applyEdit).toHaveBeenCalled();
     });
 
+    it('should reverse-translate FROM the displayed language even when the config changed', async () => {
+      const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
+      // Render once (config = pt-br) so the provider records pt-br as the displayed language.
+      await provider.provideContent(uri);
+      // The user then switches the configured language to es-es, but this view still shows pt-br
+      // (it has unsaved edits, so VS Code did not reload it).
+      mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('es-es');
+      workspace.textDocuments = [];
+
+      await provider.writeFile(uri, new TextEncoder().encode('publico classe Foo {}'));
+
+      // sourceLanguage (5th arg) must be the displayed pt-br, not the new config es-es.
+      const call = mockCoreBridge.applyTranslatedEdits.mock.calls[0];
+      expect(call[4]).toBe('pt-br');
+    });
+
     it('should drop other-language caches for the path after saving', async () => {
       const uri = Uri.parse(`${TRANSLATED_SCHEME}:/test/file.cs`);
       provider.cache.set('/test/file.cs::fr', 'stale fr');

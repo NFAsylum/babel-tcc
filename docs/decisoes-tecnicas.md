@@ -335,6 +335,10 @@ traduzida se nenhuma já estiver aberta para aquele caminho (`isAnyTranslatedTab
   `invalidatePath` limpa o cache do arquivo (todos os idiomas) e dispara `onDidChangeFile` para as
   visões abertas daquele caminho; idioma resolvido da config (`getTargetLanguage`); ao salvar,
   `doWriteFile` descarta todos os idiomas em cache do arquivo e refresca o atual.
+- Tradução reversa parte do **idioma exibido** (`displayLanguages`, rastreado por arquivo em
+  `provideContent`), não da config: ao trocar de idioma com edições não salvas, o doc sujo não
+  recarrega e segue no idioma antigo; salvar usando a config nova reverteria o conteúdo antigo com o
+  mapa errado e corromperia o original no disco.
 - `autoTranslateManager.ts`: `refreshTranslatedTabs` só chama `contentProvider.invalidatePath(caminho)`
   por arquivo aberto (sem abrir/fechar/refocar); `handleActiveEditorChange` mantém uma visão por arquivo;
   fechamentos de aba (toggle on/off e readonly) usam `closeTab(uri)` por busca fresca.

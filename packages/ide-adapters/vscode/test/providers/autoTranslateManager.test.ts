@@ -225,6 +225,18 @@ describe('AutoTranslateManager', () => {
         expect.stringContaining('switched tabs')
       );
     });
+
+    it('should not restore focus to a non-translated active editor on scheme switch', async () => {
+      mockConfigService.isReadonly.mockReturnValue(true);
+      window.tabGroups.all = [];
+      // A plain file (non-translated) is focused when readonly is toggled.
+      window.activeTextEditor = { document: { uri: Uri.file('/test/file.cs') } } as any;
+
+      await manager.handleConfigChange();
+
+      // restoreFocus must not open a translated view for the unrelated file.
+      expect(workspace.openTextDocument).not.toHaveBeenCalled();
+    });
   });
 
   describe('findTabsByScheme', () => {

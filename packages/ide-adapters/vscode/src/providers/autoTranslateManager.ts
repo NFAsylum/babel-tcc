@@ -174,7 +174,11 @@ export class AutoTranslateManager implements vscode.Disposable {
   public async switchScheme(oldScheme: string): Promise<void> {
     const oldTabs: TabInfo[] = this.findTabsByScheme(oldScheme);
     const newScheme: string = this.getActiveScheme();
-    const activePath: string | undefined = vscode.window.activeTextEditor?.document.uri.path;
+    // Only restore focus if a translated view was active; otherwise we would open a translated view
+    // for an unrelated (possibly unsupported) file that just happened to be focused.
+    const activeDoc: vscode.TextDocument | undefined = vscode.window.activeTextEditor?.document;
+    const activePath: string | undefined =
+      activeDoc && isTranslatedScheme(activeDoc.uri.scheme) ? activeDoc.uri.path : undefined;
 
     for (const { uri, path, viewColumn } of oldTabs) {
       try {
