@@ -86,6 +86,22 @@ public class TextScanTranslator
                 }
             }
 
+            // Skip backtick template literals (JavaScript). The entire literal is copied
+            // verbatim, including any ${...} interpolation, so keywords inside it are never
+            // translated. Gated by HasBacktickStrings so other languages are unaffected.
+            if (rules.HasBacktickStrings && code[i] == '`')
+            {
+                result.Append(code[i]);
+                i++;
+                while (i < code.Length && code[i] != '`')
+                {
+                    if (code[i] == '\\') { result.Append(code[i]); i++; }
+                    if (i < code.Length) { result.Append(code[i]); i++; }
+                }
+                if (i < code.Length) { result.Append(code[i]); i++; }
+                continue;
+            }
+
             // Skip double-quoted strings
             if (code[i] == '"')
             {
