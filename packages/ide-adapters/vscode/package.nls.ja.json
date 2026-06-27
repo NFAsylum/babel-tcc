@@ -14,5 +14,6 @@
   "config.languageOverrides.csharp.description": "C# ファイルの対象言語",
   "config.languageOverrides.python.description": "Python ファイルの対象言語",
   "config.languageOverrides.visualg.description": "VisuAlg ファイルの対象言語",
-  "config.languageOverrides.portugolStudio.description": "Portugol Studio ファイルの対象言語"
+  "config.languageOverrides.portugolStudio.description": "Portugol Studio ファイルの対象言語",
+  "config.languageOverrides.javascript.description": "JavaScript ファイルの対象言語"
 }

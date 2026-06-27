@@ -14,5 +14,6 @@
   "config.languageOverrides.csharp.description": "Zielsprache für C#-Dateien",
   "config.languageOverrides.python.description": "Zielsprache für Python-Dateien",
   "config.languageOverrides.visualg.description": "Zielsprache für VisuAlg-Dateien",
-  "config.languageOverrides.portugolStudio.description": "Zielsprache für Portugol-Studio-Dateien"
+  "config.languageOverrides.portugolStudio.description": "Zielsprache für Portugol-Studio-Dateien",
+  "config.languageOverrides.javascript.description": "Zielsprache für JavaScript-Dateien"
 }

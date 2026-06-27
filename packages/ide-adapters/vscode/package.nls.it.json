@@ -14,5 +14,6 @@
   "config.languageOverrides.csharp.description": "Lingua di destinazione per i file C#",
   "config.languageOverrides.python.description": "Lingua di destinazione per i file Python",
   "config.languageOverrides.visualg.description": "Lingua di destinazione per i file VisuAlg",
-  "config.languageOverrides.portugolStudio.description": "Lingua di destinazione per i file Portugol Studio"
+  "config.languageOverrides.portugolStudio.description": "Lingua di destinazione per i file Portugol Studio",
+  "config.languageOverrides.javascript.description": "Lingua di destinazione per i file JavaScript"
 }
