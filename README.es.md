@@ -76,7 +76,7 @@ El archivo en el disco permanece **siempre en el código original**. La traducci
   (Windows/Linux/macOS) ya incluyen el runtime y **no requieren .NET instalado** (ver
   [Paquetes de distribución](#paquetes-de-distribución)).
 - Python 3.8+ — **opcional**, necesario únicamente para traducir archivos `.py`
-- Nada adicional para VisuAlg / Portugol Studio (funcionan mediante Text Scan, sin parser externo)
+- Nada adicional para VisuAlg / Portugol Studio / JavaScript (funcionan mediante Text Scan, sin parser externo)
 
 ### Paquetes de distribución
 
@@ -111,6 +111,7 @@ Para generar el `.vsix`: `npm run package` (requiere [vsce](https://github.com/m
 | Python | `.py` | 35 | Subproceso CPython + Text Scan, admite tradu |
 | VisuAlg (Claudio Morgado) | `.alg` | 48 | Text Scan solo palabras clave, sin distinción de mayúsculas |
 | Portugol Studio (UNIVALI) | `.por` | 26 | Text Scan solo palabras clave, con distinción de mayúsculas |
+| JavaScript | `.js` | 38 | Text Scan solo palabras clave, con distinción de mayúsculas |
 
 ## Idiomas disponibles
 
