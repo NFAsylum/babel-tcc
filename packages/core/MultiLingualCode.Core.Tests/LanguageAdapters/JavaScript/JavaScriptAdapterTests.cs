@@ -2,24 +2,13 @@ using MultiLingualCode.Core.LanguageAdapters.JavaScript;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Models.AST;
 using MultiLingualCode.Core.Services;
+using MultiLingualCode.Core.Tests.LanguageAdapters.Portugol;
 
 namespace MultiLingualCode.Core.Tests.LanguageAdapters.JavaScript;
 
 public class JavaScriptAdapterTests
 {
     public JavaScriptAdapter Adapter = new JavaScriptAdapter();
-
-    private static Func<string, int> MakeLookup(Dictionary<string, int> reverseMap)
-    {
-        return word =>
-        {
-            if (reverseMap.TryGetValue(word, out int id))
-            {
-                return id;
-            }
-            return -1;
-        };
-    }
 
     [Fact]
     public void Properties_WhenAccessed_ReturnExpectedValues()
@@ -117,7 +106,7 @@ public class JavaScriptAdapterTests
             ["verdadeiro"] = 31, // true
         };
         string translated = "funcao add(a) {\n  constante ok = verdadeiro;\n  se (a) { retornar ok; }\n}";
-        string original = Adapter.ReverseSubstituteKeywords(translated, MakeLookup(reverseMap));
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("function add", original);
         Assert.Contains("const ok", original);
         Assert.Contains("if (a)", original);
@@ -133,7 +122,7 @@ public class JavaScriptAdapterTests
             ["se"] = 18, // if
         };
         string translated = "const msg = \"se isto aparecer, fica\";";
-        string original = Adapter.ReverseSubstituteKeywords(translated, MakeLookup(reverseMap));
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("\"se isto aparecer, fica\"", original);
     }
 
@@ -145,7 +134,7 @@ public class JavaScriptAdapterTests
             ["se"] = 18, // if
         };
         string translated = "const msg = `valor se ${a} fim`;";
-        string original = Adapter.ReverseSubstituteKeywords(translated, MakeLookup(reverseMap));
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("`valor se ${a} fim`", original);
     }
 
@@ -157,7 +146,7 @@ public class JavaScriptAdapterTests
             ["se"] = 18, // if
         };
         string translated = "// se aparece aqui fica\nconst x = 1;";
-        string original = Adapter.ReverseSubstituteKeywords(translated, MakeLookup(reverseMap));
+        string original = Adapter.ReverseSubstituteKeywords(translated, PortugolTestHelpers.MakeLookup(reverseMap));
         Assert.Contains("// se aparece aqui fica", original);
     }
 }
