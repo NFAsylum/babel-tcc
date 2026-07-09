@@ -3,6 +3,7 @@ using MultiLingualCode.Core.Interfaces;
 using MultiLingualCode.Core.LanguageAdapters;
 using MultiLingualCode.Core.LanguageAdapters.Portugol;
 using MultiLingualCode.Core.LanguageAdapters.Python;
+using MultiLingualCode.Core.LanguageAdapters.JavaScript;
 using MultiLingualCode.Core.Models;
 using MultiLingualCode.Core.Services;
 using MultiLingualCode.Core.Utilities;
@@ -305,6 +306,7 @@ public class Program
         registry.RegisterAdapter(new PythonAdapter());
         registry.RegisterAdapter(new VisuAlgAdapter());
         registry.RegisterAdapter(new PortugolStudioAdapter());
+        registry.RegisterAdapter(new JavaScriptAdapter());
         return registry;
     }
 

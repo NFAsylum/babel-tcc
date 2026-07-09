@@ -76,7 +76,7 @@ The file on disk always stays in the **original code**. The translation is purel
   (Windows/Linux/macOS) bundle the runtime and **do not require .NET to be installed** (see
   [Distribution packages](#distribution-packages)).
 - Python 3.8+ — **optional**, needed only to translate `.py` files
-- Nothing extra for VisuAlg / Portugol Studio (they operate via Text Scan, with no external parser)
+- Nothing extra for VisuAlg / Portugol Studio / JavaScript (they operate via Text Scan, with no external parser)
 
 ### Distribution packages
 
@@ -111,6 +111,7 @@ To build the `.vsix`: `npm run package` (requires [vsce](https://github.com/micr
 | Python | `.py` | 35 | CPython subprocess + Text Scan, supports tradu |
 | VisuAlg (Claudio Morgado) | `.alg` | 48 | Text Scan keyword-only, case-insensitive |
 | Portugol Studio (UNIVALI) | `.por` | 26 | Text Scan keyword-only, case-sensitive |
+| JavaScript | `.js` | 38 | Text Scan keyword-only, case-sensitive |
 
 ## Available Languages
 

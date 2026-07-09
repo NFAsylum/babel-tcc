@@ -288,7 +288,7 @@ public class LanguageRegistryTests
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
-        OperationResultGeneric<ILanguageAdapter> result = registry.GetAdapter(".js");
+        OperationResultGeneric<ILanguageAdapter> result = registry.GetAdapter(".rb");
         Assert.False(result.IsSuccess);
     }
 
@@ -297,7 +297,7 @@ public class LanguageRegistryTests
     {
         LanguageRegistry registry = Host.Program.CreateRegistry();
 
-        string[] expected = new[] { ".alg", ".cs", ".por", ".py" };
+        string[] expected = new[] { ".alg", ".cs", ".js", ".por", ".py" };
         string[] actual = registry.GetSupportedExtensions();
 
         Array.Sort(expected);
@@ -325,7 +325,7 @@ public class LanguageRegistryTests
     public void HandleValidateSyntax_WithUnsupportedExtension_ReturnsFailure()
     {
         Host.CoreResponse result = Host.Program.HandleValidateSyntax(
-            new Host.ValidateRequest { SourceCode = "var x = 1;", FileExtension = ".js" }, Host.Program.CreateRegistry());
+            new Host.ValidateRequest { SourceCode = "var x = 1;", FileExtension = ".rb" }, Host.Program.CreateRegistry());
         Assert.False(result.Success);
     }
 
@@ -344,7 +344,7 @@ public class LanguageRegistryTests
 
         // These must match SUPPORTED_LANGUAGES in src/config/languages.ts
         // If you add a new adapter, update both CreateRegistry AND languages.ts
-        string[] vsCodeExtensions = new[] { ".alg", ".cs", ".por", ".py" };
+        string[] vsCodeExtensions = new[] { ".alg", ".cs", ".js", ".por", ".py" };
         Array.Sort(vsCodeExtensions);
 
         Assert.Equal(vsCodeExtensions, coreExtensions);

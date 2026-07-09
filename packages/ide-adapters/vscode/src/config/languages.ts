@@ -25,6 +25,7 @@ export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
   { name: 'Python', extensions: ['.py'], vscodeLangId: 'python', registersGrammar: false },
   { name: 'VisuAlg', extensions: ['.alg'], vscodeLangId: 'visualg', registersGrammar: true },
   { name: 'PortugolStudio', extensions: ['.por'], vscodeLangId: 'portugol-studio', registersGrammar: true },
+  { name: 'JavaScript', extensions: ['.js'], vscodeLangId: 'javascript', registersGrammar: false },
 ];
 
 /** Builds extension-to-language-name map from the central registry. */

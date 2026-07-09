@@ -14,5 +14,6 @@
   "config.languageOverrides.csharp.description": "Langue cible pour les fichiers C#",
   "config.languageOverrides.python.description": "Langue cible pour les fichiers Python",
   "config.languageOverrides.visualg.description": "Langue cible pour les fichiers VisuAlg",
-  "config.languageOverrides.portugolStudio.description": "Langue cible pour les fichiers Portugol Studio"
+  "config.languageOverrides.portugolStudio.description": "Langue cible pour les fichiers Portugol Studio",
+  "config.languageOverrides.javascript.description": "Langue cible pour les fichiers JavaScript"
 }

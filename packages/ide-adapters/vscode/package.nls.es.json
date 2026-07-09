@@ -14,5 +14,6 @@
   "config.languageOverrides.csharp.description": "Idioma de destino para archivos C#",
   "config.languageOverrides.python.description": "Idioma de destino para archivos Python",
   "config.languageOverrides.visualg.description": "Idioma de destino para archivos VisuAlg",
-  "config.languageOverrides.portugolStudio.description": "Idioma de destino para archivos Portugol Studio"
+  "config.languageOverrides.portugolStudio.description": "Idioma de destino para archivos Portugol Studio",
+  "config.languageOverrides.javascript.description": "Idioma de destino para archivos JavaScript"
 }

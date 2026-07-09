@@ -41,6 +41,7 @@
     "onLanguage:python",
     "onLanguage:visualg",
     "onLanguage:portugol-studio",
+    "onLanguage:javascript",
     "onFileSystem:babel-tcc-translated",
     "onFileSystem:babel-tcc-readonly"
   ],
@@ -100,7 +101,8 @@
             "CSharp": { "type": "string", "description": "%config.languageOverrides.csharp.description%" },
             "Python": { "type": "string", "description": "%config.languageOverrides.python.description%" },
             "VisuAlg": { "type": "string", "description": "%config.languageOverrides.visualg.description%" },
-            "PortugolStudio": { "type": "string", "description": "%config.languageOverrides.portugolStudio.description%" }
+            "PortugolStudio": { "type": "string", "description": "%config.languageOverrides.portugolStudio.description%" },
+            "JavaScript": { "type": "string", "description": "%config.languageOverrides.javascript.description%" }
           },
           "additionalProperties": false
         }

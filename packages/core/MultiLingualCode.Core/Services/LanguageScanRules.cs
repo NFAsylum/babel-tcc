@@ -26,6 +26,9 @@ public class LanguageScanRules
     /// <summary>Whether single-quoted strings/chars are supported.</summary>
     public bool HasSingleQuoteStrings = true;
 
+    /// <summary>Whether backtick-delimited template literals (`...`) are supported (JavaScript).</summary>
+    public bool HasBacktickStrings = false;
+
     /// <summary>Whether keyword matching is case-insensitive (e.g. VisuAlg accepts SE, Se, se).</summary>
     public bool CaseInsensitiveKeywords = false;
 
@@ -78,6 +81,20 @@ public class LanguageScanRules
         HasEscapedIdentifiers = false,
         HasTripleQuoteStrings = false,
         HasSingleQuoteStrings = true,
+        CaseInsensitiveKeywords = false,
+    };
+
+    /// <summary>Pre-defined rules for JavaScript (C-like blocks, double/single/backtick strings, case-sensitive).</summary>
+    public static LanguageScanRules JavaScript = new LanguageScanRules
+    {
+        LineComment = "//",
+        BlockCommentStart = "/*",
+        BlockCommentEnd = "*/",
+        HasPreprocessor = false,
+        HasEscapedIdentifiers = false,
+        HasTripleQuoteStrings = false,
+        HasSingleQuoteStrings = true,
+        HasBacktickStrings = true,
         CaseInsensitiveKeywords = false,
     };
 }
