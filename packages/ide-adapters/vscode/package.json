@@ -68,8 +68,21 @@
       {
         "command": "babel-tcc.showOriginal",
         "title": "%command.showOriginal.title%"
+      },
+      {
+        "command": "babel-tcc.suggestTranslation",
+        "title": "%command.suggestTranslation.title%"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "babel-tcc.suggestTranslation",
+          "when": "editorTextFocus",
+          "group": "1_modification"
+        }
+      ]
+    },
     "configuration": {
       "title": "%configuration.title%",
       "properties": {
@@ -105,6 +118,27 @@
             "JavaScript": { "type": "string", "description": "%config.languageOverrides.javascript.description%" }
           },
           "additionalProperties": false
+        },
+        "babel-tcc.llm.mode": {
+          "type": "string",
+          "enum": ["local", "hosted"],
+          "default": "local",
+          "description": "%config.llm.mode.description%"
+        },
+        "babel-tcc.services.url": {
+          "type": "string",
+          "default": "",
+          "description": "%config.services.url.description%"
+        },
+        "babel-tcc.services.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.services.apiKey.description%"
+        },
+        "babel-tcc.local-llm.url": {
+          "type": "string",
+          "default": "",
+          "description": "%config.localLlm.url.description%"
         }
       }
     },

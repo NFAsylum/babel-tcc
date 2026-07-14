@@ -122,6 +122,25 @@ export class Hover {
 
 export class WorkspaceEdit {
   replace = vi.fn();
+  insert = vi.fn();
+}
+
+export class CodeActionKind {
+  static readonly RefactorRewrite = new CodeActionKind('refactor.rewrite');
+  static readonly QuickFix = new CodeActionKind('quickfix');
+  constructor(public value: string) {}
+}
+
+export class CodeAction {
+  command?: { command: string; title: string; arguments?: unknown[] };
+  constructor(
+    public title: string,
+    public kind?: CodeActionKind
+  ) {}
+}
+
+export enum ProgressLocation {
+  Notification = 15,
 }
 
 export class TabInputText {
@@ -260,6 +279,10 @@ export const window = {
   showQuickPick: vi.fn(),
   onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
   showTextDocument: vi.fn(),
+  // Runs the task immediately (no real progress UI) and returns its result.
+  withProgress: vi.fn(
+    <T>(_options: unknown, task: () => Thenable<T>): Thenable<T> => Promise.resolve(task())
+  ),
   activeTextEditor: undefined as unknown,
   tabGroups: {
     all: [] as unknown[],
@@ -282,6 +305,7 @@ export const languages = {
   registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
   registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
   registerDocumentSemanticTokensProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  registerCodeActionsProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
 
 // --- Helper to set config values in tests ---

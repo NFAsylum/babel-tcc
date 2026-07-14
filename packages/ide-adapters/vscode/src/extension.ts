@@ -13,7 +13,9 @@ import { StatusBar } from './ui/statusBar';
 import { AutoTranslateManager } from './providers/autoTranslateManager';
 import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/semanticKeywordProvider';
 import { buildFileWatcherPattern, SUPPORTED_LANGUAGES } from './config/languages';
-import { COMMANDS } from './config/constants';
+import { COMMANDS, CONFIG_SECTION, SECRET_API_KEY } from './config/constants';
+import { BabelServicesClient } from './services/babelServicesClient';
+import { IdentifierTranslateProvider, suggestTranslation } from './providers/identifierTranslateProvider';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -361,7 +363,57 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
+  // Serviço 1: LLM-assisted identifier translation (code action + hosted/local client).
+  // API key comes from SecretStorage first (secure), falling back to the plaintext setting.
+  const apiKeyProvider = async (): Promise<string | undefined> => {
+    const fromSecret: string | undefined = await context.secrets.get(SECRET_API_KEY);
+    if (fromSecret) {
+      return fromSecret;
+    }
+    const fromConfig: string = vscode.workspace
+      .getConfiguration(CONFIG_SECTION)
+      .get<string>('services.apiKey', '');
+    return fromConfig || undefined;
+  };
+  const babelServicesClient: BabelServicesClient = new BabelServicesClient(apiKeyProvider);
+  const identifierTranslateProvider: IdentifierTranslateProvider = new IdentifierTranslateProvider();
+
+  const codeActionRegistration: vscode.Disposable = vscode.languages.registerCodeActionsProvider(
+    { scheme: 'file' },
+    identifierTranslateProvider,
+    { providedCodeActionKinds: IdentifierTranslateProvider.providedKinds }
+  );
+
+  const suggestTranslationCommand: vscode.Disposable = vscode.commands.registerCommand(
+    COMMANDS.SUGGEST_TRANSLATION,
+    async (uri?: vscode.Uri, wordRange?: vscode.Range, identifier?: string): Promise<void> => {
+      // Invoked from the code action with args; from the palette we derive them from the cursor.
+      if (!uri || !wordRange || !identifier) {
+        const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+        if (!editor) {
+          vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: No active editor.'));
+          return;
+        }
+        const range: vscode.Range | undefined = editor.document.getWordRangeAtPosition(
+          editor.selection.active,
+          /[A-Za-z_][A-Za-z0-9_]*/
+        );
+        if (!range) {
+          vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: Place the cursor on an identifier first.'));
+          return;
+        }
+        uri = editor.document.uri;
+        wordRange = range;
+        identifier = editor.document.getText(range);
+      }
+      const targetLanguage: string = configService.getLanguage();
+      await suggestTranslation(babelServicesClient, targetLanguage, uri, wordRange, identifier);
+    }
+  );
+
   context.subscriptions.push(outputChannel);
+  context.subscriptions.push(codeActionRegistration);
+  context.subscriptions.push(suggestTranslationCommand);
   context.subscriptions.push(fileWatcher);
   context.subscriptions.push(fileWatcherChangeHandler);
   context.subscriptions.push(providerRegistration);

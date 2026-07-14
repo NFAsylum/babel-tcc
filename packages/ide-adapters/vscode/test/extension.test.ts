@@ -29,10 +29,10 @@ describe('extension', () => {
   });
 
   describe('activate', () => {
-    it('should register 5 commands', () => {
+    it('should register 6 commands', () => {
       const context = makeContext();
       activate(context as any);
-      expect(commands.registerCommand).toHaveBeenCalledTimes(5);
+      expect(commands.registerCommand).toHaveBeenCalledTimes(6);
     });
 
     it('should register expected command names', () => {
@@ -44,6 +44,7 @@ describe('extension', () => {
       expect(registeredCommands).toContain('babel-tcc.openTranslatedEditable');
       expect(registeredCommands).toContain('babel-tcc.openTranslatedReadonly');
       expect(registeredCommands).toContain('babel-tcc.showOriginal');
+      expect(registeredCommands).toContain('babel-tcc.suggestTranslation');
     });
 
     it('should register 2 file system providers', () => {
@@ -59,10 +60,10 @@ describe('extension', () => {
       expect(languages.registerHoverProvider).toHaveBeenCalledTimes(2);
     });
 
-    it('should push exactly 20 subscriptions to context', () => {
+    it('should push exactly 22 subscriptions to context', () => {
       const context = makeContext();
       activate(context as any);
-      expect(context.subscriptions.length).toBe(20);
+      expect(context.subscriptions.length).toBe(22);
     });
 
     it('should create file watcher covering all supported extensions', () => {
