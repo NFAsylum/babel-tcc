@@ -1,0 +1,22 @@
+<idea-plugin>
+    <id>com.nfasylum.babel</id>
+    <name>Babel Multilingual Code</name>
+    <vendor email="marcooinotna13@outlook.com">NFAsylum</vendor>
+    <description><![CDATA[
+        Show programming code with keywords translated to your native language.
+        The file on disk stays in the original language, so compilers, git and
+        other tools keep working on plain source. Translation is purely visual.
+    ]]></description>
+
+    <!-- Platform-only dependency: the same plugin loads in Rider, IDEA, PyCharm,
+         WebStorm, PhpStorm, GoLand, RubyMine, CLion and DataGrip. -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points (services, listeners, providers) and actions are
+         registered incrementally as each feature lands in later commits. -->
+    <extensions defaultExtensionNs="com.intellij">
+    </extensions>
+
+    <actions>
+    </actions>
+</idea-plugin>
