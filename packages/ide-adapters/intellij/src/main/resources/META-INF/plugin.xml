@@ -21,6 +21,7 @@
             instance="com.nfasylum.babel.intellij.settings.BabelSettingsConfigurable"
             id="com.nfasylum.babel.settings"
             displayName="Babel"/>
+        <documentationProvider implementation="com.nfasylum.babel.intellij.providers.HoverProvider"/>
     </extensions>
 
     <projectListeners>
@@ -34,5 +35,9 @@
     </applicationListeners>
 
     <actions>
+        <action id="Babel.SelectLanguage"
+                class="com.nfasylum.babel.intellij.actions.SelectLanguageAction"
+                text="Babel: Select Language"
+                description="Choose the natural language Babel translates code into"/>
     </actions>
 </idea-plugin>
