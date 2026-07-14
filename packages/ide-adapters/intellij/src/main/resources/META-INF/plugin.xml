@@ -12,10 +12,16 @@
          WebStorm, PhpStorm, GoLand, RubyMine, CLion and DataGrip. -->
     <depends>com.intellij.modules.platform</depends>
 
-    <!-- Extension points (services, listeners, providers) and actions are
-         registered incrementally as each feature lands in later commits. -->
     <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.CoreBridge"/>
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.LanguageService"/>
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.TranslationService"/>
     </extensions>
+
+    <projectListeners>
+        <listener class="com.nfasylum.babel.intellij.providers.VirtualDocumentProvider"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
 
     <actions>
     </actions>
