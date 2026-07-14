@@ -23,6 +23,11 @@
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </projectListeners>
 
+    <applicationListeners>
+        <listener class="com.nfasylum.babel.intellij.providers.SaveHandler"
+                  topic="com.intellij.openapi.fileEditor.FileDocumentManagerListener"/>
+    </applicationListeners>
+
     <actions>
     </actions>
 </idea-plugin>

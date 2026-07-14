@@ -10,15 +10,17 @@ import com.intellij.openapi.util.Key
  * @property originalPath absolute path of the real file on disk (always English).
  * @property extension file extension without a leading dot, e.g. "cs".
  * @property language natural-language code the view was rendered in.
- * @property originalContent the English source as read from disk when opened.
- * @property shownTranslation the translated text currently presented; updated
- *   after each successful save so the next 3-way merge has a correct baseline.
+ * @property originalContent the English source currently on disk; advanced to
+ *   the freshly written source after each save so the next 3-way merge baseline
+ *   is correct.
+ * @property shownTranslation the translated text currently presented; advanced
+ *   to the just-saved edits after each successful save.
  */
 data class TranslatedView(
     val originalPath: String,
     val extension: String,
     val language: String,
-    val originalContent: String,
+    var originalContent: String,
     var shownTranslation: String,
 )
 
