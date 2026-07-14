@@ -16,6 +16,11 @@
         <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.CoreBridge"/>
         <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.LanguageService"/>
         <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.TranslationService"/>
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.settings.BabelSettings"/>
+        <applicationConfigurable
+            instance="com.nfasylum.babel.intellij.settings.BabelSettingsConfigurable"
+            id="com.nfasylum.babel.settings"
+            displayName="Babel"/>
     </extensions>
 
     <projectListeners>
