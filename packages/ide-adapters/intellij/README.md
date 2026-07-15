@@ -118,8 +118,18 @@ never fires for it — which is why an earlier build appeared to "not save". Ins
 persisted through `FileDocumentManagerListener.beforeAllDocumentsSaving`, which the platform
 invokes on **Ctrl+S / Save All and on autosave** (frame deactivation, running, VCS ops, etc.).
 At that point every open translated view is reverse-translated and written to its original disk
-file. In practice edits reach disk before you compile, commit or switch away — but note the
-trigger is the global save/autosave, not a per-tab save event.
+file. Additionally, closing a translated view's tab persists any pending edit (persist-on-close),
+so edits are never silently lost even though the light-file document is not tracked as "unsaved".
+In practice edits reach disk on Ctrl+S, on autosave (frame deactivation, running, VCS ops), and on
+tab close.
+
+### Dependência: LightVirtualFile
+
+`TranslatedLightFile` estende `com.intellij.testFramework.LightVirtualFile`, uma classe
+originalmente destinada a testes que é largamente usada em plugins de produção pelo ecossistema
+IntelliJ. Não há alternativa first-class na API pública pra representar um documento in-memory
+editável nesse fluxo. Se a JetBrains reorganizar o package, o plugin precisará adaptar.
+Documentado aqui como risco estrutural conhecido.
 
 ## Testes
 
