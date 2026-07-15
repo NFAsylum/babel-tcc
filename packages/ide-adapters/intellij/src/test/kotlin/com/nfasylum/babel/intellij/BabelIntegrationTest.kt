@@ -52,6 +52,7 @@ class BabelIntegrationTest : BasePlatformTestCase() {
     fun `test declared services resolve and are wired through plugin_xml`() {
         val bridge = ApplicationManager.getApplication().getService(CoreBridge::class.java)
         assertNotNull("CoreBridge application service must be registered", bridge)
+        bridge.stop()
         bridge.transportFactory = {
             FakeTransport { gson.toJson(CoreResponse(success = true, result = "se (x) { }", error = "")) }
         }
