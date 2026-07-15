@@ -14,7 +14,7 @@ class BabelStatusBarWidgetFactory : StatusBarWidgetFactory {
 
     override fun isAvailable(project: Project): Boolean = true
 
-    override fun createWidget(project: Project): StatusBarWidget = BabelStatusBarWidget()
+    override fun createWidget(project: Project): StatusBarWidget = BabelStatusBarWidget(project)
 
     override fun disposeWidget(widget: StatusBarWidget) {
         Disposer.dispose(widget)
