@@ -106,7 +106,11 @@ class TranslationService {
     fun supportedExtensions(): List<String> = SUPPORTED_EXTENSIONS.sorted()
 
     companion object {
-        /** Extensions the MVP intercepts. The Core also handles VisuAlg/Portugol; kept to the common set here. */
-        val SUPPORTED_EXTENSIONS: Set<String> = setOf("cs", "py", "js")
+        /**
+         * Extensions Babel intercepts, matching the adapters the Core.Host registers:
+         * C# (.cs), Python (.py), JavaScript (.js), VisuAlg (.alg) and Portugol Studio (.por).
+         * VisuAlg and Portugol are the main teaching languages in Brazil — the primary audience.
+         */
+        val SUPPORTED_EXTENSIONS: Set<String> = setOf("cs", "py", "js", "alg", "por")
     }
 }

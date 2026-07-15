@@ -55,6 +55,14 @@ class TranslationServiceTest {
     }
 
     @Test
+    fun `VisuAlg alg and Portugol por are translatable`() {
+        val ts = TranslationService()
+        assertTrue(ts.isTranslatable("alg"))
+        assertTrue(ts.isTranslatable("por"))
+        assertTrue(ts.isTranslatable("ALG"))
+    }
+
+    @Test
     fun `dottedExtension normalises with a single leading dot`() {
         val ts = TranslationService()
         assertEquals(".cs", ts.dottedExtension("cs"))
