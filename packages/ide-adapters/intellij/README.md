@@ -83,9 +83,9 @@ Cobertura: **11 arquivos de teste, 42 testes** (unitários + integração headle
 o grafo de serviços real declarado no `plugin.xml`. Os critérios visuais (swap do editor, tooltip
 renderizado, tradução ao vivo com Core.Host real) exigem `runIde` num ambiente com display + .NET.
 
-**Não-MVP (blueprint pro Qwen 30B):** code actions (traduzir identificador via LLM), diagnostics
-de `// tradu` faltante, rename tradu-aware, ícones no explorer, integração com `babel-services`.
-Especificação executável em [`BLUEPRINT-QWEN.md`](./BLUEPRINT-QWEN.md).
+**Não-MVP (blueprint pra features futuras):** diagnostics de `// tradu` faltante, rename
+tradu-aware (determinístico via Core.Host), ícones no explorer. Tudo determinístico/offline.
+Especificação executável em [`BLUEPRINT.md`](./BLUEPRINT.md).
 
 ## Known limitations
 
