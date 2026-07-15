@@ -92,4 +92,43 @@ class SaveIntegrationTest : BasePlatformTestCase() {
             editorManager.closeFile(light)
         }
     }
+
+    fun `test closing a tab without save does not persist edits (documents R3)`() {
+        stubCoreReverse("if (x) { }")
+        val (light, ioFile) = newTranslatedView(translated = "se (y) { }")
+        val editorManager = FileEditorManager.getInstance(project)
+        editorManager.openFile(light, true)
+        val document = FileDocumentManager.getInstance().getDocument(light) ?: error("no document")
+        WriteCommandAction.runWriteCommandAction(project) { document.setText("se (x) { }") }
+
+        editorManager.closeFile(light) // no saveAllDocuments
+
+        // Documents current behavior (R3): tab close alone does not run beforeAllDocumentsSaving,
+        // so the edit is not persisted. Edits reach disk on Ctrl+S / autosave, not on tab close.
+        assertEquals("edit is not persisted on bare tab close", "if (y) { }", FileUtil.loadFile(ioFile))
+    }
+
+    fun `test saveAllDocuments persists many open translated views`() {
+        stubCoreReverse("if (x) { }")
+        val editorManager = FileEditorManager.getInstance(project)
+        val views = (1..10).map { newTranslatedView(translated = "se (y) { }") }
+        try {
+            views.forEach { (light, _) ->
+                editorManager.openFile(light, true)
+                val document = FileDocumentManager.getInstance().getDocument(light) ?: error("no document")
+                WriteCommandAction.runWriteCommandAction(project) { document.setText("se (x) { }") }
+            }
+
+            val startNanos = System.nanoTime()
+            FileDocumentManager.getInstance().saveAllDocuments()
+            val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+
+            views.forEach { (_, ioFile) ->
+                assertEquals("each open view is persisted", "if (x) { }", FileUtil.loadFile(ioFile))
+            }
+            assertTrue("saveAll of 10 views should be fast (was ${elapsedMs}ms)", elapsedMs < 2_000)
+        } finally {
+            views.forEach { (light, _) -> editorManager.closeFile(light) }
+        }
+    }
 }
