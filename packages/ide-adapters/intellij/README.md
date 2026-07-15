@@ -85,6 +85,29 @@ renderizado, tradução ao vivo com Core.Host real) exigem `runIde` num ambiente
 de `// tradu` faltante, rename tradu-aware, ícones no explorer, integração com `babel-services`.
 Especificação executável em [`BLUEPRINT-QWEN.md`](./BLUEPRINT-QWEN.md).
 
+## Known limitations
+
+### Syntax highlighting in Rider (C#)
+
+Rider uses ReSharper's project-aware C# highlighting engine, which requires files to be
+attached to a `.csproj` — the `LightVirtualFile` used to render the translated view is
+not project-attached, so ReSharper does not run analysis on it. As a result:
+
+- **Keywords are colored** (via Babel's own annotator)
+- **Identifiers, strings, comments and other tokens are NOT colored** in the translated view
+
+The file on disk keeps normal Rider highlighting; only the translated view is affected.
+
+IntelliJ IDEA and PyCharm use grammar-based highlighting for `.java` / `.py` and are
+expected to render the translated view with full syntax coloring. (The VS Code extension
+uses TextMate grammars, which is why it renders full coloring in the translated view.)
+
+Workarounds attempted / considered:
+- Attaching `LightVirtualFile` to `ProjectFileIndex`: high research cost, no guaranteed fix
+- Editor decorations instead of virtual file: architectural rewrite (15-25h)
+
+Neither is scheduled — trade-off accepted for MVP.
+
 ## Testes
 
 ```bash
