@@ -119,6 +119,8 @@ class CoreBridge {
     }
 
     private fun startProcess() {
+        // (Re)starting un-disposes: a bridge stopped earlier can be reused.
+        disposed = false
         val spec = resolveLaunch()
         log.info("CoreBridge: starting Core.Host (${spec.command})")
         val newTransport = transportFactory(spec)

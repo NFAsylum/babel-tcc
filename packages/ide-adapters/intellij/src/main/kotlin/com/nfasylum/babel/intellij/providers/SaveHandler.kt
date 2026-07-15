@@ -1,49 +1,47 @@
 package com.nfasylum.babel.intellij.providers
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.ProjectManager
 import com.nfasylum.babel.intellij.services.TranslationService
 
 /**
- * Reverse translation on save (Commit 2.3). When the user saves a Babel
- * translated view, the edits — a mix of untouched English from disk and new
- * text typed in the display language — are reverse-translated back to pure
- * original source, which is what gets written to disk. The file on disk is
- * therefore always in the original language (DT-003).
+ * Persists edits to a Babel translated view back to the original disk file,
+ * reverse-translated to the original language (DT-003).
  *
- * The reverse merge itself is [TranslationService.toDisk] (Core
- * `ApplyTranslatedEdits`), which fails open to the on-disk original so a broken
- * engine can never corrupt the file.
+ * The translated view is a non-physical [TranslatedLightFile]; editing it does
+ * not even mark the document unsaved, so the per-document save path never fires
+ * for it (that was the Part D save bug). The reliable trigger is
+ * [beforeAllDocumentsSaving], which the platform calls on Ctrl+S / Save All and on
+ * autosave (frame deactivation) regardless of whether individual files are
+ * savable — there we persist every open translated view.
  *
- * NOTE: the listener wiring runs only inside a live IDE; the pure reverse+baseline
- * logic is [reverseTranslate], unit-tested in SaveHandlerTest.
+ * The pure reverse+baseline logic is [reverseTranslate] (unit-tested); the disk
+ * write lives in [TranslatedLightFile.persistReverseTranslation].
  */
 class SaveHandler : FileDocumentManagerListener {
     private val log = Logger.getInstance(SaveHandler::class.java)
 
+    override fun beforeAllDocumentsSaving() {
+        val fileDocumentManager = FileDocumentManager.getInstance()
+        for (project in ProjectManager.getInstance().openProjects) {
+            if (project.isDisposed) continue
+            for (file in FileEditorManager.getInstance(project).openFiles) {
+                val translatedFile = file as? TranslatedLightFile ?: continue
+                val document = fileDocumentManager.getDocument(translatedFile) ?: continue
+                translatedFile.persistReverseTranslation(document.text)
+            }
+        }
+    }
+
     override fun beforeDocumentSaving(document: Document) {
-        val savedFile = FileDocumentManager.getInstance().getFile(document) ?: return
-        val view = savedFile.getUserData(BabelKeys.TRANSLATED_VIEW) ?: return
-
-        val translationService = service<TranslationService>()
-        val diskContent = reverseTranslate(view, document.text, translationService)
-
-        val originalFile = LocalFileSystem.getInstance().findFileByPath(view.originalPath)
-        if (originalFile == null) {
-            log.warn("Babel: original file vanished, cannot write back: ${view.originalPath}")
-            return
-        }
-
-        ApplicationManager.getApplication().runWriteAction {
-            VfsUtil.saveText(originalFile, diskContent)
-        }
-        log.info("Babel: wrote reverse-translated source to ${view.originalPath}")
+        // Fallback for physical files that reach the per-document path; light views are
+        // handled by beforeAllDocumentsSaving above.
+        val savedFile = FileDocumentManager.getInstance().getFile(document) as? TranslatedLightFile ?: return
+        savedFile.persistReverseTranslation(document.text)
     }
 
     companion object {

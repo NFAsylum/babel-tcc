@@ -62,7 +62,7 @@ class VirtualDocumentProvider : FileEditorManagerListener {
             ApplicationManager.getApplication().invokeLater {
                 if (!file.isValid) return@invokeLater
                 val view = TranslatedView(file.path, extension, language, original, translated)
-                val light = LightVirtualFile(file.name, file.fileType, translated).apply {
+                val light = TranslatedLightFile(file.name, file.fileType, translated, view).apply {
                     isWritable = !readonly
                     putUserData(BabelKeys.TRANSLATED_VIEW, view)
                 }
