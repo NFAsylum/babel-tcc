@@ -7,29 +7,29 @@ import com.nfasylum.babel.intellij.settings.BabelSettings
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Holds the currently active natural language and whether translation is enabled.
- *
- * This is the in-memory source of truth that providers read on every editor
- * event. It is deliberately independent of persistence: `BabelSettings`
- * (persistent state) pushes values in here on load and on change, so the hot
- * path never touches disk.
+ * Runtime API and change-notification hub for translation state. The state itself
+ * lives in [BabelSettings] — the single source of truth — and this service reads
+ * *through* to it instead of keeping its own copy, so the two can never drift
+ * (that drift was the "Babel: off on startup" bug). [BabelSettings] calls
+ * [fireChanged] on every mutation, so subscribers (status bar, auto-translate)
+ * stay in sync.
  */
 @Service(Service.Level.APP)
 class LanguageService {
-    @Volatile
-    var currentLanguage: String = BabelPlugin.LANGUAGE_NONE
-        private set
-
-    @Volatile
-    var enabled: Boolean = true
-        private set
-
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
+
+    /** Active default language, read through from [BabelSettings] (no cached copy). */
+    val currentLanguage: String
+        get() = service<BabelSettings>().language
+
+    /** Whether translation is enabled, read through from [BabelSettings]. */
+    val enabled: Boolean
+        get() = service<BabelSettings>().enabled
 
     /** True when files should actually be shown translated (enabled and not the passthrough "en"). */
     fun isTranslationActive(): Boolean = enabled && currentLanguage != BabelPlugin.LANGUAGE_NONE
 
-    /** Effective language for a specific file extension — honors per-language overrides in BabelSettings. */
+    /** Effective language for a specific file extension — honors per-language overrides. */
     fun effectiveLanguageFor(fileExtension: String): String =
         service<BabelSettings>().effectiveLanguage(fileExtension)
 
@@ -39,21 +39,7 @@ class LanguageService {
         return effectiveLanguageFor(fileExtension) != BabelPlugin.LANGUAGE_NONE
     }
 
-    /** Updates the active language and notifies listeners if it changed. */
-    fun setLanguage(language: String) {
-        if (language == currentLanguage) return
-        currentLanguage = language
-        notifyChanged()
-    }
-
-    /** Enables or disables translation and notifies listeners if it changed. */
-    fun setEnabled(value: Boolean) {
-        if (value == enabled) return
-        enabled = value
-        notifyChanged()
-    }
-
-    /** Registers a callback fired whenever the active language or enabled flag changes. */
+    /** Registers a callback fired whenever translation state changes. */
     fun addChangeListener(listener: () -> Unit) {
         listeners.add(listener)
     }
@@ -63,16 +49,8 @@ class LanguageService {
         listeners.remove(listener)
     }
 
-    /**
-     * Notifies listeners even though the active language/enabled did not change.
-     * Used when readonly or per-extension overrides change, so open views reopen
-     * and the status bar refreshes.
-     */
+    /** Notifies listeners that translation state changed. Called by [BabelSettings] on every mutation. */
     fun fireChanged() {
-        notifyChanged()
-    }
-
-    private fun notifyChanged() {
         listeners.forEach { it() }
     }
 }

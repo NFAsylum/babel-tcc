@@ -77,6 +77,20 @@ class BabelIntegrationTest : BasePlatformTestCase() {
         assertFalse("English passthrough deactivates translation", languageService.isTranslationActive())
     }
 
+    fun `test LanguageService reads through to BabelSettings without an explicit sync`() {
+        val settings = service<BabelSettings>()
+        val languageService = service<LanguageService>()
+        try {
+            settings.language = "es"
+            assertEquals("read-through: no cached copy to drift", "es", languageService.currentLanguage)
+            settings.enabled = false
+            assertFalse(languageService.isTranslationActive())
+        } finally {
+            settings.language = "en"
+            settings.enabled = true
+        }
+    }
+
     fun `test status bar widget reflects the configured language, not off`() {
         val settings = service<BabelSettings>()
         settings.enabled = true

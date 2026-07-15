@@ -12,8 +12,8 @@ import com.nfasylum.babel.intellij.settings.BabelSettings
  */
 class BabelStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
-        // Load persisted settings early so LanguageService (and the status bar) reflect the
-        // saved language from the start, not the default "off".
+        // Load persisted settings early so the saved Core.Host path reaches CoreBridge and the
+        // state is deserialized before anything reads it.
         service<BabelSettings>()
         service<AutoTranslateManager>().ensureSubscribed()
     }

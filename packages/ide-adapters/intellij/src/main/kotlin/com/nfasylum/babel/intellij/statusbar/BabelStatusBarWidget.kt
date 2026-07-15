@@ -60,17 +60,11 @@ class BabelStatusBarWidget(private val project: Project) : StatusBarWidget, Stat
 
     override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
 
-    override fun getText(): String {
-        // Read BabelSettings first: instantiating it loads the persisted state and syncs
-        // LanguageService, so the first render reflects the saved language instead of the
-        // default "off" before any user interaction.
-        val readonly = service<BabelSettings>().readonly
-        return widgetText(
-            active = languageService.isTranslationActive(),
-            language = languageService.currentLanguage,
-            readonly = readonly,
-        )
-    }
+    override fun getText(): String = widgetText(
+        active = languageService.isTranslationActive(),
+        language = languageService.currentLanguage,
+        readonly = service<BabelSettings>().readonly,
+    )
 
     override fun getAlignment(): Float = Component.CENTER_ALIGNMENT
 

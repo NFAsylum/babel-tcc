@@ -12,10 +12,11 @@ import com.nfasylum.babel.intellij.services.LanguageService
 /**
  * Persistent Babel settings, stored in `babel.xml` and surviving IDE restarts.
  *
- * This is the persistence layer; the hot-path runtime state lives in
- * [LanguageService]. Whenever the persisted state changes (on load or via the
- * settings UI) it is pushed into the runtime through [runtimeSync], which also
- * hands the custom Core.Host path to the [CoreBridge].
+ * This is the single source of truth for translation state. [LanguageService]
+ * reads through to it, so there is no cached copy to drift. Whenever the state
+ * changes (on load or via the settings UI) [runtimeSync] notifies
+ * [LanguageService] (which re-notifies subscribers) and hands the custom
+ * Core.Host path to the [CoreBridge].
  */
 @Service(Service.Level.APP)
 @State(name = "BabelSettings", storages = [Storage("babel.xml")])
@@ -32,8 +33,8 @@ class BabelSettings : PersistentStateComponent<BabelSettings.State> {
     private var state = State()
 
     /**
-     * Seam for tests: applies persisted state to the running services. Defaults
-     * to pushing into [LanguageService] and [CoreBridge]; tests replace it so
+     * Seam for tests: propagates a state change to the running services. Defaults
+     * to notifying [LanguageService] and updating [CoreBridge]; tests replace it so
      * persistence can be verified without booting the platform.
      */
     var runtimeSync: (State) -> Unit = ::defaultRuntimeSync
@@ -105,10 +106,8 @@ class BabelSettings : PersistentStateComponent<BabelSettings.State> {
     private fun defaultRuntimeSync(state: State) {
         try {
             val app = ApplicationManager.getApplication() ?: return
-            app.getService(LanguageService::class.java)?.apply {
-                setEnabled(state.enabled)
-                setLanguage(state.language)
-            }
+            // LanguageService reads state through this component, so just notify listeners.
+            app.getService(LanguageService::class.java)?.fireChanged()
             app.getService(CoreBridge::class.java)?.coreHostPath = state.coreHostPath
         } catch (e: Exception) {
             // Services may not be ready during very early load; runtime will re-sync on next change.

@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.nfasylum.babel.intellij.services.AutoTranslateManager
-import com.nfasylum.babel.intellij.services.LanguageService
 import com.nfasylum.babel.intellij.settings.BabelSettings
 
 /** Toggles Babel translation on/off. Reopens affected editors via the language-change path. */
@@ -29,9 +28,8 @@ class ToggleReadonlyAction : ToggleAction("Read-only view") {
     override fun isSelected(e: AnActionEvent): Boolean = service<BabelSettings>().readonly
 
     override fun setSelected(e: AnActionEvent, state: Boolean) {
+        // BabelSettings notifies LanguageService on change, which reopens views + refreshes the widget.
         service<BabelSettings>().readonly = state
-        // readonly doesn't change language/enabled, so nudge listeners explicitly.
-        service<LanguageService>().fireChanged()
     }
 }
 
@@ -46,7 +44,6 @@ class SelectLanguageMenuAction(private val language: String) : AnAction(language
 class SetOverrideAction(private val extension: String, private val language: String) : AnAction(language) {
     override fun actionPerformed(e: AnActionEvent) {
         service<BabelSettings>().setLanguageOverride(extension, language)
-        service<LanguageService>().fireChanged()
     }
 }
 
@@ -54,7 +51,6 @@ class SetOverrideAction(private val extension: String, private val language: Str
 class ClearOverrideAction(private val extension: String) : AnAction("Use default") {
     override fun actionPerformed(e: AnActionEvent) {
         service<BabelSettings>().clearLanguageOverride(extension)
-        service<LanguageService>().fireChanged()
     }
 }
 
