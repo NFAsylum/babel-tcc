@@ -91,6 +91,37 @@ class BabelIntegrationTest : BasePlatformTestCase() {
         }
     }
 
+    fun `test a throwing change listener does not stop the others`() {
+        val ls = service<LanguageService>()
+        var secondCalled = false
+        val throwing: () -> Unit = { throw RuntimeException("boom") }
+        val ok: () -> Unit = { secondCalled = true }
+        ls.addChangeListener(throwing)
+        ls.addChangeListener(ok)
+        try {
+            ls.fireChanged()
+            assertTrue("second listener still fires after the first throws", secondCalled)
+        } finally {
+            ls.removeChangeListener(throwing)
+            ls.removeChangeListener(ok)
+        }
+    }
+
+    fun `test settings dialog tracks readonly with no State-UI drift`() {
+        val settings = service<BabelSettings>()
+        try {
+            settings.readonly = true
+            val configurable = com.nfasylum.babel.intellij.settings.BabelSettingsConfigurable()
+            configurable.createComponent()
+            assertFalse("UI matches settings right after reset", configurable.isModified())
+            settings.readonly = false
+            assertTrue("isModified detects the readonly divergence", configurable.isModified())
+            configurable.disposeUIResources()
+        } finally {
+            settings.readonly = false
+        }
+    }
+
     fun `test status bar widget reflects the configured language, not off`() {
         val settings = service<BabelSettings>()
         settings.enabled = true

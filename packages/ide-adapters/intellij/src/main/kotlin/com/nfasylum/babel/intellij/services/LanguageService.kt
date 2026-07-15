@@ -2,6 +2,7 @@ package com.nfasylum.babel.intellij.services
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.Logger
 import com.nfasylum.babel.intellij.BabelPlugin
 import com.nfasylum.babel.intellij.settings.BabelSettings
 import java.util.concurrent.CopyOnWriteArrayList
@@ -16,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 @Service(Service.Level.APP)
 class LanguageService {
+    private val log = Logger.getInstance(LanguageService::class.java)
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
     /** Active default language, read through from [BabelSettings] (no cached copy). */
@@ -51,6 +53,13 @@ class LanguageService {
 
     /** Notifies listeners that translation state changed. Called by [BabelSettings] on every mutation. */
     fun fireChanged() {
-        listeners.forEach { it() }
+        listeners.forEach {
+            try {
+                it()
+            } catch (e: Exception) {
+                // One misbehaving listener must not stop the others from being notified.
+                log.warn("Babel: language change listener threw: ${e.message}", e)
+            }
+        }
     }
 }
