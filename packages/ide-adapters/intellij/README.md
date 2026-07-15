@@ -32,7 +32,7 @@ tradução é reimplementado em Kotlin.
 | Highlight+Hover | `highlighting/BabelAnnotator` | Cor de keyword no tema + tooltip do original |
 | Hover (Ctrl+Q) | `providers/HoverProvider` | Quick doc com keyword original |
 | Completion | `completion/BabelCompletionContributor` | Autocomplete de keywords traduzidas |
-| Status bar | `statusbar/BabelStatusBarWidget` | Idioma ativo + clique pra trocar |
+| Status bar | `statusbar/BabelStatusBarWidget` | Idioma ativo; menu de controles (enable, readonly, idioma, overrides por extensão, show original) |
 | Auto | `services/AutoTranslateManager` | Re-traduz abas abertas ao trocar idioma |
 | Settings | `settings/BabelSettings` (+ Configurable) | Estado persistente (`babel.xml`) |
 | Ação | `actions/SelectLanguageAction` | Command palette: trocar idioma |
@@ -73,8 +73,10 @@ uma tarefa de release — ver blueprint).
 **Pronto (MVP + paridade VS Code, este diretório):** carregamento do plugin, CoreBridge,
 virtual document, reverse translation no save, settings persistentes, action de trocar idioma,
 syntax highlighting das keywords traduzidas, hover tooltip (mouse e Ctrl+Q), completion de
-keywords, status bar com idioma ativo, e re-translate ao vivo ao trocar idioma.
-Cobertura: **11 arquivos de teste, 32 testes** (unitários + integração headless via
+keywords, status bar com menu de controles (enable/readonly/idioma/overrides por extensão/show
+original), views read-only opcionais, overrides de idioma por linguagem, e re-translate ao vivo
+ao trocar idioma.
+Cobertura: **10 arquivos de teste, 40 testes** (unitários + integração headless via
 `BasePlatformTestCase`).
 
 **Verificação:** tudo que não exige GUI é testado programaticamente (`./gradlew test`), incluindo
