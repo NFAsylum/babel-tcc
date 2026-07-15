@@ -30,9 +30,10 @@ class TranslatedLightFile(
     private val log = Logger.getInstance(TranslatedLightFile::class.java)
 
     override fun setBinaryContent(content: ByteArray, newModificationStamp: Long, newTimeStamp: Long, requestor: Any?) {
-        // Best-effort: the platform does not route non-physical light-file saves here
-        // (see SaveHandler.beforeAllDocumentsSaving, the actual Ctrl+S path), but if it
-        // ever does, persist too. Harmless double-write (baseline advances → idempotent).
+        // setBinaryContent normally is not invoked for non-physical light files (the actual
+        // Ctrl+S path is SaveHandler.beforeAllDocumentsSaving), but if the platform ever routes
+        // here, persist too. If persist fails, toDisk fails-open to the original disk content —
+        // the buffer diverges from disk until the next save, but disk is never corrupted.
         persistReverseTranslation(String(content, charset))
         super.setBinaryContent(content, newModificationStamp, newTimeStamp, requestor)
     }
