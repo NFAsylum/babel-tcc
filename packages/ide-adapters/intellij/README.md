@@ -29,7 +29,11 @@ tradução é reimplementado em Kotlin.
 | Estado | `services/LanguageService` | Idioma ativo + enabled (hot path) |
 | View | `providers/VirtualDocumentProvider` | Abre `.cs`/`.py` como `LightVirtualFile` traduzido |
 | Save | `providers/SaveHandler` | Reverse-translate no save → disco em inglês |
-| Hover | `providers/HoverProvider` | Tooltip com keyword original |
+| Highlight+Hover | `highlighting/BabelAnnotator` | Cor de keyword no tema + tooltip do original |
+| Hover (Ctrl+Q) | `providers/HoverProvider` | Quick doc com keyword original |
+| Completion | `completion/BabelCompletionContributor` | Autocomplete de keywords traduzidas |
+| Status bar | `statusbar/BabelStatusBarWidget` | Idioma ativo + clique pra trocar |
+| Auto | `services/AutoTranslateManager` | Re-traduz abas abertas ao trocar idioma |
 | Settings | `settings/BabelSettings` (+ Configurable) | Estado persistente (`babel.xml`) |
 | Ação | `actions/SelectLanguageAction` | Command palette: trocar idioma |
 
@@ -66,23 +70,25 @@ uma tarefa de release — ver blueprint).
 
 ## Status: MVP vs paridade completa
 
-**Pronto (MVP, este diretório):** carregamento do plugin, CoreBridge, virtual document,
-reverse translation no save, settings persistentes, action de trocar idioma, hover de keyword.
-Cobertura: **6 arquivos de teste, 23 testes** (unitários + integração headless via
+**Pronto (MVP + paridade VS Code, este diretório):** carregamento do plugin, CoreBridge,
+virtual document, reverse translation no save, settings persistentes, action de trocar idioma,
+syntax highlighting das keywords traduzidas, hover tooltip (mouse e Ctrl+Q), completion de
+keywords, status bar com idioma ativo, e re-translate ao vivo ao trocar idioma.
+Cobertura: **11 arquivos de teste, 32 testes** (unitários + integração headless via
 `BasePlatformTestCase`).
 
 **Verificação:** tudo que não exige GUI é testado programaticamente (`./gradlew test`), incluindo
 o grafo de serviços real declarado no `plugin.xml`. Os critérios visuais (swap do editor, tooltip
 renderizado, tradução ao vivo com Core.Host real) exigem `runIde` num ambiente com display + .NET.
 
-**Não-MVP (blueprint pro Qwen 30B):** syntax highlighting, completion, code actions, diagnostics,
-rename tradu-aware, ícones no explorer, status bar, integração com `babel-services`. Especificação
-executável em [`BLUEPRINT-QWEN.md`](./BLUEPRINT-QWEN.md).
+**Não-MVP (blueprint pro Qwen 30B):** code actions (traduzir identificador via LLM), diagnostics
+de `// tradu` faltante, rename tradu-aware, ícones no explorer, integração com `babel-services`.
+Especificação executável em [`BLUEPRINT-QWEN.md`](./BLUEPRINT-QWEN.md).
 
 ## Testes
 
 ```bash
-./gradlew test        # 23 testes; relatório em build/reports/tests/test/index.html
+./gradlew test        # 32 testes; relatório em build/reports/tests/test/index.html
 ```
 
 Os testes fakeiam o subprocesso Core.Host (transport in-memory), então não precisam de .NET.

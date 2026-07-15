@@ -1,10 +1,9 @@
 # BLUEPRINT — Babel IntelliJ extension: features não-MVP (execução por Qwen 30B)
 
 > **Público-alvo deste doc:** o modelo Qwen 30B que assume o trabalho depois da fase de MVP.
-> A base MVP (build system, CoreBridge, virtual document, save handler, settings,
-> action, hover) já está pronta e testada no diretório
-> `packages/ide-adapters/intellij/`. Este blueprint cobre o que falta pra paridade
-> com a extension VS Code.
+> A base MVP + a rodada de paridade com a extension VS Code (syntax highlighting, hover,
+> completion, status bar, auto re-translate — ver "Já implementado" abaixo) já estão prontas e
+> testadas em `packages/ide-adapters/intellij/`. Este blueprint cobre as features restantes.
 
 ## Como usar este blueprint
 
@@ -44,106 +43,22 @@ crescem). Para cada feature:
 
 ---
 
-## Feature 1 — Syntax highlighting das keywords traduzidas
+## Já implementado no plugin (não reimplementar)
 
-**Effort:** ~6–8h · **Depende de:** `CoreBridge.getKeywordMap`
+As features de paridade abaixo já foram entregues no MVP + rodada de parity e **não devem ser
+refeitas**. Os números das features restantes preservam os IDs originais deste blueprint (por
+isso a numeração começa em 3 e pula a 7):
 
-### Product spec
-Keywords traduzidas (ex.: `se`, `enquanto`, `para`) devem receber a mesma cor que a
-keyword original teria (roxo/azul do tema). Hoje o editor pinta o texto traduzido como
-identificador comum porque o lexer da IDE não conhece `se`. Precisamos re-anotar.
+| Feature original | Entregue como | Arquivos |
+|---|---|---|
+| Syntax highlighting (Feature 1) | `BabelAnnotator` | `highlighting/BabelAnnotator.kt`, `highlighting/BabelColors.kt` |
+| Mouse hover tooltip | `BabelAnnotator` + `HoverProvider` (Ctrl+Q) | `highlighting/BabelAnnotator.kt`, `providers/HoverProvider.kt` |
+| Completion (Feature 2) | `BabelCompletionContributor` | `completion/BabelCompletionContributor.kt` |
+| Status bar (Feature 7) | `BabelStatusBarWidget` | `statusbar/BabelStatusBarWidgetFactory.kt`, `statusbar/BabelStatusBarWidget.kt` |
+| Auto re-translate ao trocar idioma | `AutoTranslateManager` | `services/AutoTranslateManager.kt` |
 
-### Files
-- `highlighting/BabelAnnotator.kt`
-- `highlighting/BabelColors.kt`
-
-```kotlin
-// highlighting/BabelColors.kt
-object BabelColors {
-    // Reusa a paleta de keyword padrão do tema, então segue o esquema do usuário.
-    val KEYWORD: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
-        "BABEL_KEYWORD", DefaultLanguageHighlighterColors.KEYWORD,
-    )
-}
-
-// highlighting/BabelAnnotator.kt
-class BabelAnnotator : Annotator {
-    override fun annotate(element: PsiElement, holder: AnnotationHolder) {
-        val file = element.containingFile?.virtualFile ?: return
-        val view = file.getUserData(BabelKeys.TRANSLATED_VIEW) ?: return
-        val map = service<CoreBridge>().getKeywordMap(
-            service<TranslationService>().dottedExtension(view.extension), view.language,
-        )
-        // Se o texto do elemento é uma keyword traduzida, pinta como keyword.
-        if (element is LeafPsiElement && map.containsKey(element.text)) {
-            holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
-                .range(element).textAttributes(BabelColors.KEYWORD).create()
-        }
-    }
-}
-```
-Registrar em `plugin.xml`:
-```xml
-<annotator language="" implementationClass="com.nfasylum.babel.intellij.highlighting.BabelAnnotator"/>
-```
-> Atenção: `annotator` exige atributo `language`. Rider usa a linguagem C#/ReSharper, que **não**
-> existe na IntelliJ Community — ver Escalation gate.
-
-### DoD
-- `./gradlew buildPlugin` verde.
-- Teste unitário: dado um `map` com `"se" -> "if"`, um helper puro `isTranslatedKeyword("se", map)` retorna `true` e `"foo"` retorna `false`.
-- `runIde`: abrir `.cs` com PT-BR ativo → `se`/`enquanto` aparecem com cor de keyword (verificação visual).
-
-### Escalation gate
-Se o atributo `language` do EP `annotator` não aceitar um valor genérico e a linguagem
-Rider/C# não estiver disponível na Community usada em dev: **escale**. Pode ser necessário
-registrar por linguagem (`JAVA`, `Python`, ...) ou usar `HighlightVisitor` em vez de `Annotator`.
-
----
-
-## Feature 2 — Completion provider (autocomplete em idioma alvo)
-
-**Effort:** ~5–7h · **Depende de:** `CoreBridge.getKeywordMap`
-
-### Product spec
-Ao digitar num arquivo traduzido, o autocomplete sugere keywords no idioma ativo
-(`se`, `enquanto`) em vez das originais.
-
-### Files
-- `completion/BabelCompletionContributor.kt`
-
-```kotlin
-class BabelCompletionContributor : CompletionContributor() {
-    init {
-        extend(CompletionType.BASIC, PlatformPatterns.psiElement(), object : CompletionProvider<CompletionParameters>() {
-            override fun addCompletions(
-                parameters: CompletionParameters, context: ProcessingContext, result: CompletionResultSet,
-            ) {
-                val file = parameters.originalFile.virtualFile ?: return
-                val view = file.getUserData(BabelKeys.TRANSLATED_VIEW) ?: return
-                val map = service<CoreBridge>().getKeywordMap(
-                    service<TranslationService>().dottedExtension(view.extension), view.language,
-                )
-                map.keys.forEach { translated ->
-                    result.addElement(LookupElementBuilder.create(translated).withTypeText("Babel keyword"))
-                }
-            }
-        })
-    }
-}
-```
-```xml
-<completion.contributor language="" implementationClass="com.nfasylum.babel.intellij.completion.BabelCompletionContributor"/>
-```
-
-### DoD
-- `buildPlugin` verde.
-- Teste unitário: um helper puro `keywordLookupElements(map)` produz um item por chave do map.
-- `runIde`: digitar `s` num `.cs` PT-BR oferece `se` no popup de completion.
-
-### Escalation gate
-Mesma questão de `language` genérico da Feature 1. Se `completion.contributor` sem `language`
-não registrar, escale.
+O keyword map usado por highlighting/hover/completion é cacheado por idioma em
+`TranslationService.keywordMap()` — reuse-o, não faça round-trip no Core por token.
 
 ---
 
@@ -307,54 +222,6 @@ Nenhum esperado. Se `IconLoader` não achar o SVG, verifique o path relativo ao 
 
 ---
 
-## Feature 7 — Status bar item (idioma ativo)
-
-**Effort:** ~4–6h · **Depende de:** `LanguageService`
-
-### Product spec
-Widget na status bar mostra o idioma ativo (ex.: "Babel: PT-BR"). Clicar abre o popup da
-`SelectLanguageAction` pra trocar rápido. Atualiza via `LanguageService.addChangeListener`.
-
-### Files
-- `statusbar/BabelStatusBarWidgetFactory.kt` (`StatusBarWidgetFactory`)
-- `statusbar/BabelStatusBarWidget.kt` (`StatusBarWidget` + `StatusBarWidget.TextPresentation`)
-
-```kotlin
-class BabelStatusBarWidgetFactory : StatusBarWidgetFactory {
-    override fun getId() = "BabelLanguageWidget"
-    override fun getDisplayName() = "Babel Language"
-    override fun createWidget(project: Project): StatusBarWidget = BabelStatusBarWidget(project)
-    override fun isAvailable(project: Project) = true
-}
-
-class BabelStatusBarWidget(project: Project) : StatusBarWidget, StatusBarWidget.TextPresentation {
-    override fun ID() = "BabelLanguageWidget"
-    override fun getText() = "Babel: ${service<LanguageService>().currentLanguage}"
-    override fun getClickConsumer() = Consumer<MouseEvent> { /* dispara SelectLanguageAction */ }
-    // registrar addChangeListener no LanguageService pra chamar statusBar.updateWidget(ID())
-    override fun getPresentation() = this
-    override fun getTooltipText() = "Idioma ativo do Babel — clique pra trocar"
-    override fun getAlignment() = Component.CENTER_ALIGNMENT
-    override fun install(statusBar: StatusBar) {}
-    override fun dispose() {}
-}
-```
-```xml
-<statusBarWidgetFactory id="BabelLanguageWidget"
-    implementation="com.nfasylum.babel.intellij.statusbar.BabelStatusBarWidgetFactory"/>
-```
-
-### DoD
-- `buildPlugin` verde.
-- Teste unitário: `widgetText("pt-BR")` == `"Babel: pt-BR"`.
-- `runIde`: status bar mostra idioma; trocar idioma atualiza o texto ao vivo; clique abre picker.
-
-### Escalation gate
-Nenhum esperado. API de status bar mudou entre versões da IDE; se `StatusBarWidget.TextPresentation`
-estiver deprecada na baseline usada, use a API nova indicada pelo deprecation warning.
-
----
-
 ## Feature 8 — Cliente Kotlin pro backend `babel-services`
 
 **Effort:** ~5–7h · **Depende de:** contrato de API do `babel-services` (Instance 1)
@@ -397,7 +264,7 @@ HTTP nova** (nada de OkHttp/Retrofit sem aprovação, ver guardrail de dependên
 
 ---
 
-## Checklist final (quando as 8 features estiverem prontas)
+## Checklist final (quando as features restantes estiverem prontas)
 
 - [ ] `./gradlew test buildPlugin` verde com todas as features.
 - [ ] `plugin.xml` registra todos os EPs novos sem warning no `verifyPluginConfiguration`.
