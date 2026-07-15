@@ -5,6 +5,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.diagnostic.Logger
 import com.nfasylum.babel.intellij.BabelPlugin
 import com.nfasylum.babel.intellij.services.CoreBridge
 import com.nfasylum.babel.intellij.services.LanguageService
@@ -30,6 +31,7 @@ class BabelSettings : PersistentStateComponent<BabelSettings.State> {
         var languageOverrides: MutableMap<String, String> = mutableMapOf(),
     )
 
+    private val log = Logger.getInstance(BabelSettings::class.java)
     private var state = State()
 
     /**
@@ -39,7 +41,11 @@ class BabelSettings : PersistentStateComponent<BabelSettings.State> {
      */
     var runtimeSync: (State) -> Unit = ::defaultRuntimeSync
 
-    override fun getState(): State = state
+    // Defensive copy: the serializer must not be able to mutate the live map without
+    // going through a setter (which would skip runtimeSync). loadState still receives fresh data.
+    override fun getState(): State = state.copy(
+        languageOverrides = state.languageOverrides.toMutableMap(),
+    )
 
     override fun loadState(state: State) {
         this.state = state
@@ -110,7 +116,8 @@ class BabelSettings : PersistentStateComponent<BabelSettings.State> {
             app.getService(LanguageService::class.java)?.fireChanged()
             app.getService(CoreBridge::class.java)?.coreHostPath = state.coreHostPath
         } catch (e: Exception) {
-            // Services may not be ready during very early load; runtime will re-sync on next change.
+            // Services may not be ready during very early load; runtime re-syncs on next change.
+            log.warn("Babel: runtime sync failed (services may not be ready yet): ${e.message}")
         }
     }
 }
