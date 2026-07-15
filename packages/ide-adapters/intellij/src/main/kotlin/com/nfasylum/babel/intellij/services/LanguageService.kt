@@ -46,6 +46,11 @@ class LanguageService {
         listeners.add(listener)
     }
 
+    /** Removes a previously registered change listener (call on dispose to avoid leaks). */
+    fun removeChangeListener(listener: () -> Unit) {
+        listeners.remove(listener)
+    }
+
     private fun notifyChanged() {
         listeners.forEach { it() }
     }

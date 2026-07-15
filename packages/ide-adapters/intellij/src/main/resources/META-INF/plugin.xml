@@ -23,6 +23,9 @@
             displayName="Babel"/>
         <documentationProvider implementation="com.nfasylum.babel.intellij.providers.HoverProvider"/>
         <annotator language="" implementationClass="com.nfasylum.babel.intellij.highlighting.BabelAnnotator"/>
+        <statusBarWidgetFactory
+            id="com.nfasylum.babel.statusbar"
+            implementation="com.nfasylum.babel.intellij.statusbar.BabelStatusBarWidgetFactory"/>
     </extensions>
 
     <projectListeners>
