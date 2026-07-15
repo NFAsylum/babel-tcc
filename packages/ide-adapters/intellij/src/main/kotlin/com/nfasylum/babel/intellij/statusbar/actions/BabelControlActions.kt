@@ -65,3 +65,11 @@ class ShowOriginalAction(private val project: Project? = null) : AnAction("Show 
         service<AutoTranslateManager>().showOriginalForSelected(target)
     }
 }
+
+/** Re-translates the selected original file back into a translated view (inverse of Show original). */
+class ShowTranslatedAction(private val project: Project? = null) : AnAction("Show translated view") {
+    override fun actionPerformed(e: AnActionEvent) {
+        val target = project ?: e.project ?: return
+        service<AutoTranslateManager>().showTranslatedForSelected(target)
+    }
+}

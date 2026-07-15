@@ -106,6 +106,22 @@ class AutoTranslateManager {
     /** True (once) if the file at [path] should be opened untranslated because of Show original. */
     fun consumeShowOriginalFlag(path: String): Boolean = showOriginalOnce.remove(path)
 
+    /**
+     * Re-translates the currently selected original file: closes it and reopens it so
+     * [com.nfasylum.babel.intellij.providers.VirtualDocumentProvider] renders the translated
+     * view again. The inverse of [showOriginalForSelected]. No-op if the selection is already a
+     * translated view.
+     */
+    fun showTranslatedForSelected(project: Project) {
+        val editorManager = FileEditorManager.getInstance(project)
+        val current = editorManager.selectedFiles.firstOrNull() ?: return
+        if (current.getUserData(BabelKeys.TRANSLATED_VIEW) != null) return
+        ApplicationManager.getApplication().invokeLater {
+            editorManager.closeFile(current)
+            editorManager.openFile(current, true)
+        }
+    }
+
     companion object {
         /**
          * Pure decision: a translated view reopens its original; a plain translatable
