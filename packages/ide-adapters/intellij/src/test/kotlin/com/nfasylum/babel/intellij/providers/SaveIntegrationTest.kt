@@ -93,7 +93,7 @@ class SaveIntegrationTest : BasePlatformTestCase() {
         }
     }
 
-    fun `test closing a tab without save does not persist edits (documents R3)`() {
+    fun `test closing a tab persists pending edits (no silent loss)`() {
         stubCoreReverse("if (x) { }")
         val (light, ioFile) = newTranslatedView(translated = "se (y) { }")
         val editorManager = FileEditorManager.getInstance(project)
@@ -101,11 +101,20 @@ class SaveIntegrationTest : BasePlatformTestCase() {
         val document = FileDocumentManager.getInstance().getDocument(light) ?: error("no document")
         WriteCommandAction.runWriteCommandAction(project) { document.setText("se (x) { }") }
 
-        editorManager.closeFile(light) // no saveAllDocuments
+        editorManager.closeFile(light) // no explicit save — persist-on-close handles it
 
-        // Documents current behavior (R3): tab close alone does not run beforeAllDocumentsSaving,
-        // so the edit is not persisted. Edits reach disk on Ctrl+S / autosave, not on tab close.
-        assertEquals("edit is not persisted on bare tab close", "if (y) { }", FileUtil.loadFile(ioFile))
+        assertEquals("tab close persists the edit", "if (x) { }", FileUtil.loadFile(ioFile))
+    }
+
+    fun `test closing an unedited view does not write to disk`() {
+        stubCoreReverse("if (x) { }")
+        val (light, ioFile) = newTranslatedView(translated = "se (y) { }")
+        val editorManager = FileEditorManager.getInstance(project)
+        editorManager.openFile(light, true)
+
+        editorManager.closeFile(light) // nothing edited -> must skip the write
+
+        assertEquals("no spurious write when nothing changed", "if (y) { }", FileUtil.loadFile(ioFile))
     }
 
     fun `test saveAllDocuments persists many open translated views`() {

@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.impl.LoadTextUtil
@@ -70,6 +71,20 @@ class VirtualDocumentProvider : FileEditorManagerListener {
                 source.closeFile(file)
                 source.openFile(light, true)
             }
+        }
+    }
+
+    /**
+     * Persists a translated view when its tab closes, so edits made after the last
+     * save are not silently lost (the light-file document is not tracked as "unsaved",
+     * so IntelliJ would not otherwise prompt or persist on close). Skips views with no
+     * pending edit to avoid spurious disk writes.
+     */
+    override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
+        val translatedFile = file as? TranslatedLightFile ?: return
+        val document = FileDocumentManager.getInstance().getDocument(translatedFile) ?: return
+        if (document.text != translatedFile.view.shownTranslation) {
+            translatedFile.persistReverseTranslation(document.text)
         }
     }
 }
