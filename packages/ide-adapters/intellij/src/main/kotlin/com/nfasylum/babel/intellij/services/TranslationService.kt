@@ -3,6 +3,7 @@ package com.nfasylum.babel.intellij.services
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Translation logic shared by the editor providers, kept free of platform
@@ -67,6 +68,34 @@ class TranslationService {
             log.warn("TranslationService: reverse translate failed, keeping original on disk: ${e.message}")
             originalCode
         }
+    }
+
+    private val keywordMapCache = ConcurrentHashMap<String, Map<String, String>>()
+
+    /**
+     * Cached translated-keyword -> original-keyword map for an (extension, language)
+     * pair. The map is static per language, so it is fetched from the Core once and
+     * reused — critical because the annotator queries it per token. A failed or empty
+     * fetch is not cached, so a transient Core outage retries on the next call.
+     */
+    fun keywordMap(extension: String, language: String): Map<String, String> {
+        val key = "${dottedExtension(extension)}::$language"
+        keywordMapCache[key]?.let { return it }
+        val map = try {
+            coreBridgeProvider().getKeywordMap(dottedExtension(extension), language)
+        } catch (e: Exception) {
+            log.warn("TranslationService: keyword map fetch failed: ${e.message}")
+            emptyMap()
+        }
+        if (map.isNotEmpty()) {
+            keywordMapCache[key] = map
+        }
+        return map
+    }
+
+    /** Drops the cached keyword maps (call when the translations source may have changed). */
+    fun invalidateKeywordCache() {
+        keywordMapCache.clear()
     }
 
     companion object {

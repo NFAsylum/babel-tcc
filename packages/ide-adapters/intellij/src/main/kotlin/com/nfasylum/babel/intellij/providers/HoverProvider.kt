@@ -2,22 +2,19 @@ package com.nfasylum.babel.intellij.providers
 
 import com.intellij.lang.documentation.DocumentationProvider
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
-import com.nfasylum.babel.intellij.services.CoreBridge
 import com.nfasylum.babel.intellij.services.TranslationService
 
 /**
- * Shows the original (English) keyword when the user hovers a translated keyword
- * in a Babel view. Only fires inside a Babel [BabelKeys.TRANSLATED_VIEW]; the
- * keyword under the cursor is looked up in the Core's translated→original map.
+ * Quick Documentation (Ctrl+Q) vector for the original keyword. Complements the
+ * always-on mouse-hover tooltip produced by
+ * [com.nfasylum.babel.intellij.highlighting.BabelAnnotator]. Only fires inside a
+ * Babel [BabelKeys.TRANSLATED_VIEW]; the keyword is looked up in the cached
+ * translated->original map.
  *
- * The lookup itself is [originalKeyword], unit-tested; the surrounding PSI/VFS
- * plumbing runs only inside a live IDE.
+ * The lookup is [originalKeyword], unit-tested.
  */
 class HoverProvider : DocumentationProvider {
-    private val log = Logger.getInstance(HoverProvider::class.java)
-
     override fun getQuickNavigateInfo(element: PsiElement?, originalElement: PsiElement?): String? {
         val anchor = originalElement ?: element ?: return null
         val virtualFile = anchor.containingFile?.virtualFile ?: return null
@@ -26,15 +23,8 @@ class HoverProvider : DocumentationProvider {
         val keyword = anchor.text?.trim().orEmpty()
         if (keyword.isEmpty()) return null
 
-        val original = try {
-            val extension = service<TranslationService>().dottedExtension(view.extension)
-            val map = service<CoreBridge>().getKeywordMap(extension, view.language)
-            originalKeyword(keyword, map)
-        } catch (e: Exception) {
-            log.warn("Babel: keyword hover lookup failed: ${e.message}")
-            null
-        } ?: return null
-
+        val map = service<TranslationService>().keywordMap(view.extension, view.language)
+        val original = originalKeyword(keyword, map) ?: return null
         return "Babel — original keyword: <b>$original</b>"
     }
 

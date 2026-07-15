@@ -22,6 +22,7 @@
             id="com.nfasylum.babel.settings"
             displayName="Babel"/>
         <documentationProvider implementation="com.nfasylum.babel.intellij.providers.HoverProvider"/>
+        <annotator language="" implementationClass="com.nfasylum.babel.intellij.highlighting.BabelAnnotator"/>
     </extensions>
 
     <projectListeners>
