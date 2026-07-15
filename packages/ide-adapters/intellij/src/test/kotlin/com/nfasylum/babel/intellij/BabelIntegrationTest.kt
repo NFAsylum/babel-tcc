@@ -77,6 +77,19 @@ class BabelIntegrationTest : BasePlatformTestCase() {
         assertFalse("English passthrough deactivates translation", languageService.isTranslationActive())
     }
 
+    fun `test status bar widget reflects the configured language, not off`() {
+        val settings = service<BabelSettings>()
+        settings.enabled = true
+        settings.language = "pt-BR"
+        val widget = com.nfasylum.babel.intellij.statusbar.BabelStatusBarWidget(project)
+        try {
+            assertEquals("Babel: pt-BR", widget.getText())
+        } finally {
+            widget.dispose()
+            settings.language = "en"
+        }
+    }
+
     fun `test per-extension override drives effective language`() {
         val settings = service<BabelSettings>()
         val languageService = service<LanguageService>()
