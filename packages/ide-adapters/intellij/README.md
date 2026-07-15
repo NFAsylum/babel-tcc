@@ -76,7 +76,7 @@ syntax highlighting das keywords traduzidas, hover tooltip (mouse e Ctrl+Q), com
 keywords, status bar com menu de controles (enable/readonly/idioma/overrides por extensão/show
 original), views read-only opcionais, overrides de idioma por linguagem, e re-translate ao vivo
 ao trocar idioma.
-Cobertura: **10 arquivos de teste, 40 testes** (unitários + integração headless via
+Cobertura: **11 arquivos de teste, 42 testes** (unitários + integração headless via
 `BasePlatformTestCase`).
 
 **Verificação:** tudo que não exige GUI é testado programaticamente (`./gradlew test`), incluindo
@@ -110,10 +110,21 @@ Workarounds attempted / considered:
 
 Neither is scheduled — trade-off accepted for MVP.
 
+### Save model
+
+The translated view is a non-physical `LightVirtualFile`. IntelliJ never marks such a file's
+document as "unsaved", so the per-document save path (`beforeDocumentSaving` / `setBinaryContent`)
+never fires for it — which is why an earlier build appeared to "not save". Instead, edits are
+persisted through `FileDocumentManagerListener.beforeAllDocumentsSaving`, which the platform
+invokes on **Ctrl+S / Save All and on autosave** (frame deactivation, running, VCS ops, etc.).
+At that point every open translated view is reverse-translated and written to its original disk
+file. In practice edits reach disk before you compile, commit or switch away — but note the
+trigger is the global save/autosave, not a per-tab save event.
+
 ## Testes
 
 ```bash
-./gradlew test        # 32 testes; relatório em build/reports/tests/test/index.html
+./gradlew test        # 42 testes; relatório em build/reports/tests/test/index.html
 ```
 
 Os testes fakeiam o subprocesso Core.Host (transport in-memory), então não precisam de .NET.
