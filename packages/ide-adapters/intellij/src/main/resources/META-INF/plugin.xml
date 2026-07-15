@@ -28,6 +28,9 @@
             implementation="com.nfasylum.babel.intellij.statusbar.BabelStatusBarWidgetFactory"/>
         <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.AutoTranslateManager"/>
         <postStartupActivity implementation="com.nfasylum.babel.intellij.services.BabelStartupActivity"/>
+        <completion.contributor
+            language=""
+            implementationClass="com.nfasylum.babel.intellij.completion.BabelCompletionContributor"/>
     </extensions>
 
     <projectListeners>
