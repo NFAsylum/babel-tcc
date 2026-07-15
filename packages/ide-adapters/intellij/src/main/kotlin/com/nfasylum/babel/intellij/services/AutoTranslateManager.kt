@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.nfasylum.babel.intellij.BabelPlugin
 import com.nfasylum.babel.intellij.providers.BabelKeys
 import java.util.concurrent.ConcurrentHashMap
 
@@ -56,13 +57,18 @@ class AutoTranslateManager {
 
     private fun reopenTranslatableFiles() {
         val translationService = service<TranslationService>()
+        val languageService = service<LanguageService>()
         ProjectManager.getInstance().openProjects.forEach { project ->
             if (project.isDisposed) return@forEach
             val editorManager = FileEditorManager.getInstance(project)
             editorManager.openFiles.toList().forEach { file ->
                 val view = file.getUserData(BabelKeys.TRANSLATED_VIEW)
-                val translatable = file.extension?.let { translationService.isTranslatable(it) } ?: false
-                when (val plan = planFor(view != null, view?.originalPath, translatable)) {
+                val extension = file.extension
+                val translatable = extension?.let { translationService.isTranslatable(it) } ?: false
+                val newEffective = extension?.let { languageService.effectiveLanguageFor(it) }
+                    ?: BabelPlugin.LANGUAGE_NONE
+                val active = extension?.let { languageService.isTranslationActiveFor(it) } ?: false
+                when (val plan = planFor(view?.language, view?.originalPath, translatable, newEffective, active)) {
                     is ReopenPlan.ReopenOriginal -> {
                         val original = LocalFileSystem.getInstance().findFileByPath(plan.path)
                         if (original != null) {
@@ -124,12 +130,26 @@ class AutoTranslateManager {
 
     companion object {
         /**
-         * Pure decision: a translated view reopens its original; a plain translatable
-         * file reopens itself; anything else is skipped.
+         * Pure decision for what to do with one open file when the language changes:
+         * - a translated view already showing the new effective language -> Skip (avoids flicker,
+         *   e.g. an override-pinned file when only the default language changed);
+         * - a translated view whose language changed, or where translation turned off -> reopen original;
+         * - a plain translatable original with translation active -> reopen to translate;
+         * - anything else -> Skip.
          */
-        fun planFor(hasView: Boolean, originalPath: String?, isTranslatableExtension: Boolean): ReopenPlan = when {
-            hasView && originalPath != null -> ReopenPlan.ReopenOriginal(originalPath)
-            !hasView && isTranslatableExtension -> ReopenPlan.ReopenSelf
+        fun planFor(
+            currentViewLanguage: String?,
+            originalPath: String?,
+            isTranslatableExtension: Boolean,
+            newEffectiveLanguage: String,
+            translationActive: Boolean,
+        ): ReopenPlan = when {
+            currentViewLanguage != null && translationActive && currentViewLanguage == newEffectiveLanguage ->
+                ReopenPlan.Skip
+            currentViewLanguage != null && originalPath != null ->
+                ReopenPlan.ReopenOriginal(originalPath)
+            currentViewLanguage == null && isTranslatableExtension && translationActive ->
+                ReopenPlan.ReopenSelf
             else -> ReopenPlan.Skip
         }
     }
