@@ -20,9 +20,49 @@ dependencies {
 // development; the same plugin bytecode loads in Rider and the other
 // JetBrains IDEs that share the platform (see plugin.xml <depends>).
 intellij {
-    version.set("2023.3")
+    version.set("2023.1")
     type.set("IC")
     plugins.set(listOf())
+}
+
+// --- Bundling: ship Core.Host + translations inside the plugin (zero manual config) ---
+val babelRepoRoot = rootDir.resolve("../../..").canonicalFile
+val coreHostProject = babelRepoRoot.resolve("packages/core/MultiLingualCode.Core.Host")
+val translationsRepo = babelRepoRoot.parentFile.resolve("babel-tcc-translations")
+val coreHostBundleDir = layout.buildDirectory.dir("babel-bundle/core-host")
+val translationsBundleDir = layout.buildDirectory.dir("babel-bundle/translations")
+
+tasks.register<Exec>("buildCoreHost") {
+    description = "dotnet publish the C# Core.Host binary into the plugin bundle staging dir"
+    group = "babel"
+    workingDir = coreHostProject
+    commandLine(
+        "dotnet", "publish",
+        "-c", "Release",
+        "--no-self-contained",
+        "-o", coreHostBundleDir.get().asFile.absolutePath,
+    )
+    inputs.dir(coreHostProject.resolve("."))
+    outputs.dir(coreHostBundleDir)
+    doFirst {
+        require(coreHostProject.exists()) {
+            "Core.Host project not found at $coreHostProject — check repo layout"
+        }
+    }
+}
+
+tasks.register<Copy>("bundleTranslations") {
+    description = "Copy babel-tcc-translations JSON tables into the plugin bundle staging dir"
+    group = "babel"
+    from(translationsRepo) {
+        exclude(".git/**", "README*", "LICENSE*", ".gitignore")
+    }
+    into(translationsBundleDir)
+    doFirst {
+        require(translationsRepo.exists()) {
+            "babel-tcc-translations not found at $translationsRepo — clone it alongside babel-tcc"
+        }
+    }
 }
 
 tasks {
@@ -34,7 +74,18 @@ tasks {
         kotlinOptions.jvmTarget = "17"
     }
     patchPluginXml {
-        sinceBuild.set("233")
-        untilBuild.set("241.*")
+        // Open-ended range: works on IntelliJ 2023.1+ and Rider 251+ (validated by Marco).
+        sinceBuild.set("231")
+        untilBuild.set(provider { null })
+    }
+    prepareSandbox {
+        dependsOn("buildCoreHost", "bundleTranslations")
+        from(coreHostBundleDir) { into("${intellij.pluginName.get()}/core-host") }
+        from(translationsBundleDir) { into("${intellij.pluginName.get()}/translations") }
+    }
+    prepareTestingSandbox {
+        dependsOn("buildCoreHost", "bundleTranslations")
+        from(coreHostBundleDir) { into("${intellij.pluginName.get()}/core-host") }
+        from(translationsBundleDir) { into("${intellij.pluginName.get()}/translations") }
     }
 }

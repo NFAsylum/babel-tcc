@@ -283,8 +283,9 @@ class CoreBridge {
      * then a bundled `.dll` run via `dotnet`.
      */
     fun resolveLaunch(): LaunchSpec {
+        val effectiveTranslations = translationsPath ?: bundledTranslationsPath()
         val extraArgs = buildList {
-            translationsPath?.let { add("--translations"); add(it) }
+            effectiveTranslations?.let { add("--translations"); add(it) }
             projectPath?.let { add("--project"); add(it) }
         }
 
@@ -312,12 +313,23 @@ class CoreBridge {
         return LaunchSpec("dotnet", listOf(HOST_DLL_NAME) + extraArgs)
     }
 
-    /** Locates a file under the installed plugin's `bin/` directory, or null if absent. */
+    /** Locates a file under the installed plugin's bundled `core-host/` directory, or null if absent. */
     private fun bundledHostFile(name: String): File? {
         return try {
             val plugin = PluginManagerCore.getPlugin(PluginId.getId(BabelPlugin.PLUGIN_ID)) ?: return null
-            val candidate = plugin.pluginPath.resolve("bin").resolve(name).toFile()
+            val candidate = plugin.pluginPath.resolve("core-host").resolve(name).toFile()
             if (candidate.exists()) candidate else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** Returns the absolute path to the bundled `translations/` dir, or null if absent. */
+    private fun bundledTranslationsPath(): String? {
+        return try {
+            val plugin = PluginManagerCore.getPlugin(PluginId.getId(BabelPlugin.PLUGIN_ID)) ?: return null
+            val dir = plugin.pluginPath.resolve("translations").toFile()
+            if (dir.exists() && dir.isDirectory) dir.absolutePath else null
         } catch (e: Exception) {
             null
         }
