@@ -98,6 +98,13 @@ class TranslationService {
         keywordMapCache.clear()
     }
 
+    /**
+     * File extensions Babel can translate, e.g. ["cs", "js", "py"]. Kept in sync with
+     * [isTranslatable] via the single [SUPPORTED_EXTENSIONS] source of truth so the
+     * per-extension override menu only offers extensions that actually translate.
+     */
+    fun supportedExtensions(): List<String> = SUPPORTED_EXTENSIONS.sorted()
+
     companion object {
         /** Extensions the MVP intercepts. The Core also handles VisuAlg/Portugol; kept to the common set here. */
         val SUPPORTED_EXTENSIONS: Set<String> = setOf("cs", "py", "js")

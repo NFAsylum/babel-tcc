@@ -5,9 +5,11 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.nfasylum.babel.intellij.providers.BabelKeys
+import java.util.concurrent.ConcurrentHashMap
 
 /** What to do with an open file when the active language changes. */
 sealed class ReopenPlan {
@@ -79,6 +81,30 @@ class AutoTranslateManager {
             }
         }
     }
+
+    /** Paths queued to open untranslated exactly once (Show original). */
+    private val showOriginalOnce = ConcurrentHashMap.newKeySet<String>()
+
+    /**
+     * Shows the original disk file for the currently selected translated view: closes
+     * the view and reopens the original with a one-shot skip flag so
+     * [com.nfasylum.babel.intellij.providers.VirtualDocumentProvider] leaves it untranslated.
+     * The next open (e.g. after a language change) translates it again.
+     */
+    fun showOriginalForSelected(project: Project) {
+        val editorManager = FileEditorManager.getInstance(project)
+        val current = editorManager.selectedFiles.firstOrNull() ?: return
+        val view = current.getUserData(BabelKeys.TRANSLATED_VIEW) ?: return
+        val original = LocalFileSystem.getInstance().findFileByPath(view.originalPath) ?: return
+        showOriginalOnce.add(view.originalPath)
+        ApplicationManager.getApplication().invokeLater {
+            editorManager.closeFile(current)
+            editorManager.openFile(original, true)
+        }
+    }
+
+    /** True (once) if the file at [path] should be opened untranslated because of Show original. */
+    fun consumeShowOriginalFlag(path: String): Boolean = showOriginalOnce.remove(path)
 
     companion object {
         /**

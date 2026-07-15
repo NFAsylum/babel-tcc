@@ -76,6 +76,21 @@ class BabelIntegrationTest : BasePlatformTestCase() {
         assertFalse("English passthrough deactivates translation", languageService.isTranslationActive())
     }
 
+    fun `test per-extension override drives effective language`() {
+        val settings = service<BabelSettings>()
+        val languageService = service<LanguageService>()
+        settings.enabled = true
+        settings.language = "pt-BR"
+        settings.setLanguageOverride("cs", "es")
+        try {
+            assertEquals("es", languageService.effectiveLanguageFor("cs"))
+            assertEquals("pt-BR", languageService.effectiveLanguageFor("py"))
+            assertTrue(languageService.isTranslationActiveFor("cs"))
+        } finally {
+            settings.clearLanguageOverride("cs")
+        }
+    }
+
     fun `test translated view user data roundtrips on a real LightVirtualFile`() {
         val light = LightVirtualFile("A.cs", "se (x) { }")
         val view = TranslatedView("/proj/A.cs", "cs", "pt-BR", "if (x) { }", "se (x) { }")

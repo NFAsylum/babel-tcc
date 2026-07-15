@@ -25,6 +25,8 @@ class BabelSettings : PersistentStateComponent<BabelSettings.State> {
         var language: String = BabelPlugin.LANGUAGE_NONE,
         var enabled: Boolean = true,
         var coreHostPath: String? = null,
+        var readonly: Boolean = false,
+        var languageOverrides: MutableMap<String, String> = mutableMapOf(),
     )
 
     private var state = State()
@@ -63,6 +65,42 @@ class BabelSettings : PersistentStateComponent<BabelSettings.State> {
             state.coreHostPath = value?.takeIf { it.isNotBlank() }
             runtimeSync(state)
         }
+
+    /** When true, translated views open read-only. */
+    var readonly: Boolean
+        get() = state.readonly
+        set(value) {
+            state.readonly = value
+            runtimeSync(state)
+        }
+
+    /** Read-only view of the per-extension language overrides (extension without a dot). */
+    val languageOverrides: Map<String, String>
+        get() = state.languageOverrides
+
+    /** Effective language for a file extension (e.g. ".cs" -> "pt-BR"), honoring per-extension overrides. */
+    fun effectiveLanguage(fileExtension: String): String {
+        val ext = fileExtension.lowercase().removePrefix(".")
+        return state.languageOverrides[ext] ?: state.language
+    }
+
+    /** Sets a per-extension language override. A blank value or the default language clears it. */
+    fun setLanguageOverride(fileExtension: String, language: String) {
+        val ext = fileExtension.lowercase().removePrefix(".")
+        if (language.isBlank() || language == state.language) {
+            state.languageOverrides.remove(ext)
+        } else {
+            state.languageOverrides[ext] = language
+        }
+        runtimeSync(state)
+    }
+
+    /** Removes any per-extension override, falling back to the default language. */
+    fun clearLanguageOverride(fileExtension: String) {
+        val ext = fileExtension.lowercase().removePrefix(".")
+        state.languageOverrides.remove(ext)
+        runtimeSync(state)
+    }
 
     private fun defaultRuntimeSync(state: State) {
         try {

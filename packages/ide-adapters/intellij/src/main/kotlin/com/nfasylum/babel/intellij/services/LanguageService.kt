@@ -1,7 +1,9 @@
 package com.nfasylum.babel.intellij.services
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.nfasylum.babel.intellij.BabelPlugin
+import com.nfasylum.babel.intellij.settings.BabelSettings
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -27,6 +29,16 @@ class LanguageService {
     /** True when files should actually be shown translated (enabled and not the passthrough "en"). */
     fun isTranslationActive(): Boolean = enabled && currentLanguage != BabelPlugin.LANGUAGE_NONE
 
+    /** Effective language for a specific file extension — honors per-language overrides in BabelSettings. */
+    fun effectiveLanguageFor(fileExtension: String): String =
+        service<BabelSettings>().effectiveLanguage(fileExtension)
+
+    /** True if translation is active for a given extension, considering per-extension overrides. */
+    fun isTranslationActiveFor(fileExtension: String): Boolean {
+        if (!enabled) return false
+        return effectiveLanguageFor(fileExtension) != BabelPlugin.LANGUAGE_NONE
+    }
+
     /** Updates the active language and notifies listeners if it changed. */
     fun setLanguage(language: String) {
         if (language == currentLanguage) return
@@ -49,6 +61,15 @@ class LanguageService {
     /** Removes a previously registered change listener (call on dispose to avoid leaks). */
     fun removeChangeListener(listener: () -> Unit) {
         listeners.remove(listener)
+    }
+
+    /**
+     * Notifies listeners even though the active language/enabled did not change.
+     * Used when readonly or per-extension overrides change, so open views reopen
+     * and the status bar refreshes.
+     */
+    fun fireChanged() {
+        notifyChanged()
     }
 
     private fun notifyChanged() {

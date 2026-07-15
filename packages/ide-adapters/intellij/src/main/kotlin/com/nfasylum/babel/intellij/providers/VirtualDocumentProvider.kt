@@ -9,8 +9,10 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.impl.LoadTextUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
+import com.nfasylum.babel.intellij.services.AutoTranslateManager
 import com.nfasylum.babel.intellij.services.LanguageService
 import com.nfasylum.babel.intellij.services.TranslationService
+import com.nfasylum.babel.intellij.settings.BabelSettings
 
 /**
  * The killer feature (DT-003): the `.cs`/`.py` file on disk stays original
@@ -35,14 +37,19 @@ class VirtualDocumentProvider : FileEditorManagerListener {
         if (file.getUserData(BabelKeys.TRANSLATED_VIEW) != null) return
         if (file is LightVirtualFile) return
 
-        val languageService = service<LanguageService>()
-        if (!languageService.isTranslationActive()) return
-
         val extension = file.extension ?: return
         val translationService = service<TranslationService>()
         if (!translationService.isTranslatable(extension)) return
 
-        val language = languageService.currentLanguage
+        // Show original: one-shot request to open this file untranslated.
+        if (service<AutoTranslateManager>().consumeShowOriginalFlag(file.path)) return
+
+        // Honor per-extension language overrides and the enabled flag.
+        val languageService = service<LanguageService>()
+        if (!languageService.isTranslationActiveFor(extension)) return
+        val language = languageService.effectiveLanguageFor(extension)
+
+        val readonly = service<BabelSettings>().readonly
 
         // Translation may block (subprocess round-trip); keep it off the EDT.
         ApplicationManager.getApplication().executeOnPooledThread {
@@ -56,10 +63,10 @@ class VirtualDocumentProvider : FileEditorManagerListener {
                 if (!file.isValid) return@invokeLater
                 val view = TranslatedView(file.path, extension, language, original, translated)
                 val light = LightVirtualFile(file.name, file.fileType, translated).apply {
-                    isWritable = true
+                    isWritable = !readonly
                     putUserData(BabelKeys.TRANSLATED_VIEW, view)
                 }
-                log.info("Babel: showing translated view of ${file.name} in $language")
+                log.info("Babel: showing ${if (readonly) "readonly" else "editable"} translated view of ${file.name} in $language")
                 source.closeFile(file)
                 source.openFile(light, true)
             }

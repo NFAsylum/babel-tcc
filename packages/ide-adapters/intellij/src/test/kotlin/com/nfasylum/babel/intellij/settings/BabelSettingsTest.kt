@@ -1,6 +1,7 @@
 package com.nfasylum.babel.intellij.settings
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -56,5 +57,52 @@ class BabelSettingsTest {
         assertEquals("en", s.language)
         assertEquals(true, s.enabled)
         assertNull(s.coreHostPath)
+        assertFalse(s.readonly)
+        assertTrue(s.languageOverrides.isEmpty())
+    }
+
+    @Test
+    fun `readonly persists and notifies`() {
+        val (s, captured) = settings()
+        s.readonly = true
+        assertTrue(s.readonly)
+        assertTrue(captured.any { it.readonly })
+    }
+
+    @Test
+    fun `effectiveLanguage returns override when set, default otherwise`() {
+        val s = BabelSettings().apply { runtimeSync = {}; language = "pt-BR" }
+        assertEquals("pt-BR", s.effectiveLanguage(".cs"))
+        s.setLanguageOverride("cs", "es")
+        assertEquals("es", s.effectiveLanguage(".cs"))
+        assertEquals("pt-BR", s.effectiveLanguage(".py"))
+    }
+
+    @Test
+    fun `override equal to default clears it`() {
+        val s = BabelSettings().apply { runtimeSync = {}; language = "pt-BR" }
+        s.setLanguageOverride("cs", "es")
+        assertTrue(s.languageOverrides.containsKey("cs"))
+        s.setLanguageOverride("cs", "pt-BR")
+        assertFalse(s.languageOverrides.containsKey("cs"))
+    }
+
+    @Test
+    fun `clearLanguageOverride falls back to default`() {
+        val s = BabelSettings().apply { runtimeSync = {}; language = "pt-BR" }
+        s.setLanguageOverride("cs", "es")
+        s.clearLanguageOverride("cs")
+        assertFalse(s.languageOverrides.containsKey("cs"))
+        assertEquals("pt-BR", s.effectiveLanguage(".cs"))
+    }
+
+    @Test
+    fun `new fields roundtrip through loadState`() {
+        val (s, _) = settings()
+        s.loadState(
+            BabelSettings.State(language = "pt-BR", readonly = true, languageOverrides = mutableMapOf("cs" to "es")),
+        )
+        assertTrue(s.readonly)
+        assertEquals("es", s.effectiveLanguage(".cs"))
     }
 }
