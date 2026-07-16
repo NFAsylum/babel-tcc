@@ -85,7 +85,7 @@ renderizado, tradução ao vivo com Core.Host real) exigem `runIde` num ambiente
 
 **Não-MVP (blueprint pra features futuras):** diagnostics de `// tradu` faltante, rename
 tradu-aware (determinístico via Core.Host), ícones no explorer. Tudo determinístico/offline.
-Especificação executável em [`BLUEPRINT.md`](./BLUEPRINT.md).
+Especificação executável em `docs/roadmap-intellij.md` (na raiz do repo).
 
 ## Known limitations
 
@@ -112,16 +112,13 @@ Neither is scheduled — trade-off accepted for MVP.
 
 ### Save model
 
-The translated view is a non-physical `LightVirtualFile`. IntelliJ never marks such a file's
-document as "unsaved", so the per-document save path (`beforeDocumentSaving` / `setBinaryContent`)
-never fires for it — which is why an earlier build appeared to "not save". Instead, edits are
-persisted through `FileDocumentManagerListener.beforeAllDocumentsSaving`, which the platform
-invokes on **Ctrl+S / Save All and on autosave** (frame deactivation, running, VCS ops, etc.).
-At that point every open translated view is reverse-translated and written to its original disk
-file. Additionally, closing a translated view's tab persists any pending edit (persist-on-close),
-so edits are never silently lost even though the light-file document is not tracked as "unsaved".
-In practice edits reach disk on Ctrl+S, on autosave (frame deactivation, running, VCS ops), and on
-tab close.
+Edits em uma view traduzida são persistidos em disco via `beforeAllDocumentsSaving` — dispara em
+Ctrl+S, Save All, autosave (frame deactivation), e nas ops de VCS. O light-file document não é
+marcado como "unsaved" pela plataforma, então o path per-documento (`beforeDocumentSaving` /
+`setBinaryContent`) não dispara — daí o uso do `beforeAllDocumentsSaving`. **Não** dispara ao
+fechar uma aba individual sem save prévio: se o dev editou e fecha a aba sem salvar, os edits
+ficam só no `LightVirtualFile` in-memory e são perdidos com a aba (mesmo comportamento que
+arquivos não-persistidos padrão do IntelliJ).
 
 ### Dependência: LightVirtualFile
 

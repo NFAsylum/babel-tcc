@@ -93,7 +93,7 @@ class SaveIntegrationTest : BasePlatformTestCase() {
         }
     }
 
-    fun `test closing a tab persists pending edits (no silent loss)`() {
+    fun `test closing a tab without save does not persist edits`() {
         stubCoreReverse("if (x) { }")
         val (light, ioFile) = newTranslatedView(translated = "se (y) { }")
         val editorManager = FileEditorManager.getInstance(project)
@@ -101,20 +101,9 @@ class SaveIntegrationTest : BasePlatformTestCase() {
         val document = FileDocumentManager.getInstance().getDocument(light) ?: error("no document")
         WriteCommandAction.runWriteCommandAction(project) { document.setText("se (x) { }") }
 
-        editorManager.closeFile(light) // no explicit save — persist-on-close handles it
+        editorManager.closeFile(light) // no save: edits stay in-memory and are dropped with the tab
 
-        assertEquals("tab close persists the edit", "if (x) { }", FileUtil.loadFile(ioFile))
-    }
-
-    fun `test closing an unedited view does not write to disk`() {
-        stubCoreReverse("if (x) { }")
-        val (light, ioFile) = newTranslatedView(translated = "se (y) { }")
-        val editorManager = FileEditorManager.getInstance(project)
-        editorManager.openFile(light, true)
-
-        editorManager.closeFile(light) // nothing edited -> must skip the write
-
-        assertEquals("no spurious write when nothing changed", "if (y) { }", FileUtil.loadFile(ioFile))
+        assertEquals("bare tab close does not write to disk", "if (y) { }", FileUtil.loadFile(ioFile))
     }
 
     fun `test saveAllDocuments persists many open translated views`() {

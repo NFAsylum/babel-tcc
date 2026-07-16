@@ -1,11 +1,10 @@
-# BLUEPRINT — Babel IntelliJ extension: features não-MVP
+# Roadmap — Babel IntelliJ extension
 
-> A base MVP + a paridade com a extension VS Code (syntax highlighting, hover, completion,
-> status bar, auto re-translate, read-only, overrides por linguagem, show original/translated
-> — ver "Já implementado") já estão prontas e testadas em `packages/ide-adapters/intellij/`.
-> Este blueprint cobre as features restantes, para uma próxima fase de trabalho.
+> Features não-MVP planejadas pra próxima fase de trabalho do adapter IntelliJ.
+> A base MVP + a paridade com a extension VS Code já está pronta em
+> `packages/ide-adapters/intellij/` (ver README lá).
 
-## Como usar este blueprint
+## Como usar este roadmap
 
 Cada seção é uma feature independente. Ordem sugerida = ordem das seções (dependências
 crescem). Para cada feature:
@@ -18,7 +17,7 @@ crescem). Para cada feature:
 
 ### Convenções herdadas (não renegociáveis)
 
-- **Branch única:** `dev-marco-agent.intellij-mvp` (ou nova branch se o Marco pedir).
+- **Branch dedicada** por feature (ex.: `dev-marco-agent.intellij-diagnostics`); nunca commit em `main`.
 - **Commits < 300 LOC** de diff (Kotlin tem boilerplate; +100 LOC de folga).
 - **Sem `--no-verify`, sem `git rebase`, sem force push. Nunca commit em `main`.**
 - **Nunca tocar** `packages/ide-adapters/vscode/` nem `packages/core/`.
@@ -29,41 +28,11 @@ crescem). Para cada feature:
 - Português em docs/comentários pro humano; inglês em código e docstrings.
 - Build/test verdes antes de marcar qualquer feature como feita.
 
-### Blocos de reuso já prontos (MVP)
-
-| Componente | Arquivo | O que oferece |
-|---|---|---|
-| `CoreBridge` | `services/CoreBridge.kt` | `translateToNaturalLanguage`, `translateFromNaturalLanguage`, `applyTranslatedEdits`, `getKeywordMap`, `getIdentifierMap`, `getSupportedLanguages` |
-| `TranslationService` | `services/TranslationService.kt` | `toDisplay`, `toDisk`, `isTranslatable`, `keywordMap` (cacheado), `supportedExtensions` (fail-open) |
-| `LanguageService` | `services/LanguageService.kt` | `currentLanguage`, `isTranslationActive()`, `effectiveLanguageFor`, `addChangeListener` |
-| `BabelSettings` | `settings/BabelSettings.kt` | estado persistente (`language`, `enabled`, `readonly`, `coreHostPath`, `languageOverrides`) |
-| `BabelKeys.TRANSLATED_VIEW` | `providers/TranslatedView.kt` | user-data que marca um `TranslatedLightFile` como view traduzida |
-
-`CoreBridge` também expõe `invoke("ValidateSyntax", ...)` genérico caso uma feature precise de
-validação de sintaxe (a Feature 1 pode usar).
+Blocos de reuso e features já implementadas: ver `packages/ide-adapters/intellij/README.md`. O
+keyword map usado por highlighting/hover/completion é cacheado por idioma em
+`TranslationService.keywordMap()` — reuse-o, não faça round-trip no Core por token.
 
 **Effort total estimado:** ~30–45h de trabalho futuro, dividido em commits < 200 LOC.
-
----
-
-## Já implementado no plugin (não reimplementar)
-
-As features de paridade abaixo já foram entregues no MVP + rodadas de parity e **não devem ser
-refeitas**:
-
-| Feature | Entregue como | Arquivos |
-|---|---|---|
-| Syntax highlighting | `BabelAnnotator` | `highlighting/BabelAnnotator.kt`, `highlighting/BabelColors.kt` |
-| Mouse hover tooltip | `BabelAnnotator` + `HoverProvider` (Ctrl+Q) | `highlighting/BabelAnnotator.kt`, `providers/HoverProvider.kt` |
-| Completion | `BabelCompletionContributor` | `completion/BabelCompletionContributor.kt` |
-| Status bar + control menu | `BabelStatusBarWidget` | `statusbar/BabelStatusBarWidget.kt`, `statusbar/actions/BabelControlActions.kt` |
-| Read-only views + per-language overrides | `BabelSettings` + `VirtualDocumentProvider` | `settings/BabelSettings.kt`, `providers/VirtualDocumentProvider.kt` |
-| Show original / show translated | `AutoTranslateManager` | `services/AutoTranslateManager.kt` |
-| Auto re-translate ao trocar idioma | `AutoTranslateManager` | `services/AutoTranslateManager.kt` |
-| Save (reverse translation) | `SaveHandler` + `TranslatedLightFile` | `providers/SaveHandler.kt`, `providers/TranslatedLightFile.kt` |
-
-O keyword map usado por highlighting/hover/completion é cacheado por idioma em
-`TranslationService.keywordMap()` — reuse-o, não faça round-trip no Core por token.
 
 ---
 
