@@ -1,0 +1,52 @@
+<idea-plugin>
+    <id>com.nfasylum.babel</id>
+    <name>Babel Multilingual Code</name>
+    <vendor email="marcooinotna13@outlook.com">NFAsylum</vendor>
+    <description><![CDATA[
+        Show programming code with keywords translated to your native language.
+        The file on disk stays in the original language, so compilers, git and
+        other tools keep working on plain source. Translation is purely visual.
+    ]]></description>
+
+    <!-- Platform-only dependency: the same plugin loads in Rider, IDEA, PyCharm,
+         WebStorm, PhpStorm, GoLand, RubyMine, CLion and DataGrip. -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.CoreBridge"/>
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.LanguageService"/>
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.TranslationService"/>
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.settings.BabelSettings"/>
+        <applicationConfigurable
+            instance="com.nfasylum.babel.intellij.settings.BabelSettingsConfigurable"
+            id="com.nfasylum.babel.settings"
+            displayName="Babel"/>
+        <documentationProvider implementation="com.nfasylum.babel.intellij.providers.HoverProvider"/>
+        <annotator language="" implementationClass="com.nfasylum.babel.intellij.highlighting.BabelAnnotator"/>
+        <statusBarWidgetFactory
+            id="com.nfasylum.babel.statusbar"
+            implementation="com.nfasylum.babel.intellij.statusbar.BabelStatusBarWidgetFactory"/>
+        <applicationService serviceImplementation="com.nfasylum.babel.intellij.services.AutoTranslateManager"/>
+        <postStartupActivity implementation="com.nfasylum.babel.intellij.services.BabelStartupActivity"/>
+        <completion.contributor
+            language=""
+            implementationClass="com.nfasylum.babel.intellij.completion.BabelCompletionContributor"/>
+    </extensions>
+
+    <projectListeners>
+        <listener class="com.nfasylum.babel.intellij.providers.VirtualDocumentProvider"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
+
+    <applicationListeners>
+        <listener class="com.nfasylum.babel.intellij.providers.SaveHandler"
+                  topic="com.intellij.openapi.fileEditor.FileDocumentManagerListener"/>
+    </applicationListeners>
+
+    <actions>
+        <action id="Babel.SelectLanguage"
+                class="com.nfasylum.babel.intellij.actions.SelectLanguageAction"
+                text="Babel: Select Language"
+                description="Choose the natural language Babel translates code into"/>
+    </actions>
+</idea-plugin>
