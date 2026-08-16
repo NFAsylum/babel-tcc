@@ -238,4 +238,115 @@ public class PythonTokenizerServiceTests
         // Manual cleanup to not leak in test
         service.Dispose();
     }
+
+    // === Captura de stderr do subprocesso ===
+
+    [Fact]
+    public void CaptureStderrLine_MoreLinesThanLimit_KeepsOnlyMostRecent()
+    {
+        using PythonTokenizerService service = new();
+
+        for (int i = 0; i < PythonTokenizerService.MaxStderrLines + 10; i++)
+        {
+            service.CaptureStderrLine($"line{i}");
+        }
+
+        Assert.Equal(PythonTokenizerService.MaxStderrLines, service.StderrTail.Count);
+
+        string drained = service.DrainStderr();
+        Assert.DoesNotContain("line0 ", drained);
+        Assert.Contains($"line{PythonTokenizerService.MaxStderrLines + 9}", drained);
+    }
+
+    [Fact]
+    public void CaptureStderrLine_OverlyLongLine_IsTruncated()
+    {
+        using PythonTokenizerService service = new();
+        service.CaptureStderrLine(new string('x', PythonTokenizerService.MaxStderrLineLength + 100));
+
+        string drained = service.DrainStderr();
+        Assert.Contains("[truncated]", drained);
+        Assert.True(drained.Length < PythonTokenizerService.MaxStderrLineLength + 100);
+    }
+
+    [Fact]
+    public void CaptureStderrLine_BlankLine_IsIgnored()
+    {
+        using PythonTokenizerService service = new();
+        service.CaptureStderrLine("");
+        service.CaptureStderrLine("   ");
+
+        Assert.Empty(service.StderrTail);
+    }
+
+    [Fact]
+    public void DrainStderr_CalledTwice_SecondCallReturnsEmpty()
+    {
+        using PythonTokenizerService service = new();
+        service.CaptureStderrLine("boom");
+
+        Assert.Equal("boom", service.DrainStderr());
+        Assert.Equal("", service.DrainStderr());
+    }
+
+    [Fact]
+    public void WithStderr_NothingCaptured_ReturnsMessageUnchanged()
+    {
+        using PythonTokenizerService service = new();
+        Assert.Equal("failed", service.WithStderr("failed"));
+    }
+
+    [Fact]
+    public void WithStderr_WithCapturedOutput_AppendsStderrToMessage()
+    {
+        using PythonTokenizerService service = new();
+        service.CaptureStderrLine("Traceback (most recent call last):");
+        service.CaptureStderrLine("ModuleNotFoundError: No module named 'tokenize'");
+
+        string message = service.WithStderr("failed");
+
+        Assert.StartsWith("failed Python stderr: ", message);
+        Assert.Contains("ModuleNotFoundError", message);
+    }
+
+    [RequiresPythonFact]
+    public void StartProcess_InterpreterWritesToStderrAndDies_ErrorCarriesTheTraceback()
+    {
+        PythonTokenizerService service = new();
+
+        // Resolve the interpreter the same way production does. Hardcoding "python3" would make
+        // this test fail instead of skip on a machine whose working candidate is "python" or "py",
+        // which is what RequiresPythonFact accepts.
+        OperationResult resolved = service.ResolvePython();
+        Assert.True(resolved.IsSuccess, resolved.ErrorMessage);
+
+        // Seam: appending -c makes StartProcess run this snippet instead of the tokenizer script
+        // (the script path is still appended, and simply ignored as an extra argv). It reproduces a
+        // startup crash, which is exactly the case whose cause used to be discarded.
+        // Kept as a suffix because the resolved args may already carry a flag, such as "py -3".
+        string crashSnippet =
+            "-c \"import sys; sys.stderr.write('ModuleNotFoundError: fake\\n'); sys.stderr.flush(); sys.exit(1)\"";
+        service.ResolvedPythonArgs = (service.ResolvedPythonArgs + " " + crashSnippet).Trim();
+
+        OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Python stderr:", result.ErrorMessage);
+        Assert.Contains("ModuleNotFoundError: fake", result.ErrorMessage);
+
+        service.Dispose();
+    }
+
+    [RequiresPythonFact]
+    public void Tokenize_AfterStderrCapture_StillTokenizesNormally()
+    {
+        using PythonTokenizerService service = new();
+        service.CaptureStderrLine("noise from an earlier run");
+
+        OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
+
+        Assert.True(result.IsSuccess, result.ErrorMessage);
+        Assert.NotEmpty(result.Value);
+        Assert.Empty(service.StderrTail);
+    }
 }
