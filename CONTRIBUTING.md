@@ -32,7 +32,12 @@ Obrigado pelo interesse em contribuir! Este documento explica como participar no
 - .NET 8 SDK
 - Node.js 20+
 - Python 3.8+ (para suporte a Python)
+- JDK 17 (para o plugin IntelliJ)
 - VS Code (para testar a extensão)
+
+O build do plugin IntelliJ espera o repositório `babel-tcc-translations` clonado
+como **irmão** de `babel-tcc`; a task `bundleTranslations` aborta com mensagem
+explícita se não encontrar.
 
 ### Build
 
@@ -45,6 +50,10 @@ dotnet build
 cd packages/ide-adapters/vscode
 npm install
 npm run build
+
+# Plugin IntelliJ (Kotlin)
+cd packages/ide-adapters/intellij
+./gradlew build
 ```
 
 ### Testes
@@ -56,9 +65,31 @@ dotnet test packages/core/MultiLingualCode.Core.Tests
 # Testes da extensão
 cd packages/ide-adapters/vscode
 npm test
+
+# Testes do plugin IntelliJ
+cd packages/ide-adapters/intellij
+./gradlew test
 ```
 
 ## Convenções de código
+
+O projeto usa quatro linguagens, e as regras de cada uma derivam dos mesmos
+quatro princípios. Quando uma linguagem nova entrar, derive as regras dela
+destes princípios em vez de copiar a lista de outra linguagem — o idioma muda,
+a intenção não.
+
+1. **Erro é valor, não fluxo de controle.** A falha é devolvida e tratada
+   explicitamente por quem chamou, em vez de subir sozinha pela pilha.
+2. **Falha de runtime degrada; falha de build grita.** Em runtime o arquivo do
+   usuário é sagrado: se a tradução falha, mostra-se o original intacto. No
+   build vale o oposto — abortar alto em vez de empacotar artefato quebrado.
+3. **Costuras de teste declaradas no código.** A testabilidade vem de pontos de
+   substituição explícitos, não de mocking mágico.
+4. **Explícito acima de esperto.** Entre a forma curta e a forma óbvia, o
+   projeto escolhe a óbvia.
+
+As regras por linguagem abaixo são a tradução desses princípios para cada
+idioma, não uma cópia literal de uma linguagem para outra.
 
 ### C# (Core)
 
@@ -78,6 +109,67 @@ npm test
 - Aspas simples
 - Arquivos em camelCase, classes em PascalCase
 
+### Kotlin (Plugin IntelliJ)
+
+O Kotlin **não** copia a lista do C# ao pé da letra: várias daquelas regras
+existem para contornar limitações que o Kotlin não tem. O que se preserva é a
+intenção de cada uma.
+
+- **Erro não atravessa a borda do serviço.** `CoreBridge` lança
+  `CoreBridgeException` internamente, mas todo serviço que o consome captura e
+  degrada — `TranslationService` devolve o código original quando o Core falha.
+  Um Core quebrado nunca pode corromper o arquivo em disco. É o equivalente do
+  `OperationResult` do C# (princípios 1 e 2).
+- **Exponha a costura, não a classe inteira.** É o equivalente do "tudo
+  `public`" do C#: em vez de abrir todos os membros, declare o ponto exato de
+  substituição — a interface `CoreTransport`, `var transportFactory`,
+  `var timeoutMs`. `private` é o padrão para o resto (princípio 3)
+- **Agrupar declarações relacionadas no mesmo arquivo** quando formam uma
+  unidade: `CoreBridge.kt` reúne o serviço, seu transporte, o envelope de
+  resposta e a exceção. O C# exige uma classe por arquivo; o Kotlin idiomático
+  agrupa, e aqui o idioma da linguagem prevalece
+- Tipos inferidos são aceitáveis em locais (`val log = Logger.getInstance(...)`);
+  explícitos na assinatura pública de funções
+- Um `Logger` por classe, via `Logger.getInstance(Classe::class.java)`. Registre
+  falha real em `error`, degradação em `warn`, e nunca descarte a exceção quando
+  o overload aceitar o throwable
+- Nomes de teste: frase entre crases descrevendo o comportamento observável —
+  ``fun `timeout message carries what the Core wrote to stderr`()``
+
+### Python (tokenizer do adapter)
+
+`tokenizer_service.py` roda no interpretador **do usuário**, num ambiente que o
+projeto não controla. Isso dita quase todas as regras.
+
+- **Somente biblioteca padrão. Nunca dependência de terceiros.** Ninguém deve
+  precisar rodar `pip install` para a extensão funcionar. Hoje o script importa
+  apenas `io`, `json`, `keyword`, `sys`, `token` e `tokenize`
+- **Compatível com Python 3.8+**, que é o piso verificado por
+  `PythonTokenizerService.MinimumPythonVersion`. Nada de sintaxe mais nova
+- **Erro é valor, transportado pelo protocolo.** Devolva
+  `{"ok": false, "error": "..."}` pelo stdout — é o `OperationResult` do C#
+  atravessando a fronteira de processo. Nenhuma exceção pode escapar do laço de
+  `main()` (princípio 1)
+- **stdout é canal de protocolo; stderr é diagnóstico.** Nunca escreva mensagem
+  livre no stdout: ela seria lida como resposta JSON e quebraria o
+  enquadramento. O lado C# drena e registra o stderr
+- `sys.stdout.flush()` após cada resposta — o processo é persistente e o outro
+  lado bloqueia esperando a linha
+- Uma responsabilidade por script: tokenizar. Regra de tradução mora no C#
+
+### JavaScript (scripts de build)
+
+Rodam no Node durante o empacotamento, nunca em produção.
+
+- **Somente biblioteca padrão do Node** (`fs`, `path`), sem dependências
+- **CommonJS** (`require`), não ESM
+- **Falhar alto, sem fallback silencioso.** Ao contrário do runtime, aqui um
+  fallback é pior que um erro: empacotar um `.vsix` sem traduções ou sem README
+  é publicar produto quebrado. Explique o motivo em `console.error` e encerre
+  com `process.exit(1)` (princípio 2)
+- `const` por padrão, nunca `var`
+- Indentação e encoding seguem o `.editorconfig`
+
 ## Estrutura do projeto
 
 ```
@@ -89,7 +181,8 @@ babel-tcc/
       MultiLingualCode.Core.Tests/ # Testes unitários e integração
     ide-adapters/
       vscode/                      # Extensão VS Code (TypeScript)
-  scripts/                         # Scripts de validação e build
+      intellij/                    # Plugin IntelliJ (Kotlin)
+  scripts/                         # Scripts de build (JavaScript/Node)
   tarefas/                         # Gestão de tarefas (.pendente/.finalizada)
   examples/                        # Exemplos de uso (C# e Python)
   docs/                            # Documentação técnica e do usuário
