@@ -1,5 +1,5 @@
 {
-  "description": "Visualisez du code C#, Python, VisuAlg et Portugol Studio traduit dans votre langue naturelle. Les mots-clés et les identifiants sont traduits en temps réel.",
+  "description": "Visualisez du code C#, Python, JavaScript, VisuAlg et Portugol Studio traduit dans votre langue naturelle. Les mots-clés et les identifiants sont traduits en temps réel.",
   "command.toggle.title": "Babel TCC : Activer/désactiver la traduction",
   "command.selectLanguage.title": "Babel TCC : Sélectionner la langue",
   "command.openTranslatedEditable.title": "Babel TCC : Ouvrir la vue traduite (modifiable)",

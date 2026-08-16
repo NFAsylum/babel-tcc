@@ -1,5 +1,5 @@
 {
-  "description": "Visualisieren Sie C#-, Python-, VisuAlg- und Portugol-Studio-Code, übersetzt in Ihre natürliche Sprache. Schlüsselwörter und Bezeichner werden in Echtzeit übersetzt.",
+  "description": "Visualisieren Sie C#-, Python-, JavaScript-, VisuAlg- und Portugol-Studio-Code, übersetzt in Ihre natürliche Sprache. Schlüsselwörter und Bezeichner werden in Echtzeit übersetzt.",
   "command.toggle.title": "Babel TCC: Übersetzung umschalten",
   "command.selectLanguage.title": "Babel TCC: Sprache auswählen",
   "command.openTranslatedEditable.title": "Babel TCC: Übersetzte Ansicht öffnen (bearbeitbar)",
