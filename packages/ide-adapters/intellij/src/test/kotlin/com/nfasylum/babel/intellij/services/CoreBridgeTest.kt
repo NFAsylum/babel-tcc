@@ -27,6 +27,15 @@ class CoreBridgeTest {
         /** Invoked on every write so a test can script the matching response. */
         var onWrite: ((String) -> Unit)? = null
 
+        /** Scripted stderr, as the real transport would have captured it from the process. */
+        var stderr: String = ""
+
+        override fun drainStderr(): String {
+            val captured = stderr
+            stderr = ""
+            return captured
+        }
+
         override fun writeLine(line: String) {
             requests.add(line)
             onWrite?.invoke(line)
@@ -113,6 +122,36 @@ class CoreBridgeTest {
 
         assertTrue("should not block far past the timeout (was ${elapsedMs}ms)", elapsedMs < 2_000)
         assertTrue("timed-out transport should be killed", fake.closed)
+    }
+
+    @Test
+    fun `timeout message carries what the Core wrote to stderr`() {
+        val fake = FakeTransport()
+        // A Core that died mid-request: no response line, but a stack trace on stderr.
+        fake.stderr = "Unhandled exception. System.IO.FileNotFoundException: translations"
+        val bridge = bridgeWith(fake).apply { timeoutMs = 200 }
+
+        try {
+            bridge.translateToNaturalLanguage("if (x) { }", ".cs", "pt-BR")
+            fail("expected a timeout CoreBridgeException")
+        } catch (e: CoreBridgeException) {
+            assertTrue("message should mention timeout", e.message!!.contains("Timeout"))
+            assertTrue("message should carry the stderr", e.message!!.contains("Core.Host stderr:"))
+            assertTrue("message should name the cause", e.message!!.contains("FileNotFoundException"))
+        }
+    }
+
+    @Test
+    fun `a silent Core leaves the error message without a stderr section`() {
+        val fake = FakeTransport()
+        val bridge = bridgeWith(fake).apply { timeoutMs = 200 }
+
+        try {
+            bridge.translateToNaturalLanguage("if (x) { }", ".cs", "pt-BR")
+            fail("expected a timeout CoreBridgeException")
+        } catch (e: CoreBridgeException) {
+            assertTrue("no stderr means no stderr section", !e.message!!.contains("Core.Host stderr"))
+        }
     }
 
     @Test
