@@ -314,13 +314,19 @@ public class PythonTokenizerServiceTests
     {
         PythonTokenizerService service = new();
 
-        // Seam: pre-resolving the interpreter makes StartProcess run this -c snippet instead of the
-        // tokenizer script (the script path is still appended, and simply ignored as an extra argv).
-        // It reproduces a startup crash, which is exactly the case whose cause used to be discarded.
-        service.PythonResolved = true;
-        service.ResolvedPythonPath = "python3";
-        service.ResolvedPythonArgs =
+        // Resolve the interpreter the same way production does. Hardcoding "python3" would make
+        // this test fail instead of skip on a machine whose working candidate is "python" or "py",
+        // which is what RequiresPythonFact accepts.
+        OperationResult resolved = service.ResolvePython();
+        Assert.True(resolved.IsSuccess, resolved.ErrorMessage);
+
+        // Seam: appending -c makes StartProcess run this snippet instead of the tokenizer script
+        // (the script path is still appended, and simply ignored as an extra argv). It reproduces a
+        // startup crash, which is exactly the case whose cause used to be discarded.
+        // Kept as a suffix because the resolved args may already carry a flag, such as "py -3".
+        string crashSnippet =
             "-c \"import sys; sys.stderr.write('ModuleNotFoundError: fake\\n'); sys.stderr.flush(); sys.exit(1)\"";
+        service.ResolvedPythonArgs = (service.ResolvedPythonArgs + " " + crashSnippet).Trim();
 
         OperationResultGeneric<List<PythonToken>> result = service.Tokenize("x = 1");
 
