@@ -6,6 +6,35 @@
 - Documentação de usuário e commits em **português**
 - Nomes de arquivo em **inglês** (PascalCase para C#, kebab-case para TS)
 
+Este arquivo é a **fonte única** das regras de código. Nenhum outro documento do
+repositório repete regra daqui — uma cópia resumida em outro lugar diverge e
+passa a ser seguida como se fosse a regra completa.
+
+## Alcance das regras
+
+As **proibições absolutas**, as **práticas a evitar** e as **práticas
+obrigatórias** da seção de C# valem para **todas as linguagens do projeto**. Elas
+estão escritas por extenso em C# porque é a maior camada; as seções das demais
+linguagens registram apenas como cada regra se expressa naquele idioma, mais as
+exceções justificadas.
+
+Uma linguagem nova herda as mesmas proibições. Uma regra só deixa de valer
+quando a linguagem não tem o construto (`partial` não existe em Kotlin) ou
+quando cumpri-la exigiria abandonar um recurso estrutural do idioma — e nesse
+caso a exceção fica escrita, com o motivo.
+
+As convenções de **nomenclatura** e de **nomes de teste** são por linguagem, e
+cada seção declara as suas.
+
+### Conformidade do código existente
+
+Estas regras valem para código novo. Parte do código escrito antes delas ainda
+não é conforme — o plugin IntelliJ, o tokenizer Python e os scripts de build.
+
+A adequação é trabalho próprio, rastreado na tarefa
+`tarefas/tarefa112-adequar-codigo-aos-padroes`, e não é requisito de quem toca
+nesses arquivos por outro motivo.
+
 ## C# (.NET 8)
 
 ### Regras Obrigatórias
@@ -108,7 +137,8 @@ MultiLingualCode.Core/
 - Preferir `const` sobre `let`; nunca usar `var`
 - Tipos explícitos em assinaturas de função (parâmetros e retorno)
 - Strings com aspas simples (`'`) exceto em template literals
-- Mesmas regras de proibição de null/throw/private aplicam-se
+- Todas as proibições absolutas valem aqui, incluindo null, `throw`, `private` e
+  o operador ternário (ver [Alcance das regras](#alcance-das-regras))
 
 ### Estrutura de Projeto
 
@@ -120,6 +150,112 @@ vscode/src/
 ├── services/            # CoreBridge, Config, LanguageDetector
 └── ui/                  # StatusBar, LanguageSelector
 ```
+
+## Kotlin (Plugin IntelliJ)
+
+Todas as proibições absolutas valem aqui. A tabela registra como cada uma se
+expressa em Kotlin, não uma lista nova.
+
+### Proibições — como se aplicam
+
+| Regra | Em Kotlin |
+|---|---|
+| `var` | O `var` de Kotlin é mutabilidade, não inferência. A regra que transfere é **tipo explícito na declaração**: `val timeoutMs: Long = 10_000`, nunca `val timeoutMs = 10_000`. Prefira `val` a `var` |
+| `?`, `?.`, `?:` | Proibido tipo anulável. Usar Result pattern, valor default ou string vazia. **Exceção de boundary**: APIs Java que devolvem `null` (`BufferedReader.readLine()`), com o tratamento contido na função que faz a chamada |
+| `? :` (ternário) | Kotlin não tem ternário. `if/else` como expressão é a forma correta |
+| `throw` | Proibido. O erro atravessa a fronteira como valor, não como exceção |
+| `internal`, `private` | Proibidos. Tudo `public` e testável |
+| `partial` | Não existe em Kotlin |
+| Constructors | **Exceção documentada**: o construtor primário é estrutural em Kotlin — `data class` não existe sem ele. Permitido apenas para declarar as propriedades do construtor primário. Proibida lógica de inicialização nele ou em `init`; isso vai para static factory no `companion object` |
+| Function overloading | Proibido, incluindo default arguments que simulam overload. Nomes distintos e descritivos |
+| Classes aninhadas | Proibidas. Uma classe por arquivo, declarada no topo |
+| Classes-deus, valores hardcoded, nomes genéricos | Idênticos ao C# |
+
+### Convenções de Nomenclatura
+
+| Tipo | Convenção | Exemplo |
+|---|---|---|
+| Arquivo | PascalCase, igual ao nome da classe | `CoreBridge.kt` |
+| Pacote | minúsculas, sem separador | `com.nfasylum.babel.intellij.services` |
+| Classe/Interface | PascalCase | `CoreBridge`, `CoreTransport` |
+| Função | camelCase | `translateToNaturalLanguage()` |
+| Propriedade | camelCase | `timeoutMs` |
+| Constante (`const val`) | UPPER_SNAKE_CASE | `DEFAULT_TIMEOUT_MS` |
+| Parâmetro/variável local | camelCase | `sourceCode` |
+
+### Testes (JUnit)
+
+- Nomear com frase entre crases descrevendo o comportamento observável:
+  ``fun `timeout message carries what the Core wrote to stderr`()``
+- Usar padrões Arrange-Act-Assert
+- Substituir dependências pelas costuras declaradas no próprio código
+  (`transportFactory`, `CoreTransport`), não por mocking de framework
+
+### Logging
+
+- Um `Logger` por classe, via `Logger.getInstance(Classe::class.java)`
+- `error` para falha real, `warn` para degradação, `debug` para ruído por
+  requisição. Nunca descartar a exceção quando o overload aceita o throwable
+
+## Python (Tokenizer do Adapter)
+
+`tokenizer_service.py` roda no interpretador **do usuário**, num ambiente que o
+projeto não controla. Isso domina as regras desta seção.
+
+### Restrições de ambiente
+
+| Regra | Motivo |
+|---|---|
+| Somente biblioteca padrão, nunca dependência de terceiros | Ninguém deve rodar `pip install` para a extensão funcionar |
+| Compatível com Python 3.8+ | É o piso verificado por `PythonTokenizerService.MinimumPythonVersion` |
+| Uma responsabilidade por script: tokenizar | Regra de tradução mora no C# |
+
+### Proibições — como se aplicam
+
+| Regra | Em Python |
+|---|---|
+| Tipos explícitos | Anotações de tipo obrigatórias na assinatura de função |
+| `?` (nullable) | Proibido usar `None` como sinal de erro ou retorno opcional. Devolver o envelope `{"ok": false, "error": "..."}` |
+| `? :` (ternário) | Proibido `a if cond else b`. Usar bloco `if/else` |
+| `throw` | Nenhuma exceção pode escapar do laço de `main()`. O erro vira valor no protocolo — é o Result pattern atravessando a fronteira de processo |
+| `private` | Proibido o prefixo `_` para simular visibilidade |
+| Nomes genéricos, valores hardcoded, classes-deus | Idênticos ao C# |
+
+### Protocolo
+
+- **stdout é canal de protocolo; stderr é diagnóstico.** Nunca escrever mensagem
+  livre no stdout: seria lida como resposta JSON e quebraria o enquadramento
+- `sys.stdout.flush()` após cada resposta — o processo é persistente e o outro
+  lado bloqueia esperando a linha
+
+### Convenções de Nomenclatura
+
+| Tipo | Convenção | Exemplo |
+|---|---|---|
+| Arquivo | snake_case | `tokenizer_service.py` |
+| Função | snake_case | `tokenize_source()` |
+| Variável/Parâmetro | snake_case | `source_code` |
+| Constante | UPPER_SNAKE_CASE | `MAX_TOKENS` |
+
+## JavaScript (Scripts de Build)
+
+Rodam no Node durante o empacotamento, nunca em produção. As proibições valem
+igual; a diferença está no tratamento de falha.
+
+| Regra | Em JavaScript |
+|---|---|
+| `var` | Proibido. `const` por padrão, `let` só quando há reatribuição real |
+| `?`, `?.`, `??` | Proibido usar `null`/`undefined` como sinal. Valor default ou encerramento explícito |
+| `? :` (ternário) | Proibido. Bloco `if/else` |
+| `throw` | Proibido. **Falha de build encerra alto**: `console.error` com o motivo e `process.exit(1)`. Não é exceção propagada, é término explícito |
+| `#private` | Proibido |
+| Somente biblioteca padrão do Node (`fs`, `path`) | Sem dependências |
+| CommonJS (`require`), não ESM | |
+| Indentação e encoding | Seguem o `.editorconfig` |
+
+**Falha de build nunca degrada silenciosamente.** É o oposto do runtime: lá o
+arquivo do usuário é preservado mostrando o original; aqui, empacotar um `.vsix`
+sem traduções ou sem README publica um produto quebrado. Falhe alto.
 
 ## JSON (Tabelas de Tradução)
 
