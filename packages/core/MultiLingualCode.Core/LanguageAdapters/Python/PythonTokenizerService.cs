@@ -216,9 +216,12 @@ public class PythonTokenizerService : IDisposable
             return;
         }
 
-        string trimmed = line.Length > MaxStderrLineLength
-            ? line.Substring(0, MaxStderrLineLength) + "[truncated]"
-            : line;
+        string trimmed = line;
+
+        if (line.Length > MaxStderrLineLength)
+        {
+            trimmed = line.Substring(0, MaxStderrLineLength) + "[truncated]";
+        }
 
         lock (StderrLock)
         {
