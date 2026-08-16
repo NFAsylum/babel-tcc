@@ -80,9 +80,8 @@ Lá estão as proibições absolutas que valem para todas as linguagens, as prá
 que exigem justificativa explícita, as convenções de nomenclatura por linguagem
 e as regras de Git.
 
-Não duplique regra de código neste arquivo. Uma cópia resumida aqui já divergiu
-do documento real uma vez, e uma contribuição seguiu o resumo achando que era a
-regra completa.
+Não duplique regra de código neste arquivo: uma cópia resumida diverge do
+documento real e passa a ser seguida como se fosse a regra completa.
 
 ## Estrutura do projeto
 

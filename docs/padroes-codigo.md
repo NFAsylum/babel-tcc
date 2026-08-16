@@ -6,10 +6,9 @@
 - Documentação de usuário e commits em **português**
 - Nomes de arquivo em **inglês** (PascalCase para C#, kebab-case para TS)
 
-Este arquivo é a **fonte única** das regras de código. O `CONTRIBUTING.md`
-aponta para cá e não repete regra nenhuma: uma cópia resumida lá já divergiu
-deste documento uma vez, e uma contribuição seguiu o resumo achando que era a
-regra completa.
+Este arquivo é a **fonte única** das regras de código. Nenhum outro documento do
+repositório repete regra daqui — uma cópia resumida em outro lugar diverge e
+passa a ser seguida como se fosse a regra completa.
 
 ## Alcance das regras
 
@@ -29,15 +28,12 @@ cada seção declara as suas.
 
 ### Conformidade do código existente
 
-Estas regras valem para código novo. Parte do código atual ainda não é conforme
-e a adequação é trabalho próprio, não requisito de quem toca no arquivo por
-outro motivo:
+Estas regras valem para código novo. Parte do código escrito antes delas ainda
+não é conforme — o plugin IntelliJ, o tokenizer Python e os scripts de build.
 
-| Camada | Desvios conhecidos |
-|---|---|
-| Plugin IntelliJ | 63 usos de `private`, 4 `throw`, 22 tipos anuláveis |
-| Tokenizer Python | Sem anotações de tipo |
-| Scripts de build | Indentação de 4 espaços, contra os 2 do `.editorconfig` |
+A adequação é trabalho próprio, rastreado na tarefa
+`tarefas/tarefa112-adequar-codigo-aos-padroes`, e não é requisito de quem toca
+nesses arquivos por outro motivo.
 
 ## C# (.NET 8)
 
