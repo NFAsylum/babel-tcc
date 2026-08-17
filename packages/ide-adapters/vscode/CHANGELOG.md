@@ -5,6 +5,25 @@ All notable changes to the Babel TCC extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-16
+
+### Added
+
+- **JavaScript support** (`.js`). The 38 reserved words of JavaScript are now translated to your
+  natural language in all 10 supported locales, using the fast Text Scan path — no external parser
+  or extra runtime is required. Strings, comments and template literals (including `${...}`
+  interpolation) are left untouched, and saving the translated view restores the original English
+  keywords on disk.
+
+### Notes
+
+- JavaScript translation is keyword-only: `// tradu[lang]:` identifier annotations remain exclusive
+  to C# and Python, which have a full parser available. This is the same scope already documented
+  for VisuAlg and Portugol Studio.
+- The contextual keywords `of`, `as`, `from`, `get` and `set` are deliberately excluded. They are
+  commonly used as identifiers and property names, and a text scan cannot tell the two apart —
+  including them would produce incorrect translations.
+
 ## [1.0.0] - 2026-05-28
 
 First stable release.
