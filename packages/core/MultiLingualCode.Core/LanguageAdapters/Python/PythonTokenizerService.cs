@@ -20,12 +20,30 @@ public class PythonTokenizerService : IDisposable
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
     public static readonly Version MinimumPythonVersion = new(3, 8);
 
+    /// <summary>
+    /// How many stderr lines are kept from the subprocess. Bounded on purpose: the buffer exists to
+    /// explain the last failure, not to archive everything the interpreter ever printed.
+    /// </summary>
+    public const int MaxStderrLines = 20;
+
+    /// <summary>Maximum characters kept per stderr line; longer lines are truncated.</summary>
+    public const int MaxStderrLineLength = 500;
+
     public readonly object Lock = new();
     public Process Process = null!;
     public string ResolvedPythonPath = "";
     public string ResolvedPythonArgs = "";
     public bool PythonResolved = false;
     public bool Disposed = false;
+
+    /// <summary>
+    /// Guards <see cref="StderrTail"/>. Separate from <see cref="Lock"/> because stderr arrives on a
+    /// thread-pool thread while a request thread is holding <see cref="Lock"/>.
+    /// </summary>
+    public readonly object StderrLock = new();
+
+    /// <summary>Most recent stderr lines written by the subprocess, oldest first.</summary>
+    public readonly Queue<string> StderrTail = new();
 
     /// <summary>
     /// Tokenizes Python source code by sending it to the persistent Python subprocess.
@@ -151,17 +169,130 @@ public class PythonTokenizerService : IDisposable
 
             Process started = Process.Start(startInfo)!;
 
-            if (started == null || started.HasExited)
+            if (started == null)
             {
                 return OperationResult.Fail("Failed to start Python subprocess.");
             }
 
+            lock (StderrLock)
+            {
+                StderrTail.Clear();
+            }
+
+            // Stderr must be drained continuously: the stream is redirected, so leaving it unread
+            // lets the pipe buffer fill and block the interpreter mid-write. Draining it also keeps
+            // the Python traceback, which is otherwise lost and turns a crash into a bare timeout.
+            started.ErrorDataReceived += (_, e) => CaptureStderrLine(e.Data + "");
+            started.BeginErrorReadLine();
+
             Process = started;
+
+            if (started.HasExited)
+            {
+                // Died on startup (bad interpreter, broken import). WaitForExit with no timeout also
+                // waits for the async stderr reader to finish, so the traceback is complete here.
+                started.WaitForExit();
+                return OperationResult.Fail(WithStderr("Failed to start Python subprocess."));
+            }
+
             return OperationResult.Ok();
         }
         catch (Exception ex)
         {
             return OperationResult.Fail($"Failed to start Python subprocess: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Records one stderr line from the subprocess, keeping only the most recent
+    /// <see cref="MaxStderrLines"/> lines so a looping or chatty interpreter cannot grow memory
+    /// without bound. Blank lines are dropped.
+    /// </summary>
+    /// <param name="line">The raw stderr line; empty or whitespace-only lines are ignored.</param>
+    public void CaptureStderrLine(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        string trimmed = line;
+
+        if (line.Length > MaxStderrLineLength)
+        {
+            trimmed = line.Substring(0, MaxStderrLineLength) + "[truncated]";
+        }
+
+        lock (StderrLock)
+        {
+            StderrTail.Enqueue(trimmed);
+
+            while (StderrTail.Count > MaxStderrLines)
+            {
+                StderrTail.Dequeue();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns the captured stderr lines joined into one string and empties the buffer, so the same
+    /// traceback is not appended to every later error.
+    /// </summary>
+    /// <returns>The captured lines separated by " | ", or an empty string if nothing was captured.</returns>
+    public string DrainStderr()
+    {
+        lock (StderrLock)
+        {
+            if (StderrTail.Count == 0)
+            {
+                return "";
+            }
+
+            string joined = string.Join(" | ", StderrTail);
+            StderrTail.Clear();
+            return joined;
+        }
+    }
+
+    /// <summary>
+    /// Appends whatever the subprocess wrote to stderr to an error message. Without it the caller
+    /// only sees "timed out" or "closed its output stream" with no trace of the Python failure.
+    /// </summary>
+    /// <param name="message">The base error message.</param>
+    /// <returns>The message, with the captured stderr appended when there is any.</returns>
+    public string WithStderr(string message)
+    {
+        string captured = DrainStderr();
+
+        if (captured.Length == 0)
+        {
+            return message;
+        }
+
+        return $"{message} Python stderr: {captured}";
+    }
+
+    /// <summary>
+    /// When the subprocess has already exited, waits for its async stderr reader to finish so the
+    /// captured tail is complete before it gets attached to an error message.
+    /// </summary>
+    public void FlushStderrOnExit()
+    {
+        if (Process == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (Process.HasExited)
+            {
+                Process.WaitForExit();
+            }
+        }
+        catch
+        {
+            // Best effort: a process already reaped or disposed has nothing left to flush.
         }
     }
 
@@ -174,7 +305,9 @@ public class PythonTokenizerService : IDisposable
     {
         if (Process == null || Process.HasExited)
         {
-            return OperationResult.Fail<List<PythonToken>>("Python subprocess is not running.");
+            FlushStderrOnExit();
+            return OperationResult.Fail<List<PythonToken>>(
+                WithStderr("Python subprocess is not running."));
         }
 
         try
@@ -187,15 +320,17 @@ public class PythonTokenizerService : IDisposable
             if (!readTask.Wait(RequestTimeout))
             {
                 StopProcess();
-                return OperationResult.Fail<List<PythonToken>>(
-                    $"Python subprocess timed out after {RequestTimeout.TotalSeconds} seconds.");
+                return OperationResult.Fail<List<PythonToken>>(WithStderr(
+                    $"Python subprocess timed out after {RequestTimeout.TotalSeconds} seconds."));
             }
 
             string responseLine = readTask.Result;
             if (responseLine == null)
             {
-                return OperationResult.Fail<List<PythonToken>>(
-                    "Python subprocess closed its output stream unexpectedly.");
+                // End of stream means the interpreter is gone; its stderr explains why.
+                FlushStderrOnExit();
+                return OperationResult.Fail<List<PythonToken>>(WithStderr(
+                    "Python subprocess closed its output stream unexpectedly."));
             }
 
             TokenizerResponse response;
@@ -231,8 +366,9 @@ public class PythonTokenizerService : IDisposable
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return OperationResult.Fail<List<PythonToken>>(
-                $"Error communicating with Python subprocess: {ex.Message}");
+            FlushStderrOnExit();
+            return OperationResult.Fail<List<PythonToken>>(WithStderr(
+                $"Error communicating with Python subprocess: {ex.Message}"));
         }
     }
 

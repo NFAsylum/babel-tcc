@@ -47,6 +47,13 @@ interface CoreTransport {
     fun isAlive(): Boolean
 
     fun close()
+
+    /**
+     * Returns whatever the process wrote to stderr since the last call, then clears it, so a failure
+     * message can carry the reason instead of just the symptom. Transports with no separate error
+     * stream (the in-memory test fakes) have nothing to report.
+     */
+    fun drainStderr(): String = ""
 }
 
 /**
@@ -142,6 +149,11 @@ class CoreBridge {
                     responses.offer(line)
                 }
             }
+            if (generation == myGeneration && !disposed) {
+                // Not draining stderr here on purpose: every line is already logged as it arrives,
+                // and the tail is left intact for the failing request's exception message.
+                log.warn("CoreBridge: Core.Host closed its output stream")
+            }
         } catch (e: Exception) {
             if (generation == myGeneration && !disposed) {
                 log.warn("CoreBridge: reader thread stopped: ${e.message}")
@@ -190,7 +202,7 @@ class CoreBridge {
                 onTimeout(method)
             }
 
-            val response = parseResponse(line)
+            val response = parseResponse(line, active)
             consecutiveTimeouts = 0
             restartCount = 0
             if (!response.success) {
@@ -204,21 +216,34 @@ class CoreBridge {
         consecutiveTimeouts++
         // Kill the process so its stream is clean; the next call restarts fresh.
         generation++
+        val active = transport
+        // Read stderr before closing: a Core that died mid-request explains itself there.
+        val details = stderrSuffix(active)
         try {
-            transport?.close()
+            active?.close()
         } catch (_: Exception) {
         }
         transport = null
-        throw CoreBridgeException("Timeout after ${timeoutMs}ms for method '$method'")
+        throw CoreBridgeException("Timeout after ${timeoutMs}ms for method '$method'$details")
     }
 
-    private fun parseResponse(line: String): CoreResponse {
+    private fun parseResponse(line: String, source: CoreTransport?): CoreResponse {
         return try {
             gson.fromJson(line, CoreResponse::class.java)
                 ?: throw CoreBridgeException("Empty response from Core")
         } catch (e: Exception) {
-            throw CoreBridgeException("Failed to parse Core response: $line")
+            throw CoreBridgeException("Failed to parse Core response: $line${stderrSuffix(source)}")
         }
+    }
+
+    /** Formats the transport's captured stderr as a message suffix, or "" when it stayed silent. */
+    private fun stderrSuffix(source: CoreTransport?): String {
+        val tail = try {
+            source?.drainStderr().orEmpty()
+        } catch (_: Exception) {
+            ""
+        }
+        return if (tail.isEmpty()) "" else ". Core.Host stderr: $tail"
     }
 
     // --- typed API (mirrors the C# Program.cs method names) ---------------
@@ -372,8 +397,63 @@ private class ProcessTransport(
     private val process: Process,
     private val gson: Gson,
 ) : CoreTransport {
+    private val log = Logger.getInstance(ProcessTransport::class.java)
     private val writer: Writer = OutputStreamWriter(process.outputStream, StandardCharsets.UTF_8)
     private val reader: BufferedReader = BufferedReader(InputStreamReader(process.inputStream, StandardCharsets.UTF_8))
+
+    /** Most recent stderr lines, oldest first. Guarded by itself. */
+    private val stderrTail = ArrayDeque<String>()
+
+    init {
+        // Stderr is a pipe of its own (redirectErrorStream is false). Leaving it unread lets the
+        // buffer fill and block Core.Host mid-write, and throws away the .NET stack trace — which
+        // is why a crashed Core used to surface as nothing but a timeout.
+        thread(name = "babel-core-stderr", isDaemon = true) { drainStderrLoop() }
+    }
+
+    /** Reads stderr to end-of-stream, logging every line and keeping a bounded tail. */
+    private fun drainStderrLoop() {
+        try {
+            BufferedReader(InputStreamReader(process.errorStream, StandardCharsets.UTF_8)).use { errors ->
+                while (true) {
+                    val line = errors.readLine() ?: break
+                    if (line.isBlank()) continue
+                    log.warn("Core.Host stderr: $line")
+                    rememberStderr(line)
+                }
+            }
+        } catch (_: Exception) {
+            // The stream dies with the process; the exit itself is reported by the read loop.
+        }
+    }
+
+    /**
+     * Keeps only the last [MAX_STDERR_LINES] lines. The tail exists to explain the most recent
+     * failure, not to accumulate everything the process ever printed.
+     */
+    private fun rememberStderr(line: String) {
+        val trimmed = if (line.length > MAX_STDERR_LINE_LENGTH) {
+            line.take(MAX_STDERR_LINE_LENGTH) + "[truncated]"
+        } else {
+            line
+        }
+        synchronized(stderrTail) {
+            stderrTail.addLast(trimmed)
+            while (stderrTail.size > MAX_STDERR_LINES) {
+                stderrTail.removeFirst()
+            }
+        }
+    }
+
+    override fun drainStderr(): String = synchronized(stderrTail) {
+        if (stderrTail.isEmpty()) {
+            ""
+        } else {
+            val joined = stderrTail.joinToString(" | ")
+            stderrTail.clear()
+            joined
+        }
+    }
 
     override fun writeLine(line: String) {
         writer.write(line)
@@ -400,5 +480,7 @@ private class ProcessTransport(
 
     private companion object {
         const val DISPOSE_TIMEOUT_MS: Long = 2_000
+        const val MAX_STDERR_LINES: Int = 20
+        const val MAX_STDERR_LINE_LENGTH: Int = 500
     }
 }

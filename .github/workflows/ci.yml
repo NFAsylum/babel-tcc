@@ -100,6 +100,58 @@ jobs:
           name: vscode-coverage
           path: packages/ide-adapters/vscode/coverage/lcov.info
 
+  # So ubuntu: o plugin compila para bytecode independente de plataforma, e a parte que e
+  # especifica de SO (o Core.Host embutido) ja e coberta pela matriz do core-build-test.
+  intellij-build-test:
+    name: IntelliJ Plugin (ubuntu-latest)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: packages/ide-adapters/intellij
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout translations repo
+        uses: actions/checkout@v4
+        with:
+          repository: NFAsylum/babel-tcc-translations
+          path: babel-tcc-translations
+
+      # O build.gradle.kts resolve as traducoes como IRMA do repo (babelRepoRoot.parentFile),
+      # que e o layout de desenvolvimento local. O actions/checkout so escreve dentro do
+      # workspace, entao movemos um nivel acima para a task bundleTranslations encontrar.
+      - name: Move translations alongside the repo
+        working-directory: ${{ github.workspace }}
+        run: mv babel-tcc-translations ../babel-tcc-translations
+
+      # A task buildCoreHost roda `dotnet publish`: o plugin embute o Core.Host no bundle.
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Faz cache de ~/.gradle, que inclui o SDK do IntelliJ (~1GB) baixado na primeira execucao.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Test
+        run: ./gradlew test --console=plain
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: intellij-test-report
+          path: packages/ide-adapters/intellij/build/reports/tests/test/
+
   coverage-report:
     name: Coverage Report
     needs: [core-build-test, vscode-build-test]

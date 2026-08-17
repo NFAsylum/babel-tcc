@@ -32,7 +32,12 @@ Obrigado pelo interesse em contribuir! Este documento explica como participar no
 - .NET 8 SDK
 - Node.js 20+
 - Python 3.8+ (para suporte a Python)
+- JDK 17 (para o plugin IntelliJ)
 - VS Code (para testar a extensão)
+
+O build do plugin IntelliJ espera o repositório `babel-tcc-translations` clonado
+como **irmão** de `babel-tcc`; a task `bundleTranslations` aborta com mensagem
+explícita se não encontrar.
 
 ### Build
 
@@ -45,6 +50,10 @@ dotnet build
 cd packages/ide-adapters/vscode
 npm install
 npm run build
+
+# Plugin IntelliJ (Kotlin)
+cd packages/ide-adapters/intellij
+./gradlew build
 ```
 
 ### Testes
@@ -56,27 +65,23 @@ dotnet test packages/core/MultiLingualCode.Core.Tests
 # Testes da extensão
 cd packages/ide-adapters/vscode
 npm test
+
+# Testes do plugin IntelliJ
+cd packages/ide-adapters/intellij
+./gradlew test
 ```
 
 ## Convenções de código
 
-### C# (Core)
+As regras de código do projeto vivem em um único lugar:
+**[docs/padroes-codigo.md](docs/padroes-codigo.md)**.
 
-- Não usar `var` - tipos explícitos sempre
-- Não usar `private` ou `internal` - tudo `public`
-- Não usar `throw` - usar `OperationResult` para erros
-- Evitar nullable (`?`, `??`) — permitido em boundaries com APIs .NET que retornam null (ex: `Environment.GetEnvironmentVariable`, `Path.GetDirectoryName`, `Version.TryParse`)
-- Uma classe por arquivo
-- Nomes de testes: `MetodoTestado_Cenario_ResultadoEsperado`
+Lá estão as proibições absolutas que valem para todas as linguagens, as práticas
+que exigem justificativa explícita, as convenções de nomenclatura por linguagem
+e as regras de Git.
 
-### TypeScript (VS Code Extension)
-
-- Strict mode habilitado
-- Usar `const` em vez de `let` quando possível
-- Nunca usar `var`
-- Tipos explícitos em parâmetros e retornos
-- Aspas simples
-- Arquivos em camelCase, classes em PascalCase
+Não duplique regra de código neste arquivo: uma cópia resumida diverge do
+documento real e passa a ser seguida como se fosse a regra completa.
 
 ## Estrutura do projeto
 
@@ -89,7 +94,8 @@ babel-tcc/
       MultiLingualCode.Core.Tests/ # Testes unitários e integração
     ide-adapters/
       vscode/                      # Extensão VS Code (TypeScript)
-  scripts/                         # Scripts de validação e build
+      intellij/                    # Plugin IntelliJ (Kotlin)
+  scripts/                         # Scripts de build (JavaScript/Node)
   tarefas/                         # Gestão de tarefas (.pendente/.finalizada)
   examples/                        # Exemplos de uso (C# e Python)
   docs/                            # Documentação técnica e do usuário
