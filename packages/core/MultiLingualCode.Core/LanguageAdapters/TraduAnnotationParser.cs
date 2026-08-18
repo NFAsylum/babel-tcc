@@ -23,6 +23,14 @@ public class TraduAnnotationParser
     public static readonly Regex LanguagePrefixRegex = new Regex(@"^\[([a-z]{2}(-[a-z]+)*)\]:(.+)$", RegexOptions.Compiled);
 
     /// <summary>
+    /// Shape a translated identifier must have: a letter or underscore, then letters, digits,
+    /// underscores or dots. Letters are Unicode, because translations are frequently non-ASCII
+    /// ("tipo", "类型", "معاملات"); dots are allowed because namespaces are translated as a whole
+    /// ("System.Collections.Generic" -> "Sistema.Colecoes.Generico").
+    /// </summary>
+    public static readonly Regex IdentifierRegex = new Regex(@"^[^\W\d][\w.]*$", RegexOptions.Compiled);
+
+    /// <summary>
     /// Extracts all "tradu[lang]:" annotations from the source code and associates them with their target tokens.
     /// Supports multi-language format with | separator (e.g. "[pt-br]:Calculadora|[es]:Calculadora").
     /// </summary>
@@ -83,10 +91,14 @@ public class TraduAnnotationParser
                 }
                 else
                 {
-                    List<string> identifiers = adapter.GetIdentifierNamesOnLine(sourceCode, tokenLine);
-                    if (identifiers.Count > 0)
+                    // A forma "origem=traducao" ja definiu o alvo; so adivinhamos quando ela nao foi usada.
+                    if (string.IsNullOrEmpty(annotation.OriginalIdentifier))
                     {
-                        annotation.OriginalIdentifier = identifiers[0];
+                        List<string> identifiers = adapter.GetIdentifierNamesOnLine(sourceCode, tokenLine);
+                        if (identifiers.Count > 0)
+                        {
+                            annotation.OriginalIdentifier = identifiers[0];
+                        }
                     }
 
                     if (annotation.ParameterMappings.Count > 0)
@@ -94,6 +106,15 @@ public class TraduAnnotationParser
                         (int startLine, int endLine) = adapter.GetContainingMethodRange(sourceCode, tokenLine);
                         annotation.MethodStartLine = startLine;
                         annotation.MethodEndLine = endLine;
+                    }
+
+                    // Anotacao malformada e descartada em vez de aplicada. Sem isso qualquer texto
+                    // vira nome de identificador e o resultado nao compila — "kind=a=b" produzia
+                    // "int a=b;" na visao traduzida. Descartar deixa o codigo no idioma original,
+                    // que e o lado seguro.
+                    if (!IsValidIdentifier(annotation.TranslatedIdentifier))
+                    {
+                        continue;
                     }
                 }
 
@@ -126,27 +147,31 @@ public class TraduAnnotationParser
             return annotation;
         }
 
+        // Forma explicita "origem=traducao": nomeia qual identificador da linha traduzir, em vez
+        // de deixar o chamador adivinhar pelo primeiro da linha. Usa '=' e nao ':' porque ':' ja
+        // separa o parametro da sua traducao depois da virgula, e reusa-lo aqui tornaria
+        // "Principal,args:argumentos" ambiguo.
+        string identifierSpec = annotationText;
+        int commaIndex = annotationText.IndexOf(',');
+        if (commaIndex > 0)
+        {
+            identifierSpec = annotationText.Substring(0, commaIndex);
+        }
+
+        int equalsIndex = identifierSpec.IndexOf('=');
+        if (equalsIndex > 0 && equalsIndex < identifierSpec.Length - 1)
+        {
+            annotation.OriginalIdentifier = identifierSpec.Substring(0, equalsIndex);
+            annotation.TranslatedIdentifier = identifierSpec.Substring(equalsIndex + 1);
+            AddParameterMappings(annotation, annotationText);
+            return annotation;
+        }
+
         if (annotationText.Contains(",") && annotationText.Contains(":"))
         {
             string[] parts = annotationText.Split(',');
             annotation.TranslatedIdentifier = parts[0];
-
-            for (int partIndex = 1; partIndex < parts.Length; partIndex++)
-            {
-                string paramPart = parts[partIndex];
-                int colonIndex = paramPart.IndexOf(':');
-                if (colonIndex > 0)
-                {
-                    string originalParamName = paramPart.Substring(0, colonIndex);
-                    string translatedParamName = paramPart.Substring(colonIndex + 1);
-                    annotation.ParameterMappings.Add(new TraduParameterMapping
-                    {
-                        OriginalParameterName = originalParamName,
-                        TranslatedParameterName = translatedParamName
-                    });
-                }
-            }
-
+            AddParameterMappings(annotation, annotationText);
             return annotation;
         }
 
@@ -159,5 +184,46 @@ public class TraduAnnotationParser
 
         annotation.TranslatedIdentifier = annotationText;
         return annotation;
+    }
+
+    /// <summary>
+    /// True when the text can be used as an identifier name. Empty text is invalid, so an
+    /// annotation that produced nothing usable is discarded by the caller.
+    /// </summary>
+    /// <param name="identifier">The candidate identifier name.</param>
+    /// <returns>True if the text has the shape of an identifier.</returns>
+    public bool IsValidIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return false;
+        }
+
+        return IdentifierRegex.IsMatch(identifier);
+    }
+
+    /// <summary>
+    /// Reads the "param:translation" pairs that follow the first comma and records them on the
+    /// annotation. Segments without a colon are ignored.
+    /// </summary>
+    /// <param name="annotation">The annotation being built.</param>
+    /// <param name="annotationText">The full annotation text after the "tradu[lang]:" prefix.</param>
+    public void AddParameterMappings(TraduAnnotation annotation, string annotationText)
+    {
+        string[] parts = annotationText.Split(',');
+
+        for (int partIndex = 1; partIndex < parts.Length; partIndex++)
+        {
+            string paramPart = parts[partIndex];
+            int colonIndex = paramPart.IndexOf(':');
+            if (colonIndex > 0)
+            {
+                annotation.ParameterMappings.Add(new TraduParameterMapping
+                {
+                    OriginalParameterName = paramPart.Substring(0, colonIndex),
+                    TranslatedParameterName = paramPart.Substring(colonIndex + 1)
+                });
+            }
+        }
     }
 }
