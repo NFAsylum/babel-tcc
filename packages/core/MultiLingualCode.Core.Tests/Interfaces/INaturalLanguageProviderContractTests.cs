@@ -116,6 +116,11 @@ public class INaturalLanguageProviderContractTests
             return -1;
         }
 
+        public int ReverseTranslateKeywordIgnoringCase(string translatedKeyword)
+        {
+            return ReverseTranslateKeyword(translatedKeyword);
+        }
+
         public OperationResultGeneric<string> TranslateIdentifier(string identifier, IdentifierContext context)
         {
             if (identifier == "count")

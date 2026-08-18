@@ -142,8 +142,18 @@ public class TranslationOrchestrator
             return OperationResultGeneric<string>.Fail(loadResult.ErrorMessage);
         }
 
-        string preSubstituted = adapter.ReverseSubstituteKeywords(
-            translatedCode, Provider.ReverseTranslateKeyword);
+        // O adapter conhece o lexer da sua linguagem; a tabela e so dado. Estrito por omissao, e
+        // tolerante apenas onde a linguagem realmente ignora caixa (VisuAlg aceita SE, Se, se) —
+        // mesma politica que o TextScanTranslator ja aplica no sentido direto.
+        // ITextScannable e opcional; um adapter sem ela fica no comportamento estrito, que e o
+        // lado seguro — tolerar caixa demais reescreve identificador em keyword.
+        Func<string, int> reverseLookup = Provider.ReverseTranslateKeyword;
+        if (adapter is ITextScannable scannable && scannable.GetScanRules().CaseInsensitiveKeywords)
+        {
+            reverseLookup = Provider.ReverseTranslateKeywordIgnoringCase;
+        }
+
+        string preSubstituted = adapter.ReverseSubstituteKeywords(translatedCode, reverseLookup);
 
         ApplyReverseTraduAnnotations(preSubstituted, sourceLanguage, adapter);
 

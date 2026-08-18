@@ -92,14 +92,32 @@ public class LanguageTableTests
     }
 
     [Fact]
-    public void GetKeywordId_WithDifferentCasing_ReturnsSameId()
+    public void GetKeywordId_WithDifferentCasing_ReturnsMinusOne()
     {
+        // Tabela de C#, que e case-sensitive. Casar "SE" com a keyword "se" fazia um identificador
+        // que so difere na caixa ser reescrito como keyword na traducao reversa: uma propriedade
+        // "Texto" voltava do disco como "string". A tabela e dado; quem decide se duas caixas sao
+        // o mesmo token e o lexer da linguagem, via GetKeywordIdIgnoringCase.
         OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(PtBrCSharpPath());
         Assert.True(loadResult.IsSuccess);
         LanguageTable table = loadResult.Value;
 
-        Assert.Equal(30, table.GetKeywordId("SE"));
-        Assert.Equal(30, table.GetKeywordId("Se"));
+        Assert.Equal(-1, table.GetKeywordId("SE"));
+        Assert.Equal(-1, table.GetKeywordId("Se"));
+        Assert.Equal(30, table.GetKeywordId("se"));
+    }
+
+    [Fact]
+    public void GetKeywordIdIgnoringCase_WithDifferentCasing_ReturnsSameId()
+    {
+        // A tolerancia continua disponivel para quem precisa dela — o VisuAlg aceita SE, Se, se.
+        OperationResultGeneric<LanguageTable> loadResult = LanguageTable.LoadFrom(PtBrCSharpPath());
+        Assert.True(loadResult.IsSuccess);
+        LanguageTable table = loadResult.Value;
+
+        Assert.Equal(30, table.GetKeywordIdIgnoringCase("SE"));
+        Assert.Equal(30, table.GetKeywordIdIgnoringCase("Se"));
+        Assert.Equal(30, table.GetKeywordIdIgnoringCase("se"));
     }
 
     [Fact]
