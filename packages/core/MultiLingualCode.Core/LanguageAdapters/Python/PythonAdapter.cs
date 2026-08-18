@@ -127,6 +127,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable, ITextScannable
                 root.Children.Add(new LiteralNode
                 {
                     Value = value,
+                    OriginalValue = value,
                     Type = LiteralType.String,
                     IsTranslatable = true,
                     StartPosition = startPos,
@@ -141,6 +142,7 @@ public class PythonAdapter : ILanguageAdapter, IDisposable, ITextScannable
                 root.Children.Add(new LiteralNode
                 {
                     Value = token.String,
+                    OriginalValue = token.String,
                     Type = LiteralType.Number,
                     IsTranslatable = false,
                     StartPosition = startPos,
@@ -512,6 +514,13 @@ public class PythonAdapter : ILanguageAdapter, IDisposable, ITextScannable
     /// </summary>
     public static string WrapPythonLiteral(LiteralNode literal, string originalText)
     {
+        // Same structural check as WrapCSharpLiteral: an untouched literal is emitted verbatim, so
+        // escape sequences survive instead of being rebuilt from the decoded value.
+        if (Equals(literal.Value, literal.OriginalValue))
+        {
+            return originalText;
+        }
+
         string currentValue = $"{literal.Value}";
         string extractedOriginal = ExtractStringContent(originalText);
 

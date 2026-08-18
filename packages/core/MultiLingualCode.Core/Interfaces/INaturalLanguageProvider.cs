@@ -33,6 +33,14 @@ public interface INaturalLanguageProvider
     int ReverseTranslateKeyword(string translatedKeyword);
 
     /// <summary>
+    /// Reverse-translates a keyword ignoring letter case. Only languages whose keywords are
+    /// case-insensitive should use it; the strict variant is the default.
+    /// </summary>
+    /// <param name="translatedKeyword">The translated keyword to reverse-lookup.</param>
+    /// <returns>The keyword ID, or -1 if not found.</returns>
+    int ReverseTranslateKeywordIgnoringCase(string translatedKeyword);
+
+    /// <summary>
     /// Retrieves the original programming language keyword text for the given keyword ID.
     /// </summary>
     OperationResultGeneric<string> GetOriginalKeyword(int keywordId);

@@ -161,6 +161,28 @@ public class NaturalLanguageProvider : INaturalLanguageProvider
     }
 
     /// <summary>
+    /// Reverse-translates a keyword ignoring letter case. Used only by languages whose keywords are
+    /// case-insensitive; the strict variant is the default so an identifier that differs only in
+    /// casing from a translated keyword is not rewritten into that keyword.
+    /// </summary>
+    /// <param name="translatedKeyword">The translated keyword to reverse-lookup.</param>
+    /// <returns>The keyword ID, or -1 if not found.</returns>
+    public int ReverseTranslateKeywordIgnoringCase(string translatedKeyword)
+    {
+        if (string.IsNullOrEmpty(translatedKeyword))
+        {
+            return -1;
+        }
+
+        if (!HasActiveTable)
+        {
+            return -1;
+        }
+
+        return ActiveTable.GetKeywordIdIgnoringCase(translatedKeyword);
+    }
+
+    /// <summary>
     /// Gets the original programming language keyword string for a given keyword ID.
     /// </summary>
     /// <param name="keywordId">The keyword ID to look up.</param>

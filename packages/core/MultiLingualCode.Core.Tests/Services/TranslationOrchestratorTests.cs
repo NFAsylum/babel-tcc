@@ -1503,4 +1503,73 @@ public class Calculator // tradu[pt-br]:Calculadora|[es]:Calculadora
         Assert.Equal(DiffOpType.Equal, ops[2].Type);
         Assert.Equal("C", ops[2].EditedLine);
     }
+
+    /// <summary>
+    /// Mock adapter que tambem e ITextScannable, para exercitar a escolha de estrategia de lookup.
+    /// ReverseSubstituteKeywords invoca a func recebida, para o teste observar QUAL foi passada.
+    /// </summary>
+    public static ILanguageAdapter CreateScannableAdapter(bool caseInsensitive, string palavraConsultada)
+    {
+        ILanguageAdapter adapter = Substitute.For<ILanguageAdapter, ITextScannable>();
+        adapter.LanguageName.Returns("CSharp");
+        adapter.FileExtensions.Returns(new[] { ".cs" });
+        adapter.Version.Returns("1.0.0");
+        adapter.ExtractTrailingComments(Arg.Any<string>()).Returns(new List<TrailingComment>());
+        adapter.GetIdentifierNamesOnLine(Arg.Any<string>(), Arg.Any<int>()).Returns(new List<string>());
+        adapter.GetFirstStringLiteralOnLine(Arg.Any<string>(), Arg.Any<int>()).Returns("");
+        adapter.GetContainingMethodRange(Arg.Any<string>(), Arg.Any<int>()).Returns((-1, -1));
+        adapter.Parse(Arg.Any<string>()).Returns(new StatementNode { StatementKind = "CompilationUnit" });
+        adapter.Generate(Arg.Any<ASTNode>()).Returns("");
+
+        LanguageScanRules rules = new LanguageScanRules { CaseInsensitiveKeywords = caseInsensitive };
+        ((ITextScannable)adapter).GetScanRules().Returns(rules);
+
+        adapter.ReverseSubstituteKeywords(Arg.Any<string>(), Arg.Any<Func<string, int>>())
+            .Returns(callInfo =>
+            {
+                Func<string, int> lookup = callInfo.Arg<Func<string, int>>();
+                lookup(palavraConsultada);
+                return "";
+            });
+
+        return adapter;
+    }
+
+    [Fact]
+    public async Task TranslateFromNaturalLanguage_WithCaseSensitiveLanguage_UsesExactLookup()
+    {
+        // Esta e a decisao que a correcao do lookup reverso introduziu. Sem teste, inverter a
+        // condicao no orquestrador nao quebraria nada.
+        ILanguageAdapter adapter = CreateScannableAdapter(caseInsensitive: false, palavraConsultada: "Se");
+        Registry.RegisterAdapter(adapter);
+        INaturalLanguageProvider provider = Substitute.For<INaturalLanguageProvider>();
+        provider.LoadTranslationTableAsync(Arg.Any<string>()).Returns(OperationResult.Ok());
+
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator
+        { Registry = Registry, Provider = provider, IdentifierMapperService = Mapper };
+
+        await orchestrator.TranslateFromNaturalLanguageAsync("Se", ".cs", "pt-br");
+
+        provider.Received().ReverseTranslateKeyword("Se");
+        provider.DidNotReceive().ReverseTranslateKeywordIgnoringCase(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task TranslateFromNaturalLanguage_WithCaseInsensitiveLanguage_UsesTolerantLookup()
+    {
+        // VisuAlg aceita SE, Se, se — a tolerancia precisa continuar disponivel para ele.
+        ILanguageAdapter adapter = CreateScannableAdapter(caseInsensitive: true, palavraConsultada: "SE");
+        Registry.RegisterAdapter(adapter);
+        INaturalLanguageProvider provider = Substitute.For<INaturalLanguageProvider>();
+        provider.LoadTranslationTableAsync(Arg.Any<string>()).Returns(OperationResult.Ok());
+
+        TranslationOrchestrator orchestrator = new TranslationOrchestrator
+        { Registry = Registry, Provider = provider, IdentifierMapperService = Mapper };
+
+        await orchestrator.TranslateFromNaturalLanguageAsync("SE", ".cs", "pt-br");
+
+        provider.Received().ReverseTranslateKeywordIgnoringCase("SE");
+        provider.DidNotReceive().ReverseTranslateKeyword(Arg.Any<string>());
+    }
+
 }

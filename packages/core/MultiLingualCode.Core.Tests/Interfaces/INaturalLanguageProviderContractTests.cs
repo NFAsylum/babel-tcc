@@ -51,6 +51,30 @@ public class INaturalLanguageProviderContractTests
     }
 
     [Fact]
+    public void ReverseTranslateKeyword_WithDifferentCasing_ReturnsMinusOne()
+    {
+        // O lookup exato e o padrao justamente para que um identificador que so difere na caixa
+        // de uma palavra traduzida nao seja reescrito como keyword na traducao reversa.
+        Assert.Equal(-1, ProviderInstance.ReverseTranslateKeyword("SE"));
+        Assert.Equal(-1, ProviderInstance.ReverseTranslateKeyword("Se"));
+    }
+
+    [Fact]
+    public void ReverseTranslateKeywordIgnoringCase_WithDifferentCasing_ReturnsId()
+    {
+        // A variante tolerante existe para linguagens cujo lexer ignora caixa (VisuAlg: SE, Se, se).
+        Assert.Equal(30, ProviderInstance.ReverseTranslateKeywordIgnoringCase("SE"));
+        Assert.Equal(30, ProviderInstance.ReverseTranslateKeywordIgnoringCase("Se"));
+        Assert.Equal(30, ProviderInstance.ReverseTranslateKeywordIgnoringCase("se"));
+    }
+
+    [Fact]
+    public void ReverseTranslateKeywordIgnoringCase_WithUnknownTranslation_ReturnsMinusOne()
+    {
+        Assert.Equal(-1, ProviderInstance.ReverseTranslateKeywordIgnoringCase("desconhecido"));
+    }
+
+    [Fact]
     public void TranslateIdentifier_WithKnownIdentifier_ReturnsTranslation()
     {
         IdentifierContext context = new IdentifierContext
@@ -109,6 +133,18 @@ public class INaturalLanguageProviderContractTests
             foreach (KeyValuePair<int, string> kvp in Keywords)
             {
                 if (kvp.Value == translatedKeyword)
+                {
+                    return kvp.Key;
+                }
+            }
+            return -1;
+        }
+
+        public int ReverseTranslateKeywordIgnoringCase(string translatedKeyword)
+        {
+            foreach (KeyValuePair<int, string> kvp in Keywords)
+            {
+                if (string.Equals(kvp.Value, translatedKeyword, StringComparison.OrdinalIgnoreCase))
                 {
                     return kvp.Key;
                 }
