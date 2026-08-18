@@ -167,8 +167,8 @@ public class TranslationOrchestrator
         string originalCode, string previousTranslatedCode, string editedTranslatedCode,
         string fileExtension, string sourceLanguage);
 
-    // Fallback sem contexto de diff. Nao distingue identificador de keyword traduzida
-    // e nao preserva escapes em literais de string.
+    // Fallback sem contexto de diff: nao distingue identificador de keyword traduzida.
+    // Limitacao estrutural — o metodo recebe uma unica versao do codigo.
     public async Task<OperationResultGeneric<string>> TranslateFromNaturalLanguageAsync(
         string translatedCode, string fileExtension, string sourceLanguage);
 

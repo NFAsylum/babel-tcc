@@ -80,8 +80,8 @@ Guarde a tradução exibida ao renderizar a visão: ela é o `previousTranslated
 errado faz o merge despejar texto traduzido dentro do original.
 
 Use `TranslateFromNaturalLanguage` apenas quando não houver as três versões — por exemplo uma
-conversão avulsa por linha de comando. Nesse modo, além da ambiguidade acima, escapes em literais
-de string (`\n`, `\t`, `\"`, `\\`) não são preservados.
+conversão avulsa por linha de comando, aceitando a ambiguidade acima. Ela é estrutural: nasce de o
+método receber uma única versão do código, e não de um defeito que possa ser corrigido.
 
 ## Criar novo IDE adapter
 
