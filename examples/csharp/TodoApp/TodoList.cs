@@ -1,5 +1,5 @@
-using System.Collections.Generic; // tradu[pt-br]:Sistema.Colecoes.Generico
-using System.Linq; // tradu[pt-br]:Sistema.Linq
+using System.Collections.Generic; // tradu[pt-br]:System.Collections.Generic=Sistema.Colecoes.Generico
+using System.Linq; // tradu[pt-br]:System.Linq=Sistema.Linq
 
 namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 {
@@ -16,7 +16,7 @@ namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 
         public TodoItem AddItem(string title, string description) // tradu[pt-br]:AdicionarItem,title:titulo,description:descricao
         {
-            TodoItem item = new TodoItem(NextId, title, description); // tradu[pt-br]:item
+            TodoItem item = new TodoItem(NextId, title, description); // tradu[pt-br]:item=item
             Items.Add(item);
             NextId++;
             return item;
@@ -24,7 +24,7 @@ namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 
         public bool RemoveItem(int id) // tradu[pt-br]:RemoverItem,id:identificador
         {
-            TodoItem item = Items.FirstOrDefault(i => i.Id == id); // tradu[pt-br]:item
+            TodoItem item = Items.FirstOrDefault(i => i.Id == id); // tradu[pt-br]:item=item
             if (item == null)
             {
                 return false;
@@ -36,7 +36,7 @@ namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 
         public bool CompleteItem(int id) // tradu[pt-br]:ConcluirItem,id:identificador
         {
-            TodoItem item = Items.FirstOrDefault(i => i.Id == id); // tradu[pt-br]:item
+            TodoItem item = Items.FirstOrDefault(i => i.Id == id); // tradu[pt-br]:item=item
             if (item == null)
             {
                 return false;
