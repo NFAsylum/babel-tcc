@@ -23,6 +23,14 @@ public class TraduAnnotationParser
     public static readonly Regex LanguagePrefixRegex = new Regex(@"^\[([a-z]{2}(-[a-z]+)*)\]:(.+)$", RegexOptions.Compiled);
 
     /// <summary>
+    /// Shape a translated identifier must have: a letter or underscore, then letters, digits,
+    /// underscores or dots. Letters are Unicode, because translations are frequently non-ASCII
+    /// ("tipo", "类型", "معاملات"); dots are allowed because namespaces are translated as a whole
+    /// ("System.Collections.Generic" -> "Sistema.Colecoes.Generico").
+    /// </summary>
+    public static readonly Regex IdentifierRegex = new Regex(@"^[^\W\d][\w.]*$", RegexOptions.Compiled);
+
+    /// <summary>
     /// Extracts all "tradu[lang]:" annotations from the source code and associates them with their target tokens.
     /// Supports multi-language format with | separator (e.g. "[pt-br]:Calculadora|[es]:Calculadora").
     /// </summary>
@@ -99,6 +107,15 @@ public class TraduAnnotationParser
                         annotation.MethodStartLine = startLine;
                         annotation.MethodEndLine = endLine;
                     }
+
+                    // Anotacao malformada e descartada em vez de aplicada. Sem isso qualquer texto
+                    // vira nome de identificador e o resultado nao compila — "kind=a=b" produzia
+                    // "int a=b;" na visao traduzida. Descartar deixa o codigo no idioma original,
+                    // que e o lado seguro.
+                    if (!IsValidIdentifier(annotation.TranslatedIdentifier))
+                    {
+                        continue;
+                    }
                 }
 
                 annotations.Add(annotation);
@@ -167,6 +184,22 @@ public class TraduAnnotationParser
 
         annotation.TranslatedIdentifier = annotationText;
         return annotation;
+    }
+
+    /// <summary>
+    /// True when the text can be used as an identifier name. Empty text is invalid, so an
+    /// annotation that produced nothing usable is discarded by the caller.
+    /// </summary>
+    /// <param name="identifier">The candidate identifier name.</param>
+    /// <returns>True if the text has the shape of an identifier.</returns>
+    public bool IsValidIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier))
+        {
+            return false;
+        }
+
+        return IdentifierRegex.IsMatch(identifier);
     }
 
     /// <summary>
