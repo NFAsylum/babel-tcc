@@ -36,8 +36,11 @@ e esta tarefa mexe em `commands`/`menus`/`keybindings`.
   a visao nao esta aberta, "mostrar original" quando ja se esta na visao traduzida. Dois icones
   concorrentes na barra do editor sao poluicao.
 - Teclas do chord a evitar por causa do AltGr do ABNT2 (AltGr = Ctrl+Alt no Windows): entre outras
-  `q`, `w`, `e`, `c`, `1`, `2`, `3`, `/`. Confirmar cada tecla escolhida num teclado ABNT2 real
-  antes de fechar a tarefa.
+  `q`, `w`, `e`, `c`, `1`, `2`, `3`, `/`.
+- **Prefixo `ctrl+alt+b` verificado em teclado ABNT2 real (2026-08-16):** nao produz caractere no
+  Bloco de Notas, no Notas Autoadesivas nem no VS Code. Liberado para uso. Apenas o prefixo precisa
+  dessa verificacao - a segunda tecla do chord e pressionada sem modificador, entao nao passa pelo
+  AltGr.
 - O teste de contrato do manifesto e o item de maior valor desta tarefa: e o analogo do
   `scripts/validate.py` do repo de traducoes aplicado a camada de UI. Manifesto sem validacao
   drifta - foi exatamente assim que a `description` do Marketplace ficou desatualizada por 2 releases.
