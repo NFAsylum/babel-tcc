@@ -15,9 +15,20 @@ public class LanguageTable
     public Dictionary<int, string> IdToTranslation = new();
 
     /// <summary>
-    /// Dictionary mapping translated natural language strings back to their keyword IDs (case-insensitive).
+    /// Dictionary mapping translated natural language strings back to their keyword IDs.
+    /// Exact match: the table is data and does not decide whether two casings are the same token —
+    /// that is a fact about a language's lexer. Callers that need tolerance ask for it explicitly
+    /// via <see cref="GetKeywordIdIgnoringCase"/>, mirroring how the forward scanner
+    /// (TextScanTranslator.BuildTranslationMap) defaults to case-sensitive and opts in per language.
     /// </summary>
-    public Dictionary<string, int> TranslationToId = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, int> TranslationToId = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Same mapping as <see cref="TranslationToId"/>, compared without case. Kept separate so the
+    /// strict lookup stays strict; used only by languages whose keywords are case-insensitive
+    /// (VisuAlg accepts SE, Se, se).
+    /// </summary>
+    public Dictionary<string, int> TranslationToIdIgnoringCase = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The version of this translation table.
@@ -61,7 +72,8 @@ public class LanguageTable
         set
         {
             IdToTranslation = new Dictionary<int, string>();
-            TranslationToId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            TranslationToId = new Dictionary<string, int>(StringComparer.Ordinal);
+            TranslationToIdIgnoringCase = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             foreach (KeyValuePair<string, string> kvp in value)
             {
@@ -69,6 +81,7 @@ public class LanguageTable
                 {
                     IdToTranslation[id] = kvp.Value;
                     TranslationToId[kvp.Value] = id;
+                    TranslationToIdIgnoringCase[kvp.Value] = id;
                 }
             }
         }
@@ -102,6 +115,26 @@ public class LanguageTable
         }
 
         if (TranslationToId.TryGetValue(translatedKeyword, out int id))
+        {
+            return id;
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Reverse-lookup ignoring letter case, for languages whose keywords are case-insensitive.
+    /// </summary>
+    /// <param name="translatedKeyword">The translated keyword to reverse-lookup.</param>
+    /// <returns>The keyword ID, or -1 if not found.</returns>
+    public int GetKeywordIdIgnoringCase(string translatedKeyword)
+    {
+        if (string.IsNullOrEmpty(translatedKeyword))
+        {
+            return -1;
+        }
+
+        if (TranslationToIdIgnoringCase.TryGetValue(translatedKeyword, out int id))
         {
             return id;
         }
