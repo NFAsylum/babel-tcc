@@ -162,6 +162,13 @@ public class TranslationOrchestrator
 
     public async Task<OperationResultGeneric<string>> TranslateToNaturalLanguageAsync(
         string sourceCode, string fileExtension, string targetLanguage);
+    // Caminho recomendado para salvar: diff de 3 vias, preserva o que o usuario nao editou.
+    public async Task<OperationResultGeneric<string>> ApplyTranslatedEditsAsync(
+        string originalCode, string previousTranslatedCode, string editedTranslatedCode,
+        string fileExtension, string sourceLanguage);
+
+    // Fallback sem contexto de diff. Nao distingue identificador de keyword traduzida
+    // e nao preserva escapes em literais de string.
     public async Task<OperationResultGeneric<string>> TranslateFromNaturalLanguageAsync(
         string translatedCode, string fileExtension, string sourceLanguage);
 
