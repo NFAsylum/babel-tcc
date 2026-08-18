@@ -61,9 +61,27 @@ dotnet MultiLingualCode.Core.Host.dll \
 | Método | Params | Descrição |
 |--------|--------|-----------|
 | `TranslateToNaturalLanguage` | sourceCode, fileExtension, targetLanguage | Traduz código para idioma natural |
-| `TranslateFromNaturalLanguage` | translatedCode, fileExtension, sourceLanguage | Traduz de volta para linguagem de programação |
+| `ApplyTranslatedEdits` | originalCode, previousTranslatedCode, editedTranslatedCode, fileExtension, sourceLanguage | **Use este ao salvar.** Diff de 3 vias: linhas não alteradas são copiadas do original sem tradução reversa |
+| `TranslateFromNaturalLanguage` | translatedCode, fileExtension, sourceLanguage | Tradução reversa simples. *Fallback* para chamadas sem contexto de diff — ver limitação abaixo |
 | `ValidateSyntax` | sourceCode, fileExtension | Valida sintaxe do código |
 | `GetSupportedLanguages` | (nenhum) | Retorna lista de idiomas suportados |
+
+### Por que salvar com `ApplyTranslatedEdits`
+
+`TranslateFromNaturalLanguage` recebe apenas o código traduzido, então não consegue distinguir uma
+keyword traduzida de um identificador com o mesmo texto. Uma variável chamada `se` em pt-br volta
+como `if`, corrompendo o arquivo (ver tarefa 085).
+
+`ApplyTranslatedEdits` recebe as três versões — original em disco, tradução exibida e tradução
+editada — e copia do original toda linha que não mudou, sem reinterpretá-la. Só o que o usuário
+realmente editou passa por tradução reversa.
+
+Guarde a tradução exibida ao renderizar a visão: ela é o `previousTranslatedCode`, e um baseline
+errado faz o merge despejar texto traduzido dentro do original.
+
+Use `TranslateFromNaturalLanguage` apenas quando não houver as três versões — por exemplo uma
+conversão avulsa por linha de comando. Nesse modo, além da ambiguidade acima, escapes em literais
+de string (`\n`, `\t`, `\"`, `\\`) não são preservados.
 
 ## Criar novo IDE adapter
 
@@ -77,8 +95,8 @@ Para criar um adapter para outro IDE (IntelliJ, Sublime Text, Neovim, etc.):
 2. **Parsear a resposta JSON do stdout**
 
 3. **Implementar as features básicas:**
-   - Abrir view com código traduzido
-   - Interceptar save para traduzir de volta
+   - Abrir view com código traduzido, guardando o texto exibido como baseline
+   - Interceptar save e chamar `ApplyTranslatedEdits` com as três versões
    - Toggle on/off
    - Seletor de idioma
 
