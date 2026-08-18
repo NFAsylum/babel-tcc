@@ -964,4 +964,49 @@ namespace HelloWorld
         Assert.True(result.IsSuccess);
         Assert.True(sw.ElapsedMilliseconds < 50, $"Python Text Scan took {sw.ElapsedMilliseconds}ms for ~2500 lines, expected < 50ms");
     }
+
+    [Fact]
+    public async Task RoundTrip_StringLiteralWithEscapes_PreservesEscapeSequences()
+    {
+        // O literal nao e traduzido, entao a volta ao original tem que devolver o texto EXATO.
+        // Antes, o gerador comparava o valor DECODIFICADO com o texto CRU da fonte; com escapes os
+        // dois nunca batem, o literal era reconstruido a partir do valor decodificado e as barras
+        // se perdiam ("a\\nb" voltava com quebra de linha real).
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = "class F { void M() { string s = \"a\\nb\\tc\\\\d\"; } }";
+
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+        Assert.True(forwardResult.IsSuccess, forwardResult.ErrorMessage);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            forwardResult.Value, ".cs", "pt-br");
+        Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
+
+        Assert.Equal(sourceCode, reverseResult.Value);
+    }
+
+    [Fact]
+    public async Task RoundTrip_VerbatimStringLiteral_PreservesRawContent()
+    {
+        IdentifierMapper mapper = new IdentifierMapper();
+        mapper.LoadMap(TempDir);
+        TranslationOrchestrator orchestrator = CreateOrchestrator(mapper);
+
+        string sourceCode = "class F { void M() { string s = @\"C:\\temp\\novo\"; } }";
+
+        OperationResultGeneric<string> forwardResult = await orchestrator.TranslateToNaturalLanguageAsync(
+            sourceCode, ".cs", "pt-br");
+        Assert.True(forwardResult.IsSuccess, forwardResult.ErrorMessage);
+
+        OperationResultGeneric<string> reverseResult = await orchestrator.TranslateFromNaturalLanguageAsync(
+            forwardResult.Value, ".cs", "pt-br");
+        Assert.True(reverseResult.IsSuccess, reverseResult.ErrorMessage);
+
+        Assert.Equal(sourceCode, reverseResult.Value);
+    }
+
 }
