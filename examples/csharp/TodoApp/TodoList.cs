@@ -1,5 +1,5 @@
-using System.Collections.Generic; // tradu[pt-br]:System.Collections.Generic=Sistema.Colecoes.Generico
-using System.Linq; // tradu[pt-br]:System.Linq=Sistema.Linq
+using System.Collections.Generic; // tradu[pt-br]:System=Sistema
+using System.Linq; // tradu[pt-br]:System=Sistema
 
 namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 {

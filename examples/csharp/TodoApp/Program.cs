@@ -1,4 +1,4 @@
-using System; // tradu[pt-br]:Sistema
+using System; // tradu[pt-br]:System=Sistema
 
 namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 {
@@ -6,7 +6,7 @@ namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
     {
         static void Main(string[] args) // tradu[pt-br]:Principal,args:argumentos
         {
-            TodoList list = new TodoList(); // tradu[pt-br]:lista
+            TodoList list = new TodoList(); // tradu[pt-br]:list=lista
 
             list.AddItem("Buy groceries", "Milk, eggs, bread"); // tradu[pt-br]:"Comprar mantimentos"
             list.AddItem("Clean house", "Kitchen and bathroom"); // tradu[pt-br]:"Limpar casa"
