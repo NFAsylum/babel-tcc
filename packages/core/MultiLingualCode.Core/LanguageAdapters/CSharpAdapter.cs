@@ -127,6 +127,7 @@ public class CSharpAdapter : ILanguageAdapter, ITextScannable
                 compilationUnit.Children.Add(new LiteralNode
                 {
                     Value = RoslynWrapper.GetLiteralValue(token),
+                    OriginalValue = RoslynWrapper.GetLiteralValue(token),
                     Type = ConvertLiteralKind(RoslynWrapper.GetLiteralKind(token)),
                     IsTranslatable = RoslynWrapper.IsStringLiteralToken(token),
                     StartPosition = span.Start,
@@ -447,6 +448,16 @@ public class CSharpAdapter : ILanguageAdapter, ITextScannable
     /// </summary>
     public static string WrapCSharpLiteral(Models.AST.LiteralNode literal, string originalText)
     {
+        // Untouched literal: emit the source text byte for byte. Checked structurally — the value
+        // has not changed since parse — because comparing the DECODED value against the RAW source
+        // text never matches when the literal carries escape sequences. That mismatch used to send
+        // an untouched literal down the rebuild path, which re-emitted the decoded value and
+        // silently dropped its escapes ("a\nb" came back with a real line break).
+        if (Equals(literal.Value, literal.OriginalValue))
+        {
+            return originalText;
+        }
+
         string currentValue = $"{literal.Value}";
 
         // Extract the content between quotes from the original text
