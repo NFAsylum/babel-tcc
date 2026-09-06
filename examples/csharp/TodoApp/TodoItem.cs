@@ -24,7 +24,7 @@ namespace TodoApp // tradu[pt-br]:AplicacaoTarefas
 
         public override string ToString() // tradu[pt-br]:ParaTexto
         {
-            string status = IsCompleted ? "Done" : "Pending"; // tradu[pt-br]:estado,"Concluido","Pendente"
+            string status = IsCompleted ? "Done" : "Pending"; // tradu[pt-br]:status=estado
             return $"[{status}] {Title}: {Description}";
         }
     }

@@ -30,7 +30,7 @@ namespace Showcase // tradu[pt-br]:Vitrine|[es-es]:Vitrina|[fr-fr]:Vitrine|[de-d
     public abstract class Shape : IShape // tradu[pt-br]:Forma|[es-es]:Forma|[fr-fr]:Forme|[de-de]:Form|[it-it]:Forma|[en-us]:Shape|[ja-jp-romaji]:Katachi|[zh-cn]:形状|[ar-sa]:شكل
     {
         public const double Pi = 3.14159;
-        protected readonly ShapeKind kind; // tradu[pt-br]:tipo|[es-es]:tipo|[fr-fr]:type|[de-de]:art|[it-it]:tipo|[en-us]:kind|[ja-jp-romaji]:shurui|[zh-cn]:类型|[ar-sa]:نوع
+        protected readonly ShapeKind kind; // tradu[pt-br]:kind=tipo|[es-es]:kind=tipo|[fr-fr]:kind=type|[de-de]:kind=art|[it-it]:kind=tipo|[en-us]:kind=kind|[ja-jp-romaji]:kind=shurui|[zh-cn]:kind=类型|[ar-sa]:kind=نوع
 
         protected Shape(ShapeKind kind)
         {

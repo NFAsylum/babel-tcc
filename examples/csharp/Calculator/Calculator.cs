@@ -40,7 +40,7 @@ namespace CalculatorApp // tradu[pt-br]:AplicacaoCalculadora
 
         public string GetSummary() // tradu[pt-br]:ObterResumo
         {
-            string message = $"Total operations: {OperationCount}"; // tradu[pt-br]:mensagem,"Total de operacoes: {ContagemOperacoes}"
+            string message = $"Total operations: {OperationCount}"; // tradu[pt-br]:message=mensagem
             return message;
         }
     }

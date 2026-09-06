@@ -55,6 +55,9 @@ Para traduzir identificadores customizados (nomes de classes, métodos, variáve
 // Formato simples - traduz o identificador da linha
 public class Student // tradu[pt-br]:Aluno
 
+// Formato explícito - diz QUAL identificador traduzir
+protected readonly ShapeKind kind; // tradu[pt-br]:kind=tipo
+
 // Formato método+params - traduz método e parâmetros
 public int Add(int a, int b) // tradu[pt-br]:Somar,a:primeiro,b:segundo
 
@@ -63,3 +66,55 @@ string label = "Total: "; // tradu[pt-br]:"Total: "
 ```
 
 As anotações são processadas automaticamente pela extensão.
+
+### Quando usar o formato explícito
+
+O formato simples traduz **o primeiro identificador da linha**. Isso resolve o caso
+comum, em que a linha declara um nome só:
+
+```csharp
+public class Student // tradu[pt-br]:Aluno      → o primeiro identificador é Student
+```
+
+Mas quando a linha tem mais de um identificador, o primeiro pode não ser o que você
+quer. Em C# a declaração vem depois do tipo:
+
+```csharp
+protected readonly ShapeKind kind; // tradu[pt-br]:tipo
+//                 ^^^^^^^^^ o primeiro identificador é o TIPO, não o campo
+```
+
+Aí a tradução cai no tipo `ShapeKind`, e o campo `kind` fica sem traduzir. O formato
+`origem=traducao` remove a adivinhação:
+
+```csharp
+protected readonly ShapeKind kind; // tradu[pt-br]:kind=tipo
+```
+
+Use o formato explícito sempre que a linha tiver mais de um identificador —
+declarações de campo e de variável local, `foreach`, e `using` de namespace:
+
+```csharp
+using System.Collections.Generic; // tradu[pt-br]:System.Collections.Generic=Sistema.Colecoes.Generico
+foreach (TodoItem item in lista)  // tradu[pt-br]:item=tarefa
+TodoItem item = new TodoItem();   // tradu[pt-br]:item=tarefa
+```
+
+Duas anotações que adivinham o mesmo alvo se sobrescrevem, então o formato explícito
+também é o que permite anotar dois `using` do mesmo namespace raiz.
+
+Ele combina com o mapeamento de parâmetros:
+
+```csharp
+static void Main(string[] args) // tradu[pt-br]:Main=Principal,args:argumentos
+```
+
+Com vários idiomas, a origem se repete em cada segmento, porque cada `[idioma]:valor`
+é lido de forma independente:
+
+```csharp
+protected readonly ShapeKind kind; // tradu[pt-br]:kind=tipo|[es-es]:kind=tipo
+```
+
+O separador é `=`, e não `:`, porque `:` já separa o parâmetro da sua tradução depois
+da vírgula — reusá-lo tornaria `Somar,a:primeiro` ambíguo.
