@@ -406,3 +406,90 @@ Fica como follow-up; o caso (editar o original por fora com a visão traduzida a
 - [microsoft/vscode#110854 — recarregamento de editores abertos sobre `FileSystemProvider` (não confiável)](https://github.com/microsoft/vscode/issues/110854)
 - [microsoft/vscode#242867 — `tabGroups.close` ineficaz com referência guardada](https://github.com/microsoft/vscode/issues/242867)
 - [microsoft/vscode#72831 — `FileSystemWatcher.onDidChange` dispara antes do conteúdo estar atualizado](https://github.com/microsoft/vscode/issues/72831)
+
+---
+
+## DT-012: Descoberta declarativa por context keys
+
+**Decisão:** A visibilidade de todo item de UI da extensão é declarada no manifesto, por cláusula
+`when` sobre context keys que a extensão publica (`babelTcc.enabled`, `babelTcc.supportedFile`,
+`babelTcc.translatedView`, `babelTcc.readonlyView`). As chaves ficam num único módulo,
+`src/ui/contextKeys.ts`, com uma única função de recálculo (`refresh`) disparada por mudança de
+editor ativo e por mudança de configuração. Nenhuma superfície nova é uma webview.
+
+**Problema:** A extensão contribuía 5 comandos e **nenhuma** outra superfície: sem
+`contributes.menus`, sem `contributes.keybindings`, sem nenhuma chamada a `setContext`. Quem não
+soubesse de antemão que a extensão existe e como ela se chama não tinha como acioná-la — só pelo
+Command Palette, digitando o nome certo. Para o público-alvo (estudante iniciante, professor
+demonstrando em aula) isso equivale a funcionalidade inexistente.
+
+Junto vinha um segundo problema: os títulos dos 5 comandos carregavam o prefixo `"Babel TCC: "` no
+próprio `title`. O VS Code compõe esse prefixo automaticamente a partir de `category`, e **só** no
+Command Palette; dentro de um menu de contexto o prefixo é ruído, porque o contexto já é óbvio.
+
+**Alternativas consideradas:**
+- **Checagem em runtime dentro do comando** (o que já existe): o item de menu apareceria sempre e
+  responderia "tipo de arquivo não suportado" *depois* do clique. É a falha de UX que a etapa veio
+  corrigir: o usuário descobre que a ação não servia só depois de tentar. Rejeitada como mecanismo
+  de descoberta — mas **mantida como defesa**, porque o Command Palette continua expondo todos os
+  comandos (INV-02) e portanto um comando ainda pode ser invocado num contexto inválido.
+- **View container próprio** (ícone na Activity Bar com uma árvore): dá descoberta forte, mas ocupa
+  espaço permanente na barra lateral por uma extensão que age sobre o editor ativo, não sobre uma
+  coleção navegável. Custo de UI alto para o ganho.
+- **Webview de onboarding:** daria controle visual total, mas traz bundle novo, ciclo de vida
+  próprio, e uma superfície de acessibilidade que passaria a ser responsabilidade nossa (foco,
+  navegação por teclado, contraste, leitor de tela) em vez de ser herdada do VS Code. Contraria
+  INV-15. Rejeitada — o walkthrough nativo (`contributes.walkthroughs`, tarefa116) cobre o mesmo
+  caso de uso com acessibilidade nativa.
+- **Publicar as chaves de dentro de cada módulo que já observa o estado** (status bar, provider,
+  autoTranslateManager): evitaria uma classe nova, mas espalharia a verdade sobre visibilidade por
+  vários arquivos, que foi exatamente como o `description` do Marketplace ficou desatualizado por
+  duas releases. Rejeitada em favor de uma fonte única.
+
+**Justificativa:**
+- O `when` é avaliado pelo próprio VS Code, antes de desenhar o item: um menu que não se aplica
+  simplesmente não aparece, em vez de aparecer e falhar. É a diferença entre a extensão parecer
+  quebrada e parecer atenta ao contexto.
+- Uma fonte única (`contextKeys.ts`) com um único `refresh` significa que não existe estado de UI
+  derivado em dois lugares que possam divergir.
+- O custo real — manter as chaves sincronizadas com o estado — é mitigado por teste:
+  `test/ui/contextKeys.test.ts` cobre o recálculo, e `test/manifest/manifest.test.ts` garante que
+  todo item de menu tem `when` não vazio e que todo comando citado em `menus`/`keybindings` existe.
+
+**Consequências:**
+- Os nomes das chaves são **camelCase** (`babelTcc.*`), não `babel-tcc.*` como a seção de
+  configuração: o hífen é lido como operador de subtração dentro de uma expressão `when`, então
+  `babel-tcc.enabled` não funcionaria. É a única inconsistência de nomenclatura da extensão e existe
+  por imposição da plataforma.
+- `vscode.window.activeTextEditor` é `TextEditor | undefined` por definição da API. O nulo é
+  recebido **só** em `refresh()` e normalizado ali para string vazia, sem propagar — mesmo
+  tratamento que `docs/padroes-codigo.md` já aceita para as fronteiras com APIs Java no plugin
+  IntelliJ.
+- `publishKey` não aguarda o `setContext`: o VS Code reavalia as cláusulas `when` quando o valor
+  chega, e bloquear o handler de evento do editor nisso só adicionaria latência.
+- `editor/title` recebe **um** botão por vez ("abrir visão traduzida" quando o arquivo é suportado e
+  a visão não está aberta; "mostrar original" quando já se está nela). Dois ícones concorrentes na
+  barra do editor são poluição — e o teste de contrato do manifesto trava essa regra.
+- Os keybindings usam chord com prefixo próprio `ctrl+alt+b` (`cmd+alt+b` no mac) em vez de
+  combinações de uma tecla só. No Windows o `AltGr` do teclado ABNT2 chega às aplicações como
+  `Ctrl+Alt`, então o prefixo foi verificado em teclado ABNT2 real (2026-08-16): não produz
+  caractere. O teste de contrato rejeita as teclas que o ABNT2 alcança por AltGr.
+
+**Implementação (tarefa 113):**
+- `src/config/constants.ts`: `CONTEXT_KEYS` com os nomes das 4 chaves.
+- `src/ui/contextKeys.ts`: `ContextKeyManager`, criado por static factory (`create`) — o construtor
+  só declara propriedades, como manda `docs/padroes-codigo.md`. `create` assina
+  `window.onDidChangeActiveTextEditor` e `configService.onDidChangeConfiguration`, e publica o
+  primeiro valor das 4 chaves. `dispose()` libera as 2 subscrições.
+- `src/extension.ts`: cria o manager e o registra em `context.subscriptions`.
+- `package.json`: `category` e `icon` nos comandos, `shortTitle` nos 2 usados em `editor/title`,
+  `contributes.menus` (`editor/title` e `editor/context`) e `contributes.keybindings`.
+- `package.nls*.json` (7): título sem o prefixo `"Babel TCC: "`, chave nova `extension.category`.
+- Testes: `test/ui/contextKeys.test.ts`, `test/manifest/manifest.test.ts` (contrato entre
+  `package.json`, os 7 nls e `constants.ts`) e `test/l10n/bundles.test.ts` (contrato entre as
+  chamadas `l10n.t()` e os 6 bundles de runtime).
+
+**Referências:**
+- [when clause contexts — operadores e context keys embutidas](https://code.visualstudio.com/api/references/when-clause-contexts)
+- [contributes.menus — grupos e `navigation`](https://code.visualstudio.com/api/references/contribution-points#contributes.menus)
+- [contributes.keybindings — chords e variantes por plataforma](https://code.visualstudio.com/api/references/contribution-points#contributes.keybindings)
