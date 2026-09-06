@@ -9,6 +9,18 @@ export const CONFIG_KEYS = {
   READONLY: `${CONFIG_SECTION}.readonly`,
 } as const;
 
+/**
+ * Context keys published to VS Code so menus and keybindings can declare visibility with `when`
+ * clauses. Names are camelCase on purpose: a hyphen inside a context key is parsed as an operator
+ * in `when` expressions, so `babel-tcc.*` would not work here.
+ */
+export const CONTEXT_KEYS = {
+  ENABLED: 'babelTcc.enabled',
+  SUPPORTED_FILE: 'babelTcc.supportedFile',
+  TRANSLATED_VIEW: 'babelTcc.translatedView',
+  READONLY_VIEW: 'babelTcc.readonlyView',
+} as const;
+
 /** Command identifiers registered by the extension. */
 export const COMMANDS = {
   TOGGLE: `${CONFIG_SECTION}.toggle`,

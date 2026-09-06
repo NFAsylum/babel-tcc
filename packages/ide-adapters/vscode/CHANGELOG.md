@@ -5,6 +5,27 @@ All notable changes to the Babel TCC extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **The translation commands are now reachable without the Command Palette.** A button in the editor
+  title bar opens the translated view of a supported file, and turns into "show original" once you
+  are in that view; the editor context menu offers the editable view, the read-only view and the way
+  back. Every one of these surfaces declares when it applies, so an action that does not fit the file
+  you are on is not shown at all instead of being shown and then refused.
+- **Keyboard shortcuts, as a chord starting with `Ctrl+Alt+B` (`Cmd+Alt+B` on macOS):** `T` toggles
+  translation, `I` picks the target language, `V` opens the translated view and `O` goes back to the
+  original. The prefix was checked on a real ABNT2 keyboard: on Windows `AltGr` reaches applications
+  as `Ctrl+Alt`, so a shortcut on the wrong key would fire while you were simply typing a character.
+
+### Changed
+
+- Command titles no longer repeat `Babel TCC: `. The prefix now comes from the command category, so
+  VS Code still shows "Babel TCC: Open Translated View" in the Command Palette while the context menu
+  shows just "Open Translated View", where the prefix was only noise. All 7 interface locales were
+  updated.
+
 ## [1.1.0] - 2026-08-16
 
 ### Added

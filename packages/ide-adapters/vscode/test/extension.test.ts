@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs';
-import { commands, workspace, window, languages, Uri } from './__mocks__/vscode';
+import { commands, workspace, window, languages, Uri, __getContextKeys } from './__mocks__/vscode';
 
 vi.mock('fs');
 
 import { activate, deactivate, buildScopeItems } from '../src/extension';
 import { SUPPORTED_LANGUAGES, buildFileWatcherPattern } from '../src/config/languages';
+import { ContextKeyManager } from '../src/ui/contextKeys';
 
 function makeContext(): { extensionPath: string; subscriptions: { dispose(): void }[] } {
   return {
@@ -59,10 +60,28 @@ describe('extension', () => {
       expect(languages.registerHoverProvider).toHaveBeenCalledTimes(2);
     });
 
-    it('should push exactly 20 subscriptions to context', () => {
+    it('should push exactly 21 subscriptions to context', () => {
       const context = makeContext();
       activate(context as any);
-      expect(context.subscriptions.length).toBe(20);
+      expect(context.subscriptions.length).toBe(21);
+    });
+
+    it('should register the context key manager for disposal', () => {
+      const context = makeContext();
+      activate(context as any);
+      const managers = context.subscriptions.filter((s) => s instanceof ContextKeyManager);
+      expect(managers.length).toBe(1);
+    });
+
+    it('should publish the four context keys on activation', () => {
+      const context = makeContext();
+      activate(context as any);
+      expect(Object.keys(__getContextKeys()).sort()).toEqual([
+        'babelTcc.enabled',
+        'babelTcc.readonlyView',
+        'babelTcc.supportedFile',
+        'babelTcc.translatedView',
+      ]);
     });
 
     it('should create file watcher covering all supported extensions', () => {

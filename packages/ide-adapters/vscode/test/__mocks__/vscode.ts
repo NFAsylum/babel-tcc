@@ -284,6 +284,18 @@ export const languages = {
   registerDocumentSemanticTokensProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
 
+// --- Helper to read the context keys published via executeCommand('setContext', key, value) ---
+// Returns the last value published for each key, mirroring how VS Code evaluates `when` clauses.
+export function __getContextKeys(): Record<string, unknown> {
+  const publishedKeys: Record<string, unknown> = {};
+  for (const call of commands.executeCommand.mock.calls) {
+    if (call[0] === 'setContext') {
+      publishedKeys[call[1] as string] = call[2];
+    }
+  }
+  return publishedKeys;
+}
+
 // --- Helper to set config values in tests ---
 export function __setConfigValue(key: string, value: unknown): void {
   configValues[key] = value;
