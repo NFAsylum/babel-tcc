@@ -70,6 +70,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The manifest contract test compares the language enum with the locales of this repository.
+      - name: Checkout translations repo
+        uses: actions/checkout@v4
+        with:
+          repository: NFAsylum/babel-tcc-translations
+          path: babel-tcc-translations
+
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -91,6 +98,8 @@ jobs:
         run: npm run lint
 
       - name: Test with coverage
+        env:
+          BABEL_TCC_TRANSLATIONS_PATH: ${{ github.workspace }}/babel-tcc-translations
         run: npm run test:coverage
 
       - name: Upload coverage

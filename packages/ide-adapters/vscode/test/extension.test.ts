@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs';
-import { commands, workspace, window, languages, Uri } from './__mocks__/vscode';
+import { commands, workspace, window, languages, Uri, __getContextKeys } from './__mocks__/vscode';
 
 vi.mock('fs');
 // activate() probes the .NET runtime with `dotnet --list-runtimes`. Unmocked, that runs the real
@@ -94,6 +94,14 @@ describe('extension', () => {
       const context = makeContext();
       activate(context as any);
       expect(context.subscriptions.length).toBe(20);
+    });
+
+    // Menus and keybindings read only built-in keys (resourceExtname, resourceScheme, config.*), which
+    // VS Code evaluates per editor group; a key published by the extension would be global (DT-012).
+    it('should not publish any context key', () => {
+      const context = makeContext();
+      activate(context as any);
+      expect(__getContextKeys()).toEqual({});
     });
 
     it('should create file watcher covering all supported extensions', () => {

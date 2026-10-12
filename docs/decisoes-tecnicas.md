@@ -407,3 +407,186 @@ Fica como follow-up; o caso (editar o original por fora com a visão traduzida a
 - [microsoft/vscode#110854 — recarregamento de editores abertos sobre `FileSystemProvider` (não confiável)](https://github.com/microsoft/vscode/issues/110854)
 - [microsoft/vscode#242867 — `tabGroups.close` ineficaz com referência guardada](https://github.com/microsoft/vscode/issues/242867)
 - [microsoft/vscode#72831 — `FileSystemWatcher.onDidChange` dispara antes do conteúdo estar atualizado](https://github.com/microsoft/vscode/issues/72831)
+
+---
+
+## DT-012: Descoberta declarativa por cláusulas `when`
+
+**Decisão:** A visibilidade de todo item de UI da extensão é declarada no manifesto, por cláusula
+`when`. O que é propriedade **de cada editor** (o arquivo é de uma linguagem suportada? é uma visão
+traduzida?) é lido das context keys **nativas** `resourceExtname` e `resourceScheme`, que o VS Code
+avalia por grupo de editor. O que é **global por natureza** — a extensão está habilitada — é lido
+direto da configuração pelo prefixo nativo `config.` (`config.babel-tcc.enabled`). A extensão não
+publica nenhuma context key: a visibilidade é 100% declarada no manifesto. Nenhuma superfície nova é
+uma webview.
+
+**Problema:** A extensão contribuía 5 comandos e **nenhuma** outra superfície: sem
+`contributes.menus`, sem `contributes.keybindings`, sem nenhuma chamada a `setContext`. Quem não
+soubesse de antemão que a extensão existe e como ela se chama não tinha como acioná-la — só pelo
+Command Palette, digitando o nome certo. Para o público-alvo (estudante iniciante, professor
+demonstrando em aula) isso equivale a funcionalidade inexistente.
+
+Junto vinha um segundo problema: os títulos dos 5 comandos carregavam o prefixo `"Babel TCC: "` no
+próprio `title`. O VS Code compõe esse prefixo automaticamente a partir de `category`, e **só** no
+Command Palette; dentro de um menu de contexto o prefixo é ruído, porque o contexto já é óbvio.
+
+**Alternativas consideradas:**
+- **Checagem em runtime dentro do comando** (o que já existe): o item de menu apareceria sempre e
+  responderia "tipo de arquivo não suportado" *depois* do clique. É a falha de UX que a etapa veio
+  corrigir: o usuário descobre que a ação não servia só depois de tentar. Rejeitada como mecanismo
+  de descoberta — mas **mantida como defesa**, porque o Command Palette continua expondo todos os
+  comandos e portanto um comando ainda pode ser invocado num contexto inválido.
+- **Context keys próprias calculadas a partir do editor ativo** (`babelTcc.supportedFile`,
+  `babelTcc.translatedView`, recalculadas em `onDidChangeActiveTextEditor`): foi a primeira versão
+  implementada, e foi trocada na revisão do PR #185 — ver "Revisão" abaixo. `setContext` grava no
+  escopo **global**, mas `editor/title` é desenhado **por grupo de editor**: com a tela dividida, o
+  botão de todos os grupos seguia o editor ativo, e o grupo de um `README.md` mostrava "mostrar
+  original". Exatamente o caso que esta decisão existe para eliminar. Com a configuração padrão o
+  defeito fica escondido, porque o VS Code só desenha os botões do grupo ativo
+  (`workbench.editor.alwaysShowEditorActions` vem desligado); ele aparece para quem liga essa opção,
+  e depender do padrão de uma configuração do usuário para a UI estar certa não é aceitável.
+- **Context keys nativas `resourceExtname`/`resourceScheme`** (escolhida para os fatos por editor):
+  o VS Code as calcula no contexto de cada grupo, então cada barra de título responde pelo seu próprio
+  editor. Dispensa observar troca de editor, dispensa estado na extensão e não tem como divergir do
+  arquivo que está de fato aberto ali.
+- **Lista de extensões publicada numa context key e testada com o operador `in`**
+  (`resourceExtname in babelTcc.supportedExtensions`): manteria `languages.ts` como fonte única em
+  tempo de execução, mas `in` compara com caixa e `resourceExtname` preserva a caixa do disco —
+  `Program.CS` ficaria sem botão, enquanto o `LanguageDetector`, que normaliza para minúsculas,
+  aceita o arquivo. Rejeitada em favor de regex com a flag `i`, com a lista travada contra
+  `languages.ts` por teste de contrato.
+- **Context key própria para o estado habilitado** (`babelTcc.enabled`, publicada por `setContext` e
+  republicada a cada mudança de configuração): funcionava, mas duplicava em código um valor que o VS
+  Code já expõe. O prefixo `config.` lê `configurationService.getValue` — com o valor padrão do
+  manifesto quando o usuário não definiu nada — e se atualiza sozinho quando a configuração muda.
+  Rejeitada: sem módulo, sem subscrição e sem nada para manter sincronizado.
+- **View container próprio** (ícone na Activity Bar com uma árvore): dá descoberta forte, mas ocupa
+  espaço permanente na barra lateral por uma extensão que age sobre o editor ativo, não sobre uma
+  coleção navegável. Custo de UI alto para o ganho.
+- **Webview de onboarding:** daria controle visual total, mas traz bundle novo, ciclo de vida
+  próprio, e uma superfície de acessibilidade que passaria a ser responsabilidade nossa (foco,
+  navegação por teclado, contraste, leitor de tela) em vez de ser herdada do VS Code. Rejeitada — o
+  walkthrough nativo (`contributes.walkthroughs`) cobre o mesmo caso de uso com acessibilidade nativa.
+
+**Justificativa:**
+- O `when` é avaliado pelo próprio VS Code, antes de desenhar o item: um menu que não se aplica
+  simplesmente não aparece, em vez de aparecer e falhar. É a diferença entre a extensão parecer
+  quebrada e parecer atenta ao contexto.
+- Fato por editor vem de chave por editor; fato global vem de chave global. Misturar os dois foi o
+  defeito da primeira versão.
+- Sem estado de UI na extensão, não existe valor derivado que possa divergir do que o VS Code vê.
+- O custo real — manter as cláusulas coerentes com o código — é mitigado por teste:
+  `test/manifest/manifest.test.ts` monta as cláusulas esperadas a partir de `SUPPORTED_LANGUAGES`,
+  das constantes de scheme e de `CONFIG_KEYS` e exige que todo item de menu e keybinding as use;
+  também falha se uma cláusula voltar a depender de uma chave `babelTcc.*` ou ler, via `config.`, uma
+  configuração que o manifesto não declara. `test/extension.test.ts` falha se a ativação publicar
+  qualquer context key.
+
+**Consequências:**
+- As cláusulas usadas são:
+  - abrir visão traduzida: `config.babel-tcc.enabled && resourceExtname =~ /^\.(cs|py|alg|por|js)$/i &&
+    resourceScheme != 'babel-tcc-translated' && resourceScheme != 'babel-tcc-readonly'`;
+  - mostrar original: `resourceScheme =~ /^(babel-tcc-translated|babel-tcc-readonly)$/`.
+  As duas são complementares em `resourceScheme`, então um mesmo editor nunca casa as duas. A
+  exclusão dos schemes traduzidos é feita por `!=`, não por `resourceScheme == file`, para não
+  esconder o botão em janelas remotas (WSL, SSH), onde o scheme visto pela interface não é `file`.
+- A lista de extensões passa a existir em dois lugares (`languages.ts` e as cláusulas do manifesto),
+  como já acontecia com `activationEvents` e `languages`. O teste de contrato quebra se divergirem.
+- As cláusulas foram validadas contra o parser de `when` do próprio VS Code (código-fonte da tag
+  1.141.0): todas são aceitas e, avaliadas por editor, `.cs`/`.CS` mostram só "abrir visão
+  traduzida", `.md`/`.ts`/`.json` não mostram nada e as duas visões traduzidas mostram só "mostrar
+  original".
+- `editor/title` recebe **um** botão por vez ("abrir visão traduzida" num original suportado;
+  "mostrar original" numa visão traduzida). Dois ícones concorrentes na barra do editor são poluição.
+- Os keybindings usam chord com prefixo próprio `ctrl+alt+u` (`cmd+alt+u` no mac) em vez de
+  combinações de uma tecla só. O prefixo precisa estar livre no keymap padrão do VS Code: um chord de
+  extensão sobre um atalho nativo deixa o nativo inutilizado para todo mundo que instala a extensão,
+  porque o resolvedor de atalhos dá preferência ao último candidato cuja cláusula casa. E precisa
+  estar fora das teclas que o `AltGr` do teclado ABNT2 alcança, porque no Windows o `AltGr` chega às
+  aplicações como `Ctrl+Alt`. O teste de contrato rejeita essas teclas (`1 2 3 4 5 6 = [ ] q w e c /`).
+
+**Revisão (2026-10-12, PR #185):** a primeira versão desta decisão tinha dois defeitos, apontados na
+revisão e corrigidos antes do merge:
+1. **Prefixo `ctrl+alt+b`.** É o atalho nativo de "Toggle Secondary Side Bar"
+   (`workbench.action.toggleAuxiliaryBar`; `Cmd+Alt+B` no macOS). Os keybindings de `toggle` e
+   `selectLanguage` não têm cláusula, então casavam sempre e o atalho nativo deixava de funcionar
+   em qualquer contexto. A verificação feita na época cobriu só o ABNT2, não o keymap do VS Code. O
+   prefixo novo, `u`, foi escolhido por varredura do keymap padrão do VS Code 1.141 (letras livres em
+   Ctrl+Alt e Cmd+Alt: `a d e h j m n q u x z`), excluindo as alcançadas por AltGr no ABNT2 (`q`,
+   `e`) e as que o macOS reserva em Cmd+Opt (`h` esconde os outros apps, `d` alterna o Dock, `m`
+   minimiza todas as janelas).
+2. **Chaves globais para fatos por editor**, descrito em "Alternativas consideradas". Com os fatos
+   por editor vindo de `resourceExtname`/`resourceScheme` e o estado habilitado vindo de
+   `config.babel-tcc.enabled`, as 4 chaves próprias (`babelTcc.enabled`, `babelTcc.supportedFile`,
+   `babelTcc.translatedView` e `babelTcc.readonlyView` — esta publicada sem que nenhuma cláusula a
+   lesse) e o módulo `src/ui/contextKeys.ts` deixaram de existir, junto com a classe
+   `ContextKeyManager` e seu construtor. A primeira versão também justificava o nome camelCase das
+   chaves dizendo que o hífen seria lido como operador numa expressão `when`; o parser do VS Code
+   1.141 aceita `babel-tcc.enabled` como uma chave só, então a justificativa estava errada — e
+   deixou de importar.
+
+**Implementação (tarefa 113):**
+- Nenhum código de produção: a decisão vive inteira no manifesto.
+- `package.json`: `category` e `icon` nos comandos, `shortTitle` nos 2 usados em `editor/title`,
+  `contributes.menus` (`editor/title` e `editor/context`) e `contributes.keybindings`.
+- `package.nls*.json` (7): título sem o prefixo `"Babel TCC: "`, chave nova `extension.category`.
+- Testes: `test/manifest/manifest.test.ts` (contrato entre `package.json`, os 7 nls,
+  `constants.ts`, `languages.ts` e as constantes de scheme), `test/l10n/bundles.test.ts` (contrato
+  entre as chamadas `l10n.t()` e os 6 bundles de runtime) e, em `test/extension.test.ts`, a garantia
+  de que a ativação não publica context key.
+
+**Referências:**
+- [when clause contexts — operadores e context keys embutidas](https://code.visualstudio.com/api/references/when-clause-contexts)
+- [contributes.menus — grupos e `navigation`](https://code.visualstudio.com/api/references/contribution-points#contributes.menus)
+- [contributes.keybindings — chords e variantes por plataforma](https://code.visualstudio.com/api/references/contribution-points#contributes.keybindings)
+
+---
+
+## DT-013: Idiomas como lista fechada nas configurações
+
+**Decisão:** `babel-tcc.language` e as 5 propriedades de `babel-tcc.languageOverrides` deixam de ser
+texto livre e passam a `enum` com os 10 locales que acompanham a extensão, cada um com
+`enumItemLabels` (o nome do idioma na própria grafia) e `enumDescriptions` (explicação localizada nos
+7 nls).
+
+**Problema:** Com `"type": "string"`, a tela de Configurações desenhava uma caixa de texto vazia e o
+usuário precisava digitar o código do locale exatamente como a extensão espera (`ja-jp-romaji`,
+`pt-br-ascii`). Só acertava quem já tinha lido a documentação — a barreira que a etapa de UX existe
+para derrubar.
+
+**Alternativas consideradas:**
+- **Manter texto livre e validar em runtime**, avisando quando o locale não existe: a descoberta
+  continuaria dependendo de documentação, e o erro só apareceria depois de digitado.
+- **`enum` gerado no build a partir das pastas de tradução:** eliminaria a lista duplicada no
+  manifesto, mas o `package.json` passaria a ser artefato gerado, e os rótulos e descrições por idioma
+  ainda precisariam de uma fonte editorial. Custo de build novo para pouco ganho.
+- **`enum` declarado no manifesto, travado por teste** (escolhida): a lista fica legível onde o VS
+  Code a lê, e o teste de contrato garante que ela é exatamente o conjunto de pastas em
+  `natural-languages`.
+
+**Justificativa:**
+- As traduções são empacotadas dentro do `.vsix`, então no caso normal os 10 locales embarcados são
+  os únicos que existem. A lista fechada só descreve a realidade.
+- Os rótulos ficam na grafia nativa de cada idioma (`Deutsch`, `日本語 (romaji)`), não traduzidos para
+  o idioma da interface: quem procura o próprio idioma reconhece o nome escrito como ele escreve.
+
+**Consequências:**
+- **Trade-off aceito:** o `enum` desliga a digitação livre de um locale novo. Quem aponta
+  `babel-tcc.translationsPath` para um fork do repositório de traduções com um locale a mais vê um
+  aviso de validação no `settings.json`, mas o valor **ainda é aplicado** — o VS Code sinaliza valor
+  fora do `enum`, não o bloqueia. Cenário raro, degradação suave, ganho grande para o caso comum.
+- Adicionar um idioma passa a exigir também a entrada no `enum` (com rótulo e descrição nos 7 nls).
+  O teste `should offer exactly the locales that ship with the extension` quebra se isso for
+  esquecido. No CI, o job da extensão faz checkout do repositório de traduções e aponta
+  `BABEL_TCC_TRANSLATIONS_PATH` para ele, então o teste roda em todo PR, sem skip.
+- Como o CI usa o `main` do repositório de traduções, um locale novo mergeado lá antes do manifesto
+  daqui faz o job da extensão falhar até o `enum` ser atualizado. É o comportamento desejado — a
+  mesma regra de ouro do `scripts/validate.py`, estendida à camada de UI.
+
+**Implementação (tarefa 114):**
+- `package.json`: `enum`, `enumItemLabels` e `enumDescriptions` nas 6 propriedades de idioma;
+  `order` nas 5 propriedades de configuração.
+- `package.nls*.json` (7): as chaves de `enumDescriptions`.
+- `test/manifest/manifest.test.ts`: o `enum` é comparado com as pastas de `natural-languages`, lidas
+  de `BABEL_TCC_TRANSLATIONS_PATH`, da cópia gerada pelo build ou do repositório irmão.
+- `.github/workflows/ci.yml`: checkout do repositório de traduções no job da extensão.
