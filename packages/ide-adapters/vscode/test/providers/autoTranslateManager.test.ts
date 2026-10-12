@@ -448,4 +448,40 @@ describe('AutoTranslateManager', () => {
       expect(() => manager.dispose()).not.toThrow();
     });
   });
+
+  // Regression (tarefa120): Windows does not guarantee the case of the drive letter, so the same
+  // file reaches the extension as /C:/... in one place and /c:/... in another within one session.
+  // Comparing with === made the guard miss the open translated tab, and showOriginal was undone by
+  // handleActiveEditorChange reopening the translated view.
+  describe('drive letter case in paths', () => {
+    it('should find a translated tab spelled with a different drive case', () => {
+      const openTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/C:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [openTab], viewColumn: ViewColumn.One }];
+
+      expect(manager.isAnyTranslatedTabOpenForPath('/c:/test/file.cs')).toBe(true);
+    });
+
+    it('should keep the original open when the translated tab differs only by drive case', async () => {
+      const editor = {
+        document: { uri: Uri.parse('file:/c:/test/file.cs') },
+        viewColumn: ViewColumn.One,
+      };
+      (editor.document.uri as any).fsPath = '/c:/test/file.cs';
+      const openTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/C:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [openTab], viewColumn: ViewColumn.One }];
+
+      await manager.handleActiveEditorChange(editor as any);
+
+      expect(workspace.openTextDocument).not.toHaveBeenCalled();
+    });
+
+    it('should close a tab spelled with a different drive case', async () => {
+      const openTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/C:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [openTab], viewColumn: ViewColumn.One }];
+
+      await manager.closeTab(Uri.parse(`${TRANSLATED_SCHEME}:/c:/test/file.cs`));
+
+      expect(window.tabGroups.close).toHaveBeenCalledWith(openTab);
+    });
+  });
 });

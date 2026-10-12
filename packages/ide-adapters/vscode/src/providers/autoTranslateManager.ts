@@ -4,6 +4,7 @@ import { ConfigurationService } from '../services/configurationService';
 import { LanguageDetector } from '../services/languageDetector';
 import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './translatedContentProvider';
 import { SUPPORTED_LANGUAGES } from '../config/languages';
+import { isSameUri, isSameUriPath } from '../services/uriPaths';
 
 /** Manages automatic translation of .cs tabs based on the enabled/language configuration. */
 export class AutoTranslateManager implements vscode.Disposable {
@@ -64,7 +65,7 @@ export class AutoTranslateManager implements vscode.Disposable {
     for (const group of vscode.window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (tab.input instanceof vscode.TabInputText) {
-          if (isTranslatedScheme(tab.input.uri.scheme) && tab.input.uri.path === path) {
+          if (isTranslatedScheme(tab.input.uri.scheme) && isSameUriPath(tab.input.uri.path, path)) {
             return true;
           }
         }
@@ -384,7 +385,7 @@ export class AutoTranslateManager implements vscode.Disposable {
     this.contentProvider.invalidatePath(path);
 
     const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
-      (d: vscode.TextDocument): boolean => d.uri.toString() === uri.toString()
+      (d: vscode.TextDocument): boolean => isSameUri(d.uri, uri)
     );
     if (!doc || doc.isDirty) {
       return;
@@ -438,12 +439,10 @@ export class AutoTranslateManager implements vscode.Disposable {
 
   /** Closes the tab matching the given URI, found by a fresh scan of the current tab model. */
   public async closeTab(uri: vscode.Uri): Promise<void> {
-    const uriString: string = uri.toString();
-
     for (const group of vscode.window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (tab.input instanceof vscode.TabInputText) {
-          if (tab.input.uri.toString() === uriString) {
+          if (isSameUri(tab.input.uri, uri)) {
             await vscode.window.tabGroups.close(tab);
             return;
           }

@@ -3,6 +3,7 @@ import { describeError } from '../services/errorMessage';
 import { CoreBridge } from '../services/coreBridge';
 import { LanguageDetector } from '../services/languageDetector';
 import { ConfigurationService } from '../services/configurationService';
+import { normalizeUriPath, isSameUriPath, buildUriKey } from '../services/uriPaths';
 
 /** The URI scheme used for editable translated document views. */
 export const TRANSLATED_SCHEME = 'babel-tcc-translated';
@@ -75,7 +76,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     // change event unless both hold (FileSystemProvider.onDidChangeFile contract). This is what makes
     // an in-place language switch — invalidatePath fires the change event — actually re-translate.
     const content: string = await this.provideContent(uri);
-    const virtualMtime: number = this.mtimeMap.get(uri.toString()) || originalStat.mtime;
+    const virtualMtime: number = this.mtimeMap.get(buildUriKey(uri)) || originalStat.mtime;
     return {
       type: originalStat.type,
       ctime: originalStat.ctime,
@@ -92,8 +93,8 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     // recording there would let a stat after a language switch overwrite this before the buffer
     // actually reloads. Keeping the baseline keyed here (not via cache) is what makes a save always
     // reverse-translate from the correct content/language.
-    this.displayLanguages.set(uri.path, this.getTargetLanguage(uri));
-    this.renderedContent.set(uri.path, content);
+    this.displayLanguages.set(normalizeUriPath(uri.path), this.getTargetLanguage(uri));
+    this.renderedContent.set(normalizeUriPath(uri.path), content);
     const encoder = new TextEncoder();
     return encoder.encode(content);
   }
@@ -129,7 +130,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       // save left it as), taken from renderedContent — never from the cache, which a language switch
       // or the file-watcher may have cleared. An empty/mismatched baseline makes the 3-way merge
       // dump the translated text into the original.
-      const previousTranslated: string = this.renderedContent.get(originalPath) ?? '';
+      const previousTranslated: string = this.renderedContent.get(normalizeUriPath(originalPath)) ?? '';
 
       const originalCode: string = await this.coreBridge.applyTranslatedEdits(
         currentOriginal, previousTranslated, translatedContent, fileExtension, sourceLanguage
@@ -153,12 +154,12 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
       // drop them — a later switch re-translates from the updated source. displayLanguages is NOT
       // touched: a save does not change the language the buffer is in.
       for (const key of [...this.cache.keys()]) {
-        if (key.startsWith(`${originalPath}::`)) {
+        if (key.startsWith(`${normalizeUriPath(originalPath)}::`)) {
           this.cache.delete(key);
         }
       }
-      this.cache.set(`${originalPath}::${sourceLanguage}`, translatedContent);
-      this.renderedContent.set(originalPath, translatedContent);
+      this.cache.set(`${normalizeUriPath(originalPath)}::${sourceLanguage}`, translatedContent);
+      this.renderedContent.set(normalizeUriPath(originalPath), translatedContent);
 
       this.outputChannel.appendLine(`TranslatedContentProvider: saved original code to ${originalPath}`);
       vscode.window.showInformationMessage(vscode.l10n.t('Babel TCC: File saved successfully.'));
@@ -247,7 +248,7 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
    */
   public invalidatePath(originalPath: string): void {
     for (const key of [...this.cache.keys()]) {
-      if (key.startsWith(`${originalPath}::`)) {
+      if (key.startsWith(`${normalizeUriPath(originalPath)}::`)) {
         this.cache.delete(key);
       }
     }
@@ -255,8 +256,8 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
     const now: number = Date.now();
     const events: vscode.FileChangeEvent[] = [];
     for (const doc of vscode.workspace.textDocuments) {
-      if (isTranslatedScheme(doc.uri.scheme) && doc.uri.path === originalPath) {
-        this.mtimeMap.set(doc.uri.toString(), now);
+      if (isTranslatedScheme(doc.uri.scheme) && isSameUriPath(doc.uri.path, originalPath)) {
+        this.mtimeMap.set(buildUriKey(doc.uri), now);
         events.push({ type: vscode.FileChangeType.Changed, uri: doc.uri });
       }
     }
@@ -276,12 +277,12 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
    * change event(s) for a short window (SELF_WRITE_SUPPRESS_MS). Called from doWriteFile.
    */
   public markSelfWrite(originalPath: string): void {
-    this.recentWrites.set(originalPath, Date.now());
+    this.recentWrites.set(normalizeUriPath(originalPath), Date.now());
   }
 
   /** Returns true if the given original path was written by us within the suppression window. */
   public isRecentSelfWrite(originalPath: string): boolean {
-    const writtenAt: number | undefined = this.recentWrites.get(originalPath);
+    const writtenAt: number | undefined = this.recentWrites.get(normalizeUriPath(originalPath));
     return writtenAt !== undefined && Date.now() - writtenAt < SELF_WRITE_SUPPRESS_MS;
   }
 
@@ -297,14 +298,14 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
    * language the content is actually in, not the (possibly just-changed) configured one.
    */
   public displayLanguageFor(uri: vscode.Uri): string {
-    return this.displayLanguages.get(uri.path) ?? this.getTargetLanguage(uri);
+    return this.displayLanguages.get(normalizeUriPath(uri.path)) ?? this.getTargetLanguage(uri);
   }
 
   /**
    * Builds a cache key combining the file path and the current target language for that file.
    */
   public buildCacheKey(uri: vscode.Uri): string {
-    return `${uri.path}::${this.getTargetLanguage(uri)}`;
+    return `${normalizeUriPath(uri.path)}::${this.getTargetLanguage(uri)}`;
   }
 
   /**
