@@ -19,6 +19,8 @@
   "$(file-code) {0} only": "$(file-code) {0} のみ",
   "Babel TCC: Translation active ({0}). Click to change language.": "Babel TCC: 翻訳が有効です ({0})。クリックして言語を変更します。",
   "Babel TCC: Translation disabled. Click to change language.": "Babel TCC: 翻訳が無効です。クリックして言語を変更します。",
+  "Babel TCC: translation active, language {0}. Opens the language picker.": "Babel TCC: 翻訳が有効です（言語: {0}）。言語の選択を開きます。",
+  "Babel TCC: translation disabled. Opens the language picker.": "Babel TCC: 翻訳が無効です。言語の選択を開きます。",
   "Babel TCC: Failed to load translations. Completion and highlighting may not work.": "Babel TCC: 翻訳の読み込みに失敗しました。補完とハイライトが機能しない可能性があります。",
   "Babel TCC: Failed to load identifier translations. Highlighting may not work.": "Babel TCC: 識別子の翻訳の読み込みに失敗しました。ハイライトが機能しない可能性があります。",
   "Babel TCC: File saved successfully.": "Babel TCC: ファイルを正常に保存しました。",
