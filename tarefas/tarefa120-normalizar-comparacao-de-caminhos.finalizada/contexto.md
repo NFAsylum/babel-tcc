@@ -21,7 +21,7 @@ aba herda o comportamento intermitente enquanto isto nao for corrigido.
 
 1. `code --extensionDevelopmentPath=<...>/packages/ide-adapters/vscode <...>/examples`
 2. Abrir `examples/csharp/Calculator/Calculator.cs`. A visao traduzida abre e substitui o original.
-3. Com o cursor dentro do codigo, `Ctrl+Alt+B` `O` (ou botao direito > "Mostrar Codigo Original").
+3. Com o cursor dentro do codigo, `Ctrl+Alt+U` `O` (ou botao direito > "Mostrar Codigo Original").
 4. Painel Saida, canal "Babel TCC".
 
 Sintoma: a tela pisca e volta ao traduzido, e o log mostra o par

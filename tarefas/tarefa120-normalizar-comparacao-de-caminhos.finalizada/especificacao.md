@@ -84,15 +84,43 @@ a normalizacao vira no-op — e no Windows `C:` e `c:` sao sempre o mesmo volume
 
   Corrigir so o primeiro grupo deixaria metade do defeito de pe, inclusive no mecanismo do DT-011.
 
+  **Chaves de controle** (encontradas na revisao do PR #186). Nao guardam conteudo, mas decidem se
+  uma operacao pode comecar; com duas grafias, a mesma operacao passa duas vezes:
+
+  | Chave | Onde | Consequencia da falha |
+  |---|---|---|
+  | `saveQueue` | `writeFile` | dois saves do mesmo arquivo rodam ao mesmo tempo, e o segundo le o original pela metade |
+  | `processingUris` | `handleActiveEditorChange` e `replaceOriginalsWithTranslated` (as duas pontas precisam da mesma chave) | a trava contra laco de eventos nao reconhece o arquivo e a traducao abre duas vezes |
+  | `seen` | `refreshTranslatedTabs` | a mesma visao e recarregada duas vezes numa troca de idioma |
+
+  `saveQueue` usa so o caminho normalizado (a fila e por arquivo, compartilhada pela visao editavel e
+  pela somente leitura); `processingUris` e `seen` usam `buildUriKey`, que inclui o scheme, como a
+  comparacao por `uri.toString()` que substituem.
+
 - Testes unitarios da funcao de normalizacao (drive maiusculo, drive minusculo, caminho sem drive,
   caminho ja normalizado).
 - Teste de regressao de `isAnyTranslatedTabOpenForPath` com aba em `/C:/` e busca em `/c:/`.
 
 ## Fora de escopo
 - Qualquer mudanca de comportamento dos comandos. Isto e correcao de defeito, nao feature.
+- **Normalizar a URI traduzida na origem.** O DT-011 decide manter uma unica URI por arquivo, mas
+  `babel-tcc-translated:/C:/x` e `babel-tcc-translated:/c:/x` continuam sendo, para o VS Code, dois
+  documentos distintos, porque a URI traduzida e construida copiando a grafia do original
+  (`Uri.parse` em `extension.ts`, no abrir editavel e no abrir somente leitura, e em
+  `autoTranslateManager.ts`, no `handleActiveEditorChange`, no `replaceOriginalsWithTranslated` e no
+  `restoreFocus`). Esta tarefa faz a extensao tolerar as duas grafias; eliminar a segunda na fonte e
+  tarefa propria, apontada na revisao do PR #186 como nao bloqueante.
 - O `showOriginal` abrir o original em modo *preview* (sem `preview: false`), o que faz a aba ser
   descartada na proxima abertura. E um incomodo separado, observado no mesmo teste; avaliar em
   tarefa propria para nao misturar com a correcao de comparacao.
+
+## Revisao do PR #186 (2026-10-12)
+A revisao mostrou que as chaves de mapa estavam corrigidas, mas sem teste: reverter o
+`translatedContentProvider.ts` inteiro mantinha os 224 testes verdes. Mostrou tambem tres chaves
+de controle ainda montadas com o caminho cru (`saveQueue`, `processingUris`, `seen`); ao corrigi-las
+apareceu a segunda ponta do `processingUris`, no `replaceOriginalsWithTranslated`, que precisa da
+mesma chave para a trava funcionar. Os testes de regressao passaram a rodar nas duas direcoes, e
+cada normalizacao foi conferida por mutacao.
 
 ## Origem
 Encontrada em teste manual exploratorio durante a `tarefa113`, nao por teste automatizado. A trava
