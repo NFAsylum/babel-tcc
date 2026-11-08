@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Uri, workspace, window, FileChangeType } from '../__mocks__/vscode';
 import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from '../../src/providers/translatedContentProvider';
 
@@ -315,6 +315,139 @@ describe('TranslatedContentProvider', () => {
       provider.cache.set('key', 'value');
       provider.dispose();
       expect(provider.cache.size).toBe(0);
+    });
+  });
+
+  // Regression (tarefa120): Windows does not guarantee the case of the drive letter, so the same file
+  // reaches the provider as /C:/... in one call and /c:/... in another. Every map the provider keeps
+  // per file must find under one spelling what was stored under the other. Each case runs in both
+  // directions, so reverting the normalization on either side (where the key is written or where it
+  // is read) breaks it.
+  describe('drive letter case in paths', () => {
+    const DRIVE_SPELLINGS: Array<[string, string]> = [['/C:', '/c:'], ['/c:', '/C:']];
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it.each(DRIVE_SPELLINGS)('mtimeMap: stat under %s sees the invalidation made under %s', async (statDrive: string, invalidateDrive: string) => {
+      vi.mocked(workspace.fs.stat).mockResolvedValue({ type: 1, ctime: 0, mtime: 0, size: 100 } as any);
+      vi.spyOn(Date, 'now').mockReturnValue(424242);
+      workspace.textDocuments = [{ uri: Uri.parse(`${TRANSLATED_SCHEME}:${statDrive}/test/file.cs`) }];
+
+      provider.invalidatePath(`${invalidateDrive}/test/file.cs`);
+      const stat = await provider.stat(Uri.parse(`${TRANSLATED_SCHEME}:${statDrive}/test/file.cs`));
+
+      expect(stat.mtime).toBe(424242);
+    });
+
+    it.each(DRIVE_SPELLINGS)('mtimeMap: invalidatePath under %s fires the change for the view open under %s', (invalidateDrive: string, viewDrive: string) => {
+      workspace.textDocuments = [{ uri: Uri.parse(`${TRANSLATED_SCHEME}:${viewDrive}/test/file.cs`) }];
+      const events: unknown[] = [];
+      provider.onDidChangeFile((e: unknown) => events.push(e));
+
+      provider.invalidatePath(`${invalidateDrive}/test/file.cs`);
+
+      expect(events.length).toBe(1);
+    });
+
+    it.each(DRIVE_SPELLINGS)('recentWrites: a write marked under %s is recognized under %s', (markDrive: string, checkDrive: string) => {
+      provider.markSelfWrite(`${markDrive}/test/file.cs`);
+
+      expect(provider.isRecentSelfWrite(`${checkDrive}/test/file.cs`)).toBe(true);
+    });
+
+    it.each(DRIVE_SPELLINGS)('cache: content rendered under %s is dropped by an invalidation under %s', async (readDrive: string, invalidateDrive: string) => {
+      workspace.textDocuments = [];
+      await provider.readFile(Uri.parse(`${TRANSLATED_SCHEME}:${readDrive}/test/file.cs`));
+      expect(provider.cache.size).toBe(1);
+
+      provider.invalidatePath(`${invalidateDrive}/test/file.cs`);
+
+      expect(provider.cache.size).toBe(0);
+    });
+
+    it.each(DRIVE_SPELLINGS)('displayLanguages: a view rendered under %s keeps its language under %s after a switch', async (readDrive: string, queryDrive: string) => {
+      await provider.readFile(Uri.parse(`${TRANSLATED_SCHEME}:${readDrive}/test/file.cs`));
+      mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('es-es');
+
+      expect(provider.displayLanguageFor(Uri.parse(`${TRANSLATED_SCHEME}:${queryDrive}/test/file.cs`))).toBe('pt-br');
+    });
+
+    it.each(DRIVE_SPELLINGS)('renderedContent: a save under %s uses the baseline rendered under %s', async (saveDrive: string, readDrive: string) => {
+      await provider.readFile(Uri.parse(`${TRANSLATED_SCHEME}:${readDrive}/test/file.cs`));
+      workspace.textDocuments = [];
+
+      await provider.writeFile(
+        Uri.parse(`${TRANSLATED_SCHEME}:${saveDrive}/test/file.cs`),
+        new TextEncoder().encode('publico classe Foo editado {}')
+      );
+
+      const call = mockCoreBridge.applyTranslatedEdits.mock.calls[0];
+      expect(call[1]).toBe('publico classe Foo {}');
+    });
+
+    it.each(DRIVE_SPELLINGS)('saveQueue: a save under %s waits for one in progress under %s', async (secondDrive: string, firstDrive: string) => {
+      let releaseFirstSave: () => void = (): void => {};
+      mockCoreBridge.applyTranslatedEdits.mockImplementationOnce(
+        (): Promise<string> => new Promise<string>((resolve: (code: string) => void): void => {
+          releaseFirstSave = (): void => resolve('public class Foo {}');
+        })
+      );
+      workspace.textDocuments = [];
+
+      const firstSave: Promise<void> = provider.writeFile(
+        Uri.parse(`${TRANSLATED_SCHEME}:${firstDrive}/test/file.cs`), new TextEncoder().encode('first')
+      );
+      const secondSave: Promise<void> = provider.writeFile(
+        Uri.parse(`${TRANSLATED_SCHEME}:${secondDrive}/test/file.cs`), new TextEncoder().encode('second')
+      );
+      await new Promise<void>((resolve: () => void): void => {
+        setTimeout(resolve, 0);
+      });
+
+      // One queue per file: the second save must not start reverse-translating while the first runs.
+      expect(mockCoreBridge.applyTranslatedEdits).toHaveBeenCalledTimes(1);
+
+      releaseFirstSave();
+      await Promise.all([firstSave, secondSave]);
+      expect(mockCoreBridge.applyTranslatedEdits).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(DRIVE_SPELLINGS)('save: a save under %s drops the other-language cache rendered under %s', async (saveDrive: string, readDrive: string) => {
+      const readUri = Uri.parse(`${TRANSLATED_SCHEME}:${readDrive}/test/file.cs`);
+      mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('fr-fr');
+      await provider.readFile(readUri);
+      mockConfigService.getLanguageForProgrammingLanguage.mockReturnValue('pt-br');
+      await provider.readFile(readUri);
+      workspace.textDocuments = [];
+
+      await provider.writeFile(Uri.parse(`${TRANSLATED_SCHEME}:${saveDrive}/test/file.cs`), new TextEncoder().encode('salvo'));
+
+      const frenchKeys: string[] = [...provider.cache.keys()].filter((key: string): boolean => key.endsWith('::fr-fr'));
+      expect(frenchKeys).toEqual([]);
+    });
+
+    it.each(DRIVE_SPELLINGS)('save: a save under %s caches the saved text for a read under %s', async (saveDrive: string, readDrive: string) => {
+      workspace.textDocuments = [];
+      await provider.writeFile(Uri.parse(`${TRANSLATED_SCHEME}:${saveDrive}/test/file.cs`), new TextEncoder().encode('salvo'));
+      mockCoreBridge.translateToNaturalLanguage.mockClear();
+
+      const reread = await provider.readFile(Uri.parse(`${TRANSLATED_SCHEME}:${readDrive}/test/file.cs`));
+
+      expect(new TextDecoder().decode(reread)).toBe('salvo');
+      expect(mockCoreBridge.translateToNaturalLanguage).not.toHaveBeenCalled();
+    });
+
+    it.each(DRIVE_SPELLINGS)('save: a save under %s is the baseline of the next save under %s', async (firstDrive: string, secondDrive: string) => {
+      await provider.readFile(Uri.parse(`${TRANSLATED_SCHEME}:${secondDrive}/test/file.cs`));
+      workspace.textDocuments = [];
+
+      await provider.writeFile(Uri.parse(`${TRANSLATED_SCHEME}:${firstDrive}/test/file.cs`), new TextEncoder().encode('salvo'));
+      await provider.writeFile(Uri.parse(`${TRANSLATED_SCHEME}:${secondDrive}/test/file.cs`), new TextEncoder().encode('salvo de novo'));
+
+      const secondCall = mockCoreBridge.applyTranslatedEdits.mock.calls[1];
+      expect(secondCall[1]).toBe('salvo');
     });
   });
 });
