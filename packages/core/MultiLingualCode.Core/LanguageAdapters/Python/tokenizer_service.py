@@ -72,6 +72,13 @@ def main() -> None:
             sys.stdout.flush()
             continue
 
+        # json.loads accepts any JSON value; only an object is a request. Without this check a
+        # list or a number reaches .get() below and the AttributeError ends the process.
+        if not isinstance(request, dict):
+            sys.stdout.write(json.dumps({"ok": False, "error": "Invalid request: expected a JSON object"}) + "\n")
+            sys.stdout.flush()
+            continue
+
         if request.get("cmd") == "quit":
             break
 

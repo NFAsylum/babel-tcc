@@ -338,6 +338,34 @@ public class PythonTokenizerServiceTests
     }
 
     [RequiresPythonFact]
+    public void RawRequest_ValidJsonThatIsNotAnObject_AnswersErrorAndKeepsProcessAlive()
+    {
+        using PythonTokenizerService service = new();
+        OperationResultGeneric<List<PythonToken>> firstResult = service.Tokenize("x = 1");
+        Assert.True(firstResult.IsSuccess, firstResult.ErrorMessage);
+        int processId = service.Process.Id;
+
+        // The service itself always sends an object, so these lines go straight to the subprocess.
+        string[] nonObjectRequests = { "[]", "5", "\"text\"", "null", "true" };
+        foreach (string nonObjectRequest in nonObjectRequests)
+        {
+            service.Process.StandardInput.WriteLine(nonObjectRequest);
+            service.Process.StandardInput.Flush();
+
+            // End of stream (the interpreter died) reads as an empty line and fails the assertions.
+            string responseLine = service.Process.StandardOutput.ReadLine() + "";
+
+            Assert.Contains("\"ok\": false", responseLine);
+            Assert.Contains("expected a JSON object", responseLine);
+        }
+
+        OperationResultGeneric<List<PythonToken>> laterResult = service.Tokenize("y = 2");
+        Assert.True(laterResult.IsSuccess, laterResult.ErrorMessage);
+        Assert.False(service.IsProcessDead());
+        Assert.Equal(processId, service.Process.Id);
+    }
+
+    [RequiresPythonFact]
     public void Tokenize_AfterStderrCapture_StillTokenizesNormally()
     {
         using PythonTokenizerService service = new();

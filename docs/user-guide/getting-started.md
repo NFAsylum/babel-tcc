@@ -4,6 +4,7 @@
 
 - [Abrir um projeto](#abrir-um-projeto)
 - [Ativar a tradução](#ativar-a-tradução)
+- [Atalhos de teclado](#atalhos-de-teclado)
 - [Entender a interface](#entender-a-interface)
 - [Workflow básico](#workflow-básico)
 - [Usando anotações tradu](#usando-anotações-tradu)
@@ -11,20 +12,38 @@
 ## Abrir um projeto
 
 1. Abrir VS Code
-2. Abrir uma pasta que contenha arquivos `.cs` ou `.py` (`File > Open Folder`)
-3. A extensão Babel TCC ativa automaticamente ao detectar arquivos C# ou Python
+2. Abrir uma pasta que contenha arquivos de uma linguagem suportada — `.cs`, `.py`, `.js`, `.alg` ou `.por` (`File > Open Folder`)
+3. A extensão Babel TCC ativa automaticamente ao detectar um desses arquivos
 
 ## Ativar a tradução
 
-1. Abrir um arquivo `.cs` ou `.py`
-2. Pressionar `Ctrl+Shift+P` para abrir o Command Palette
-3. Executar `Babel TCC: Abrir Visualização Traduzida (Editável)` ou `Babel TCC: Abrir Visualização Traduzida (Somente Leitura)`
-4. O código traduzido abre num editor ao lado (`ViewColumn.Beside`)
+Com um arquivo suportado aberto, há quatro caminhos para a visualização traduzida — todos levam ao mesmo lugar:
 
-Alternativamente:
+- **Botão na barra de título do editor:** o ícone de globo, no canto superior direito do editor, abre a visualização traduzida editável. Dentro dela, o mesmo lugar mostra o botão de voltar ao código original.
+- **Menu de contexto:** clicar com o botão direito dentro do editor e escolher `Abrir Visualização Traduzida (Editável)` ou `Abrir Visualização Traduzida (Somente Leitura)`. Dentro da visualização traduzida, o menu oferece `Mostrar Código Original`.
+- **Atalho de teclado:** `Ctrl+Alt+U` e depois `V` (ver [Atalhos de teclado](#atalhos-de-teclado)).
+- **Command Palette:** `Ctrl+Shift+P` e executar `Babel TCC: Abrir Visualização Traduzida (Editável)` ou `Babel TCC: Abrir Visualização Traduzida (Somente Leitura)`.
+
+O código traduzido abre num editor ao lado (`ViewColumn.Beside`).
+
+O botão e os itens do menu só aparecem onde fazem sentido: num arquivo de linguagem não suportada (um `README.md`, por exemplo) eles não aparecem, e com a extensão desativada (`Alternar Tradução`) os itens de abrir somem. Com o editor dividido, cada barra de título responde pelo próprio arquivo.
+
+Também é possível:
 - Usar `Babel TCC: Alternar Tradução` para ativar/desativar
-- Usar `Babel TCC: Mostrar Código Original` para voltar ao código original
 - Clicar no idioma na barra de status para mudar o idioma alvo
+
+## Atalhos de teclado
+
+Os atalhos são em duas etapas (*chord*): primeiro `Ctrl+Alt+U` (`Cmd+Alt+U` no macOS), solta, e então a letra.
+
+| Atalho | Ação | Onde funciona |
+|---|---|---|
+| `Ctrl+Alt+U` `T` | Alternar Tradução | Em qualquer lugar |
+| `Ctrl+Alt+U` `I` | Selecionar Idioma | Em qualquer lugar |
+| `Ctrl+Alt+U` `V` | Abrir Visualização Traduzida (Editável) | Com o foco num arquivo suportado |
+| `Ctrl+Alt+U` `O` | Mostrar Código Original | Com o foco na visualização traduzida |
+
+O prefixo `Ctrl+Alt+U` não ocupa nenhum atalho padrão do VS Code e não colide com o `AltGr` do teclado ABNT2 — no Windows, `AltGr` chega aos programas como `Ctrl+Alt`, então um atalho na tecla errada dispararia enquanto você digita um caractere. Para trocar algum atalho, use `File > Preferences > Keyboard Shortcuts` e procure por `Babel TCC`.
 
 ## Entender a interface
 

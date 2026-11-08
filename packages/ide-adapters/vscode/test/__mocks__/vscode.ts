@@ -267,6 +267,10 @@ export const window = {
   },
 };
 
+export const env = {
+  openExternal: vi.fn(),
+};
+
 export const l10n = {
   // Mirrors vscode.l10n.t: returns the source string with {0}/{1}... substituted.
   t: (message: string, ...args: unknown[]): string =>
@@ -283,6 +287,18 @@ export const languages = {
   registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
   registerDocumentSemanticTokensProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
+
+// --- Helper to read the context keys published via executeCommand('setContext', key, value) ---
+// Returns the last value published for each key, mirroring how VS Code evaluates `when` clauses.
+export function __getContextKeys(): Record<string, unknown> {
+  const publishedKeys: Record<string, unknown> = {};
+  for (const call of commands.executeCommand.mock.calls) {
+    if (call[0] === 'setContext') {
+      publishedKeys[call[1] as string] = call[2];
+    }
+  }
+  return publishedKeys;
+}
 
 // --- Helper to set config values in tests ---
 export function __setConfigValue(key: string, value: unknown): void {

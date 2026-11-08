@@ -52,23 +52,87 @@
     "commands": [
       {
         "command": "babel-tcc.toggle",
-        "title": "%command.toggle.title%"
+        "title": "%command.toggle.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "babel-tcc.selectLanguage",
-        "title": "%command.selectLanguage.title%"
+        "title": "%command.selectLanguage.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "babel-tcc.openTranslatedEditable",
-        "title": "%command.openTranslatedEditable.title%"
+        "title": "%command.openTranslatedEditable.title%",
+        "shortTitle": "%command.openTranslatedEditable.shortTitle%",
+        "category": "%extension.category%",
+        "icon": "$(globe)"
       },
       {
         "command": "babel-tcc.openTranslatedReadonly",
-        "title": "%command.openTranslatedReadonly.title%"
+        "title": "%command.openTranslatedReadonly.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "babel-tcc.showOriginal",
-        "title": "%command.showOriginal.title%"
+        "title": "%command.showOriginal.title%",
+        "shortTitle": "%command.showOriginal.shortTitle%",
+        "category": "%extension.category%",
+        "icon": "$(file-code)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "babel-tcc.openTranslatedEditable",
+          "when": "config.babel-tcc.enabled && resourceExtname =~ /^\\.(cs|py|alg|por|js)$/i && resourceScheme != 'babel-tcc-translated' && resourceScheme != 'babel-tcc-readonly'",
+          "group": "navigation@1"
+        },
+        {
+          "command": "babel-tcc.showOriginal",
+          "when": "resourceScheme =~ /^(babel-tcc-translated|babel-tcc-readonly)$/",
+          "group": "navigation@1"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "babel-tcc.openTranslatedEditable",
+          "when": "config.babel-tcc.enabled && resourceExtname =~ /^\\.(cs|py|alg|por|js)$/i && resourceScheme != 'babel-tcc-translated' && resourceScheme != 'babel-tcc-readonly'",
+          "group": "babel-tcc@1"
+        },
+        {
+          "command": "babel-tcc.openTranslatedReadonly",
+          "when": "config.babel-tcc.enabled && resourceExtname =~ /^\\.(cs|py|alg|por|js)$/i && resourceScheme != 'babel-tcc-translated' && resourceScheme != 'babel-tcc-readonly'",
+          "group": "babel-tcc@2"
+        },
+        {
+          "command": "babel-tcc.showOriginal",
+          "when": "resourceScheme =~ /^(babel-tcc-translated|babel-tcc-readonly)$/",
+          "group": "babel-tcc@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "babel-tcc.toggle",
+        "key": "ctrl+alt+u t",
+        "mac": "cmd+alt+u t"
+      },
+      {
+        "command": "babel-tcc.selectLanguage",
+        "key": "ctrl+alt+u i",
+        "mac": "cmd+alt+u i"
+      },
+      {
+        "command": "babel-tcc.openTranslatedEditable",
+        "key": "ctrl+alt+u v",
+        "mac": "cmd+alt+u v",
+        "when": "editorTextFocus && config.babel-tcc.enabled && resourceExtname =~ /^\\.(cs|py|alg|por|js)$/i && resourceScheme != 'babel-tcc-translated' && resourceScheme != 'babel-tcc-readonly'"
+      },
+      {
+        "command": "babel-tcc.showOriginal",
+        "key": "ctrl+alt+u o",
+        "mac": "cmd+alt+u o",
+        "when": "editorTextFocus && resourceScheme =~ /^(babel-tcc-translated|babel-tcc-readonly)$/"
       }
     ],
     "configuration": {
@@ -77,35 +141,68 @@
         "babel-tcc.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "%config.enabled.description%"
+          "description": "%config.enabled.description%",
+          "order": 1
         },
         "babel-tcc.language": {
           "type": "string",
           "default": "pt-br",
-          "description": "%config.language.description%"
-        },
-        "babel-tcc.translationsPath": {
-          "type": "string",
-          "default": "",
-          "description": "%config.translationsPath.description%"
-        },
-        "babel-tcc.readonly": {
-          "type": "boolean",
-          "default": false,
-          "description": "%config.readonly.description%"
+          "description": "%config.language.description%",
+          "order": 2,
+          "enum": ["pt-br", "pt-br-ascii", "en-us", "es-es", "fr-fr", "de-de", "it-it", "ja-jp-romaji", "zh-cn", "ar-sa"],
+          "enumItemLabels": ["Português (Brasil)", "Português (Brasil, sem acentos)", "English (US)", "Español", "Français", "Deutsch", "Italiano", "日本語 (romaji)", "中文 (简体)", "العربية"],
+          "enumDescriptions": ["%config.language.enum.ptBr%", "%config.language.enum.ptBrAscii%", "%config.language.enum.enUs%", "%config.language.enum.esEs%", "%config.language.enum.frFr%", "%config.language.enum.deDe%", "%config.language.enum.itIt%", "%config.language.enum.jaJpRomaji%", "%config.language.enum.zhCn%", "%config.language.enum.arSa%"]
         },
         "babel-tcc.languageOverrides": {
           "type": "object",
           "default": {},
           "description": "%config.languageOverrides.description%",
+          "order": 3,
           "properties": {
-            "CSharp": { "type": "string", "description": "%config.languageOverrides.csharp.description%" },
-            "Python": { "type": "string", "description": "%config.languageOverrides.python.description%" },
-            "VisuAlg": { "type": "string", "description": "%config.languageOverrides.visualg.description%" },
-            "PortugolStudio": { "type": "string", "description": "%config.languageOverrides.portugolStudio.description%" },
-            "JavaScript": { "type": "string", "description": "%config.languageOverrides.javascript.description%" }
+            "CSharp": {
+              "type": "string",
+              "description": "%config.languageOverrides.csharp.description%",
+              "enum": ["pt-br", "pt-br-ascii", "en-us", "es-es", "fr-fr", "de-de", "it-it", "ja-jp-romaji", "zh-cn", "ar-sa"],
+              "enumItemLabels": ["Português (Brasil)", "Português (Brasil, sem acentos)", "English (US)", "Español", "Français", "Deutsch", "Italiano", "日本語 (romaji)", "中文 (简体)", "العربية"]
+            },
+            "Python": {
+              "type": "string",
+              "description": "%config.languageOverrides.python.description%",
+              "enum": ["pt-br", "pt-br-ascii", "en-us", "es-es", "fr-fr", "de-de", "it-it", "ja-jp-romaji", "zh-cn", "ar-sa"],
+              "enumItemLabels": ["Português (Brasil)", "Português (Brasil, sem acentos)", "English (US)", "Español", "Français", "Deutsch", "Italiano", "日本語 (romaji)", "中文 (简体)", "العربية"]
+            },
+            "VisuAlg": {
+              "type": "string",
+              "description": "%config.languageOverrides.visualg.description%",
+              "enum": ["pt-br", "pt-br-ascii", "en-us", "es-es", "fr-fr", "de-de", "it-it", "ja-jp-romaji", "zh-cn", "ar-sa"],
+              "enumItemLabels": ["Português (Brasil)", "Português (Brasil, sem acentos)", "English (US)", "Español", "Français", "Deutsch", "Italiano", "日本語 (romaji)", "中文 (简体)", "العربية"]
+            },
+            "PortugolStudio": {
+              "type": "string",
+              "description": "%config.languageOverrides.portugolStudio.description%",
+              "enum": ["pt-br", "pt-br-ascii", "en-us", "es-es", "fr-fr", "de-de", "it-it", "ja-jp-romaji", "zh-cn", "ar-sa"],
+              "enumItemLabels": ["Português (Brasil)", "Português (Brasil, sem acentos)", "English (US)", "Español", "Français", "Deutsch", "Italiano", "日本語 (romaji)", "中文 (简体)", "العربية"]
+            },
+            "JavaScript": {
+              "type": "string",
+              "description": "%config.languageOverrides.javascript.description%",
+              "enum": ["pt-br", "pt-br-ascii", "en-us", "es-es", "fr-fr", "de-de", "it-it", "ja-jp-romaji", "zh-cn", "ar-sa"],
+              "enumItemLabels": ["Português (Brasil)", "Português (Brasil, sem acentos)", "English (US)", "Español", "Français", "Deutsch", "Italiano", "日本語 (romaji)", "中文 (简体)", "العربية"]
+            }
           },
           "additionalProperties": false
+        },
+        "babel-tcc.readonly": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.readonly.description%",
+          "order": 4
+        },
+        "babel-tcc.translationsPath": {
+          "type": "string",
+          "default": "",
+          "description": "%config.translationsPath.description%",
+          "order": 5
         }
       }
     },

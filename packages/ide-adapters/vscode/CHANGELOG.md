@@ -5,6 +5,36 @@ All notable changes to the Babel TCC extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **The translation commands are now reachable without the Command Palette.** A button in the editor
+  title bar opens the translated view of a supported file, and turns into "show original" once you
+  are in that view; the editor context menu offers the editable view, the read-only view and the way
+  back. Every one of these surfaces declares when it applies, so an action that does not fit the file
+  you are on is not shown at all instead of being shown and then refused. With the editor split, each
+  title bar answers for its own file: the group showing a `README.md` offers nothing, even while the
+  active group holds a translated view.
+- **Keyboard shortcuts, as a chord starting with `Ctrl+Alt+U` (`Cmd+Alt+U` on macOS):** `T` toggles
+  translation, `I` picks the target language, `V` opens the translated view and `O` goes back to the
+  original. The prefix is free in VS Code's default shortcuts, so installing the extension takes no
+  built-in shortcut away, and it stays clear of the keys the Brazilian ABNT2 layout reaches through
+  `AltGr`: on Windows `AltGr` reaches applications as `Ctrl+Alt`, so a shortcut on the wrong key
+  would fire while you were simply typing a character.
+
+### Changed
+
+- **The target language is now picked from a list, not typed by hand.** Settings shows a dropdown
+  with every language written in its own script — `Português (Brasil)`, `Deutsch`, `日本語 (romaji)`,
+  `العربية` — instead of an empty text box that expected you to already know the code was spelled
+  `ja-jp-romaji`. The same list is offered for the per-language overrides, and the five Babel TCC
+  settings now appear in order of how often they are used rather than alphabetically.
+- Command titles no longer repeat `Babel TCC: `. The prefix now comes from the command category, so
+  VS Code still shows "Babel TCC: Open Translated View" in the Command Palette while the context menu
+  shows just "Open Translated View", where the prefix was only noise. All 7 interface locales were
+  updated.
+
 ## [1.1.0] - 2026-08-16
 
 ### Added

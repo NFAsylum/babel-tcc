@@ -1,13 +1,37 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs';
-import { commands, workspace, window, languages, Uri } from './__mocks__/vscode';
+import { commands, workspace, window, languages, Uri, __getContextKeys } from './__mocks__/vscode';
 
 vi.mock('fs');
+// activate() probes the .NET runtime with `dotnet --list-runtimes`. Unmocked, that runs the real
+// executable from a unit test, and the result of the suite depends on what the machine has installed.
+vi.mock('child_process', () => ({
+  execFile: vi.fn(),
+  spawn: vi.fn(),
+}));
+
+import { execFile } from 'child_process';
+import { env } from './__mocks__/vscode';
 
 import { CoreBridge } from '../src/services/coreBridge';
 import { KeywordMapService } from '../src/providers/keywordMap';
 import { activate, deactivate, buildScopeItems } from '../src/extension';
 import { SUPPORTED_LANGUAGES, buildFileWatcherPattern } from '../src/config/languages';
+
+const DOTNET_DOWNLOAD_URL: string = 'https://dotnet.microsoft.com/download/dotnet/8.0';
+const NET8_RUNTIME_LISTING: string = [
+  'Microsoft.AspNetCore.App 8.0.11 [/usr/share/dotnet/shared/Microsoft.AspNetCore.App]',
+  'Microsoft.NETCore.App 8.0.11 [/usr/share/dotnet/shared/Microsoft.NETCore.App]',
+].join('\n');
+const NET9_ONLY_RUNTIME_LISTING: string =
+  'Microsoft.NETCore.App 9.0.1 [/usr/share/dotnet/shared/Microsoft.NETCore.App]';
+
+/** Makes the mocked `dotnet --list-runtimes` probe answer with the given outcome. */
+function answerRuntimeProbe(probeError: Error | null, runtimeListing: string): void {
+  vi.mocked(execFile).mockImplementation(((_file: string, _args: string[], callback: any) => {
+    callback(probeError, runtimeListing, '');
+  }) as any);
+}
 
 function makeContext(): { extensionPath: string; subscriptions: { dispose(): void }[] } {
   return {
@@ -28,6 +52,8 @@ describe('extension', () => {
       update: vi.fn(),
     } as any);
     vi.mocked(window.onDidChangeActiveTextEditor).mockReturnValue({ dispose: vi.fn() });
+    answerRuntimeProbe(null, NET8_RUNTIME_LISTING);
+    vi.mocked(window.showErrorMessage).mockResolvedValue(undefined);
     // activate() warms the keyword cache, which asks the Core for the maps. Left alone that spawns a
     // real `dotnet` process from a unit test; its exit then surfaces as an unhandled EPIPE.
     vi.spyOn(KeywordMapService.prototype, 'warmCache').mockResolvedValue(undefined);
@@ -70,10 +96,84 @@ describe('extension', () => {
       expect(context.subscriptions.length).toBe(20);
     });
 
+    // Menus and keybindings read only built-in keys (resourceExtname, resourceScheme, config.*), which
+    // VS Code evaluates per editor group; a key published by the extension would be global (DT-012).
+    it('should not publish any context key', () => {
+      const context = makeContext();
+      activate(context as any);
+      expect(__getContextKeys()).toEqual({});
+    });
+
     it('should create file watcher covering all supported extensions', () => {
       const context = makeContext();
       activate(context as any);
       expect(workspace.createFileSystemWatcher).toHaveBeenCalledWith(buildFileWatcherPattern());
+    });
+  });
+
+  describe('.NET runtime check', () => {
+    it('should probe the runtime list, not the SDK version', () => {
+      activate(makeContext() as any);
+
+      expect(execFile).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(execFile).mock.calls[0][0]).toBe('dotnet');
+      expect(vi.mocked(execFile).mock.calls[0][1]).toEqual(['--list-runtimes']);
+    });
+
+    it('should stay silent when the .NET 8 runtime is installed', () => {
+      activate(makeContext() as any);
+
+      expect(window.showErrorMessage).not.toHaveBeenCalled();
+      const outputChannel = vi.mocked(window.createOutputChannel).mock.results[0].value;
+      expect(outputChannel.appendLine).toHaveBeenCalledWith('Babel TCC: .NET 8 runtime found.');
+    });
+
+    it('should report a missing runtime when dotnet cannot be run', () => {
+      answerRuntimeProbe(new Error('spawn dotnet ENOENT'), '');
+
+      activate(makeContext() as any);
+
+      expect(window.showErrorMessage).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(window.showErrorMessage).mock.calls[0][0]).toContain('.NET 8 Runtime is required');
+      expect(vi.mocked(window.showErrorMessage).mock.calls[0][1]).toBe('Open Download Page');
+      const outputChannel = vi.mocked(window.createOutputChannel).mock.results[0].value;
+      expect(outputChannel.appendLine).toHaveBeenCalledWith('Babel TCC: .NET 8 runtime not found in PATH.');
+    });
+
+    it('should report a missing runtime when the probe fails even if it printed a listing', () => {
+      answerRuntimeProbe(new Error('Command failed: dotnet --list-runtimes'), NET8_RUNTIME_LISTING);
+
+      activate(makeContext() as any);
+
+      expect(window.showErrorMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('should report a missing runtime when only another major version is installed', () => {
+      answerRuntimeProbe(null, NET9_ONLY_RUNTIME_LISTING);
+
+      activate(makeContext() as any);
+
+      expect(window.showErrorMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('should open the download page when the user picks the button', async () => {
+      answerRuntimeProbe(new Error('spawn dotnet ENOENT'), '');
+      vi.mocked(window.showErrorMessage).mockResolvedValue('Open Download Page' as any);
+
+      activate(makeContext() as any);
+      await vi.mocked(window.showErrorMessage).mock.results[0].value;
+
+      expect(env.openExternal).toHaveBeenCalledTimes(1);
+      expect(String(vi.mocked(env.openExternal).mock.calls[0][0])).toBe(DOTNET_DOWNLOAD_URL);
+    });
+
+    it('should not open anything when the user dismisses the message', async () => {
+      answerRuntimeProbe(new Error('spawn dotnet ENOENT'), '');
+
+      activate(makeContext() as any);
+      await vi.mocked(window.showErrorMessage).mock.results[0].value;
+
+      expect(env.openExternal).not.toHaveBeenCalled();
     });
   });
 
