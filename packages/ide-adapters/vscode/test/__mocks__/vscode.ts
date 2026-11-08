@@ -223,6 +223,7 @@ export const workspace = {
     for (const cb of workspace.__configChangeCallbacks) cb(event);
   },
   workspaceFolders: undefined as unknown,
+  isTrusted: true as boolean,
   registerFileSystemProvider: vi.fn(() => ({ dispose: vi.fn() })),
   openTextDocument: vi.fn(),
   createFileSystemWatcher: vi.fn(() => ({

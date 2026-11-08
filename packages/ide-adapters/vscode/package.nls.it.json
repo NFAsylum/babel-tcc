@@ -1,6 +1,8 @@
 {
   "description": "Visualizza codice C#, Python, JavaScript, VisuAlg e Portugol Studio tradotto nella tua lingua naturale. Le parole chiave e gli identificatori vengono tradotti in tempo reale.",
   "extension.category": "Babel TCC",
+  "capabilities.untrustedWorkspaces.description": "In modalità con restrizioni, Babel TCC traduce con le tabelle di traduzione incluse nell'estensione. Un percorso delle traduzioni impostato nelle impostazioni dell'area di lavoro, o una cartella di traduzioni accanto a essa, viene usato solo dopo che hai considerato attendibile l'area di lavoro.",
+  "capabilities.virtualWorkspaces.description": "Babel TCC ha bisogno di file reali sul disco ed esegue il suo motore di traduzione come processo locale, quindi non funziona nelle aree di lavoro virtuali come github.dev.",
   "command.toggle.title": "Attiva/disattiva traduzione",
   "command.selectLanguage.title": "Seleziona lingua",
   "command.openTranslatedEditable.title": "Apri vista tradotta (modificabile)",

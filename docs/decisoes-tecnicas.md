@@ -590,3 +590,65 @@ para derrubar.
 - `test/manifest/manifest.test.ts`: o `enum` é comparado com as pastas de `natural-languages`, lidas
   de `BABEL_TCC_TRANSLATIONS_PATH`, da cópia gerada pelo build ou do repositório irmão.
 - `.github/workflows/ci.yml`: checkout do repositório de traduções no job da extensão.
+
+---
+
+## DT-014: Suporte limitado em workspace não confiável
+
+**Decisão:** A extensão declara `capabilities.untrustedWorkspaces.supported: "limited"`. Em Modo
+Restrito ela funciona com as tabelas de tradução empacotadas; o que aponta para fora da extensão a
+partir do workspace só vale depois que o workspace é confiável: o `babel-tcc.translationsPath` do
+workspace (listado em `restrictedConfigurations`) e a detecção da pasta `babel-tcc-translations` ao
+lado dele. Os processos que a extensão inicia rodam com a pasta da extensão como diretório atual.
+Workspaces virtuais não são suportados (`virtualWorkspaces.supported: false`).
+
+**Problema:** Sem declaração, o VS Code desabilita a extensão, em silêncio, em toda pasta aberta em
+Modo Restrito. É o cenário mais comum do público-alvo: o professor que baixa uma pasta de exemplos e
+abre no VS Code. A extensão simplesmente não liga, e nada explica por quê.
+
+**O que a extensão faz numa pasta, e o risco de cada coisa:**
+- Inicia o Core, um binário **da própria extensão**, e o Core inicia o Python do ambiente do usuário
+  (`BABEL_TCC_PYTHON` ou o PATH). Nada disso vem do workspace.
+- Lê tabelas de tradução de um caminho que pode vir **do workspace**: o `translationsPath` das
+  configurações da pasta, ou a pasta irmã detectada automaticamente. É o risco real: ao salvar a
+  visão traduzida, a tradução reversa usa essas tabelas para reescrever o arquivo original, então
+  tabelas adulteradas corrompem o código do usuário.
+- No Windows, um comando sem caminho (`dotnet`, `python`) é procurado no diretório atual antes do
+  PATH. Se o processo herdasse o workspace como diretório atual, a pasta poderia fornecer o
+  executável.
+
+**Alternativas consideradas:**
+- **Não declarar nada** (o estado anterior): extensão desabilitada sem aviso. Rejeitada.
+- **`supported: true`:** a extensão funcionaria igual em qualquer pasta, inclusive aceitando tabelas
+  de tradução trazidas por uma pasta desconhecida. Rejeitada pelo risco ao arquivo original.
+- **`supported: false`:** o VS Code passaria a explicar que a extensão precisa de confiança, mas ela
+  continuaria inútil justamente no cenário do professor. Rejeitada: o caso comum — ler e editar com
+  as tabelas oficiais — não tem risco nenhum.
+- **`limited`, com as restrições acima** (escolhida): funciona no caso comum e só retém o que vem do
+  workspace.
+
+**Consequências:**
+- Em Modo Restrito valem as tabelas empacotadas; um `translationsPath` definido nas configurações **de
+  usuário** continua valendo, porque o usuário é confiável.
+- O caminho das traduções é escolhido quando a extensão inicia. Depois de confiar no workspace, a
+  pasta irmã e o `translationsPath` do workspace só passam a valer ao recarregar a janela. Documentado
+  em `docs/user-guide/troubleshooting.md`; reagir a `onDidGrantWorkspaceTrust` reiniciando o Core fica
+  como melhoria possível, não necessária para o caso comum.
+- Em Modo Restrito, o VS Code destaca com caixa todo caractere fora do ASCII básico
+  (`editor.unicodeHighlight.nonBasicASCII` = `inUntrustedWorkspace`, exceto os do idioma da
+  interface). Uma visão traduzida para chinês, japonês ou árabe aparece toda em caixas. A extensão
+  poderia desligar isso por `configurationDefaults`, mas desligaria a proteção também nos arquivos
+  originais da pasta não confiável, que é exatamente onde ela importa; por isso não desliga, e o
+  comportamento está documentado no guia do usuário.
+- `virtualWorkspaces: false` é a descrição honesta da arquitetura atual (processo local e arquivos
+  reais), não uma regressão. Uma versão web é trabalho futuro.
+
+**Implementação (tarefa 117):**
+- `package.json`: `capabilities` com as duas declarações; descrições nos 7 `package.nls*.json`.
+- `src/services/coreBridge.ts`: a pasta irmã só é detectada com `vscode.workspace.isTrusted`; o Core é
+  iniciado com `cwd` na pasta da extensão.
+- `src/extension.ts`: a checagem do .NET (`dotnet --list-runtimes`) também roda com `cwd` na pasta da
+  extensão.
+- Testes: contrato do manifesto (`limited`, `translationsPath` restrita, só configurações declaradas,
+  virtual não suportado) e `coreBridge`/`extension` (pasta irmã ignorada sem confiança, `cwd` dos dois
+  processos).

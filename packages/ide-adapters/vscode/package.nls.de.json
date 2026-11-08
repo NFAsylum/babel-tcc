@@ -1,6 +1,8 @@
 {
   "description": "Visualisieren Sie C#-, Python-, JavaScript-, VisuAlg- und Portugol-Studio-Code, übersetzt in Ihre natürliche Sprache. Schlüsselwörter und Bezeichner werden in Echtzeit übersetzt.",
   "extension.category": "Babel TCC",
+  "capabilities.untrustedWorkspaces.description": "Im eingeschränkten Modus übersetzt Babel TCC mit den Übersetzungstabellen, die mit der Erweiterung ausgeliefert werden. Ein in den Arbeitsbereichseinstellungen festgelegter Übersetzungspfad oder ein Übersetzungsordner neben dem Arbeitsbereich wird erst verwendet, wenn Sie dem Arbeitsbereich vertrauen.",
+  "capabilities.virtualWorkspaces.description": "Babel TCC benötigt echte Dateien auf dem Datenträger und führt seine Übersetzungs-Engine als lokalen Prozess aus. Daher funktioniert es nicht in virtuellen Arbeitsbereichen wie github.dev.",
   "command.toggle.title": "Übersetzung umschalten",
   "command.selectLanguage.title": "Sprache auswählen",
   "command.openTranslatedEditable.title": "Übersetzte Ansicht öffnen (bearbeitbar)",

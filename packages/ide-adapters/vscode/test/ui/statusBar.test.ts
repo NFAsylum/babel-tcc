@@ -108,6 +108,35 @@ describe('StatusBar', () => {
     });
   });
 
+  // The $(globe) codicon is not read by screen readers: without an accessible label the item is
+  // announced as just "PT-BR", with no hint of what it is or that it can be activated.
+  describe('accessibility', () => {
+    it('should name the item for the status bar context menu', () => {
+      expect((mockStatusBarItem as any).name).toBe('Babel TCC');
+    });
+
+    it('should announce the item as a button', () => {
+      statusBar.update();
+      expect((mockStatusBarItem as any).accessibilityInformation.role).toBe('button');
+    });
+
+    it('should describe the active state and the language in words, without the codicon', () => {
+      statusBar.update();
+      const label: string = (mockStatusBarItem as any).accessibilityInformation.label;
+      expect(label).toContain('translation active');
+      expect(label).toContain('PT-BR');
+      expect(label).not.toContain('$(');
+    });
+
+    it('should describe the disabled state in words, without the codicon', () => {
+      __setConfigValue('babel-tcc.enabled', false);
+      statusBar.update();
+      const label: string = (mockStatusBarItem as any).accessibilityInformation.label;
+      expect(label).toContain('translation disabled');
+      expect(label).not.toContain('$(');
+    });
+  });
+
   describe('dispose', () => {
     it('should dispose status bar item and config subscription', () => {
       const configDisposeSpy = vi.spyOn(statusBar.configSubscription, 'dispose');

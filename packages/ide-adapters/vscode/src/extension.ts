@@ -86,10 +86,13 @@ function cleanMultilingualCache(channel: vscode.OutputChannel): void {
  * The extension ships a framework-dependent build run via `dotnet Host.dll`, so only the
  * .NET 8 runtime is required (not the SDK). We probe with `dotnet --list-runtimes` because
  * `dotnet --version` reports the SDK version and fails on runtime-only installs.
+ * Runs from the extension folder, not the workspace: on Windows a bare `dotnet` is looked up in the
+ * current directory before PATH.
  * @param channel - The output channel for logging.
+ * @param workingDirectory - The extension folder, used as the probe's current directory.
  */
-function checkDotnetInstalled(channel: vscode.OutputChannel): void {
-  execFile('dotnet', ['--list-runtimes'], (error: Error | null, stdout: string): void => {
+function checkDotnetInstalled(channel: vscode.OutputChannel, workingDirectory: string): void {
+  execFile('dotnet', ['--list-runtimes'], { cwd: workingDirectory }, (error: Error | null, stdout: string): void => {
     const hasNet8Runtime: boolean = !error && /^Microsoft\.NETCore\.App 8\./m.test(stdout);
     if (!hasNet8Runtime) {
       channel.appendLine('Babel TCC: .NET 8 runtime not found in PATH.');
@@ -117,7 +120,7 @@ export function activate(context: vscode.ExtensionContext): void {
   outputChannel.appendLine('Babel TCC extension activated.');
 
   cleanMultilingualCache(outputChannel);
-  checkDotnetInstalled(outputChannel);
+  checkDotnetInstalled(outputChannel, context.extensionPath);
 
   coreBridge = new CoreBridge(context, outputChannel);
   languageDetector = new LanguageDetector();
