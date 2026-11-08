@@ -1,6 +1,8 @@
 {
   "description": "C#、Python、JavaScript、VisuAlg、Portugol Studio のコードを自然言語に翻訳して表示します。キーワードと識別子をリアルタイムで翻訳します。",
   "extension.category": "Babel TCC",
+  "capabilities.untrustedWorkspaces.description": "制限モードでは、Babel TCC は拡張機能に同梱されている翻訳テーブルで翻訳します。ワークスペースの設定で指定された翻訳パスや、ワークスペースの隣にある翻訳フォルダーは、ワークスペースを信頼した後にのみ使用されます。",
+  "capabilities.virtualWorkspaces.description": "Babel TCC はディスク上の実際のファイルを必要とし、翻訳エンジンをローカル プロセスとして実行するため、github.dev などの仮想ワークスペースでは動作しません。",
   "command.toggle.title": "翻訳の切り替え",
   "command.selectLanguage.title": "言語を選択",
   "command.openTranslatedEditable.title": "翻訳ビューを開く (編集可能)",

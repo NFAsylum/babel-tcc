@@ -28,7 +28,7 @@ const NET9_ONLY_RUNTIME_LISTING: string =
 
 /** Makes the mocked `dotnet --list-runtimes` probe answer with the given outcome. */
 function answerRuntimeProbe(probeError: Error | null, runtimeListing: string): void {
-  vi.mocked(execFile).mockImplementation(((_file: string, _args: string[], callback: any) => {
+  vi.mocked(execFile).mockImplementation(((_file: string, _args: string[], _options: unknown, callback: any) => {
     callback(probeError, runtimeListing, '');
   }) as any);
 }
@@ -118,6 +118,14 @@ describe('extension', () => {
       expect(execFile).toHaveBeenCalledTimes(1);
       expect(vi.mocked(execFile).mock.calls[0][0]).toBe('dotnet');
       expect(vi.mocked(execFile).mock.calls[0][1]).toEqual(['--list-runtimes']);
+    });
+
+    // On Windows a bare `dotnet` is looked up in the current directory before PATH; the probe must not
+    // inherit a workspace as its current directory, or an untrusted folder could supply the executable.
+    it('should run the probe from the extension folder, not the workspace', () => {
+      activate(makeContext() as any);
+
+      expect(vi.mocked(execFile).mock.calls[0][2]).toEqual({ cwd: '/ext' });
     });
 
     it('should stay silent when the .NET 8 runtime is installed', () => {
