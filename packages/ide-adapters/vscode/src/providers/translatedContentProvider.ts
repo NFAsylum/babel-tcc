@@ -104,10 +104,12 @@ export class TranslatedContentProvider implements vscode.FileSystemProvider {
 
     // Queue saves per path: if a save is already in progress, the next one
     // waits for it to complete before starting. This prevents the second save
-    // from reading the partially-written file as "original".
-    const previousSave: Promise<void> = this.saveQueue.get(originalPath) || Promise.resolve();
+    // from reading the partially-written file as "original". Keyed by the normalized path, so two
+    // spellings of the drive letter share one queue instead of racing in two.
+    const queueKey: string = normalizeUriPath(originalPath);
+    const previousSave: Promise<void> = this.saveQueue.get(queueKey) || Promise.resolve();
     const currentSave: Promise<void> = previousSave.then((): Promise<void> => this.doWriteFile(uri, content));
-    this.saveQueue.set(originalPath, currentSave);
+    this.saveQueue.set(queueKey, currentSave);
     await currentSave;
   }
 
