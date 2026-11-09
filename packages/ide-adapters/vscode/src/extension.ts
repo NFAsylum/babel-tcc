@@ -15,6 +15,7 @@ import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/sem
 import { buildFileWatcherPattern, SUPPORTED_LANGUAGES } from './config/languages';
 import { COMMANDS } from './config/constants';
 import { describeError } from './services/errorMessage';
+import { openExample } from './commands/openExample';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -371,6 +372,15 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
+  // Lets anyone try the extension without a project of their own: the professor in class, or a
+  // student who just installed it (tarefa115).
+  const openExampleCommand: vscode.Disposable = vscode.commands.registerCommand(
+    COMMANDS.OPEN_EXAMPLE,
+    async (): Promise<void> => {
+      await openExample(context, configService, outputChannel);
+    }
+  );
+
   context.subscriptions.push(outputChannel);
   context.subscriptions.push(fileWatcher);
   context.subscriptions.push(fileWatcherChangeHandler);
@@ -386,6 +396,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(openTranslatedEditableCommand);
   context.subscriptions.push(openTranslatedReadonlyCommand);
   context.subscriptions.push(showOriginalCommand);
+  context.subscriptions.push(openExampleCommand);
 
   outputChannel.appendLine('All commands registered successfully.');
 }

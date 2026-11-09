@@ -8,6 +8,7 @@
   "command.openTranslatedReadonly.title": "Übersetzte Ansicht öffnen (schreibgeschützt)",
   "command.showOriginal.title": "Originalcode anzeigen",
   "command.showOriginal.shortTitle": "Original anzeigen",
+  "command.openExample.title": "Beispiel öffnen",
   "configuration.title": "Babel TCC",
   "config.enabled.description": "Echtzeitübersetzung aktivieren oder deaktivieren.",
   "config.language.description": "Natürliche Zielsprache für die Übersetzung.",

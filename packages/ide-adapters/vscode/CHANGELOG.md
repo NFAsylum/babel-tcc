@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   you are on is not shown at all instead of being shown and then refused. With the editor split, each
   title bar answers for its own file: the group showing a `README.md` offers nothing, even while the
   active group holds a translated view.
+- **Try it without a project: "Babel TCC: Open Example".** Pick one of six short examples — a
+  "Hello, World" in C#, plus one example in each supported language — and it opens already
+  translated, with no folder open and nothing to set up. The examples now ship inside the extension;
+  each one is copied to the extension's own storage the first time you open it, so you can edit and
+  save it freely, and your changes are still there the next time. Also on `Ctrl+Alt+U` `X`.
 - **Keyboard shortcuts, as a chord starting with `Ctrl+Alt+U` (`Cmd+Alt+U` on macOS):** `T` toggles
   translation, `I` picks the target language, `V` opens the translated view and `O` goes back to the
   original. The prefix is free in VS Code's default shortcuts, so installing the extension takes no

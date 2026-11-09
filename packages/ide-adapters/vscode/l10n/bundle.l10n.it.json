@@ -27,5 +27,19 @@
   "Babel TCC: The translation engine is unstable. Check the Output panel for details.": "Babel TCC: Il motore di traduzione è instabile. Controlla il pannello Output per i dettagli.",
   "Save and switch": "Salva e cambia",
   "Discard and switch": "Ignora e cambia",
-  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} file tradotto/i ha/hanno modifiche non salvate. Cosa vuoi fare prima di cambiare lingua?"
+  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} file tradotto/i ha/hanno modifiche non salvate. Cosa vuoi fare prima di cambiare lingua?",
+  "Babel TCC: Open Example": "Babel TCC: Apri esempio",
+  "Choose an example to see it in your language": "Scegli un esempio da vedere nella tua lingua",
+  "Hello, World": "Ciao, mondo",
+  "The first program: prints a greeting. Class, method and variable names are translated with // tradu.": "Il primo programma: stampa un saluto. I nomi di classe, metodo e variabile sono tradotti con // tradu.",
+  "Calculator": "Calcolatrice",
+  "A class with the four operations; methods and parameters translated with // tradu.": "Una classe con le quattro operazioni; metodi e parametri tradotti con // tradu.",
+  "Geometric shapes": "Forme geometriche",
+  "Classes and inheritance computing area and perimeter; names translated with # tradu.": "Classi ed ereditarietà per calcolare area e perimetro; nomi tradotti con # tradu.",
+  "Functions, constants and loops; comments and strings stay untouched.": "Funzioni, costanti e cicli; commenti e stringhe restano invariati.",
+  "Grade average": "Media dei voti",
+  "Input, conditions and loops, in the style of introductory logic classes.": "Lettura, condizioni e cicli, nello stile delle lezioni di logica di programmazione.",
+  "Functions, types and a choose-case menu.": "Funzioni, tipi e un menu con escolha-caso.",
+  "Babel TCC: Could not open the example: {0}": "Babel TCC: impossibile aprire l'esempio: {0}",
+  "Open Log": "Apri log"
 }

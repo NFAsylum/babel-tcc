@@ -27,5 +27,19 @@
   "Babel TCC: The translation engine is unstable. Check the Output panel for details.": "Babel TCC: O motor de tradução está instável. Veja o painel Output para detalhes.",
   "Save and switch": "Salvar e trocar",
   "Discard and switch": "Descartar e trocar",
-  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} arquivo(s) traduzido(s) têm alterações não salvas. O que deseja fazer antes de trocar de idioma?"
+  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} arquivo(s) traduzido(s) têm alterações não salvas. O que deseja fazer antes de trocar de idioma?",
+  "Babel TCC: Open Example": "Babel TCC: Abrir Exemplo",
+  "Choose an example to see it in your language": "Escolha um exemplo para vê-lo no seu idioma",
+  "Hello, World": "Olá, mundo",
+  "The first program: prints a greeting. Class, method and variable names are translated with // tradu.": "O primeiro programa: escreve uma saudação. Nomes de classe, método e variável traduzidos com // tradu.",
+  "Calculator": "Calculadora",
+  "A class with the four operations; methods and parameters translated with // tradu.": "Uma classe com as quatro operações; métodos e parâmetros traduzidos com // tradu.",
+  "Geometric shapes": "Formas geométricas",
+  "Classes and inheritance computing area and perimeter; names translated with # tradu.": "Classes e herança calculando área e perímetro; nomes traduzidos com # tradu.",
+  "Functions, constants and loops; comments and strings stay untouched.": "Funções, constantes e laços; comentários e textos ficam intactos.",
+  "Grade average": "Média de notas",
+  "Input, conditions and loops, in the style of introductory logic classes.": "Leitura, condições e laços, no estilo das aulas de lógica de programação.",
+  "Functions, types and a choose-case menu.": "Funções, tipos e um menu com escolha-caso.",
+  "Babel TCC: Could not open the example: {0}": "Babel TCC: Não foi possível abrir o exemplo: {0}",
+  "Open Log": "Abrir Log"
 }

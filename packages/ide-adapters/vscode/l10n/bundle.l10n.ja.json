@@ -27,5 +27,19 @@
   "Babel TCC: The translation engine is unstable. Check the Output panel for details.": "Babel TCC: 翻訳エンジンが不安定です。詳細は出力パネルを確認してください。",
   "Save and switch": "保存して切り替え",
   "Discard and switch": "破棄して切り替え",
-  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} 個の翻訳されたファイルに未保存の変更があります。言語を切り替える前にどうしますか?"
+  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} 個の翻訳されたファイルに未保存の変更があります。言語を切り替える前にどうしますか?",
+  "Babel TCC: Open Example": "Babel TCC: サンプルを開く",
+  "Choose an example to see it in your language": "あなたの言語で表示するサンプルを選んでください",
+  "Hello, World": "こんにちは、世界",
+  "The first program: prints a greeting. Class, method and variable names are translated with // tradu.": "最初のプログラム: あいさつを表示します。クラス・メソッド・変数の名前は // tradu で翻訳されます。",
+  "Calculator": "電卓",
+  "A class with the four operations; methods and parameters translated with // tradu.": "四則演算を持つクラス。メソッドと引数は // tradu で翻訳されます。",
+  "Geometric shapes": "図形",
+  "Classes and inheritance computing area and perimeter; names translated with # tradu.": "面積と周囲の長さを計算するクラスと継承。名前は # tradu で翻訳されます。",
+  "Functions, constants and loops; comments and strings stay untouched.": "関数、定数、ループ。コメントと文字列はそのまま残ります。",
+  "Grade average": "成績の平均",
+  "Input, conditions and loops, in the style of introductory logic classes.": "入力、条件分岐、繰り返しを、プログラミング論理入門の授業のスタイルで。",
+  "Functions, types and a choose-case menu.": "関数、型、escolha-caso によるメニュー。",
+  "Babel TCC: Could not open the example: {0}": "Babel TCC: サンプルを開けませんでした: {0}",
+  "Open Log": "ログを開く"
 }
