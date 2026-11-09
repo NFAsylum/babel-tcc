@@ -16,6 +16,7 @@ export const COMMANDS = {
   OPEN_TRANSLATED_EDITABLE: `${CONFIG_SECTION}.openTranslatedEditable`,
   OPEN_TRANSLATED_READONLY: `${CONFIG_SECTION}.openTranslatedReadonly`,
   SHOW_ORIGINAL: `${CONFIG_SECTION}.showOriginal`,
+  OPEN_EXAMPLE: `${CONFIG_SECTION}.openExample`,
 } as const;
 
 /** Sibling repository name for auto-detection of translations. */

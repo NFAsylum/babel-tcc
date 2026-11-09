@@ -27,5 +27,19 @@
   "Babel TCC: The translation engine is unstable. Check the Output panel for details.": "Babel TCC: Die Übersetzungs-Engine ist instabil. Weitere Details im Ausgabebereich.",
   "Save and switch": "Speichern und wechseln",
   "Discard and switch": "Verwerfen und wechseln",
-  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} übersetzte Datei(en) haben nicht gespeicherte Änderungen. Was möchten Sie vor dem Sprachwechsel tun?"
+  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} übersetzte Datei(en) haben nicht gespeicherte Änderungen. Was möchten Sie vor dem Sprachwechsel tun?",
+  "Babel TCC: Open Example": "Babel TCC: Beispiel öffnen",
+  "Choose an example to see it in your language": "Wählen Sie ein Beispiel, um es in Ihrer Sprache zu sehen",
+  "Hello, World": "Hallo, Welt",
+  "The first program: prints a greeting. Class, method and variable names are translated with // tradu.": "Das erste Programm: gibt einen Gruß aus. Klassen-, Methoden- und Variablennamen werden mit // tradu übersetzt.",
+  "Calculator": "Taschenrechner",
+  "A class with the four operations; methods and parameters translated with // tradu.": "Eine Klasse mit den vier Grundrechenarten; Methoden und Parameter mit // tradu übersetzt.",
+  "Geometric shapes": "Geometrische Formen",
+  "Classes and inheritance computing area and perimeter; names translated with # tradu.": "Klassen und Vererbung zur Berechnung von Fläche und Umfang; Namen mit # tradu übersetzt.",
+  "Functions, constants and loops; comments and strings stay untouched.": "Funktionen, Konstanten und Schleifen; Kommentare und Zeichenketten bleiben unverändert.",
+  "Grade average": "Notendurchschnitt",
+  "Input, conditions and loops, in the style of introductory logic classes.": "Eingabe, Bedingungen und Schleifen, im Stil eines Einführungskurses in Programmierlogik.",
+  "Functions, types and a choose-case menu.": "Funktionen, Typen und ein Menü mit escolha-caso.",
+  "Babel TCC: Could not open the example: {0}": "Babel TCC: Das Beispiel konnte nicht geöffnet werden: {0}",
+  "Open Log": "Protokoll öffnen"
 }

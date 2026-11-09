@@ -8,6 +8,7 @@
   "command.openTranslatedReadonly.title": "翻訳ビューを開く (読み取り専用)",
   "command.showOriginal.title": "元のコードを表示",
   "command.showOriginal.shortTitle": "元のコード",
+  "command.openExample.title": "サンプルを開く",
   "configuration.title": "Babel TCC",
   "config.enabled.description": "リアルタイム翻訳を有効または無効にします。",
   "config.language.description": "翻訳の対象となる自然言語。",

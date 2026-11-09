@@ -8,6 +8,7 @@
   "command.openTranslatedReadonly.title": "Ouvrir la vue traduite (lecture seule)",
   "command.showOriginal.title": "Afficher le code original",
   "command.showOriginal.shortTitle": "Voir l'original",
+  "command.openExample.title": "Ouvrir un exemple",
   "configuration.title": "Babel TCC",
   "config.enabled.description": "Activer ou désactiver la traduction en temps réel.",
   "config.language.description": "Langue naturelle cible pour la traduction.",

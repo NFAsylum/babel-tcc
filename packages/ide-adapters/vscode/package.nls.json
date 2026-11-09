@@ -8,6 +8,7 @@
   "command.openTranslatedReadonly.title": "Open Translated View (Readonly)",
   "command.showOriginal.title": "Show Original Code",
   "command.showOriginal.shortTitle": "Show Original",
+  "command.openExample.title": "Open Example",
   "configuration.title": "Babel TCC",
   "config.enabled.description": "Enable or disable real-time translation.",
   "config.language.description": "Target natural language for translation.",
