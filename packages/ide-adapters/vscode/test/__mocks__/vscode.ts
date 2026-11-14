@@ -58,6 +58,18 @@ export class Uri {
     return new Uri('file', p);
   }
 
+  static joinPath(base: Uri, ...segments: string[]): Uri {
+    return new Uri(base.scheme, [base.path, ...segments].join('/').replace(/\/+/g, '/').split('/').reduce(
+      (parts: string[], segment: string): string[] => {
+        if (segment === '..') {
+          parts.pop();
+        } else if (segment !== '.') {
+          parts.push(segment);
+        }
+        return parts;
+      }, []).join('/'));
+  }
+
   static parse(value: string): Uri {
     const colonIdx = value.indexOf(':');
     if (colonIdx >= 0) {
@@ -235,6 +247,8 @@ export const workspace = {
     stat: vi.fn(),
     readFile: vi.fn(),
     writeFile: vi.fn(),
+    copy: vi.fn(),
+    createDirectory: vi.fn(),
   },
   textDocuments: [] as unknown[],
   applyEdit: vi.fn(),
@@ -261,8 +275,10 @@ export const window = {
   onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
   showTextDocument: vi.fn(),
   activeTextEditor: undefined as unknown,
+  visibleTextEditors: [] as unknown[],
   tabGroups: {
     all: [] as unknown[],
+    activeTabGroup: { viewColumn: 1 },
     close: vi.fn(),
   },
 };

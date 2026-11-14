@@ -2,12 +2,46 @@
 
 ## Índice
 
+- [Introdução guiada](#introdução-guiada)
+- [Experimentar sem projeto](#experimentar-sem-projeto)
 - [Abrir um projeto](#abrir-um-projeto)
 - [Ativar a tradução](#ativar-a-tradução)
 - [Atalhos de teclado](#atalhos-de-teclado)
 - [Entender a interface](#entender-a-interface)
 - [Workflow básico](#workflow-básico)
 - [Usando anotações tradu](#usando-anotações-tradu)
+
+## Introdução guiada
+
+Logo depois de instalar a extensão, o VS Code abre a página **Primeiros passos com o Babel TCC**, com
+quatro passos:
+
+1. **Escolha o seu idioma**: o idioma em que o código aparece.
+2. **Abra um exemplo**: abre um dos exemplos, já traduzido, ao lado da página.
+3. **Edite, salve e veja o original**: mostra que o arquivo é salvo na linguagem de programação
+   original.
+4. **Traduza nomes com tradu**: as anotações que traduzem nomes de classes, métodos e variáveis (só
+   em C# e Python).
+
+Se a tradução estiver desligada, aparece antes um passo **Ligue a tradução**, que some assim que ela
+é ligada.
+
+Cada passo tem um botão que faz a ação e marca o passo como feito; tudo funciona pelo teclado (`Tab`
+e `Enter`). Para voltar a essa página depois de fechá-la, `Ctrl+Shift+P` e executar
+`Babel TCC: Abrir Introdução`.
+
+## Experimentar sem projeto
+
+Para ver a extensão funcionando sem ter nenhum projeto — numa aula, por exemplo:
+
+1. `Ctrl+Shift+P` e executar `Babel TCC: Abrir Exemplo` (ou o atalho `Ctrl+Alt+U` `X`).
+2. Escolher um exemplo na lista: um "Olá, mundo" em C# e um exemplo de cada linguagem suportada
+   (C#, Python, JavaScript, VisuAlg e Portugol Studio).
+3. O exemplo abre já traduzido para o idioma escolhido.
+
+Não é preciso abrir pasta nenhuma. O exemplo é uma cópia guardada na pasta da própria extensão: dá
+para editar e salvar à vontade, sem afetar nada, e as alterações continuam lá na próxima vez que o
+mesmo exemplo for aberto. Com a tradução desativada, o exemplo abre no código original.
 
 ## Abrir um projeto
 
@@ -42,6 +76,7 @@ Os atalhos são em duas etapas (*chord*): primeiro `Ctrl+Alt+U` (`Cmd+Alt+U` no 
 | `Ctrl+Alt+U` `I` | Selecionar Idioma | Em qualquer lugar |
 | `Ctrl+Alt+U` `V` | Abrir Visualização Traduzida (Editável) | Com o foco num arquivo suportado |
 | `Ctrl+Alt+U` `O` | Mostrar Código Original | Com o foco na visualização traduzida |
+| `Ctrl+Alt+U` `X` | Abrir Exemplo | Em qualquer lugar |
 
 O prefixo `Ctrl+Alt+U` não ocupa nenhum atalho padrão do VS Code e não colide com o `AltGr` do teclado ABNT2 — no Windows, `AltGr` chega aos programas como `Ctrl+Alt`, então um atalho na tecla errada dispararia enquanto você digita um caractere. Para trocar algum atalho, use `File > Preferences > Keyboard Shortcuts` e procure por `Babel TCC`.
 

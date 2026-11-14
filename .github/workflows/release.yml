@@ -242,6 +242,10 @@ jobs:
           BABEL_TCC_TRANSLATIONS_PATH: ${{ github.workspace }}/babel-tcc-translations
         run: npm run copy-translations
 
+      - name: Copy examples
+        working-directory: packages/ide-adapters/vscode
+        run: npm run copy-examples
+
       - name: Copy README
         working-directory: packages/ide-adapters/vscode
         run: npm run copy-readme

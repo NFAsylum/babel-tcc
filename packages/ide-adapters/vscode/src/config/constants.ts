@@ -16,7 +16,12 @@ export const COMMANDS = {
   OPEN_TRANSLATED_EDITABLE: `${CONFIG_SECTION}.openTranslatedEditable`,
   OPEN_TRANSLATED_READONLY: `${CONFIG_SECTION}.openTranslatedReadonly`,
   SHOW_ORIGINAL: `${CONFIG_SECTION}.showOriginal`,
+  OPEN_EXAMPLE: `${CONFIG_SECTION}.openExample`,
+  OPEN_WALKTHROUGH: `${CONFIG_SECTION}.openWalkthrough`,
 } as const;
+
+/** Id of the welcome walkthrough declared in package.json (`contributes.walkthroughs`). */
+export const WALKTHROUGH_ID = 'babelTccGetStarted';
 
 /** Sibling repository name for auto-detection of translations. */
 export const TRANSLATIONS_REPO_NAME = 'babel-tcc-translations';

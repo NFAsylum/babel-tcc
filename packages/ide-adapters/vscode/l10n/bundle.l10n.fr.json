@@ -27,5 +27,19 @@
   "Babel TCC: The translation engine is unstable. Check the Output panel for details.": "Babel TCC : Le moteur de traduction est instable. Consultez le panneau Sortie pour plus de détails.",
   "Save and switch": "Enregistrer et changer",
   "Discard and switch": "Abandonner et changer",
-  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC : {0} fichier(s) traduit(s) ont des modifications non enregistrées. Que souhaitez-vous faire avant de changer de langue ?"
+  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC : {0} fichier(s) traduit(s) ont des modifications non enregistrées. Que souhaitez-vous faire avant de changer de langue ?",
+  "Babel TCC: Open Example": "Babel TCC : Ouvrir un exemple",
+  "Choose an example to see it in your language": "Choisissez un exemple pour le voir dans votre langue",
+  "Hello, World": "Bonjour, le monde",
+  "The first program: prints a greeting. Class, method and variable names are translated with // tradu.": "Le premier programme : il affiche une salutation. Les noms de classe, de méthode et de variable sont traduits avec // tradu.",
+  "Calculator": "Calculatrice",
+  "A class with the four operations; methods and parameters translated with // tradu.": "Une classe avec les quatre opérations ; méthodes et paramètres traduits avec // tradu.",
+  "Geometric shapes": "Formes géométriques",
+  "Classes and inheritance computing area and perimeter; names translated with # tradu.": "Classes et héritage pour calculer aire et périmètre ; noms traduits avec # tradu.",
+  "Functions, constants and loops; comments and strings stay untouched.": "Fonctions, constantes et boucles ; les commentaires et les textes restent intacts.",
+  "Grade average": "Moyenne des notes",
+  "Input, conditions and loops, in the style of introductory logic classes.": "Lecture, conditions et boucles, dans le style des cours d'algorithmique.",
+  "Functions, types and a choose-case menu.": "Fonctions, types et un menu escolha-caso.",
+  "Babel TCC: Could not open the example: {0}": "Babel TCC : Impossible d'ouvrir l'exemple : {0}",
+  "Open Log": "Ouvrir le journal"
 }

@@ -15,6 +15,9 @@ import { SemanticKeywordProvider, SEMANTIC_TOKENS_LEGEND } from './providers/sem
 import { buildFileWatcherPattern, SUPPORTED_LANGUAGES } from './config/languages';
 import { COMMANDS } from './config/constants';
 import { describeError } from './services/errorMessage';
+import { openExample } from './commands/openExample';
+import { openWalkthrough } from './commands/openWalkthrough';
+import { resolveEditorForShowOriginal } from './commands/showOriginal';
 
 const OUTPUT_CHANNEL_NAME = 'Babel TCC';
 
@@ -353,7 +356,10 @@ export function activate(context: vscode.ExtensionContext): void {
   const showOriginalCommand: vscode.Disposable = vscode.commands.registerCommand(
     COMMANDS.SHOW_ORIGINAL,
     async (): Promise<void> => {
-      const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+      const editor: vscode.TextEditor | undefined = resolveEditorForShowOriginal(
+        vscode.window.activeTextEditor,
+        vscode.window.visibleTextEditors
+      );
       if (!editor) {
         vscode.window.showWarningMessage(vscode.l10n.t('Babel TCC: No active editor.'));
         return;
@@ -363,11 +369,31 @@ export function activate(context: vscode.ExtensionContext): void {
       if (isTranslatedScheme(uri.scheme)) {
         const originalUri: vscode.Uri = vscode.Uri.file(uri.path);
         const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(originalUri);
-        await vscode.window.showTextDocument(doc);
+        // In the group of the translated view, which is the active group unless the command came from
+        // the walkthrough page.
+        await vscode.window.showTextDocument(doc, { viewColumn: editor.viewColumn });
         outputChannel.appendLine(`Showing original for: ${uri.path}`);
       } else {
         vscode.window.showInformationMessage(vscode.l10n.t('Babel TCC: Already viewing original code.'));
       }
+    }
+  );
+
+  // Lets anyone try the extension without a project of their own: the professor in class, or a
+  // student who just installed it (tarefa115).
+  const openExampleCommand: vscode.Disposable = vscode.commands.registerCommand(
+    COMMANDS.OPEN_EXAMPLE,
+    async (): Promise<void> => {
+      await openExample(context, configService, outputChannel);
+    }
+  );
+
+  // The welcome walkthrough opens by itself only after installation; this keeps it reachable
+  // after it was dismissed (tarefa116).
+  const openWalkthroughCommand: vscode.Disposable = vscode.commands.registerCommand(
+    COMMANDS.OPEN_WALKTHROUGH,
+    async (): Promise<void> => {
+      await openWalkthrough(context);
     }
   );
 
@@ -386,6 +412,8 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(openTranslatedEditableCommand);
   context.subscriptions.push(openTranslatedReadonlyCommand);
   context.subscriptions.push(showOriginalCommand);
+  context.subscriptions.push(openExampleCommand);
+  context.subscriptions.push(openWalkthroughCommand);
 
   outputChannel.appendLine('All commands registered successfully.');
 }

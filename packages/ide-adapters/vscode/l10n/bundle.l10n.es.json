@@ -27,5 +27,19 @@
   "Babel TCC: The translation engine is unstable. Check the Output panel for details.": "Babel TCC: El motor de traducción está inestable. Revisa el panel Output para más detalles.",
   "Save and switch": "Guardar y cambiar",
   "Discard and switch": "Descartar y cambiar",
-  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} archivo(s) traducido(s) tienen cambios sin guardar. ¿Qué deseas hacer antes de cambiar de idioma?"
+  "Babel TCC: {0} translated file(s) have unsaved changes. What would you like to do before switching languages?": "Babel TCC: {0} archivo(s) traducido(s) tienen cambios sin guardar. ¿Qué deseas hacer antes de cambiar de idioma?",
+  "Babel TCC: Open Example": "Babel TCC: Abrir ejemplo",
+  "Choose an example to see it in your language": "Elige un ejemplo para verlo en tu idioma",
+  "Hello, World": "Hola, mundo",
+  "The first program: prints a greeting. Class, method and variable names are translated with // tradu.": "El primer programa: escribe un saludo. Los nombres de clase, método y variable se traducen con // tradu.",
+  "Calculator": "Calculadora",
+  "A class with the four operations; methods and parameters translated with // tradu.": "Una clase con las cuatro operaciones; métodos y parámetros traducidos con // tradu.",
+  "Geometric shapes": "Formas geométricas",
+  "Classes and inheritance computing area and perimeter; names translated with # tradu.": "Clases y herencia que calculan área y perímetro; nombres traducidos con # tradu.",
+  "Functions, constants and loops; comments and strings stay untouched.": "Funciones, constantes y bucles; los comentarios y los textos quedan intactos.",
+  "Grade average": "Promedio de notas",
+  "Input, conditions and loops, in the style of introductory logic classes.": "Lectura, condiciones y bucles, al estilo de las clases de lógica de programación.",
+  "Functions, types and a choose-case menu.": "Funciones, tipos y un menú con escolha-caso.",
+  "Babel TCC: Could not open the example: {0}": "Babel TCC: No se pudo abrir el ejemplo: {0}",
+  "Open Log": "Abrir registro"
 }

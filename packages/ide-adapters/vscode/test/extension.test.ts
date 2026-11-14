@@ -60,10 +60,10 @@ describe('extension', () => {
   });
 
   describe('activate', () => {
-    it('should register 5 commands', () => {
+    it('should register 7 commands', () => {
       const context = makeContext();
       activate(context as any);
-      expect(commands.registerCommand).toHaveBeenCalledTimes(5);
+      expect(commands.registerCommand).toHaveBeenCalledTimes(7);
     });
 
     it('should register expected command names', () => {
@@ -75,6 +75,8 @@ describe('extension', () => {
       expect(registeredCommands).toContain('babel-tcc.openTranslatedEditable');
       expect(registeredCommands).toContain('babel-tcc.openTranslatedReadonly');
       expect(registeredCommands).toContain('babel-tcc.showOriginal');
+      expect(registeredCommands).toContain('babel-tcc.openExample');
+      expect(registeredCommands).toContain('babel-tcc.openWalkthrough');
     });
 
     it('should register 2 file system providers', () => {
@@ -90,10 +92,10 @@ describe('extension', () => {
       expect(languages.registerHoverProvider).toHaveBeenCalledTimes(2);
     });
 
-    it('should push exactly 20 subscriptions to context', () => {
+    it('should push exactly 22 subscriptions to context', () => {
       const context = makeContext();
       activate(context as any);
-      expect(context.subscriptions.length).toBe(20);
+      expect(context.subscriptions.length).toBe(22);
     });
 
     // Menus and keybindings read only built-in keys (resourceExtname, resourceScheme, config.*), which
@@ -304,6 +306,25 @@ describe('extension', () => {
       await showOriginalCall![1]();
 
       expect(window.showWarningMessage).toHaveBeenCalledWith('Babel TCC: No active editor.');
+    });
+
+    // The walkthrough's "Show Original Code" button runs with the walkthrough page focused, so there
+    // is no active text editor; the translated view beside it is the one meant.
+    it('showOriginal should open the original next to the only visible translated view when no editor is active', async () => {
+      const context = makeContext();
+      activate(context as any);
+      window.activeTextEditor = undefined;
+      window.visibleTextEditors = [{ document: { uri: Uri.parse('babel-tcc-translated:/ex/Program.cs') }, viewColumn: 2 }];
+      const originalDocument = { uri: 'original' };
+      vi.mocked(workspace.openTextDocument).mockResolvedValue(originalDocument as any);
+
+      const showOriginalCall = vi.mocked(commands.registerCommand).mock.calls.find(c => c[0] === 'babel-tcc.showOriginal');
+      await showOriginalCall![1]();
+      window.visibleTextEditors = [];
+
+      expect((vi.mocked(workspace.openTextDocument).mock.calls[0][0] as unknown as Uri).scheme).toBe('file');
+      expect(window.showTextDocument).toHaveBeenCalledWith(originalDocument, { viewColumn: 2 });
+      expect(window.showWarningMessage).not.toHaveBeenCalled();
     });
 
     it('openTranslatedEditable should warn for unsupported file', async () => {
