@@ -84,6 +84,11 @@
         "title": "%command.openExample.title%",
         "category": "%extension.category%",
         "icon": "$(book)"
+      },
+      {
+        "command": "babel-tcc.openWalkthrough",
+        "title": "%command.openWalkthrough.title%",
+        "category": "%extension.category%"
       }
     ],
     "menus": {
@@ -144,6 +149,51 @@
         "command": "babel-tcc.openExample",
         "key": "ctrl+alt+u x",
         "mac": "cmd+alt+u x"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "babelTccGetStarted",
+        "title": "%walkthrough.title%",
+        "description": "%walkthrough.description%",
+        "steps": [
+          {
+            "id": "enableTranslation",
+            "title": "%walkthrough.enableTranslation.title%",
+            "description": "%walkthrough.enableTranslation.description%",
+            "media": { "markdown": "media/walkthrough/choose-language.md" },
+            "when": "!config.babel-tcc.enabled",
+            "completionEvents": ["onCommand:babel-tcc.toggle", "onSettingChanged:babel-tcc.enabled"]
+          },
+          {
+            "id": "chooseLanguage",
+            "title": "%walkthrough.chooseLanguage.title%",
+            "description": "%walkthrough.chooseLanguage.description%",
+            "media": { "markdown": "media/walkthrough/choose-language.md" },
+            "completionEvents": ["onCommand:babel-tcc.selectLanguage", "onSettingChanged:babel-tcc.language"]
+          },
+          {
+            "id": "openExample",
+            "title": "%walkthrough.openExample.title%",
+            "description": "%walkthrough.openExample.description%",
+            "media": { "markdown": "media/walkthrough/open-example.md" },
+            "completionEvents": ["onCommand:babel-tcc.openExample"]
+          },
+          {
+            "id": "editAndSave",
+            "title": "%walkthrough.editAndSave.title%",
+            "description": "%walkthrough.editAndSave.description%",
+            "media": { "markdown": "media/walkthrough/edit-and-save.md" },
+            "completionEvents": ["onCommand:babel-tcc.showOriginal"]
+          },
+          {
+            "id": "traduAnnotations",
+            "title": "%walkthrough.traduAnnotations.title%",
+            "description": "%walkthrough.traduAnnotations.description%",
+            "media": { "markdown": "media/walkthrough/tradu-annotations.md" },
+            "completionEvents": ["onLink:https://github.com/NFAsylum/babel-tcc#sistema-tradu"]
+          }
+        ]
       }
     ],
     "configuration": {

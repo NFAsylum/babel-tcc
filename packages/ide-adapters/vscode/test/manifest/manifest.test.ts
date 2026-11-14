@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { COMMANDS, CONFIG_KEYS } from '../../src/config/constants';
+import { COMMANDS, CONFIG_KEYS, WALKTHROUGH_ID } from '../../src/config/constants';
 import { SUPPORTED_LANGUAGES, LanguageConfig } from '../../src/config/languages';
 import { TRANSLATED_SCHEME, READONLY_SCHEME } from '../../src/providers/translatedContentProvider';
 
@@ -46,11 +46,28 @@ interface ManifestKeybinding {
   when?: string;
 }
 
+interface ManifestWalkthroughStep {
+  id: string;
+  title: string;
+  description: string;
+  media: { markdown?: string; image?: unknown; altText?: string };
+  when?: string;
+  completionEvents?: string[];
+}
+
+interface ManifestWalkthrough {
+  id: string;
+  title: string;
+  description: string;
+  steps: ManifestWalkthroughStep[];
+}
+
 interface PackageManifest {
   contributes: {
     commands: ManifestCommand[];
     menus: Record<string, ManifestMenuItem[]>;
     keybindings: ManifestKeybinding[];
+    walkthroughs: ManifestWalkthrough[];
     configuration: {
       properties: Record<string, ManifestConfigProperty>;
     };
@@ -203,6 +220,43 @@ function collectNlsPlaceholders(node: unknown, found: Set<string>): Set<string> 
     }
   }
   return found;
+}
+
+/** A markdown link: the button label and where it goes. Both are empty when there is no link. */
+interface DescriptionLink {
+  label: string;
+  target: string;
+}
+
+/**
+ * Reads the link that closes a walkthrough step description. VS Code draws a link that sits alone on
+ * the last line as a button, which is what makes the step doable from the keyboard (INV-09).
+ */
+function trailingLinkOf(description: string): DescriptionLink {
+  const match: RegExpMatchArray | null = description.match(/\n\[([^\]]+)\]\(([^)]+)\)$/);
+  if (match) {
+    return { label: match[1], target: match[2] };
+  }
+  return { label: '', target: '' };
+}
+
+/** Returns the command a `command:` link runs, without the `toSide:` hint; '' for other links. */
+function commandOfLink(target: string): string {
+  const match: RegExpMatchArray | null = target.match(/^command:(?:toSide:)?(.+)$/);
+  if (match) {
+    return match[1];
+  }
+  return '';
+}
+
+/** Turns a `%key%` placeholder into its key. */
+function placeholderKeyOf(value: string): string {
+  return value.replace(/^%(.+)%$/, '$1');
+}
+
+/** Normalizes the optional completion events of a step to an array. */
+function completionEventsOf(step: ManifestWalkthroughStep): string[] {
+  return listOf(step.completionEvents);
 }
 
 /** Splits a keybinding into its chord segments (`ctrl+alt+u t` -> `ctrl+alt+u`, `t`). */
@@ -434,6 +488,122 @@ describe('manifest contract', () => {
         }
         if (keybinding.command === COMMANDS.SHOW_ORIGINAL) {
           expect(when).toContain(TRANSLATED_CLAUSE);
+        }
+      }
+    });
+  });
+
+  describe('walkthrough', () => {
+    const walkthroughs: ManifestWalkthrough[] = packageJson.contributes.walkthroughs || [];
+    const steps: ManifestWalkthroughStep[] = walkthroughs.flatMap(
+      (walkthrough: ManifestWalkthrough): ManifestWalkthroughStep[] => walkthrough.steps
+    );
+    const baseTranslations: Record<string, string> = readNlsFile('package.nls.json');
+
+    /** The link that closes a step, read from the given nls file. */
+    function stepLinkIn(translations: Record<string, string>, step: ManifestWalkthroughStep): DescriptionLink {
+      return trailingLinkOf(translations[placeholderKeyOf(step.description)] || '');
+    }
+
+    it('should declare one walkthrough, with the id that "Open Introduction" opens', () => {
+      expect(walkthroughs.map((walkthrough: ManifestWalkthrough): string => walkthrough.id)).toEqual([WALKTHROUGH_ID]);
+      expect(steps.length).toBeGreaterThan(0);
+    });
+
+    // Markdown media is read by screen readers, follows the theme and needs no light/dark pair
+    // (INV-08); a media file left out of the package would show an empty step (INV-16).
+    it('should give every step markdown media that exists in the extension folder', () => {
+      for (const step of steps) {
+        const markdownPath: string = step.media.markdown || '';
+        expect({ step: step.id, image: step.media.image }).toEqual({ step: step.id, image: undefined });
+        expect({ step: step.id, exists: markdownPath !== '' && fs.existsSync(path.join(EXTENSION_ROOT, markdownPath)) }).toEqual({
+          step: step.id,
+          exists: true,
+        });
+      }
+    });
+
+    it('should end every step description with a link, in all 7 nls files', () => {
+      for (const filename of NLS_FILENAMES) {
+        const translations: Record<string, string> = readNlsFile(filename);
+        for (const step of steps) {
+          const link: DescriptionLink = stepLinkIn(translations, step);
+          expect({ filename, step: step.id, hasLabel: link.label.trim() !== '' }).toEqual({ filename, step: step.id, hasLabel: true });
+          // Only the label is translated: the button must do the same thing in every language.
+          expect({ filename, step: step.id, target: link.target }).toEqual({
+            filename,
+            step: step.id,
+            target: stepLinkIn(baseTranslations, step).target,
+          });
+        }
+      }
+    });
+
+    it('should point every command link at a declared command', () => {
+      for (const step of steps) {
+        const target: string = stepLinkIn(baseTranslations, step).target;
+        if (target.startsWith('command:')) {
+          expect(declaredCommandIds).toContain(commandOfLink(target));
+        }
+      }
+    });
+
+    // From the walkthrough no text editor is active; `toSide:` makes VS Code open the result next to
+    // the walkthrough and focus that group, so a command that needs the active editor still has one.
+    it('should open editors beside the walkthrough', () => {
+      const editorCommands: string[] = [COMMANDS.OPEN_EXAMPLE, COMMANDS.SHOW_ORIGINAL];
+      for (const step of steps) {
+        const target: string = stepLinkIn(baseTranslations, step).target;
+        if (editorCommands.includes(commandOfLink(target))) {
+          expect(target).toBe(`command:toSide:${commandOfLink(target)}`);
+        }
+      }
+    });
+
+    // "Toggle" turns translation off as readily as on: a button for it is only safe in a step that is
+    // shown while translation is off, and that step must come first, before anything that needs it.
+    it('should only offer the toggle in a first step that shows while translation is off', () => {
+      const toggleSteps: ManifestWalkthroughStep[] = steps.filter(
+        (step: ManifestWalkthroughStep): boolean =>
+          commandOfLink(stepLinkIn(baseTranslations, step).target) === COMMANDS.TOGGLE
+      );
+      expect(toggleSteps.map((step: ManifestWalkthroughStep): string => step.id)).toEqual([steps[0].id]);
+      expect(whenOf(toggleSteps[0])).toBe(`!${ENABLED_CLAUSE}`);
+    });
+
+    it('should show every other step regardless of the settings', () => {
+      for (const step of steps.slice(1)) {
+        expect({ step: step.id, when: whenOf(step) }).toEqual({ step: step.id, when: '' });
+      }
+    });
+
+    it('should complete each step when its button is used', () => {
+      for (const step of steps) {
+        const target: string = stepLinkIn(baseTranslations, step).target;
+        let expectedEvent: string = `onLink:${target}`;
+        if (target.startsWith('command:')) {
+          expectedEvent = `onCommand:${commandOfLink(target)}`;
+        }
+        expect({ step: step.id, events: completionEventsOf(step) }).toEqual({
+          step: step.id,
+          events: expect.arrayContaining([expectedEvent]),
+        });
+      }
+    });
+
+    it('should only complete steps on commands and settings that exist', () => {
+      const declaredSettings: string[] = Object.keys(configurationProperties);
+      for (const step of steps) {
+        for (const event of completionEventsOf(step)) {
+          const [kind, ...rest] = event.split(':');
+          const subject: string = rest.join(':');
+          if (kind === 'onCommand') {
+            expect(declaredCommandIds).toContain(subject);
+          } else if (kind === 'onSettingChanged') {
+            expect(declaredSettings).toContain(subject);
+          } else {
+            expect({ step: step.id, kind }).toEqual({ step: step.id, kind: 'onLink' });
+          }
         }
       }
     });

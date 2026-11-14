@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Uri, window, workspace } from '../__mocks__/vscode';
+import { Uri, window, workspace, TabInputText, ViewColumn } from '../__mocks__/vscode';
 import {
+  chooseExampleColumn,
   buildExampleCatalog,
   buildExampleItems,
   resolveExampleCopy,
@@ -38,6 +39,7 @@ describe('openExample', () => {
     vi.mocked(workspace.fs.copy).mockResolvedValue(undefined);
     vi.mocked(workspace.openTextDocument).mockResolvedValue(openedDocument as any);
     vi.mocked(window.showTextDocument).mockResolvedValue({} as any);
+    window.tabGroups.activeTabGroup.viewColumn = 1;
   });
 
   /** Makes the picker answer with the first example of the catalog. */
@@ -147,7 +149,38 @@ describe('openExample', () => {
     const openedUri = vi.mocked(workspace.openTextDocument).mock.calls[0][0] as Uri;
     expect(openedUri.scheme).toBe(TRANSLATED_SCHEME);
     expect(openedUri.path).toBe(`/storage/examples/1.1.0/${entry.relativePath}`);
-    expect(window.showTextDocument).toHaveBeenCalledWith(openedDocument, { preview: false });
+    expect(window.showTextDocument).toHaveBeenCalledWith(openedDocument, { preview: false, viewColumn: 1 });
+  });
+
+  // From a walkthrough button, VS Code activates an empty group beside the walkthrough and runs the
+  // command; closing the picker then hands focus back to the walkthrough's group.
+  it('should open in the group that was active when the command started, not where the picker left focus', async () => {
+    pickFirstExample();
+    window.tabGroups.activeTabGroup.viewColumn = 2;
+    vi.mocked(window.showQuickPick).mockImplementationOnce(async (items: any) => {
+      window.tabGroups.activeTabGroup.viewColumn = 1;
+      return items[0];
+    });
+
+    await openExample(makeContext() as any, configService as any, outputChannel as any);
+
+    expect(window.showTextDocument).toHaveBeenCalledWith(openedDocument, { preview: false, viewColumn: 2 });
+  });
+
+  describe('chooseExampleColumn', () => {
+    it('should open in an empty active group, like the one a walkthrough button creates', () => {
+      expect(chooseExampleColumn({ viewColumn: 2, activeTab: undefined } as any)).toBe(2);
+    });
+
+    it('should open in the active group when it shows a text editor', () => {
+      const activeTab = { input: new TabInputText(Uri.file('/ex/Program.cs')) };
+      expect(chooseExampleColumn({ viewColumn: 2, activeTab } as any)).toBe(2);
+    });
+
+    // With a group already beside the walkthrough, VS Code keeps the walkthrough's group active.
+    it('should open beside the active group when it shows something else, such as the walkthrough', () => {
+      expect(chooseExampleColumn({ viewColumn: 1, activeTab: { input: undefined } } as any)).toBe(ViewColumn.Beside);
+    });
   });
 
   it('should open the read-only translated view when that is the setting', async () => {
