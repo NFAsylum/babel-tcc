@@ -2,6 +2,7 @@
 
 ## Índice
 
+- [Introdução guiada](#introdução-guiada)
 - [Experimentar sem projeto](#experimentar-sem-projeto)
 - [Abrir um projeto](#abrir-um-projeto)
 - [Ativar a tradução](#ativar-a-tradução)
@@ -9,6 +10,25 @@
 - [Entender a interface](#entender-a-interface)
 - [Workflow básico](#workflow-básico)
 - [Usando anotações tradu](#usando-anotações-tradu)
+
+## Introdução guiada
+
+Logo depois de instalar a extensão, o VS Code abre a página **Primeiros passos com o Babel TCC**, com
+quatro passos:
+
+1. **Escolha o seu idioma**: o idioma em que o código aparece.
+2. **Abra um exemplo**: abre um dos exemplos, já traduzido, ao lado da página.
+3. **Edite, salve e veja o original**: mostra que o arquivo é salvo na linguagem de programação
+   original.
+4. **Traduza nomes com tradu**: as anotações que traduzem nomes de classes, métodos e variáveis (só
+   em C# e Python).
+
+Se a tradução estiver desligada, aparece antes um passo **Ligue a tradução**, que some assim que ela
+é ligada.
+
+Cada passo tem um botão que faz a ação e marca o passo como feito; tudo funciona pelo teclado (`Tab`
+e `Enter`). Para voltar a essa página depois de fechá-la, `Ctrl+Shift+P` e executar
+`Babel TCC: Abrir Introdução`.
 
 ## Experimentar sem projeto
 
