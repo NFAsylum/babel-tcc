@@ -35,6 +35,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shows just "Open Translated View", where the prefix was only noise. All 7 interface locales were
   updated.
 
+### Fixed
+
+- **"Show Original Code" no longer bounces back to the translated view on Windows.** Windows does not
+  guarantee the case of the drive letter, so the same file could reach the extension as `C:\...` in
+  one place and `c:\...` in another within the same session. The extension compared those as two
+  different files: the original you asked for was replaced again by the translated view, and the
+  same mismatch could keep a language switch from reloading an open view, or let two saves of the
+  same file run at once. Paths are now compared ignoring only the drive letter case; on Linux and
+  macOS, where paths are genuinely case sensitive, nothing changes.
+
 ## [1.1.0] - 2026-08-16
 
 ### Added
