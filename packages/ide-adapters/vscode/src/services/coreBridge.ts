@@ -37,6 +37,13 @@ export class CoreBridge {
   public coreExePath: string;
   public translationsPath: string;
   public projectPath: string;
+  /**
+   * Working directory of the Core process: the extension's own folder, never the workspace. On
+   * Windows a bare command name (`dotnet`, and the `python` the Core starts in turn) is looked up in
+   * the current directory before PATH, so inheriting a workspace as the current directory would let
+   * an untrusted folder supply the executable.
+   */
+  public workingDirectory: string;
   public outputChannel: vscode.OutputChannel;
   public timeoutMs: number;
 
@@ -64,6 +71,7 @@ export class CoreBridge {
       exeName = 'MultiLingualCode.Core.Host.exe';
     }
     this.coreExePath = path.join(context.extensionPath, 'bin', exeName);
+    this.workingDirectory = context.extensionPath;
     this.projectPath = '';
     this.outputChannel = outputChannel;
     this.timeoutMs = timeoutMs;
@@ -130,7 +138,7 @@ export class CoreBridge {
     this.outputChannel.appendLine(
       `CoreBridge: starting persistent process (${launch.command})`
     );
-    const coreProcess: ChildProcess = spawn(launch.command, launch.args);
+    const coreProcess: ChildProcess = spawn(launch.command, launch.args, { cwd: this.workingDirectory });
 
     coreProcess.on('exit', (code: number | null): void => {
       this.outputChannel.appendLine(`CoreBridge: process exited with code ${code}`);
@@ -191,7 +199,11 @@ export class CoreBridge {
       throw new Error('CoreBridge: process crashed too many times, refusing to restart');
     }
 
-    this.outputChannel.appendLine('CoreBridge: restarting process after crash');
+    // The first start goes through here too, with no crash behind it; only a real restart is logged
+    // as one, so the log does not report a crash that never happened.
+    if (this.crashCount > 0) {
+      this.outputChannel.appendLine('CoreBridge: restarting process after crash');
+    }
     this.startProcess();
   }
 
@@ -348,7 +360,17 @@ export class CoreBridge {
       return configuredPath;
     }
 
-    if (this.projectPath) {
+    // A translations folder next to the workspace is only trusted with the workspace: in Restricted
+    // Mode a downloaded folder could bring its own tables, and saving the translated view applies them
+    // to the original file. The workspace value of `translationsPath` is already ignored by VS Code
+    // there, because the manifest lists it in `restrictedConfigurations`.
+    if (this.projectPath && !vscode.workspace.isTrusted) {
+      this.outputChannel.appendLine(
+        'CoreBridge: workspace not trusted, not looking for a translations folder next to it'
+      );
+    }
+
+    if (this.projectPath && vscode.workspace.isTrusted) {
       const workspaceParent: string = path.dirname(this.projectPath);
       const siblingPath: string = path.join(workspaceParent, TRANSLATIONS_REPO_NAME);
 

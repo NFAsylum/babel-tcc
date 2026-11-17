@@ -46,7 +46,17 @@ interface ManifestKeybinding {
   when?: string;
 }
 
+interface ManifestTrustCapability {
+  supported: boolean | string;
+  description: string;
+  restrictedConfigurations?: string[];
+}
+
 interface PackageManifest {
+  capabilities: {
+    untrustedWorkspaces: ManifestTrustCapability;
+    virtualWorkspaces: ManifestTrustCapability;
+  };
   contributes: {
     commands: ManifestCommand[];
     menus: Record<string, ManifestMenuItem[]>;
@@ -436,6 +446,36 @@ describe('manifest contract', () => {
           expect(when).toContain(TRANSLATED_CLAUSE);
         }
       }
+    });
+  });
+
+  // Without a declaration VS Code disables the extension, silently, in every folder opened in
+  // Restricted Mode: the "teacher downloads a folder of examples" case. `limited` keeps it working
+  // there with the bundled translation tables; settings that point outside the extension are only
+  // honored in trusted workspaces.
+  describe('workspace trust', () => {
+    const untrustedWorkspaces: ManifestTrustCapability = packageJson.capabilities.untrustedWorkspaces;
+    const virtualWorkspaces: ManifestTrustCapability = packageJson.capabilities.virtualWorkspaces;
+    const declaredSettings: string[] = Object.keys(configurationProperties);
+
+    it('should keep working in Restricted Mode, with limited support', () => {
+      expect(untrustedWorkspaces.supported).toBe('limited');
+      expect(untrustedWorkspaces.description).toBe('%capabilities.untrustedWorkspaces.description%');
+    });
+
+    it('should ignore the workspace value of the translations path in Restricted Mode', () => {
+      expect(listOf(untrustedWorkspaces.restrictedConfigurations)).toContain(CONFIG_KEYS.TRANSLATIONS_PATH);
+    });
+
+    it('should only restrict settings that the extension declares', () => {
+      for (const setting of listOf(untrustedWorkspaces.restrictedConfigurations)) {
+        expect(declaredSettings).toContain(setting);
+      }
+    });
+
+    it('should declare that virtual workspaces are not supported, with the reason', () => {
+      expect(virtualWorkspaces.supported).toBe(false);
+      expect(virtualWorkspaces.description).toBe('%capabilities.virtualWorkspaces.description%');
     });
   });
 

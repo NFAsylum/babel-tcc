@@ -103,6 +103,7 @@ describe('CoreBridge', () => {
       update: vi.fn(),
     } as any);
     workspace.workspaceFolders = undefined;
+    workspace.isTrusted = true;
 
     bridge = new CoreBridge(makeContext() as any, makeOutputChannel() as any, 5000);
   });
@@ -164,6 +165,20 @@ describe('CoreBridge', () => {
 
     it('should fall back to embedded translations', () => {
       expect(bridge.translationsPath).toContain('translations');
+    });
+
+    // In Restricted Mode a downloaded folder could bring its own translation tables, and saving the
+    // translated view applies them to the original file.
+    it('should not use a translations folder next to an untrusted workspace', () => {
+      workspace.workspaceFolders = [{ uri: Uri.file('/projects/babel-tcc'), name: 'ws', index: 0 }] as any;
+      workspace.isTrusted = false;
+      vi.mocked(fs.existsSync).mockImplementation((p) => String(p).includes('babel-tcc-translations'));
+      const channel = makeOutputChannel();
+
+      const b = new CoreBridge(makeContext('/ext') as any, channel as any);
+
+      expect(b.translationsPath).toBe(path.join('/ext', 'translations'));
+      expect(channel.appendLine).toHaveBeenCalledWith(expect.stringContaining('workspace not trusted'));
     });
   });
 
@@ -330,7 +345,45 @@ describe('CoreBridge', () => {
     });
   });
 
+  describe('working directory', () => {
+    // On Windows a bare command name is looked up in the current directory before PATH; the Core (and
+    // the Python it starts) must not inherit a workspace as the current directory.
+    it('should start the Core from the extension folder, not the workspace', () => {
+      workspace.workspaceFolders = [{ uri: Uri.file('/workspace'), name: 'ws', index: 0 }] as any;
+      const b = new CoreBridge(makeContext('/ext') as any, makeOutputChannel() as any);
+
+      b.startProcess();
+
+      expect(vi.mocked(spawn).mock.calls[0][2]).toEqual({ cwd: '/ext' });
+    });
+  });
+
   describe('crash recovery', () => {
+    it('should not report a crash on the first start', async () => {
+      const channel = makeOutputChannel();
+      const b = new CoreBridge(makeContext() as any, channel as any, 5000);
+      rl.setNextResponse(JSON.stringify({ success: true, result: '"ok"', error: '' }));
+
+      await b.invokeCore('FirstRequest', {});
+
+      expect(channel.appendLine).not.toHaveBeenCalledWith('CoreBridge: restarting process after crash');
+    });
+
+    it('should report the restart after a real crash', async () => {
+      const channel = makeOutputChannel();
+      const b = new CoreBridge(makeContext() as any, channel as any, 5000);
+      b.startProcess();
+      (mockProcess as any)._onExit(1);
+      const newProcess = createMockProcess();
+      vi.mocked(spawn).mockReturnValue(newProcess as any);
+      const newRl = setupReadlineMock(newProcess);
+      newRl.setNextResponse(JSON.stringify({ success: true, result: '"ok"', error: '' }));
+
+      await b.invokeCore('AfterCrash', {});
+
+      expect(channel.appendLine).toHaveBeenCalledWith('CoreBridge: restarting process after crash');
+    });
+
     it('should restart process after crash', async () => {
       bridge.startProcess();
       expect(spawn).toHaveBeenCalledTimes(1);
