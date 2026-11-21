@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   built-in shortcut away, and it stays clear of the keys the Brazilian ABNT2 layout reaches through
   `AltGr`: on Windows `AltGr` reaches applications as `Ctrl+Alt`, so a shortcut on the wrong key
   would fire while you were simply typing a character.
+- **The extension now works in Restricted Mode.** A folder you have not trusted yet (typically one
+  downloaded from the internet) used to disable Babel TCC silently. It now translates there with the
+  tables that ship with the extension; a translations path set in that folder's settings, or a
+  translations folder next to it, is only used once you trust the folder, because saving the
+  translated view applies those tables to your original file.
+- **Screen readers now announce the status bar item properly.** It used to be read as just "PT-BR";
+  it now says it is Babel TCC, whether translation is on, which language is active and that
+  activating it opens the language picker. The item is also named "Babel TCC" in the status bar's
+  own menu, where it can be hidden or shown.
 
 ### Changed
 
@@ -45,6 +54,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   VS Code still shows "Babel TCC: Open Translated View" in the Command Palette while the context menu
   shows just "Open Translated View", where the prefix was only noise. All 7 interface locales were
   updated.
+
+### Fixed
+
+- **"Show Original Code" no longer bounces back to the translated view on Windows.** Windows does not
+  guarantee the case of the drive letter, so the same file could reach the extension as `C:\...` in
+  one place and `c:\...` in another within the same session. The extension compared those as two
+  different files: the original you asked for was replaced again by the translated view, and the
+  same mismatch could keep a language switch from reloading an open view, or let two saves of the
+  same file run at once. Paths are now compared ignoring only the drive letter case; on Linux and
+  macOS, where paths are genuinely case sensitive, nothing changes.
 
 ## [1.1.0] - 2026-08-16
 

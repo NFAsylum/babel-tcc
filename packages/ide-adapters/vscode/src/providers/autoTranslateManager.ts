@@ -4,6 +4,7 @@ import { ConfigurationService } from '../services/configurationService';
 import { LanguageDetector } from '../services/languageDetector';
 import { TranslatedContentProvider, TRANSLATED_SCHEME, READONLY_SCHEME, isTranslatedScheme } from './translatedContentProvider';
 import { SUPPORTED_LANGUAGES } from '../config/languages';
+import { isSameUri, isSameUriPath, buildUriKey } from '../services/uriPaths';
 
 /** Manages automatic translation of .cs tabs based on the enabled/language configuration. */
 export class AutoTranslateManager implements vscode.Disposable {
@@ -64,7 +65,7 @@ export class AutoTranslateManager implements vscode.Disposable {
     for (const group of vscode.window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (tab.input instanceof vscode.TabInputText) {
-          if (isTranslatedScheme(tab.input.uri.scheme) && tab.input.uri.path === path) {
+          if (isTranslatedScheme(tab.input.uri.scheme) && isSameUriPath(tab.input.uri.path, path)) {
             return true;
           }
         }
@@ -90,8 +91,8 @@ export class AutoTranslateManager implements vscode.Disposable {
       return;
     }
 
-    const uriString: string = editor.document.uri.toString();
-    if (this.processingUris.has(uriString)) {
+    const uriKey: string = buildUriKey(editor.document.uri);
+    if (this.processingUris.has(uriKey)) {
       return;
     }
 
@@ -105,7 +106,7 @@ export class AutoTranslateManager implements vscode.Disposable {
       return;
     }
 
-    this.processingUris.add(uriString);
+    this.processingUris.add(uriKey);
     try {
       const viewColumn: vscode.ViewColumn = editor.viewColumn ?? vscode.ViewColumn.One;
 
@@ -120,7 +121,7 @@ export class AutoTranslateManager implements vscode.Disposable {
       const message: string = describeError(error);
       this.outputChannel.appendLine(`AutoTranslate: failed - ${message}`);
     } finally {
-      this.processingUris.delete(uriString);
+      this.processingUris.delete(uriKey);
     }
   }
 
@@ -243,9 +244,10 @@ export class AutoTranslateManager implements vscode.Disposable {
   public async replaceOriginalsWithTranslated(): Promise<void> {
     const csTabs: TabInfo[] = this.findSupportedFileTabs();
 
-    const uriStrings: string[] = csTabs.map(({ uri }): string => uri.toString());
-    for (const uriString of uriStrings) {
-      this.processingUris.add(uriString);
+    // Same key as handleActiveEditorChange, so the guard set here is seen there.
+    const uriKeys: string[] = csTabs.map(({ uri }): string => buildUriKey(uri));
+    for (const uriKey of uriKeys) {
+      this.processingUris.add(uriKey);
     }
 
     const activeScheme: string = this.getActiveScheme();
@@ -262,8 +264,8 @@ export class AutoTranslateManager implements vscode.Disposable {
         }
       }
     } finally {
-      for (const uriString of uriStrings) {
-        this.processingUris.delete(uriString);
+      for (const uriKey of uriKeys) {
+        this.processingUris.delete(uriKey);
       }
     }
 
@@ -352,11 +354,11 @@ export class AutoTranslateManager implements vscode.Disposable {
 
     const seen: Set<string> = new Set<string>();
     for (const { uri, path } of translatedTabs) {
-      const key: string = uri.toString();
-      if (seen.has(key)) {
+      const uriKey: string = buildUriKey(uri);
+      if (seen.has(uriKey)) {
         continue;
       }
-      seen.add(key);
+      seen.add(uriKey);
       await this.reloadTranslatedView(uri, path);
     }
 
@@ -384,7 +386,7 @@ export class AutoTranslateManager implements vscode.Disposable {
     this.contentProvider.invalidatePath(path);
 
     const doc: vscode.TextDocument | undefined = vscode.workspace.textDocuments.find(
-      (d: vscode.TextDocument): boolean => d.uri.toString() === uri.toString()
+      (d: vscode.TextDocument): boolean => isSameUri(d.uri, uri)
     );
     if (!doc || doc.isDirty) {
       return;
@@ -438,12 +440,10 @@ export class AutoTranslateManager implements vscode.Disposable {
 
   /** Closes the tab matching the given URI, found by a fresh scan of the current tab model. */
   public async closeTab(uri: vscode.Uri): Promise<void> {
-    const uriString: string = uri.toString();
-
     for (const group of vscode.window.tabGroups.all) {
       for (const tab of group.tabs) {
         if (tab.input instanceof vscode.TabInputText) {
-          if (tab.input.uri.toString() === uriString) {
+          if (isSameUri(tab.input.uri, uri)) {
             await vscode.window.tabGroups.close(tab);
             return;
           }

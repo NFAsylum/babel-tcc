@@ -46,6 +46,19 @@
     "onFileSystem:babel-tcc-translated",
     "onFileSystem:babel-tcc-readonly"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "%capabilities.untrustedWorkspaces.description%",
+      "restrictedConfigurations": [
+        "babel-tcc.translationsPath"
+      ]
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "%capabilities.virtualWorkspaces.description%"
+    }
+  },
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {

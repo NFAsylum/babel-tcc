@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Uri, TabInputText, ViewColumn, window, workspace, commands } from '../__mocks__/vscode';
 import { AutoTranslateManager } from '../../src/providers/autoTranslateManager';
 import { TRANSLATED_SCHEME, READONLY_SCHEME } from '../../src/providers/translatedContentProvider';
+import { buildUriKey } from '../../src/services/uriPaths';
 
 describe('AutoTranslateManager', () => {
   let manager: AutoTranslateManager;
@@ -115,7 +116,7 @@ describe('AutoTranslateManager', () => {
 
     it('should do nothing when uri is already being processed', async () => {
       const uri = Uri.file('/test/file.cs');
-      manager.processingUris.add(uri.toString());
+      manager.processingUris.add(buildUriKey(uri));
       const editor = {
         document: { uri },
         viewColumn: ViewColumn.One,
@@ -140,7 +141,7 @@ describe('AutoTranslateManager', () => {
       expect(outputChannel.appendLine).toHaveBeenCalledWith(
         expect.stringContaining('replaced')
       );
-      expect(manager.processingUris.has(uri.toString())).toBe(false);
+      expect(manager.processingUris.has(buildUriKey(uri))).toBe(false);
     });
 
     it('should do nothing when any translated view for the path is already open', async () => {
@@ -446,6 +447,94 @@ describe('AutoTranslateManager', () => {
   describe('dispose', () => {
     it('should dispose without error', () => {
       expect(() => manager.dispose()).not.toThrow();
+    });
+  });
+
+  // Regression (tarefa120): Windows does not guarantee the case of the drive letter, so the same
+  // file reaches the extension as /C:/... in one place and /c:/... in another within one session.
+  // Comparing with === made the guard miss the open translated tab, and showOriginal was undone by
+  // handleActiveEditorChange reopening the translated view.
+  describe('drive letter case in paths', () => {
+    it('should find a translated tab spelled with a different drive case', () => {
+      const openTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/C:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [openTab], viewColumn: ViewColumn.One }];
+
+      expect(manager.isAnyTranslatedTabOpenForPath('/c:/test/file.cs')).toBe(true);
+    });
+
+    it('should keep the original open when the translated tab differs only by drive case', async () => {
+      const editor = {
+        document: { uri: Uri.parse('file:/c:/test/file.cs') },
+        viewColumn: ViewColumn.One,
+      };
+      (editor.document.uri as any).fsPath = '/c:/test/file.cs';
+      const openTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/C:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [openTab], viewColumn: ViewColumn.One }];
+
+      await manager.handleActiveEditorChange(editor as any);
+
+      expect(workspace.openTextDocument).not.toHaveBeenCalled();
+    });
+
+    it('should close a tab spelled with a different drive case', async () => {
+      const openTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:/C:/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [openTab], viewColumn: ViewColumn.One }];
+
+      await manager.closeTab(Uri.parse(`${TRANSLATED_SCHEME}:/c:/test/file.cs`));
+
+      expect(window.tabGroups.close).toHaveBeenCalledWith(openTab);
+    });
+
+    // Each case below runs in both directions, so reverting the normalization on either side (where
+    // the key is written or where it is read) breaks it.
+    const DRIVE_SPELLINGS: Array<[string, string]> = [['/C:', '/c:'], ['/c:', '/C:']];
+
+    it.each(DRIVE_SPELLINGS)('should not translate again a file the batch swap is handling, tab under %s and event under %s', async (tabDrive: string, eventDrive: string) => {
+      const batchTab = { input: new TabInputText(Uri.parse(`file:${tabDrive}/test/file.cs`)) };
+      window.tabGroups.all = [{ tabs: [batchTab], viewColumn: ViewColumn.One }];
+      const editorEvent = {
+        document: { uri: Uri.parse(`file:${eventDrive}/test/file.cs`) },
+        viewColumn: ViewColumn.One,
+      };
+      // While the batch swap opens the translated view, VS Code reports the original as the active
+      // editor under the other spelling; the processingUris guard must recognize it as the same file.
+      let eventDelivered: boolean = false;
+      vi.mocked(workspace.openTextDocument).mockImplementation(async (): Promise<any> => {
+        if (!eventDelivered) {
+          eventDelivered = true;
+          await manager.handleActiveEditorChange(editorEvent as any);
+        }
+        return {};
+      });
+
+      await manager.replaceOriginalsWithTranslated();
+
+      expect(workspace.openTextDocument).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(DRIVE_SPELLINGS)('should reload once a translated view whose tabs are spelled %s and %s', async (firstDrive: string, secondDrive: string) => {
+      const firstTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:${firstDrive}/test/file.cs`)) };
+      const secondTab = { input: new TabInputText(Uri.parse(`${TRANSLATED_SCHEME}:${secondDrive}/test/file.cs`)) };
+      window.tabGroups.all = [
+        { tabs: [firstTab], viewColumn: ViewColumn.One },
+        { tabs: [secondTab], viewColumn: ViewColumn.Two },
+      ];
+
+      await manager.refreshTranslatedTabs();
+
+      expect(mockContentProvider.invalidatePath).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(DRIVE_SPELLINGS)('should reload a view open under %s when asked under %s', async (docDrive: string, requestDrive: string) => {
+      const openDoc = { uri: Uri.parse(`${TRANSLATED_SCHEME}:${docDrive}/test/file.cs`), isDirty: false };
+      workspace.textDocuments = [openDoc];
+
+      await manager.reloadTranslatedView(
+        Uri.parse(`${TRANSLATED_SCHEME}:${requestDrive}/test/file.cs`), `${requestDrive}/test/file.cs`
+      );
+
+      expect(window.showTextDocument).toHaveBeenCalledWith(openDoc, { preview: false });
+      expect(commands.executeCommand).toHaveBeenCalledWith('workbench.action.files.revert');
     });
   });
 });
