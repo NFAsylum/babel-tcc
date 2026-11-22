@@ -64,6 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same mismatch could keep a language switch from reloading an open view, or let two saves of the
   same file run at once. Paths are now compared ignoring only the drive letter case; on Linux and
   macOS, where paths are genuinely case sensitive, nothing changes.
+- **No more error in VS Code's own log when the extension shuts down.** The translation engine ends
+  a moment after VS Code has closed the extension's Output channel, and the extension still tried
+  to log that, leaving `Error: Channel has been closed` in the extension host log on every reload
+  or exit. Nothing visible broke, but it was an unhandled error; events of the engine that arrive
+  after shutdown are now dropped instead.
 
 ## [1.1.0] - 2026-08-16
 

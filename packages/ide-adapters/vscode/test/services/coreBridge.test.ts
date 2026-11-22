@@ -30,11 +30,15 @@ function createMockProcess() {
     killed: false,
     pid: 1234,
   };
+  // Every handler is kept, like a real ChildProcess: dispose() adds its own 'exit' handler on top of
+  // the one startProcess() registered, and both must run when the process exits.
+  const handlers: Record<string, Function[]> = { exit: [], error: [] };
   proc.on.mockImplementation((event: string, cb: Function) => {
-    if (event === 'exit') (proc as any)._onExit = cb;
-    if (event === 'error') (proc as any)._onError = cb;
+    if (handlers[event]) handlers[event].push(cb);
     return proc;
   });
+  (proc as any)._onExit = (...args: unknown[]) => handlers.exit.forEach((cb: Function) => cb(...args));
+  (proc as any)._onError = (...args: unknown[]) => handlers.error.forEach((cb: Function) => cb(...args));
   return proc;
 }
 
@@ -477,6 +481,56 @@ describe('CoreBridge', () => {
 
     it('should not throw when no process running', () => {
       expect(() => bridge.dispose()).not.toThrow();
+    });
+  });
+
+  // VS Code closes the output channel when the extension shuts down, and the Core process ends after
+  // that, on its own time. A closed channel throws on appendLine ("Channel has been closed").
+  describe('process events after dispose', () => {
+    let channel: ReturnType<typeof makeOutputChannel>;
+
+    beforeEach(() => {
+      channel = makeOutputChannel();
+      bridge = new CoreBridge(makeContext() as any, channel as any, 5000);
+      bridge.startProcess();
+    });
+
+    function closeChannel(): void {
+      channel.appendLine.mockImplementation(() => {
+        throw new Error('Channel has been closed');
+      });
+    }
+
+    it('should still log the exit of the process while running', () => {
+      (mockProcess as any)._onExit(1);
+      expect(channel.appendLine).toHaveBeenCalledWith('CoreBridge: process exited with code 1');
+    });
+
+    it('should not write to a closed channel when the process exits after dispose', () => {
+      bridge.dispose();
+      closeChannel();
+      expect(() => (mockProcess as any)._onExit(0)).not.toThrow();
+    });
+
+    it('should not write to a closed channel when the process fails after dispose', () => {
+      bridge.dispose();
+      closeChannel();
+      expect(() => (mockProcess as any)._onError(new Error('EPIPE'))).not.toThrow();
+    });
+
+    it('should not write to a closed channel when the process prints to stderr after dispose', () => {
+      bridge.dispose();
+      closeChannel();
+      expect(() => mockProcess.stderr.emit('data', Buffer.from('shutting down'))).not.toThrow();
+    });
+
+    it('should not write to a closed channel when the quit times out after dispose', () => {
+      vi.useFakeTimers();
+      bridge.dispose();
+      closeChannel();
+      expect(() => vi.advanceTimersByTime(3000)).not.toThrow();
+      expect(mockProcess.kill).toHaveBeenCalled();
+      vi.useRealTimers();
     });
   });
 });

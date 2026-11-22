@@ -141,7 +141,7 @@ export class CoreBridge {
     const coreProcess: ChildProcess = spawn(launch.command, launch.args, { cwd: this.workingDirectory });
 
     coreProcess.on('exit', (code: number | null): void => {
-      this.outputChannel.appendLine(`CoreBridge: process exited with code ${code}`);
+      this.logProcessEvent(`CoreBridge: process exited with code ${code}`);
       this.process = null;
       this.responseReader = null;
       this.pendingResolve = null;
@@ -152,7 +152,7 @@ export class CoreBridge {
     });
 
     coreProcess.on('error', (err: Error): void => {
-      this.outputChannel.appendLine(`CoreBridge: process error - ${err.message}`);
+      this.logProcessEvent(`CoreBridge: process error - ${err.message}`);
       this.process = null;
       this.responseReader = null;
       this.pendingResolve = null;
@@ -164,7 +164,7 @@ export class CoreBridge {
 
     if (coreProcess.stderr) {
       coreProcess.stderr.on('data', (data: Buffer): void => {
-        this.outputChannel.appendLine(`CoreBridge stderr: ${data.toString()}`);
+        this.logProcessEvent(`CoreBridge stderr: ${data.toString()}`);
       });
     }
 
@@ -184,6 +184,21 @@ export class CoreBridge {
     this.process = coreProcess;
     this.crashCount = 0;
     this.consecutiveTimeouts = 0;
+  }
+
+  /**
+   * Logs an event that comes from the Core process (exit, error, stderr, the quit timeout). These
+   * keep arriving after dispose(): the process ends on its own time, by then VS Code has usually
+   * closed the output channel, and writing to a closed channel throws "Channel has been closed"
+   * inside the event handler, an unhandled error in the extension host log. After dispose() the
+   * event is dropped: the channel it would go to is gone.
+   * @param message - The line to log.
+   */
+  public logProcessEvent(message: string): void {
+    if (this.disposed) {
+      return;
+    }
+    this.outputChannel.appendLine(message);
   }
 
   /** Ensures the process is running, restarting if necessary (crash recovery). */
@@ -399,7 +414,7 @@ export class CoreBridge {
 
     const killTimeout: NodeJS.Timeout = setTimeout((): void => {
       if (this.process) {
-        this.outputChannel.appendLine('CoreBridge: force killing process (quit timeout)');
+        this.logProcessEvent('CoreBridge: force killing process (quit timeout)');
         this.process.kill();
       }
     }, DISPOSE_TIMEOUT_MS);
