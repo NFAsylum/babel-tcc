@@ -53,6 +53,8 @@ export class CoreBridge {
   private requestQueue: Promise<void> = Promise.resolve();
   private crashCount: number = 0;
   private consecutiveTimeouts: number = 0;
+  /** Whether the user was already told the engine stopped, so the warning is shown only once. */
+  public instabilityReported: boolean = false;
   private disposed: boolean = false;
 
   constructor(
@@ -181,8 +183,10 @@ export class CoreBridge {
       }
     });
 
+    // crashCount is not reset here: a restart is not proof that the engine works, and resetting on
+    // every start kept the count at 1 forever, so MAX_CRASHES never stopped a crash loop. It goes
+    // back to zero when the process answers a request.
     this.process = coreProcess;
-    this.crashCount = 0;
     this.consecutiveTimeouts = 0;
   }
 
@@ -201,17 +205,25 @@ export class CoreBridge {
     this.outputChannel.appendLine(message);
   }
 
-  /** Ensures the process is running, restarting if necessary (crash recovery). */
-  private ensureProcess(): void {
+  /**
+   * Ensures the process is running, restarting it after a crash. After MAX_CRASHES crashes in a row
+   * (with no answer from the engine in between) it stops restarting: the engine is broken, and
+   * restarting it on every request would only loop. The user is told once, with a way to the log;
+   * later requests are refused quietly instead of repeating the warning on each one.
+   * @returns True when there is a process to send the request to.
+   */
+  public ensureProcess(): boolean {
     if (this.process) {
-      return;
+      return true;
     }
 
     if (this.crashCount >= MAX_CRASHES) {
-      vscode.window.showWarningMessage(
-        vscode.l10n.t('Babel TCC: The translation engine is unstable. Check the Output panel for details.')
-      );
-      throw new Error('CoreBridge: process crashed too many times, refusing to restart');
+      if (!this.instabilityReported) {
+        this.instabilityReported = true;
+        this.outputChannel.appendLine(`CoreBridge: process crashed ${this.crashCount} times in a row, not restarting`);
+        this.warnEngineUnstable();
+      }
+      return false;
     }
 
     // The first start goes through here too, with no crash behind it; only a real restart is logged
@@ -220,6 +232,22 @@ export class CoreBridge {
       this.outputChannel.appendLine('CoreBridge: restarting process after crash');
     }
     this.startProcess();
+    return true;
+  }
+
+  /** Tells the user the translation engine stopped, with a button that opens the log. */
+  public warnEngineUnstable(): void {
+    const openLogLabel: string = vscode.l10n.t('Open Log');
+    vscode.window
+      .showWarningMessage(
+        vscode.l10n.t('Babel TCC: The translation engine is unstable. Check the Output panel for details.'),
+        openLogLabel
+      )
+      .then((selection: string | undefined): void => {
+        if (selection === openLogLabel) {
+          this.outputChannel.show();
+        }
+      });
   }
 
   /**
@@ -228,10 +256,8 @@ export class CoreBridge {
    */
   private sendRequest(method: string, params: Record<string, unknown>): Promise<CoreResponse> {
     return new Promise<CoreResponse>((resolve, reject): void => {
-      try {
-        this.ensureProcess();
-      } catch (err: unknown) {
-        reject(err);
+      if (!this.ensureProcess()) {
+        reject(new Error('CoreBridge: process crashed too many times, refusing to restart'));
         return;
       }
 
@@ -261,6 +287,10 @@ export class CoreBridge {
 
         try {
           const response: CoreResponse = JSON.parse(line) as CoreResponse;
+          // A protocol response, even an error one, shows the engine is alive: the crash streak ends.
+          // Not any line: a runtime that fails to start prints its error as plain text on stdout
+          // before exiting, and counting that as an answer reset the streak on every crash.
+          this.crashCount = 0;
           if (!response.success) {
             this.outputChannel.appendLine(`CoreBridge error: ${response.error}`);
             reject(new Error(`CoreBridge: ${response.error}`));
