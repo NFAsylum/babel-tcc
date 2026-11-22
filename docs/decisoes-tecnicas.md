@@ -652,3 +652,46 @@ abre no VS Code. A extensão simplesmente não liga, e nada explica por quê.
 - Testes: contrato do manifesto (`limited`, `translationsPath` restrita, só configurações declaradas,
   virtual não suportado) e `coreBridge`/`extension` (pasta irmã ignorada sem confiança, `cwd` dos dois
   processos).
+
+## DT-015: Exemplos copiados para o armazenamento global da extensão
+
+**Decisão:** Os exemplos vêm dentro do pacote da extensão (`examples/`, copiados da raiz do
+repositório por `scripts/copy-examples.js`), mas o "Abrir Exemplo" nunca abre o arquivo do pacote: ele
+abre uma cópia em `globalStorageUri/examples/<versão>/<caminho do exemplo>`. A cópia é criada na
+primeira vez e nunca é sobrescrita depois. É sempre aberta com o esquema `file:`.
+
+**Problema:** O comando existe para quem não tem projeto nenhum: o professor em aula, o aluno que
+acabou de instalar. O passo natural depois de ver o exemplo traduzido é editá-lo e salvar, e esse é
+justamente o passo "Edite, salve e veja o original" do walkthrough (tarefa116). O arquivo tem de ser
+gravável, existir sem pasta aberta e sobreviver entre sessões, sem pedir nada ao usuário.
+
+**Alternativas consideradas:**
+- **Abrir direto da pasta da extensão:** em instalações do Marketplace essa pasta é somente leitura;
+  salvar o exemplo falharia. Rejeitada.
+- **`os.tmpdir()`:** limpeza imprevisível pelo sistema operacional e permissões variáveis no Linux;
+  as edições do aluno podiam sumir. Rejeitada.
+- **Pedir ao usuário uma pasta:** atrito exatamente no momento em que se quer zero atrito. Rejeitada.
+- **`globalStorageUri`** (escolhida): gravável, multiplataforma, não depende de pasta aberta e pertence
+  à própria extensão.
+
+**Consequências:**
+- **Cópia existente não é sobrescrita**, para as edições sobreviverem a abrir o mesmo exemplo de novo.
+  Não há comando para restaurar o original: apagar a cópia faz o próximo "Abrir Exemplo" criar outra.
+- **Pasta por versão:** uma versão nova da extensão começa de cópias novas, com os exemplos
+  atualizados. As cópias de versões antigas ficam no disco; são poucos arquivos de texto.
+- **Sempre `file:`:** o VS Code pode entregar o `globalStorageUri` com o esquema próprio
+  `vscode-userdata:`, e o resto da extensão reconhece um arquivo original só pelo esquema `file:`.
+  Achado no F5: um exemplo aberto com a tradução desligada não virava a visão traduzida ao religar a
+  tradução, porque a aba não era encontrada como arquivo original. A cópia é convertida para `file:`
+  na origem (`resolveExampleCopy`).
+- **Fora de qualquer pasta aberta**, a cópia não é observada pelo `FileSystemWatcher` da extensão:
+  alterá-la por fora (outro editor) não recarrega a visão traduzida. Aceitável para um exemplo
+  descartável.
+
+**Implementação (tarefa 115):**
+- `scripts/copy-examples.js`: copia `examples/` para dentro da extensão, pulando pastas de build, e
+  falha alto sem origem; encadeado no `prepackage` e no `release.yml`.
+- `src/commands/openExample.ts`: catálogo tipado de 6 exemplos, `resolveExampleCopy` (caminho por
+  versão, sempre `file:`), `materializeExample` (copia só se não existir) e o comando.
+- Testes: catálogo conferido contra os arquivos reais de `examples/`, cópia sem sobrescrever, os três
+  modos de abertura e a URI `file:` mesmo com `vscode-userdata:`.
