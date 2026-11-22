@@ -276,8 +276,10 @@ export const window = {
   onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
   showTextDocument: vi.fn(),
   activeTextEditor: undefined as unknown,
+  visibleTextEditors: [] as unknown[],
   tabGroups: {
     all: [] as unknown[],
+    activeTabGroup: { viewColumn: 1 },
     close: vi.fn(),
   },
 };

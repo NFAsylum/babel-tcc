@@ -164,6 +164,24 @@ export function buildExampleViewUri(copyUri: vscode.Uri, configService: Configur
 }
 
 /**
+ * Decides where the example opens, so it never covers the welcome walkthrough. A walkthrough button
+ * with `toSide:` creates an empty group beside the page and activates it, but only when the page is
+ * the only group; when there is already a group beside it, the page's group stays active.
+ * - Active group empty, or showing a text editor: open there (the command palette case, and the
+ *   empty group created for the walkthrough).
+ * - Active group showing something else, such as the walkthrough page: open beside it.
+ * @param activeGroup - The editor group active when the command started.
+ * @returns The column to open the example in.
+ */
+export function chooseExampleColumn(activeGroup: vscode.TabGroup): vscode.ViewColumn {
+  const activeTab: vscode.Tab | undefined = activeGroup.activeTab;
+  if (!activeTab || activeTab.input instanceof vscode.TabInputText) {
+    return activeGroup.viewColumn;
+  }
+  return vscode.ViewColumn.Beside;
+}
+
+/**
  * Runs "Open Example": lets the user pick an example, copies it to the extension's storage and opens
  * it. Cancelling the picker does nothing. A file system failure becomes a message with a button to
  * the log, never an exception escaping the command.
@@ -176,6 +194,9 @@ export async function openExample(
   configService: ConfigurationService,
   outputChannel: vscode.OutputChannel
 ): Promise<void> {
+  // Decided now, before the picker takes focus: closing the picker hands focus back to whatever had
+  // it, which from a walkthrough button is the walkthrough page.
+  const targetColumn: vscode.ViewColumn = chooseExampleColumn(vscode.window.tabGroups.activeTabGroup);
   const picked: ExampleQuickPickItem | undefined = await vscode.window.showQuickPick(
     buildExampleItems(buildExampleCatalog()),
     {
@@ -201,7 +222,7 @@ export async function openExample(
     const document: vscode.TextDocument = await vscode.workspace.openTextDocument(
       buildExampleViewUri(copyUri, configService)
     );
-    await vscode.window.showTextDocument(document, { preview: false });
+    await vscode.window.showTextDocument(document, { preview: false, viewColumn: targetColumn });
     outputChannel.appendLine(`Opened example ${relativePath} from ${copyUri.fsPath}`);
   } catch (error: unknown) {
     const message: string = describeError(error);
