@@ -60,7 +60,7 @@ para `file:`.
 
 O registro formal vira o DT-015 em `docs/decisoes-tecnicas.md` quando o PR da tarefa117 (que traz o
 DT-014, no fim do mesmo arquivo) for mergeado. Escrever agora no fim do arquivo geraria conflito
-entre os dois PRs.
+entre os dois PRs. (Registrado em 2026-11-21, depois do merge do #193.)
 
 ## Limitacoes conhecidas
 - A copia fica fora de qualquer pasta aberta, entao o `FileSystemWatcher` da extensao nao a observa:
