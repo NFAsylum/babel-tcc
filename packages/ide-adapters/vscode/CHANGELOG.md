@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   translated, with no folder open and nothing to set up. The examples now ship inside the extension;
   each one is copied to the extension's own storage the first time you open it, so you can edit and
   save it freely, and your changes are still there the next time. Also on `Ctrl+Alt+U` `X`.
+- **A welcome walkthrough, "Get Started with Babel TCC".** Right after installation VS Code shows four
+  short steps: choose your language, open an example, edit and save it and see the original, and
+  translate names with `tradu`. While translation is off, a first step turns it on, so the tour
+  never leads to an untranslated example. Each step has a button that does it and marks it as done,
+  so the whole tour works from the keyboard, and the example opens beside the walkthrough instead of
+  covering it. Closed it? "Babel TCC: Open Introduction" brings it back.
 - **Keyboard shortcuts, as a chord starting with `Ctrl+Alt+U` (`Cmd+Alt+U` on macOS):** `T` toggles
   translation, `I` picks the target language, `V` opens the translated view and `O` goes back to the
   original. The prefix is free in VS Code's default shortcuts, so installing the extension takes no
@@ -58,6 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same mismatch could keep a language switch from reloading an open view, or let two saves of the
   same file run at once. Paths are now compared ignoring only the drive letter case; on Linux and
   macOS, where paths are genuinely case sensitive, nothing changes.
+- **No more error in VS Code's own log when the extension shuts down.** The translation engine ends
+  a moment after VS Code has closed the extension's Output channel, and the extension still tried
+  to log that, leaving `Error: Channel has been closed` in the extension host log on every reload
+  or exit. Nothing visible broke, but it was an unhandled error; events of the engine that arrive
+  after shutdown are now dropped instead.
 
 ## [1.1.0] - 2026-08-16
 
