@@ -407,15 +407,95 @@ describe('CoreBridge', () => {
       expect(result.result).toBe('"recovered"');
     });
 
-    it('should reject after MAX_CRASHES (3) and show warning', async () => {
-      // Simulate 3 crash-restart cycles by manually setting crashCount
-      bridge.startProcess();
-      (bridge as any).crashCount = 3;
-      (bridge as any).process = null;
+  });
 
-      await expect(bridge.invokeCore('TooManyCrashes', {}))
-        .rejects.toThrow('crashed too many times');
-      expect(window.showWarningMessage).toHaveBeenCalled();
+  // The limit used to be set by hand in its test (crashCount = 3), which hid the bug: every restart
+  // reset the count, so real crashes never reached it and a broken engine was restarted forever.
+  describe('crash limit', () => {
+    let channel: ReturnType<typeof makeOutputChannel>;
+    let current: ReturnType<typeof createMockProcess>;
+
+    beforeEach(() => {
+      channel = makeOutputChannel();
+      bridge = new CoreBridge(makeContext() as any, channel as any, 5000);
+      vi.mocked(window.showWarningMessage).mockResolvedValue(undefined as any);
+      current = mockProcess;
+      bridge.startProcess();
+    });
+
+    /** Crashes the running process and prepares a fresh one for the next restart. */
+    function crash(): void {
+      (current as any)._onExit(1);
+      current = createMockProcess();
+      vi.mocked(spawn).mockReturnValue(current as any);
+      setupReadlineMock(current);
+    }
+
+    it('should stop restarting after 3 crashes in a row, each one after a real restart', () => {
+      crash();
+      expect(bridge.ensureProcess()).toBe(true);
+      crash();
+      expect(bridge.ensureProcess()).toBe(true);
+      crash();
+
+      expect(bridge.ensureProcess()).toBe(false);
+      expect(spawn).toHaveBeenCalledTimes(3);
+    });
+
+    it('should warn once, with a button to the log, and then refuse quietly', async () => {
+      crash();
+      bridge.ensureProcess();
+      crash();
+      bridge.ensureProcess();
+      crash();
+
+      await expect(bridge.invokeCore('First', {})).rejects.toThrow('crashed too many times');
+      await expect(bridge.invokeCore('Second', {})).rejects.toThrow('crashed too many times');
+
+      expect(window.showWarningMessage).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(window.showWarningMessage).mock.calls[0][1]).toBe('Open Log');
+    });
+
+    it('should open the log when the user picks the button', async () => {
+      vi.mocked(window.showWarningMessage).mockResolvedValue('Open Log' as any);
+
+      bridge.warnEngineUnstable();
+      await Promise.resolve();
+
+      expect(channel.show).toHaveBeenCalledTimes(1);
+    });
+
+    // Found in F5 with the Core binaries missing: `dotnet` prints "could not execute..." as plain text
+    // on stdout and exits. That line is not a response, and must not end the crash streak.
+    it('should keep counting when the process prints something that is not a response before crashing', async () => {
+      crash();
+      for (let attempt: number = 0; attempt < 2; attempt++) {
+        const restartedRl = setupReadlineMock(current);
+        expect(bridge.ensureProcess()).toBe(true);
+        restartedRl.setNextResponse('The command could not be executed because the file was not found.');
+        await expect(bridge.invokeCore('GetKeywordMap', {})).rejects.toThrow('failed to parse response');
+        crash();
+      }
+
+      expect(bridge.ensureProcess()).toBe(false);
+      expect(window.showWarningMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('should count only crashes in a row: an answer from the engine ends the streak', async () => {
+      crash();
+      bridge.ensureProcess();
+      crash();
+      const restartedRl = setupReadlineMock(current);
+      bridge.ensureProcess();
+      restartedRl.setNextResponse(JSON.stringify({ success: true, result: '"ok"', error: '' }));
+      await bridge.invokeCore('Works', {});
+
+      crash();
+      bridge.ensureProcess();
+      crash();
+
+      expect(bridge.ensureProcess()).toBe(true);
+      expect(window.showWarningMessage).not.toHaveBeenCalled();
     });
   });
 

@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to log that, leaving `Error: Channel has been closed` in the extension host log on every reload
   or exit. Nothing visible broke, but it was an unhandled error; events of the engine that arrive
   after shutdown are now dropped instead.
+- **A broken translation engine is no longer restarted forever.** The limit of 3 crashes never
+  triggered, because every restart reset the count: an engine that crashed on start (a damaged
+  installation, for example) was restarted on every request, with no message. Now 3 crashes in a
+  row, with no valid answer from the engine in between, stop the restarts and show the warning once, with
+  a button that opens the log; later requests fail quietly instead of repeating it.
 
 ## [1.1.0] - 2026-08-16
 
